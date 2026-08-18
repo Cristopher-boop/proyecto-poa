@@ -2,11 +2,14 @@ import { useState } from "react";
 import { ArrowLeftRight, BookOpenText, Building2, LayoutDashboard, WalletCards } from "lucide-react";
 import MainLayout from "./components/layout/MainLayout";
 import type { ModuleKey } from "./components/layout/Sidebar";
+import { ProgramasList } from "./components/organizacional/ProgramasList";
+import { AreasList } from "./components/organizacional/AreasList";
+import { SeccionesList } from "./components/organizacional/SeccionesList";
 
 const moduleInfo: Record<Exclude<ModuleKey, "dashboard">, { title: string; description: string; icon: typeof Building2 }> = {
   organizacional: {
     title: "Organizacional",
-    description: "Módulo preparado para incorporar las funcionalidades de la estructura organizacional.",
+    description: "Módulo para la gestión de la estructura organizacional: programas, áreas y secciones.",
     icon: Building2,
   },
   presupuestos: {
@@ -87,12 +90,62 @@ function EmptyModule({ module }: { module: Exclude<ModuleKey, "dashboard"> }) {
   );
 }
 
+// Componente para renderizar el contenido del módulo organizacional
+function OrganizacionalModule() {
+  const [subModule, setSubModule] = useState<'programas' | 'areas' | 'secciones'>('programas');
+
+  return (
+    <div className="space-y-6">
+      {/* Tabs de navegación interna */}
+      <div className="flex gap-2 border-b border-gray-200 pb-4">
+        <button
+          onClick={() => setSubModule('programas')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            subModule === 'programas'
+              ? 'bg-[#19499C] text-white'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Programas
+        </button>
+        <button
+          onClick={() => setSubModule('areas')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            subModule === 'areas'
+              ? 'bg-[#19499C] text-white'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Áreas
+        </button>
+        <button
+          onClick={() => setSubModule('secciones')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            subModule === 'secciones'
+              ? 'bg-[#19499C] text-white'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Secciones
+        </button>
+      </div>
+
+      {/* Renderizado del submódulo seleccionado */}
+      {subModule === 'programas' && <ProgramasList />}
+      {subModule === 'areas' && <AreasList />}
+      {subModule === 'secciones' && <SeccionesList />}
+    </div>
+  );
+}
+
 export default function App() {
-  const [activeModule, setActiveModule] = useState<ModuleKey>("dashboard");
+  const [activeModule, setActiveModule] = useState<ModuleKey>("organizacional");
 
   return (
     <MainLayout activeModule={activeModule} onModuleChange={setActiveModule}>
-      {activeModule === "dashboard" ? <Dashboard /> : <EmptyModule module={activeModule} />}
+      {activeModule === "dashboard" && <Dashboard />}
+      {activeModule === "organizacional" && <OrganizacionalModule />}
+      {activeModule !== "dashboard" && activeModule !== "organizacional" && <EmptyModule module={activeModule} />}
     </MainLayout>
   );
 }

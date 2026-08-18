@@ -1,4 +1,7 @@
 {
+    "windowColors.colorTitleBar": true,
+    "windowColors.colorActivityBar": true,
+    "windowColors.colorStatusBar": true,
     "workbench.colorCustomizations": {
         "activityBar.background": "#0F3046",
         "titleBar.activeBackground": "#164462",

@@ -24,3 +24,12 @@ pnpm-debug.log*
 # Archivos generados por el sistema
 .DS_Store
 Thumbs.db
+backend/venv/
+frontend/node_modules/
+__pycache__/
+*.pyc
+venv/
+node_modules/
+__pycache__/
+*.pyc
+
