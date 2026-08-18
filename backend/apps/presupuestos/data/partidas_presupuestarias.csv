@@ -1,0 +1,876 @@
+﻿partida;nombre;descripsion;clase
+11000;INGRESOS DE OPERACIÓN;Comprende los ingresos que provienen de la venta de bienes y/o servicios que produce una institución, relacionados con el objeto principal de su actividad. Los mismos son percibidos por el sector público empresarial y financiero. No corresponde deducir las comisiones y bonificaciones aplicadas de acuerdo con la política comercial, las mismas que deben ser consideradas como gastos de comercialización.;ingreso
+11100;Venta de Bienes;Recursos generados por la venta bruta de bienes, efectuada por las empresas públicas.;ingreso
+11300;Venta de Servicios;Recursos generados por la venta bruta de servicios, realizada por las empresas públicas.;ingreso
+11400;Alquiler de Edificios y/o Equipos;Recursos generados por el alquiler a terceros, de edificios, maquinaria y/o equipos que pertenecen a las empresas públicas.;ingreso
+11500;Ingresos Financieros de Instituciones Financieras;Recursos que perciben las instituciones financieras bancarias y no bancarias, por la generación de intereses al otorgar créditos en el mercado financiero, producto de intermediación financiera, depósitos a la vista, a plazo, de ahorro y otros.;ingreso
+11900;Otros Ingresos de Operación;Recursos provenientes de actividades no comprendidas anteriormente, relacionadas con las atribuciones institucionales, como ser: comercialización de envases, materiales de desechos y otros.;ingreso
+12000;VENTA DE BIENES Y SERVICIOS DE LAS ADMINISTRACIONES PÚBLICAS;Ingresos por la venta de bienes y/o servicios de los Órganos del Estado Plurinacional, Entidades de Control y Defensa del Estado Plurinacional, Entidades Territoriales, Instituciones de Seguridad Social, Universidades Públicas e Instituciones Públicas Descentralizadas.;ingreso
+12100;Venta de Bienes de las Administraciones Públicas;Recursos que son generados por la venta de bienes por parte de las entidades de la administración pública no empresariales.;ingreso
+12200;Venta de Servicios de las Administraciones Públicas;Recursos que son generados por la venta de servicios por parte de las entidades de la administración pública no empresariales. Incluye el cobro de importes por formularios, impresos y otros que utilizan las instituciones públicas para: registro, identificación, autorizaciones y otros.;ingreso
+13000;INGRESOS POR IMPUESTOS;Recaudaciones por impuestos establecidos en el Sistema Tributario vigente, percibidos exclusivamente por el Tesoro General de la Nación y Entidades Territoriales Autónomas según sus competencias.;ingreso
+13100;Impuestos Internos (Renta Interna);Ingresos tributarios que proceden de pagos que realizan las personas, las entidades públicas, privadas y mixtas al Estado Plurinacional, por concepto de impuestos sobre la renta, utilidades y otros administrados por el Servicio de Impuestos Nacionales, de acuerdo a normativa vigente.;ingreso
+13110;Impuesto sobre las Utilidades de las Empresas;Recursos provenientes de la tributación sobre las utilidades de las empresas públicas, privadas y mixtas resultantes de los Estados Financieros al cierre de cada gestión, además de gravar a profesionales liberales u oficios y beneficiarios del exterior, de acuerdo a lo establecido en la normativa vigente. Incluye también los recursos provenientes de las alícuotas adicionales, de acuerdo a lo establecido en la normativa vigente.;ingreso
+13111;En Efectivo;;ingreso
+13112;En Certificados de Crédito Fiscal;;ingreso
+13120;Impuesto a las Transacciones;Recursos provenientes del gravamen impositivo sobre los ingresos brutos devengados durante el período fiscal a personas jurídicas y naturales, cuyas actividades se realizan en el territorio nacional por el ejercicio del comercio, industria, profesión, oficio, negocio, alquiler de bienes muebles o inmuebles, obras o servicios de cualquier índole, transferencia a título gratuito de bienes muebles, inmuebles y derechos, y otras, lucrativas o no, de acuerdo a lo establecido en la normativa vigente.;ingreso
+13121;En Efectivo;;ingreso
+13122;En Certificados de Crédito Fiscal;;ingreso
+13130;Impuesto al Valor Agregado - Mercado Interno;Recursos provenientes del gravamen impositivo sobre la venta de bienes o mercaderías en general, contratos de obra, servicios técnicos y profesionales, servicios públicos y privados, aportes, alquileres de muebles e inmuebles y todo otro tipo de ingreso, por actividades realizadas en el país.;ingreso
+13131;En Efectivo;;ingreso
+13132;En Certificados de Crédito Fiscal;;ingreso
+13140;Impuesto al Valor Agregado - Importaciones;Recursos provenientes del gravamen a la importación definitiva de mercancías.;ingreso
+13141;En Efectivo;;ingreso
+13142;En Certificados de Crédito Fiscal;;ingreso
+13150;Impuesto a los Consumos Específicos - Mercado Interno;Recursos originados en el impuesto por concepto de fabricación, consumo o adquisición de bebidas alcohólicas, no alcohólicas y refrescantes, alcoholes sin desnaturalizar, cigarrillos y tabacos y vehículos automóviles.;ingreso
+13151;En Efectivo;;ingreso
+13152;En Certificados de Crédito Fiscal;;ingreso
+13160;Impuesto a los Consumos Específicos - Importaciones;Recursos provenientes de la aplicación del Impuesto a los Consumos Específicos a la importación definitiva de cigarrillos y tabacos, de bebidas alcohólicas, no alcohólicas y refrescantes, alcoholes sin desnaturalizar y vehículos automóviles.;ingreso
+13161;En Efectivo;;ingreso
+13162;En Certificados de Crédito Fiscal;;ingreso
+13170;Impuestos a los Hidrocarburos;Recursos originados por la tributación a la comercialización en el mercado interno de hidrocarburos y sus derivados, sean estos producidos internamente o importados. Incluye los recursos originados por la producción de Hidrocarburos en el territorio nacional.;ingreso
+13171;Impuesto Especial a los Hidrocarburos y sus Derivados Mercado Interno – En Efectivo;;ingreso
+13172;Impuesto Especial a los Hidrocarburos y sus Derivados Mercado Interno – En Certificados de Crédito Fiscal;;ingreso
+13175;Impuesto Directo a los Hidrocarburos;;ingreso
+13190;Otros Impuestos;Recursos provenientes de gravámenes impositivos por conceptos no descritos anteriormente.;ingreso
+13191;Régimen Complementario al IVA – RC IVA;;ingreso
+13192;Impuesto a las Salidas Aéreas al Exterior - ISAE;;ingreso
+13193;Impuesto a la Transmisión Gratuita de Bienes - ITGB;;ingreso
+13194;Régimen Agropecuario Unificado - RAU;;ingreso
+13195;Régimen Tributario Simplificado - RTS;;ingreso
+13196;Régimen Tributario Integrado - STI;;ingreso
+13197;En Certificados de Crédito Fiscal;;ingreso
+13198;Impuesto a las Transacciones Financieras - ITF;;ingreso
+13199;Impuestos a la Participación en Juegos, a la Venta de Moneda Extranjera y Otros;;ingreso
+13200;Impuestos Aduaneros (Renta Aduanera);Recursos que provienen del gravamen por importación de mercancía que ingrese a recintos aduaneros, sobre el valor CIF Frontera o CIF Aduana, de acuerdo al medio de transporte utilizado.;ingreso
+13210;Gravamen Arancelario;;ingreso
+13211;En Efectivo;;ingreso
+13212;En Certificados de Crédito Fiscal;;ingreso
+13300;Impuestos Municipales;Ingresos tributarios por el pago que realizan las personas jurídicas y naturales por la tenencia de bienes y otros establecidos de acuerdo a normativa vigente.;ingreso
+13310;Impuesto a la Propiedad de Bienes Inmuebles;Recursos provenientes del impuesto que grava la propiedad de bienes inmuebles situada en el territorio nacional, de acuerdo a normativa tributaria vigente.;ingreso
+13330;Impuesto a la Propiedad de Vehículos Automotores;Recursos provenientes del impuesto que grava la propiedad de vehículos automotores de cualquier clase o categoría, de acuerdo a normativa vigente.;ingreso
+13360;Impuesto Municipal a la Transferencia de Inmuebles;Recursos provenientes del impuesto que grava la transferencia onerosa de bienes inmuebles, de acuerdo a normativa tributaria vigente.;ingreso
+13370;Impuesto Municipal a la Transferencia de Vehículos Automotores;Recursos provenientes del impuesto que grava la transferencia onerosa de vehículos automotores, de acuerdo a normativa tributaria vigente.;ingreso
+13390;Otros;"Recursos provenientes de gravámenes impositivos municipales no clasificados anteriormente.
+Recursos provenientes del impuesto que grava al consumo específico sobre la chicha de maíz y la afectación del medio ambiente por vehículos automotores, de acuerdo a normativa tributaria vigente.";ingreso
+13400;Impuestos Departamentales;Ingresos tributarios por el cobro de los impuestos de dominio tributario departamental, en el marco de la normativa tributaria vigente.;ingreso
+13410;Impuesto a la Sucesión Hereditaria y Donación de Bienes Inmuebles y Muebles Sujetos a Registro Público;Recursos provenientes del impuesto que grava a la sucesión hereditaria y donación de bienes inmuebles y muebles sujetos a registro público, de acuerdo a la normativa tributaria vigente.;ingreso
+13420;Impuesto a la Propiedad de Vehículos a motor para la navegación Aérea y Acuática;Recursos provenientes del impuesto que grava a la propiedad de vehículos a motor para navegación aérea y acuática, de acuerdo a normativa tributaria vigente.;ingreso
+13430;Impuesto a la afectación del Medio Ambiente;"Recurso proveniente del impuesto que grava a la afectación del medio ambiente, excepto las causadas por vehículos automotores y por actividades hidrocarburíferas, mineras y de electricidad; siempre y cuando no constituyan infracciones ni delitos.";ingreso
+13490;Otros;Recursos provenientes de gravámenes impositivos departamentales no clasificados anteriormente.;ingreso
+14000;REGALÍAS;Recursos percibidos por la explotación de recursos agropecuarios, forestales, yacimientos mineros, petrolíferos y otros, clasificados según la naturaleza de la actividad que origina el derecho de su percepción.;ingreso
+14100;Regalías Mineras;Recursos percibidos por la explotación de yacimientos mineros.;ingreso
+14200;Regalías por Hidrocarburos;Recursos percibidos por la explotación de yacimientos petrolíferos, los que son clasificados de acuerdo con el alcance del impuesto, sea este nacional o departamental.;ingreso
+14210;Nacionales;Recursos provenientes de regalías por la producción de hidrocarburos que se comercializan en todo el país.;ingreso
+14212;6% Participación TGN;;ingreso
+14220;Departamentales;Recursos provenientes de regalías por la producción departamental fiscalizada de hidrocarburos, de acuerdo a normativa vigente.;ingreso
+14221;11% Regalías Departamentales;;ingreso
+14222;1% Regalía Compensatoria Departamental;;ingreso
+14300;Regalías Agropecuarias y Forestales;Recursos percibidos como resultado de su acción impositiva en la explotación de recursos agropecuarios y forestales.;ingreso
+14900;Otras Regalías;Recursos percibidos como resultado de su acción impositiva en la explotación de otros recursos naturales.;ingreso
+15000;TASAS, DERECHOS Y OTROS INGRESOS;Recursos provenientes de fuentes no impositivas como ser tasas, derechos, patentes y concesiones, contribuciones por mejoras, multas y otros. Se efectúan con contraprestación y tienen carácter de no recuperables.;ingreso
+15100;Tasas;Recursos generados por la prestación efectiva de un servicio público individualizado en el contribuyente a solicitud o recepción obligatoria del mismo, así como el arancel de derechos reales, valores judiciales, el registro civil, licencias de conducir, arancel de valores fiscales, de servicios forenses en general y otros. Asimismo, incluye las tasas pagadas por las personas naturales o jurídicas, nacionales o extranjeras, por la realización de actividades petroleras tales como: transporte, refinación e industrialización y distribución de gas natural por redes. Incluye las tasas de regulación percibidas por las Entidades competentes.;ingreso
+15200;Derechos;Recursos que recaudan las entidades públicas por derechos administrativos otorgados a terceros, como matrículas, registros e inscripciones y otros.;ingreso
+15300;Patentes y Concesiones;Recursos que se originan por la explotación forestal, petrolera, minera y otros, así como los percibidos de personas jurídicas y naturales por la realización de actividades económicas de acuerdo a normativa vigente.;ingreso
+15310;Patentes Forestales;Recursos percibidos por la explotación forestal y los permisos de desmonte.;ingreso
+15320;Patentes Petroleras;Derechos realizados por las empresas del sector hidrocarburos por las áreas sujetas a contrato de riesgo compartido para la exploración, explotación y comercialización de hidrocarburos.;ingreso
+15330;Patentes y Concesiones Mineras;Recursos que se perciben por la explotación de recursos mineralógicos.;ingreso
+15331;Patentes Mineras;Recursos percibidos por el mantenimiento de vigencia del derecho concesionario.;ingreso
+15332;Concesiones Mineras;Retribución por el derecho real y exclusivo de realizar por un periodo de tiempo actividades de prospección, exploración, explotación, concentración, fundición, refinación y comercialización de todas las substancias minerales, incluidos los desmontes, escorias, relaves y cualesquier otros residuos mineros o metalúrgicos.;ingreso
+15340;Patentes Municipales;Recursos que se perciben por el uso y aprovechamiento de bienes de dominio público y la realización de actividades económicas desarrolladas en una determinada jurisdicción municipal.;ingreso
+15350;Otras Patentes y Concesiones;Otras patentes y concesiones no especificadas en los rubros precedentes.;ingreso
+15400;Contribuciones por Mejoras;Recursos originados en aportes de la comunidad para la ejecución de obras de mejoramiento público.;ingreso
+15900;Otros Ingresos;Otros ingresos no tributarios no especificados en los rubros precedentes, tales como multas, intereses penales, ganancias por diferencias de cambio, renta consular y otros ingresos no especificados.;ingreso
+15910;Multas;Recursos que se generan por concepto de sanciones pecuniarias originadas en el incumplimiento del ordenamiento legal vigente como las multas por infracciones al Reglamento de Tránsito, mora en el pago de tributos, evasión fiscal, incumplimiento de deberes formales y otros. Las multas por retrasos en el pago de impuestos, deben incluirse con el impuesto que se trate.;ingreso
+15920;Intereses Penales;Recursos que provienen como sanción por la morosidad, tardanza y/o procesos, en el pago de obligaciones pecuniarias.;ingreso
+15930;Ganancias en Operaciones Cambiarias;Recursos que se originan por operaciones con divisas extranjeras o con mantenimiento de valor por incremento o disminución del tipo de cambio.;ingreso
+15940;Renta Consular;Recursos generados en aplicación del arancel consular por la venta de valores fiscales (timbres consulares, pasaportes, formularios para registro civil, nacionalidad de las personas y otros), percibidos por los consulados acreditados en el exterior del país.;ingreso
+15990;Otros Ingresos no Especificados;"Incluye aportes para vivienda efectuados a favor del Consejo Nacional de Vivienda Policial, recursos generados por remates de madera decomisada, depósitos judiciales que se han consolidado a favor del Órgano Judicial con sentencia ejecutoriada, acuotaciones de los entes regulados a favor de la Autoridad de Supervisión del Sistema Financiero, ingresos derivados de operaciones con activos virtuales; y otros ingresos no especificados en los rubros precedentes.";ingreso
+16000;INTERESES Y OTRAS RENTAS DE LA PROPIEDAD;Recursos provenientes de arrendamientos, alquileres, intereses, dividendos y derechos derivados de la propiedad de activos como tierras y terrenos, edificios, maquinaria, equipos, activos intangibles y financieros, de propiedad de las entidades públicas.;ingreso
+16100;Intereses;Recursos obtenidos por el uso del dinero y otros créditos financieros otorgados en préstamo.;ingreso
+16110;Intereses por Depósitos;Recursos provenientes de intereses por depósitos bancarios y otros efectuados por las instituciones públicas en el sistema financiero, de acuerdo a normativa vigente.;ingreso
+16120;Intereses por Valores;Recursos provenientes de intereses por inversiones financieras en valores como acciones, certificados y otros, de acuerdo a normativa vigente.;ingreso
+16140;Intereses por Inversiones en instrumentos financieros en el extranjero;Recursos provenientes de los intereses generados por la inversión de recursos del TGN en instrumentos financieros en el extranjero.;ingreso
+16190;Otros Intereses;Recursos provenientes de intereses no clasificados anteriormente.;ingreso
+16200;Dividendos;Recursos percibidos por distribución de utilidades, provenientes de inversiones por aportes de capital en instituciones financieras, empresas públicas, privadas y/o mixtas.;ingreso
+16300;Alquiler de Edificios, Tierras y Terrenos;Recursos que se originan por el alquiler de edificios, arrendamiento de tierras y terrenos, a terceros, de propiedad de las entidades públicas y que no son utilizados en sus actividades ordinarias.;ingreso
+16400;Derechos sobre Bienes Intangibles;Recursos provenientes del uso por parte de terceros de bienes intangibles de propiedad de las entidades públicas, como los derechos de autor, marcas, fórmulas, llaves y patentes.;ingreso
+16500;Alquiler de Equipos de las Administraciones Públicas;Recursos generados por el alquiler de maquinaria y/o equipos, a terceros, que pertenecen a las entidades de la administración pública no empresariales.;ingreso
+17000;CONTRIBUCIONES A LA SEGURIDAD SOCIAL;Recursos que se generan en pagos, por concepto de aportes patronales, laborales y otros destinados a las entidades de seguridad social, con el fin de proporcionar a los asegurados prestaciones médicas y económicas, de acuerdo a normativa vigente.;ingreso
+17100;Contribuciones Obligatorias;Recursos generados en pagos al Sistema de Seguridad Social, administrados por las Cajas de Salud y otras entidades, de acuerdo a normativa vigente.;ingreso
+17110;Patronales;Recursos provenientes de contribuciones obligatorias al Sistema de Seguridad Social que aportan los empleadores, de acuerdo con disposiciones legales en materia de Seguridad Social.;ingreso
+17111;Del Sector Público;;ingreso
+17112;Del Sector Privado;;ingreso
+17120;Laborales;Recursos provenientes de aportes obligatorios al Sistema de Seguridad Social de toda persona afiliada a un ente del Sistema de Seguridad Social.;ingreso
+17121;Del Sector Público;;ingreso
+17122;Del Sector Privado;;ingreso
+17130;Especiales de las Universidades Públicas;Recursos provenientes de las Universidades Públicas al Sistema de Seguridad Social de acuerdo a normativa vigente.;ingreso
+17200;Contribuciones Voluntarias;Recursos que se originan en aportes voluntarios realizados por personas naturales y jurídicas.;ingreso
+18000;DONACIONES CORRIENTES;Recursos que provienen de países, organismos y entidades residentes y no residentes en el país, en calidad de donación de naturaleza voluntaria, sin contraprestación de bienes o servicios por parte de la entidad receptora y aplicable a gasto corriente.;ingreso
+18100;Donaciones Corrientes Internas;Recursos percibidos en calidad de donación, de residentes en el país, destinados a gastos corrientes.;ingreso
+18110;Del Sector Privado Nacional realizados por personas naturales y jurídicas.;;ingreso
+18111;Monetizable;Donaciones en efectivo que otorgan organismos, entidades nacionales que son realizadas por personas naturales y jurídicas.;ingreso
+18112;No Monetizable;Donaciones en especie que otorgan organismos, entidades nacionales que son realizadas por personas naturales y jurídicas.;ingreso
+18200;Donaciones Corrientes del Exterior;Recursos percibidos en calidad de donación de no residentes en el país, destinados a gastos corrientes.;ingreso
+18210;Del Sector Privado del Exterior;Recursos provenientes de donaciones recibidas del sector privado del exterior, destinados a gastos corrientes. Comprende las donaciones monetizables y no monetizables. La monetización se produce por la venta de una donación recibida en bienes, dicha operación debe estar señalada específicamente en los convenios entre el donante y el beneficiario. Las donaciones no monetizables son aquellas que se reciben en bienes o servicios. Las donaciones recibidas en efectivo, deben quedar registradas como donaciones monetizables.;ingreso
+18211;Monetizable;;ingreso
+18212;No Monetizable;;ingreso
+18220;De Países y Organismos Internacionales;"Recursos provenientes de donaciones recibidas de países y organismos internacionales aplicables a gastos corrientes. Comprende las donaciones en sus modalidades oficial, 
+directa y no oficial o unilateral, monetizables y no monetizables. 
+La monetización se produce por la venta de una donación recibida en bienes, dicha 
+operación debe estar señalada específicamente en los convenios entre el donante y el 
+beneficiario, además de identificar el tipo de donación recibido. Las donaciones no 
+monetizables son aquellas que se reciben en bienes o servicios.  
+Las donaciones recibidas en efectivo, deben quedar registradas como donaciones 
+monetizables de acuerdo al tipo de donación.";ingreso
+18221;Monetizable;;ingreso
+18222;No Monetizable;;ingreso
+19000;TRANSFERENCIAS CORRIENTES;Recursos que provienen de transferencias del sector público o privado, no sujetos a contraprestación en bienes y/o servicios en cumplimiento a disposiciones legales y contractuales previstas, destinados a gastos corrientes.;ingreso
+19100;Del Sector Privado;Recursos provenientes de transferencias corrientes por subsidios o subvenciones del sector privado.;ingreso
+19110;De Unidades Familiares;;ingreso
+19120;De Instituciones Privadas sin Fines de Lucro;;ingreso
+19130;De Empresas Privadas y otros actores;;ingreso
+19200;Del Sector Público No Financiero;Recursos provenientes de transferencias corrientes por subsidios, subvenciones, coparticipación tributaria del sector público no financiero.;ingreso
+19210;Del Órgano Ejecutivo;;ingreso
+19211;Por Subsidios o Subvenciones;;ingreso
+19212;Por Coparticipación Tributaria;;ingreso
+19216;Fondo de Compensación Departamental;;ingreso
+19219;Por Emisión de Certificados de Crédito Fiscal;;ingreso
+19220;De los Órganos Legislativo, Judicial y Electoral, Entidades de Control y Defensa, Descentralizadas y Universidades;;ingreso
+19230;De las Entidades Territoriales Autónomas;;ingreso
+19231;Del Gobierno Autónomo Departamental;;ingreso
+19232;Del Gobierno Autónomo Municipal;;ingreso
+19233;Del Gobierno Autónomo Indígena Originario Campesino;;ingreso
+19234;Del Gobierno Autónomo Regional;;ingreso
+19260;De las Instituciones de Seguridad Social;;ingreso
+19270;De las Empresas Públicas Nacionales;;ingreso
+19271;Por Subsidios y Subvenciones;;ingreso
+19272;Por Excedentes Financieros;;ingreso
+19280;De las Empresas Públicas Territoriales;;ingreso
+19281;Del Gobierno Autónomo Departamental;;ingreso
+19282;Del Gobierno Autónomo Municipal;;ingreso
+19283;Del Gobierno Autónomo Indígena Originario Campesino;;ingreso
+19284;Del Gobierno Autónomo Regional;;ingreso
+19300;Del Sector Público Financiero;Recursos provenientes de transferencias corrientes de las Instituciones Públicas Financieras Bancarias y No Bancarias.;ingreso
+19310;De las Instituciones Públicas Financieras No Bancarias;;ingreso
+19320;De las Instituciones Públicas Financieras Bancarias;;ingreso
+19400;Del Exterior;Recursos provenientes de transferencias corrientes del exterior.;ingreso
+21000;RECURSOS PROPIOS DE CAPITAL;Recursos que se generan como resultado de la venta de activos fijos (edificios, maquinaria y equipo, activo biológico, tierras y terrenos y otros) o intangibles, propiedad de las entidades públicas.;ingreso
+21100;Venta de Activos Fijos;Recursos originados por la venta de activos fijos.;ingreso
+21110;Edificios;Recursos provenientes por la venta de edificios y otras construcciones.;ingreso
+21120;Maquinaria y Equipo;Recursos provenientes por la venta de maquinaria y equipo de oficina, de producción, equipos agropecuarios, industriales, de transporte en general, energía, riego, frigoríficos, de comunicaciones, médicos, odontológicos, educativos y otros.;ingreso
+21121;Equipo de Oficina y Muebles;;ingreso
+21122;Maquinaria y Equipo de Producción;;ingreso
+21123;Equipo de Transporte, Tracción y Elevación;;ingreso
+21124;Equipo Médico y de Laboratorio;;ingreso
+21125;Equipo de Comunicación;;ingreso
+21126;Equipo Educacional y Recreativo;;ingreso
+21127;Otra Maquinaria y Equipo;;ingreso
+21130;Activo Biológico de Origen Animal;Recursos provenientes por la venta de ganado u otros de diferentes especies.;ingreso
+21200;Venta de Tierras y Terrenos;Recursos originados por la venta de tierras y terrenos (excluye las estructuras o construcciones).;ingreso
+21400;Venta de Activos Intangibles;Recursos originados por la venta de Activos Intangibles, tales como la venta de patentes, derechos de autor, marcas registradas, programas de computación y otros.;ingreso
+21900;Venta de Otros Activos Fijos;Recursos originados por la venta de otros activos no descritos anteriormente.;ingreso
+22000;DONACIONES DE CAPITAL;Recursos percibidos por el sector público de organismos internos y externos en calidad de donación de carácter voluntario, sin contraprestación de bienes o servicios por parte de la entidad receptora, destinados a financiar gastos de capital.;ingreso
+22100;Donaciones de Capital Internas;Recursos y activos provenientes de donaciones de capital de instituciones residentes en el país.;ingreso
+22110;Del Sector Privado Nacional realizados por personas naturales y jurídicas.;;ingreso
+22111;Monetizables;;ingreso
+22112;No Monetizable;;ingreso
+22200;Donaciones de Capital del Exterior;Recursos provenientes de donaciones de instituciones no residentes en el país.;ingreso
+22210;Del Sector Privado del Exterior;"Recursos provenientes de donaciones recibidas del sector privado del exterior, destinados a financiar los gastos de capital.
+Comprende las donaciones monetizables y no monetizables, la monetización se produce por la venta de una donación recibida en bienes, dicha operación debe estar señalada específicamente en los convenios entre el donante y el beneficiario. Las donaciones no monetizables son aquellas que se reciben en bienes o servicios.
+Las donaciones recibidas en efectivo deben quedar registradas como donaciones monetizables.";ingreso
+22211;Monetizable;;ingreso
+22212;No Monetizable;;ingreso
+22220;De Países y Organismos Internacionales;"Recursos provenientes de donaciones recibidas de países y organismos internacionales destinados a financiar los gastos de capital.
+Comprende las donaciones en sus modalidades oficial, directa y no oficial o unilateral, monetizables y no monetizables, la monetización se produce por la venta de una donación recibida en bienes, dicha operación debe estar señalada específicamente en los convenios entre el donante y el beneficiario. Las donaciones no monetizables son aquellas que se reciben en bienes o servicios. Las donaciones recibidas en efectivo deben quedar registradas como donaciones monetizables, de acuerdo al tipo de donación.
+Incluye las donaciones recibidas de países y organismos internacionales que se originan por concepto del alivio de deuda externa, en el marco de la Iniciativa para Países Altamente Endeudados (HIPC), cuyos recursos están destinados a cubrir gastos de la Ley del Diálogo Nacional 2000 N° 2235 de 31 de julio de 2001.";ingreso
+22221;Monetizable;;ingreso
+22222;No Monetizable;;ingreso
+22223;Donaciones HIPC;;ingreso
+23000;TRANSFERENCIAS DE CAPITAL;Recursos que provienen del sector público o privado, sin contraprestación de bienes o servicios por parte de la entidad receptora, estos recursos se destinarán a financiar gastos de capital (formación de capital y/o adquisición de activos financieros).;ingreso
+23100;Del Sector Privado;Recursos provenientes de transferencias de capital del sector privado.;ingreso
+23110;De Unidades Familiares;;ingreso
+23111;Monetizable;;ingreso
+23112;No Monetizable;;ingreso
+23120;De Instituciones Privadas sin Fines de Lucro;;ingreso
+23121;Monetizable;;ingreso
+23122;No Monetizable;;ingreso
+23130;De Empresas Privadas y otros actores;;ingreso
+23131;Monetizable;;ingreso
+23132;No Monetizable;;ingreso
+23200;Del Sector Público No Financiero;Recursos provenientes de transferencias de capital de los Órganos del Estado Plurinacional, Entidades de Control y Defensa del Estado, Instituciones Públicas Descentralizadas, Universidades Públicas, Entidades Territoriales, Instituciones de Seguridad Social y Empresas Públicas.;ingreso
+23210;Del Órgano Ejecutivo;;ingreso
+23211;Por Subsidios o Subvenciones;;ingreso
+23212;Por Patentes Petroleras;;ingreso
+23219;En Certificados de Crédito Fiscal;;ingreso
+23220;De los Órganos Legislativo, Judicial y Electoral, Entidades de Control y Defensa, Descentralizadas y Universidades;;ingreso
+23230;De las Entidades Territoriales Autónomas;;ingreso
+23231;Del Gobierno Autónomo Departamental;;ingreso
+23232;Del Gobierno Autónomo Municipal;;ingreso
+23233;Del Gobierno Autónomo Indígena Originario Campesino;;ingreso
+23234;Del Gobierno Autónomo Regional;;ingreso
+23260;De las Instituciones de Seguridad Social;;ingreso
+23270;De las Empresas Públicas Nacionales;;ingreso
+23271;Por Subsidios y Subvenciones;;ingreso
+23272;Por Excedentes Financieros;;ingreso
+23280;De las Empresas Públicas Territoriales;;ingreso
+23281;Del Gobierno Autónomo Departamental;;ingreso
+23282;Del Gobierno Autónomo Municipal;;ingreso
+23283;Del Gobierno Autónomo Indígena Originario Campesino;;ingreso
+23284;Del Gobierno Autónomo Regional;;ingreso
+23300;Del Sector Público Financiero;Recursos que reciben los organismos del sector público como transferencias de capital, provenientes de Instituciones Públicas Financieras Bancarias y No Bancarias.;ingreso
+23310;De las Instituciones Públicas Financieras No Bancarias;;ingreso
+23320;De las Instituciones Públicas Financieras Bancarias;;ingreso
+23400;Del Exterior;Recursos provenientes de transferencias de capital del exterior;ingreso
+31000;VENTA DE ACCIONES Y PARTICIPACIONES DE CAPITAL;Recursos provenientes por la venta de acciones y cuotas partes de capital de otras empresas públicas o privadas, nacionales o internacionales, registradas en su oportunidad en la cuenta de Acciones y Participaciones de Capital.;ingreso
+31100;De Empresas Privadas Nacionales;Recursos provenientes por la venta de acciones y cuotas partes de capital en empresas privadas nacionales.;ingreso
+31200;De Empresas Públicas;Recursos generados por la venta de acciones y cuotas partes de capital en empresas públicas.;ingreso
+31210;De las Empresas Públicas Nacionales;;ingreso
+31220;De las Empresas Públicas Departamentales;;ingreso
+31230;De las Empresas Públicas Municipales;;ingreso
+31240;De las Empresas Públicas Regionales;;ingreso
+31250;De las Empresas Públicas Indígena Originaria Campesina;;ingreso
+31300;De Instituciones Públicas Financieras;Recursos provenientes por la venta de acciones y cuotas partes de capital en instituciones públicas financieras bancarias y no bancarias.;ingreso
+31310;De las Instituciones Públicas Financieras No Bancarias;;ingreso
+31320;De las Instituciones Públicas Financieras Bancarias;;ingreso
+31400;Del Exterior;Recursos provenientes por la venta de acciones y cuotas partes de capital en entidades internacionales y otras del sector externo.;ingreso
+31410;De Organismos Internacionales;;ingreso
+31420;Otras del Exterior;;ingreso
+32000;RECUPERACIÓN DE PRÉSTAMOS DE CORTO PLAZO;Recursos originados por la recuperación de préstamos a corto plazo otorgados al sector privado, público y externo, registrados en su oportunidad en la cuenta Concesión de Préstamos a Corto Plazo.;ingreso
+32100;Del Sector Privado;Recursos generados en la recuperación de préstamos a corto plazo otorgados al sector privado.;ingreso
+32200;Del Sector Público No Financiero;Recursos producto de la recuperación de préstamos a corto plazo otorgados al sector público no financiero.;ingreso
+32210;Del Órgano Ejecutivo;;ingreso
+32211;En Efectivo;;ingreso
+32212;En Certificados de Crédito Fiscal;;ingreso
+32220;De los Órganos Legislativo, Judicial y Electoral, Entidades de Control y Defensa, Descentralizadas y Universidades;;ingreso
+32230;De las Entidades Territoriales Autónomas;;ingreso
+32231;Del Gobierno Autónomo Departamental;;ingreso
+32232;Del Gobierno Autónomo Municipal;;ingreso
+32233;Del Gobierno Autónomo Indígena Originario Campesino;;ingreso
+32234;Del Gobierno Autónomo Regional;;ingreso
+32260;De las Instituciones de Seguridad Social;;ingreso
+32270;De las Empresas Públicas Nacionales;;ingreso
+32280;De las Empresas Públicas Territoriales;;ingreso
+32281;Del Gobierno Autónomo Departamental;;ingreso
+32282;Del Gobierno Autónomo Municipal;;ingreso
+32283;Del Gobierno Autónomo Indígena Originario Campesino;;ingreso
+32284;Del Gobierno Autónomo Regional;;ingreso
+32300;Del Sector Público Financiero;Recursos generados en la recuperación de préstamos de corto plazo otorgados a instituciones financieras bancarias y no bancarias.;ingreso
+32310;De las Instituciones Públicas Financieras No Bancarias;;ingreso
+32320;De las Instituciones Públicas Financieras Bancarias;;ingreso
+32400;Del Exterior;Recursos generados en la recuperación de préstamos de corto plazo, otorgados a organismos no residentes en el país.;ingreso
+33000;RECUPERACIÓN DE PRÉSTAMOS DE LARGO PLAZO;"Recursos originados por la recuperación de préstamos de largo plazo otorgados a los sectores privado, público y externo; registrados en oportunidad de su imputación en la partida Concesión de Préstamos a Largo Plazo. Asimismo, incluye las recuperaciones por afectaciones al Tesoro General de la Nación.";ingreso
+33100;Del Sector Privado;Recursos generados en la recuperación de préstamos a largo plazo otorgados al sector privado.;ingreso
+33200;Del Sector Público No Financiero;Recursos generados en la recuperación de préstamos a largo plazo del sector público no financiero.;ingreso
+33210;Del Órgano Ejecutivo;;ingreso
+33211;En Efectivo;;ingreso
+33212;En Certificados de Crédito Fiscal;;ingreso
+33220;De los Órganos Legislativo, Judicial y Electoral, Entidades de Control y Defensa, Descentralizadas y Universidades;;ingreso
+33230;De las Entidades Territoriales Autónomas;;ingreso
+33231;Del Gobierno Autónomo Departamental;;ingreso
+33232;Del Gobierno Autónomo Municipal;;ingreso
+33233;Del Gobierno Autónomo Indígena Originario Campesino;;ingreso
+33234;Del Gobierno Autónomo Regional;;ingreso
+33260;De las Instituciones de Seguridad Social;;ingreso
+33270;De las Empresas Públicas Nacionales;;ingreso
+33280;De las Empresas Públicas Territoriales;;ingreso
+33281;Del Gobierno Autónomo Departamental;;ingreso
+33282;Del Gobierno Autónomo Municipal;;ingreso
+33283;Del Gobierno Autónomo Indígena Originario Campesino;;ingreso
+33284;Del Gobierno Autónomo Regional;;ingreso
+33300;Del Sector Público Financiero;Recursos generados en la recuperación de préstamos de largo plazo otorgados a Instituciones Públicas Financieras Bancarias y No Bancarias.;ingreso
+33310;De las Instituciones Públicas Financieras No Bancarias;;ingreso
+33320;De las Instituciones Públicas Financieras Bancarias;;ingreso
+33400;Recuperación de Fondos de Fideicomiso y Servicios Financieros;Recursos que se originan en la recuperación de fondos de fideicomisos y servicios financieros.;ingreso
+33410;De las Instituciones Públicas;;ingreso
+33420;De las Instituciones Privadas;;ingreso
+33500;Del Exterior;Recursos generados en la recuperación de préstamos de largo plazo, otorgados a organismos no residentes en el país.;ingreso
+33600;Recuperaciones por Afectaciones al Tesoro General de la Nación;Recuperaciones por concepto de afectaciones realizadas a las cuentas fiscales del Tesoro General de la Nación, y por transacciones sin movimiento de efectivo, efectuadas por cuenta de las entidades del sector público y privado.;ingreso
+34000;VENTA DE TÍTULOS Y VALORES;Recursos originados por la venta de títulos y valores registrados en su oportunidad como Inversión Financiera que no otorgan propiedad sobre el patrimonio de los entes emisores, ni reconocen derechos al valor residual y a la renta residual de las sociedades.;ingreso
+34100;Venta de Títulos y Valores de Corto Plazo;Recursos originados por la venta de títulos y valores a corto plazo que significan disminución de la inversión financiera, cuyo vencimiento está consignado en un plazo menor a doce meses.;ingreso
+34110;Letras del Tesoro;Recursos originados en la venta de letras de tesorería efectuada por el tenedor (entidad pública) y que significan pasivos del emisor, cuyo vencimiento es menor a doce meses a partir de la emisión de los mismos.;ingreso
+34120;Bonos del Tesoro;Recursos originados en la venta de bonos del tesoro efectuada por el tenedor (entidad pública) y que significan pasivos del emisor, cuyo vencimiento es menor a doce meses a partir de la emisión de los mismos.;ingreso
+34130;Otros;Recursos originados en la venta de otros títulos y valores que no correspondan a letras ni a bonos del tesoro, cuyo vencimiento es menor a doce meses a partir de la emisión de los mismos.;ingreso
+34200;Venta de Títulos y Valores de Largo Plazo;Recursos originados por la venta de títulos y valores a largo plazo que significan disminución de la inversión financiera, cuyo vencimiento está consignado en un plazo mayor a doce meses.;ingreso
+34210;Letras del Tesoro;Recursos originados en la venta de letras de tesorería efectuada por el tenedor (entidad pública) y que significan pasivos del emisor, cuyo vencimiento es mayor a doce meses, a partir de la emisión de los mismos.;ingreso
+34220;Bonos del Tesoro;Recursos originados en la venta de bonos del tesoro efectuada por el tenedor (entidad pública) y que significan pasivos del emisor, cuyo vencimiento es mayor a doce meses, a partir de la emisión de los mismos.;ingreso
+34230;Otros;Recursos originados en la venta de otros títulos y valores que no correspondan a letras ni a bonos del tesoro, cuyo vencimiento es mayor a doce meses, a partir de la emisión de los mismos.;ingreso
+35000;DISMINUCIÓN Y COBRO DE OTROS ACTIVOS FINANCIEROS;Fuentes financieras que se originan en la disminución neta de saldos de cuentas del activo disponible y del activo exigible que constituyen las instituciones públicas. Incluye el cobro de recursos devengados no cobrados en gestiones anteriores aplicados por el Sector Público.;ingreso
+35100;Disminución del Activo Disponible;Fuentes financieras que se originan en la disminución neta de los saldos de caja y bancos e inversiones temporales.;ingreso
+35110;Disminución de Caja y Bancos;Fuentes financieras que se originan en la disminución neta de saldos de caja y bancos. Resulta de comparar los saldos iníciales y finales de caja y bancos que están determinados por las magnitudes de recibos y pagos de las instituciones públicas.;ingreso
+35120;Disminución de Inversiones Temporales;Fuentes financieras que se originan en la disminución neta de saldos de inversiones temporales. Esta cuenta indica el uso de fondos como consecuencia de mayores necesidades de financiamiento de caja.;ingreso
+35130;Disminución de Anticipos Financieros;Recursos que se originan por concepto de pagos por adelantado que realiza una entidad pública, en aplicación de cláusulas contractuales en la contratación de bienes y servicios.;ingreso
+35200;Disminución de Cuentas y Documentos por Cobrar y Otros Activos Financieros a Corto Plazo;Fuentes financieras que se originan en la disminución neta de cuentas del activo exigible y otros activos financieros a corto plazo documentada y no documentada que constituye una institución pública. Su cálculo es consecuencia de políticas financieras de cobros. Estos recursos no corresponden al Sector Público.;ingreso
+35210;Disminución de Cuentas por Cobrar a Corto Plazo;Fuentes financieras que se originan en la disminución neta de saldos de las cuentas por cobrar a corto plazo.;ingreso
+35220;Disminución de Documentos por Cobrar y Otros Activos Financieros a Corto Plazo;Fuentes financieras que se originan en la disminución neta de saldos de documentos y efectos por cobrar y otros activos financieros a corto plazo. Incluye las variaciones netas de saldos de anticipos financieros, activos diferidos y débitos por apertura de cartas de crédito a corto plazo.;ingreso
+35221;Disminución de Documentos por Cobrar a Corto Plazo;;ingreso
+35222;Disminución de Otros Activos Financieros a Corto Plazo;;ingreso
+35300;Disminución de Cuentas y Documentos por Cobrar y Otros Activos Financieros a Largo Plazo;Fuentes financieras que se originan en la disminución neta de cuentas del activo exigible y otros activos financieros a largo plazo documentada y no documentada que constituye una institución pública. Su cálculo es consecuencia de políticas financieras de cobros. Estos recursos no corresponden al Sector Público.;ingreso
+35310;Disminución de Cuentas por Cobrar a Largo Plazo;Fuentes financieras que se originan en la disminución neta de saldos de las cuentas por cobrar a largo plazo.;ingreso
+35320;Disminución de Documentos por Cobrar y Otros Activos Financieros a Largo Plazo;Fuentes financieras que se originan en la disminución neta de saldos de documentos y efectos por cobrar y otros activos financieros a largo plazo. Incluye activos diferidos y débitos por apertura de cartas de crédito a largo plazo.;ingreso
+35321;Disminución de Documentos por Cobrar a Largo Plazo;;ingreso
+35322;Disminución de Otros Activos Financieros a Largo Plazo;;ingreso
+35400;Cobro de Cuentas y Documentos por Cobrar y Otros Activos Financieros a Corto Plazo;Recursos que se originan en el cobro de cuentas del activo y otros activos financieros a corto plazo, documentada y no documentada que constituye una institución pública, por recursos devengados no cobrados en gestiones pasadas. Estos recursos son presupuestados por las entidades públicas, excepto el Órgano Ejecutivo.;ingreso
+35410;Recursos Devengados no Cobrados por Cuentas por Cobrar de Corto Plazo;Recursos que se originan en el cobro de cuentas por cobrar a corto plazo.;ingreso
+35420;Recursos Devengados no Cobrados por Documentos por Cobrar y Otros Activos Financieros a Corto Plazo;Recursos que se originan en el cobro de documentos y efectos por cobrar y otros activos a corto plazo.;ingreso
+36000;OBTENCIÓN DE PRÉSTAMOS INTERNOS Y DE FONDOS - FIDEICOMISOS;Recursos generados en la realización de operaciones de crédito público interno a corto y largo plazo, efectuado por una institución pública, con instituciones financieras bancarias y no bancarias residentes en el país, prevista en el ordenamiento legal vigente. Asimismo, comprende el financiamiento por afectaciones al Tesoro General de la Nación.;ingreso
+36100;Obtención de Préstamos Internos a Corto Plazo;Recursos contratados con instituciones financieras, con vencimiento menor a un año. Incluye la emisión de certificados de crédito fiscal del Tesoro General de la Nación.;ingreso
+36110;En Efectivo;;ingreso
+36120;En Certificados de Crédito Fiscal;;ingreso
+36200;Obtención de Préstamos Internos a Largo Plazo;Recursos contratados con instituciones financieras bancarias, no bancarias y no financieras residentes en el país, cuyo vencimiento es mayor a un año.;ingreso
+36210;En Efectivo;;ingreso
+36220;En Certificados de Crédito Fiscal;;ingreso
+36300;Obtención de Fondos en Fideicomiso;Comprenden los recursos recibidos por la institución fiduciaria por concepto de fondos en calidad de fideicomiso y que serán utilizados en fines que determine el fideicomitente de acuerdo a disposiciones legales pertinentes. Incluye los recursos otorgados por el fiduciario al beneficiario, con una finalidad específica.;ingreso
+36310;Obtención de Fondos - Fideicomiso a Corto Plazo;Recursos generados en la percepción de recursos en calidad de fondos en fideicomiso para ser devueltos en un plazo menor a doce meses.;ingreso
+36320;Obtención de Fondos - Fideicomiso a Largo Plazo;Recursos generados en la percepción de recursos en calidad de fondos en fideicomiso para ser devueltos en un plazo mayor a doce meses.;ingreso
+36400;Financiamiento por Afectaciones al Tesoro General de la Nación;Financiamientos originados por afectaciones a las cuentas fiscales del Tesoro General de la Nación, y por transacciones sin movimiento de efectivo, que implican una obligación con el Tesoro General de la Nación.;ingreso
+37000;OBTENCIÓN DE PRÉSTAMOS DEL EXTERIOR;Recursos generados en la realización de operaciones de préstamos externos a corto y largo plazo, efectuados por una institución pública, con entidades financieras no residentes en el país, prevista de acuerdo a normativa vigente.;ingreso
+37100;Obtención de Préstamos del Exterior a Corto Plazo;Recursos contratados con instituciones financieras no residentes en el país, cuyo vencimiento es menor a un año.;ingreso
+37110;Del Sector Privado del Exterior;"Recursos provenientes de préstamos a corto plazo recibidos del sector privado del exterior. Comprende los préstamos monetizables y no monetizables. La monetización del préstamo significa la venta de bienes recibidos como parte del préstamo; esta operación debe estar acordada expresamente en el contrato de préstamo. Los préstamos no monetizables se pactan en bienes o servicios. Los préstamos en efectivo deben quedar registrados como monetizables.";ingreso
+37111;Monetizable;;ingreso
+37112;No Monetizable;;ingreso
+37120;De Países y Organismos Internacionales;"Recursos provenientes de préstamos a corto plazo recibidos de países y organismos internacionales. Comprende los préstamos monetizables y no monetizables. La monetización del préstamo significa la venta de bienes recibidos como parte del préstamo; esta operación debe estar acordada expresamente en el contrato de préstamo. Los préstamos no monetizables se pactan en bienes o servicios. Los préstamos en efectivo deben quedar registrados como monetizables.";ingreso
+37121;Monetizable;;ingreso
+37122;No Monetizable;;ingreso
+37200;Obtención de Préstamos del Exterior a Largo Plazo;Recursos contratados con instituciones financieras no residentes en el país, cuyo vencimiento es mayor a un año.;ingreso
+37210;Del Sector Privado del Exterior;"Recursos provenientes de préstamos a largo plazo recibidos del sector privado del exterior. Comprende los préstamos monetizables y no monetizables. La monetización del préstamo significa la venta de bienes recibidos como parte del préstamo; esta operación debe estar acordada expresamente en el contrato de préstamo. Los préstamos no monetizables se pactan en bienes o servicios. Los préstamos en efectivo deben quedar registrados como monetizables.";ingreso
+37211;Monetizable;;ingreso
+37212;No Monetizable;;ingreso
+37220;De Países y Organismos Internacionales;"Recursos provenientes de préstamos a largo plazo recibidos de países y organismos internacionales. Comprende los préstamos monetizables y no monetizables. La monetización del préstamo significa la venta de bienes recibidos como parte del préstamo; esta operación debe estar acordada expresamente en el contrato de préstamo. Los préstamos no monetizables se pactan en bienes o servicios. Los préstamos en efectivo deben quedar registrados como monetizables.";ingreso
+37221;Monetizable;;ingreso
+37222;No Monetizable;;ingreso
+38000;EMISIÓN DE TÍTULOS DE DEUDA;Recursos generados por la emisión de títulos de deuda interna y externa tanto de corto plazo como de largo plazo garantizados con instrumentos de deuda, de acuerdo a normativa vigente.;ingreso
+38100;Títulos y Valores Internos de Corto Plazo;Recursos derivados de la emisión de títulos y valores como letras, bonos y otros realizados en el mercado interno, cuyo vencimiento es menor a doce meses y que imponen al emisor la obligación incondicional de pagar sumas preestablecidas en una fecha específica.;ingreso
+38200;Títulos y Valores Internos de Largo Plazo;Recursos derivados de la emisión de títulos y valores como letras, bonos y otros realizados en el mercado interno, cuyo vencimiento es mayor a doce meses y que imponen al emisor la obligación incondicional de pagar sumas preestablecidas en una fecha específica.;ingreso
+38300;Títulos y Valores Externos de Corto Plazo;Recursos derivados de la emisión de títulos y valores como letras, bonos y otros realizados en el mercado externo, cuyo vencimiento es menor a doce meses y que imponen al emisor la obligación incondicional de pagar sumas preestablecidas en una fecha específica.;ingreso
+38400;Títulos y Valores Externos de Largo Plazo;Recursos derivados de la emisión de títulos y valores como letras, bonos y otros realizados en el mercado externo, cuyo vencimiento es mayor a doce meses y que imponen al emisor la obligación incondicional de pagar sumas preestablecidas en una fecha específica.;ingreso
+39000;INCREMENTO DE OTROS PASIVOS Y APORTES DE CAPITAL;Fuentes financieras que se originan en los incrementos netos de saldos de la deuda a corto plazo y largo plazo documentada o no, los aumentos de pasivos diferidos y las variaciones positivas de los depósitos que constituyen las instituciones financieras. El incremento de estos pasivos debe ser calculado por las instituciones públicas con excepción del Órgano Ejecutivo. Incluye los aportes de capital tanto del sector público como privado.;ingreso
+39100;Incremento de Cuentas por Pagar a Corto Plazo;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo, documentada y no documentada que constituye una institución pública con proveedores, contratistas y otros. Su cálculo es el resultado de realizar mayores gastos devengados que pagos en el ejercicio, de tal manera que la política financiera genere un incremento neto de los pasivos.;ingreso
+39110;Incremento de Cuentas por Pagar a Corto Plazo por Deudas Comerciales;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo que constituye una institución pública por deudas comerciales con proveedores.;ingreso
+39120;Incremento de Cuentas por Pagar a Corto Plazo con Contratistas;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo que constituye una institución pública con contratistas.;ingreso
+39130;Incremento de Cuentas por Pagar a Corto Plazo por Sueldos y Jornales;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo por sueldos y jornales.;ingreso
+39140;Incremento de Cuentas por Pagar a Corto Plazo por Aportes Patronales;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo por aportes patronales.;ingreso
+39150;Incremento de Cuentas por Pagar a Corto Plazo por Retenciones;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo por retenciones.;ingreso
+39160;Incremento de Cuentas por Pagar a Corto Plazo por Impuestos, Regalías y Tasas;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo por impuestos, regalías y tasas.;ingreso
+39170;Incremento de Cuentas por Pagar a Corto Plazo por Jubilaciones y Pensiones;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo por jubilaciones y pensiones.;ingreso
+39180;Incremento de Cuentas por Pagar a Corto Plazo por Intereses;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a corto plazo por intereses de la deuda pública.;ingreso
+39190;Incremento de Otros Pasivos y Otras Cuentas por Pagar a Corto Plazo;Fuentes financieras que se originan en los incrementos netos de saldos de otros pasivos y otras cuentas por pagar a corto plazo. Incluye las variaciones netas de saldos de depósitos a la vista, depósitos en caja de ahorro y a plazo fijo de las instituciones financieras y la disminución neta de documentos y efectos comerciales por pagar, otros documentos por pagar y pasivos diferidos a corto plazo.;ingreso
+39200;Incremento de Cuentas por Pagar a Largo Plazo;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a largo plazo, documentada y no documentada que tiene una institución pública con proveedores y contratistas.;ingreso
+39210;Incremento de Cuentas por Pagar a Largo Plazo por Deudas Comerciales;Fuentes financieras que se originan en los incrementos netos de saldos de cuentas por pagar a largo plazo que tiene una institución pública por deudas comerciales con proveedores.;ingreso
+39220;Incremento de Otras Cuentas por Pagar a Largo Plazo;Fuentes financieras que se originan en los incrementos netos de saldos de otras cuentas por pagar a largo plazo. Incluye las variaciones netas de saldos de documentos y efectos comerciales por pagar, otros documentos por pagar y pasivos diferidos a largo plazo.;ingreso
+39300;Aportes de Capital;Recursos provenientes de los incrementos de capital, sea en forma directa o indirecta, derivados de aportes realizados tanto por agentes económicos privados así como del sector público.;ingreso
+39310;Del Sector Público;Recursos provenientes de aportes de capital de origen estatal.;ingreso
+39320;Del Sector Privado;Recursos provenientes de aportes de capital de origen privado.;ingreso
+10000;SERVICIOS PERSONALES;"Gastos por concepto de servicios prestados por el personal permanente y no permanente, incluyendo el total de remuneraciones; así como los aportes al sistema de previsión social, otros aportes y previsiones para incrementos salariales.";egreso
+11000;Empleados Permanentes;Remuneraciones al personal regular de cada entidad.;egreso
+11100;Haberes Básicos;Remuneración básica percibida por el personal del Magisterio Fiscal, la cual debe estar determinada de acuerdo a la Escala Salarial aprobada. Se utilizará únicamente para programar el pago de haberes básicos y horas acumuladas del Magisterio Fiscal.;egreso
+11200;Bono de Antigüedad;"Remuneración determinada por la calificación de años de servicios prestados por el servidor público. Asimismo, incluye la asignación de recursos para el pago del Escalafón Docente.
+Para la base de cálculo, las entidades públicas deberán regirse de acuerdo a normativa vigente.
+El Magisterio Fiscal, Fuerzas Armadas y la Policía Boliviana, se regirán según su propio escalafón.";egreso
+11210;Categorías Magisterio;;egreso
+11220;Bono de Antigüedad;;egreso
+11300;Bonificaciones;Remuneraciones complementarias al haber básico debiendo detallar en las planillas presupuestarias para fines de ejecución y control. Comprende bonificaciones, tales como: frontera, categorías y escalafón del sector salud y bonificaciones para el Magisterio Fiscal, así como otras aprobadas de acuerdo a normativa vigente.;egreso
+11310;Bono de Frontera;Se asignarán recursos del 20% del salario básico mensual como bono de frontera, del cual se beneficiarán los (las) servidores (as) y trabajadores (as) del Sector Público, cuyo centro de trabajo se encuentre dentro de los 50 kilómetros lineales de las fronteras internacionales, de acuerdo a normativa vigente.;egreso
+11320;Remuneraciones Colaterales Médicas y de Trabajadores en Salud;El Ministerio de Salud y Deportes, Instituciones de la Seguridad Social y los Servicios Departamentales de Salud, podrán asignar recursos en esta partida para el pago de categorías médicas, escalafón médico y riesgo profesional, según las normas legales establecidas. Esta previsión corresponde exclusivamente a los médicos que prestan servicios en salud que no sean de carácter administrativo y a los trabajadores en salud dependientes de los Servicios Departamentales de Salud (SEDES).;egreso
+11321;Categorías Médicas;;egreso
+11322;Escalafón Médico;;egreso
+11323;Escalafón de los Trabajadores en Salud;Dependientes del Subsector Público de Salud, de acuerdo a norma legal vigente.;egreso
+11324;Otras Remuneraciones;;egreso
+11330;Otras Bonificaciones;Esta partida podrá ser utilizada únicamente cuando las entidades públicas cuenten con una Ley o Decreto Supremo específico, que autorice el pago del beneficio, cuyo lineamiento se extiende a las Entidades Territoriales Autónomas y Universidades Públicas, conforme a la normativa vigente y garantizando la sostenibilidad financiera.;egreso
+11331;Pago Variable;;egreso
+11332;Pago Adicional Fijo;;egreso
+11339;Otras Bonificaciones;;egreso
+11400;Aguinaldos;Remuneración extraordinaria anual conforme a las disposiciones legales en vigencia.;egreso
+11500;Primas y Bono de Producción;Retribución anual en las instituciones públicas, cuyo pago está sujeto a las utilidades anuales netas obtenidas y excedentes financieros de acuerdo a normativa vigente.;egreso
+11510;Primas;Pago adicional anual derivado de la generación de utilidades netas obtenidas;egreso
+11520;Bono de Producción;Pago adicional anual—derivado de mayor productividad per cápita, sobre la participación legal de excedentes financieros que no deben ser resultado de la variación de precios, tasas, tarifas o mejoras tecnológicas, el cual estará calculado de acuerdo a normativa vigente.;egreso
+11600;Asignaciones Familiares;Se asignarán recursos para el pago de subsidios de prenatal, natalidad, lactancia y sepelio, de acuerdo a normativa vigente.;egreso
+11700;Sueldos;Esta partida será utilizada para asignar el sueldo o haber básico mensual de los servidores públicos sobre la base de la escala salarial vigente, aprobada de acuerdo a normativa vigente.;egreso
+11800;Dietas;Retribuciones a los miembros de Directorios, por asistencia a reuniones ordinarias o extraordinarias y en el caso de los Concejos Municipales, Asambleístas suplentes (Departamentales y Regionales) de acuerdo a normativa vigente. Por ser miembros de algún Directorio, los Servidores Públicos que perciben sus honorarios con recursos públicos, no pueden ser beneficiarios del pago de dietas.;egreso
+11810;Dietas de Directorio;Retribución a los miembros de Directorio que no perciben sueldos y salarios del Sector Público.;egreso
+11820;Otras Dietas;Retribución a autoridades suplentes del Órgano deliberativo de las Entidades Territoriales Autónomas (ETA), por la asistencia a sesiones en reemplazo del titular, y otros de acuerdo a normativa vigente.;egreso
+11900;Otros Servicios Personales;Gastos no clasificados en las anteriores partidas del grupo de servicios personales, incluye: sobre tiempo por horas extraordinarias trabajadas, asignaciones por vacaciones no utilizadas al personal retirado, incentivos económicos y otras asignaciones destinadas por ejemplo a la diferencia de haberes por suplencia temporal en un cargo de mayor jerarquía, cuando corresponda de acuerdo a normativa vigente.;egreso
+11910;Horas Extraordinarias;;egreso
+11920;Vacaciones no Utilizadas;;egreso
+11930;Incentivos Económicos;;egreso
+11940;Suplencias;;egreso
+12000;Empleados No Permanentes;"Gastos para remunerar los servicios prestados a personas sujetas a contrato en forma temporal o eventual, para misiones específicas, programas y proyectos de inversión; considerando para el efecto, el cuadro de equivalencia de funciones y la escala salarial vigente, de acuerdo a normativa vigente.";egreso
+12100;Personal Eventual;;egreso
+13000;Previsión Social;"Gastos por concepto de aportes patronales a las entidades que administran el Seguro Social Obligatorio.
+La base de cálculo para la cotización de aportes patronales (cuando corresponda), son las siguientes:";egreso
+11100;Haberes Básicos.;;egreso
+11200;Bono de Antigüedad.;;egreso
+11300;Bonificaciones.;;egreso
+11700;Sueldos;;egreso
+11900;Otros Servicios Personales;;egreso
+12100;Personal Eventual;;egreso
+13100;Aporte Patronal al Seguro Social;Gastos por concepto de aportes patronales en favor del Seguro Social Obligatorio, considerando lo siguiente: 10% Seguro de Corto Plazo, 1.71% riesgos profesionales, 3.5% aporte patronal solidario y 2.3% aporte patronal solidario minero, cuando corresponda, de acuerdo a normativa vigente.;egreso
+13110;Régimen de Corto Plazo (Salud);;egreso
+13120;Prima de Riesgo Profesional Régimen de Largo Plazo;;egreso
+13130;Aporte Patronal Fondo Solidario Régimen de Largo Plazo;;egreso
+13131;Aporte Patronal Solidario 3.5%;;egreso
+13132;Aporte Patronal Minero Solidario 2.3%;;egreso
+13200;Aporte Patronal para Vivienda;Gastos por concepto de aportes patronales para la construcción de viviendas de interés social, 2% de la base cotizable, de acuerdo a normativa vigente.;egreso
+14000;Otros;Gastos no clasificados anteriormente exentos de aportes de previsión social.;egreso
+14100;Otros;;egreso
+15000;Previsiones para Incremento de Gastos en Servicios Personales;Previsión para creación de ítems, aplicación de incrementos salariales y otros.;egreso
+15100;Incremento Salarial;Previsión de recursos para incremento salarial.;egreso
+15200;Crecimiento Vegetativo;Previsión de recursos para creación de ítems, ascensos y recategorizaciones de personal en la Policía, Salud, Magisterio y Fuerzas Armadas.;egreso
+15300;Creación de Ítems;Previsión de recursos para creación de ítems para atender las necesidades institucionales.;egreso
+15400;Otras Previsiones;Previsión de recursos para entidades de nueva creación, modificaciones en la escala salarial y otros.;egreso
+20000;SERVICIOS NO PERSONALES;Gastos para atender los pagos por la prestación de servicios de carácter no personal, el uso de bienes muebles e inmuebles de terceros, así como por su mantenimiento y reparación. Incluye asignaciones para el pago de servicios profesionales y comerciales prestados por personas naturales o jurídicas y por instituciones públicas o privadas.;egreso
+21000;Servicios Básicos;Gastos por comunicaciones y servicios necesarios para el funcionamiento de las entidades, proporcionados o producidos por empresas del sector público o privado.;egreso
+21100;Comunicaciones;Gastos por servicios de correos, televisión por cable y otros, excepto servicios telefónicos, que poseen partida específica.;egreso
+21200;Energía Eléctrica;Gastos por consumo de energía eléctrica, independientemente de la fuente de suministro.;egreso
+21300;Agua;Gastos por consumo de agua, independientemente de la fuente de suministro.;egreso
+21400;Telefonía;Gastos destinados al pago de llamadas telefónicas locales, al interior y al exterior del país, así como el pago tarifario mensual y el servicio de fax, incluye la telefonía móvil, de acuerdo a normativa vigente.;egreso
+21500;Gas Domiciliario;Gastos destinados al pago del servicio de gas.;egreso
+21600;Internet;Gastos por servicios de internet, videoconferencias, transmisión de datos, dominio en páginas web y otros inherentes a este servicio, utilizados exclusivamente en entidades públicas.;egreso
+22000;Servicios de Transporte y Seguros;Gastos por transporte de bienes al interior y exterior del país, transporte de personal, gastos de pasajes y viáticos para personal permanente, eventual y consultores individuales de línea, de acuerdo a contrato establecido, cuando corresponda, facultados por autoridad competente, así como gastos de instalación y retorno de funcionarios destinados en el exterior del país, incluye gastos por contratación de seguros.;egreso
+22100;Pasajes;Gastos por servicios de transporte: aéreo, terrestre y marítimo, por viaje de personal permanente, eventual y consultores individuales de línea, de acuerdo a contrato establecido, cuando corresponda, al interior y exterior del país. Incluye gastos por cobro de servicio de Terminal Aeroportuaria y el Impuesto a las Salidas Aéreas al Exterior (ISAE).;egreso
+22110;Pasajes al Interior del País;"Gastos por pasajes dentro del territorio nacional, pasajes interdepartamentales y al interior del departamento; incluye gastos por cobro de servicio de terminal aeroportuaria.";egreso
+22120;Pasajes al Exterior del País;"Gastos por pasajes al exterior del país; incluye gastos por cobro de servicio de Terminal aeroportuaria y el Impuesto a las Salidas Aéreas al Exterior (ISAE).";egreso
+22200;Viáticos;Gastos destinados a cubrir el alojamiento y manutención del personal que se encuentre en misión oficial, sea permanente, eventual y/o consultores individuales de línea, de acuerdo a contrato establecido, cuando corresponda.;egreso
+22210;Viáticos por Viajes al Interior del País;;egreso
+22220;Viáticos por Viajes al Exterior del País;;egreso
+22300;Fletes y Almacenamiento;Gastos por concepto de fletes: terrestres, aéreos y marítimos, por transporte y almacenamiento de bienes y equipos en general, incluye los de carga y descarga y otros relacionados.;egreso
+22400;Gastos de Instalación y Retorno;Gastos por concepto de instalación y retorno del personal diplomático, agentes aduaneros y otros funcionarios destinados en el exterior, de acuerdo a normativa vigente.;egreso
+22500;Seguros;Gastos por contratación de seguros para personas, equipos, vehículos, muebles, inmuebles, instalaciones, producción, equipos satelitales y otros. Incluye el pago por franquicias.;egreso
+22600;Transporte de Personal;Gastos destinados al traslado de personal en Comisión de las Instituciones Públicas, incluye el traslado de personal para realizar funciones operativas. Además de gastos por la entrega y recepción de documentación, efectuados por personal de servicios o mensajería.;egreso
+23000;Alquileres;Gastos por alquileres de bienes muebles, inmuebles, equipos, maquinarias y otros de propiedad de terceros.;egreso
+23100;Alquiler de Inmuebles;Gastos por uso de inmuebles destinados a oficinas, escuelas y otros.;egreso
+23200;Alquiler de Equipos y Maquinarias;Gastos por el uso de equipos y maquinarias, tales como: equipos electrónicos, equipos médicos, de sonido, audiovisuales, maquinaria agrícola, de construcción, fijas o portables, vehículos, aeronaves, vagones, elevadores, mezcladoras y otros.;egreso
+23300;Alquiler de Tierras y Terrenos;Gastos que se originan por la utilización de tierras y terrenos de propiedad de terceros.;egreso
+23400;Otros Alquileres;Alquileres no especificados en las partidas anteriores, como derechos de aterrizajes, alquileres de semovientes, de garajes, tinglados, ambientes no destinados a oficinas y otros. Incluye alquileres de muebles y enseres.;egreso
+24000;Instalación, Mantenimiento y Reparaciones;Asignaciones destinadas a la conservación de edificios, equipos, vías de comunicación y otros bienes de uso público, así como la conversión de vehículos a gas natural, ejecutados por terceros.;egreso
+24100;Mantenimiento y Reparación de Inmuebles, Muebles y Equipos;Gastos para atender el mantenimiento y reparación de inmuebles, incluyendo el pago de expensas comunes, muebles, enseres, equipos de oficina, médicos, sanitarios, comunicación, tracción, transporte, elevación, perforación y otros que son ejecutados por terceros.;egreso
+24110;Mantenimiento y Reparación de Inmuebles;;egreso
+24120;Mantenimiento y Reparación de Vehículos, Maquinaria y Equipos;;egreso
+24130;Mantenimiento y Reparación de Muebles y Enseres;;egreso
+24200;Mantenimiento y Reparación de Vías de Comunicación;Gastos destinados al mantenimiento y conservación de caminos, carreteras, autopistas, puentes, vías férreas y fluviales, aeródromos y otros ejecutados por terceros.;egreso
+24300;Otros Gastos por Concepto de Instalación, Mantenimiento y Reparación;Gastos para la conservación de obras no clasificadas anteriormente, tales como: urbanísticas, hidráulicas, sanitarias, agropecuarias, tribunas para espectáculos, estantes para exposiciones. Incluye gastos por mantenimiento y reparación de componentes de aeronaves, instalación de gas domiciliario, redes de datos y redes eléctricas internas, soporte técnico, mantenimiento y actualización de software, instalaciones satelitales y otras ejecutadas por terceros.;egreso
+25000;Servicios Profesionales y Comerciales;Gastos por servicios profesionales de asesoramiento especializado, por estudios e investigaciones específicas de acuerdo a normativa vigente. Comprende pagos de comisiones y gastos bancarios, excepto los relativos a la deuda pública. Se incluyen gastos por servicios sanitarios, médicos, sociales, de lavandería, publicidad e imprenta, ejecutados por terceros.;egreso
+25100;Médicos, Sanitarios y Sociales;Gastos por contratación de terceros para servicios especializados como atención médica y análisis clínicos, servicios de laboratorios para investigación, pago de suscripciones a instituciones de Normalización de Calidad, pago de Certificaciones de Calidad para Laboratorios y otros.;egreso
+25120;Gastos Especializados por Atención Médica y Otros;"Comprende atención médica especializada, estudios, análisis, servicios de laboratorio para investigación, exámenes pre ocupacionales y otros; incluye los gastos por las Prestaciones de Servicios de Salud Integral del Estado Plurinacional de Bolivia.";egreso
+25130;Gastos por Afiliación de Estudiantes Universitarios al Seguro Social;;egreso
+25200;Estudios, Investigaciones, Auditorías Externas y Revalorizaciones;Gastos por servicios de terceros contratados para la realización de estudios, investigaciones, auditorías externas y revalorizaciones de activos fijos y otras actividades técnico profesionales, de acuerdo a la normativa vigente, que pueden formar parte de un proyecto de inversión, constituyendo gastos de funcionamiento o de operación.;egreso
+25210;Consultorías por Producto;"Gastos destinados a la contratación de terceros bajo la modalidad de trabajo por producto, cuya relación contractual está sujeta al régimen administrativo; que no forman parte de un proyecto de inversión, constituyendo gastos de funcionamiento o de operación, de acuerdo a normativa vigente.";egreso
+25220;Consultores Individuales de Línea;Gastos destinados a consultorías individuales de línea, para trabajos especializados y actividades propias de la entidad, de acuerdo a normativa vigente.;egreso
+25230;Auditorías Externas;Gastos destinados a la realización de auditorías externas, revalorización de activos fijos efectuados por terceros, de acuerdo a normativa vigente. Partida que puede ser utilizada en actividades y proyectos de inversión capitalizables y no capitalizables, cuando corresponda. Incluye las auditorías regulatorias.;egreso
+25300;Comisiones y Gastos Bancarios;Gastos por servicios que prestan las instituciones bancarias y de intermediación financiera. Se excluyen los relacionados con la Deuda Pública.;egreso
+25400;Lavandería, Limpieza e Higiene;Gastos por servicios de lavandería, limpieza, higiene y fumigación de bienes y lugares públicos, realizados por terceros.;egreso
+25500;Publicidad;Gastos por concepto de avisos, pautas publicitarias y difusión de información en: radiodifusoras, televisión, periódicos, internet (incluye redes sociales, páginas web, blogs, aplicaciones y otros similares), contratos publicitarios y promociones por algún medio de difusión, incluye material promocional, informativo, gigantografías, imagen institucional y/o comercial, y otros relacionados.;egreso
+25600;Servicios de Imprenta, Fotocopiado y Fotográficos;Gastos que se realizan por trabajos de: diseño, diagramación, impresión, compaginación, encuadernación, fotocopias y otros efectuados por terceros. Incluye los gastos por revelado, y copiado de fotografías, sliders y otros.;egreso
+25700;Capacitación del Personal;Gastos por servicios destinados a la capacitación y adiestramiento de personal permanente, eventual y consultores individuales de línea, de acuerdo a contrato establecido, cuando corresponda, en cursos de formación o instrucción, que son necesarios para la actividad de la entidad. Comprende inscripciones, matrículas, cuotas, en cursos, seminarios y otros.;egreso
+25800;Estudios e Investigaciones para Proyectos de Inversión No Capitalizables;Gastos por servicios de terceros contratados para la realización de estudios, investigaciones, asistencia técnica y otras actividades técnico profesionales, cumpliendo la normativa vigente, cuando formen parte de proyectos de inversión relacionados con fortalecimiento institucional, medio ambiente, educación, salud, asistencia social y otros que no se concretan en la generación de activos reales. Esta partida deberá presupuestarse solamente en proyectos no capitalizables.;egreso
+25810;Consultorías por Producto;Gastos por servicios contratados a terceros para la realización de estudios, investigaciones, asistencia técnica y otras actividades técnico profesionales por producto, de acuerdo a normativa vigente, cuando formen parte de proyectos de inversión cuya relación contractual está dentro del marco de los convenios de financiamiento.;egreso
+25820;Consultores Individuales de Línea;Gastos en consultores de programas y proyectos de inversión pública que desempeñen actividades técnicas, operativas, administrativa, financiera cuya relación contractual está dentro del marco de los convenios de financiamiento y de acuerdo a normativa vigente.;egreso
+25900;Servicios Manuales;Gastos ocasionales destinados al pago de servicios de terceros como: albañilería, carpintería, herrería, cerrajería, plomería, jardinería, estibadores y otros servicios manuales. Estos servicios no son recurrentes ni propios de la entidad.;egreso
+26200;Gastos Judiciales;Gastos que se realizan como consecuencia de acciones judiciales, incluye servicios notariales y otros relacionados.;egreso
+26300;Derechos sobre Bienes Intangibles;Gastos que se realizan por la utilización de bienes, tales como derechos de autor, licencias y uso de bienes y activos de propiedad industrial, comercial o intelectual. Incluye certificaciones y firmas digitales.;egreso
+26500;Conjueces y Jueces Ciudadanos;Gastos destinados al pago de conjueces y jueces ciudadanos de acuerdo a normativa vigente.;egreso
+26600;Servicio de Seguridad de los Batallones de Seguridad Física de la Policía Boliviana, las Fuerzas Armadas y Vigilancia Privada;Gastos destinados al pago de servicios de seguridad prestados por los Batallones de Seguridad Física dependientes de la Policía Boliviana y por las Fuerzas Armadas. Incluye gastos para el pago de Servicios de Vigilancia Privada, como también para el pago de Servicios de Seguridad de transporte de valores.;egreso
+26610;Servicios Públicos;Gastos destinados al pago de servicios de seguridad prestados por los Batallones de Seguridad Física dependientes de la Policía Boliviana y por las Fuerzas Armadas a los Altos Dignatarios de Estado, las MAEs y las entidades públicas, conforme a procedimientos establecidos y de acuerdo a normativa vigente.;egreso
+26620;Servicios Privados;Gastos destinados para la contratación de seguridad privada por aquellas entidades públicas, cuando la demanda exceda la capacidad de los servicios prestados por los Batallones de Seguridad Física de la Policía Boliviana.;egreso
+26630;Servicios por Traslado de Valores;Gastos destinados al pago de servicios de seguridad y vigilancia efectuado por personas naturales o jurídicas por traslado y custodia de valores.;egreso
+26640;Compensación Económica;Compensación Económica para miembros de las Fuerzas Armadas y la Policía Boliviana que conforman el Comando Estratégico Operacional de Lucha Contra el Contrabando y las Actividades Ilícitas y personal operativo del Servicio Aéreo de Seguridad Ciudadana, en función a procedimientos establecidos y normativa vigente.;egreso
+26700;Servicios de Laboratorios Especializados;Gastos a terceros por la prestación de servicios de laboratorio especializado para la industria, incluye estudios, análisis, normalización de calidad y otros.;egreso
+26900;Otros Servicios No Personales;Gastos por conceptos no clasificados en las partidas anteriores. Se desagrega en:;egreso
+26910;Gastos de Representación;Se incluyen los gastos de representación autorizados expresamente por las disposiciones legales vigentes.;egreso
+26920;Fallas de Caja;Gastos por fallas de caja en las instituciones financieras.;egreso
+26930;Pago por Trabajos Dirigidos y Pasantías;Pago de incentivo a estudiantes que cumplen funciones temporales por trabajos dirigidos y pasantías en instituciones públicas de acuerdo a convenios interinstitucionales, así como por trabajos de investigación realizados por estudiantes de las universidades públicas y privadas.;egreso
+26940;Compensación Costo de Vida;Compensación por costo de vida para servidores públicos que cumplen funciones permanentes en el exterior del país.;egreso
+26950;"Aguinaldo ""Esfuerzo por Bolivia""";Gasto destinado al pago del Segundo Aguinaldo Esfuerzo por Bolivia, que se asignará cuando el crecimiento anual del Producto Interno Bruto – PIB, supere el cuatro punto cinco por ciento (4.5%).;egreso
+26990;Otros;Gasto destinado al pago de servicios de terceros, incluye gastos por distribución de boletas de pago, gastos inherentes a procesos electorales y/o registros públicos, gastos específicos de líneas aéreas (según normativa nacional e internacional de aeronáutica civil), servicios de apoyo al deporte y otros que tengan duración definida en actividades propias de la entidad.;egreso
+27000;Gastos por Servicios Especializados por la Actividad Extractiva de Recursos Naturales del Estado Plurinacional;Gastos por actividades especializadas realizadas por terceros en operaciones extractivas, de transformación, de conversión y otros, de los recursos naturales de propiedad del Estado Plurinacional, de acuerdo a normativa vigente.;egreso
+27100;Servicios por la Extracción, Transformación y Conversión de los Recursos Naturales de Propiedad del Estado Plurinacional;Gastos por servicios de terceros contratados por instituciones y empresas públicas, para la realización de trabajos especializados en la actividad extractiva, transformación, conversión y otros, de los recursos naturales de propiedad del Estado Plurinacional.;egreso
+27110;Pago por Costos Incurridos;Pago o reposición a las empresas por los costos incurridos en los periodos de prueba, puesta en marcha, prestación de servicios, en operaciones de extracción, transformación, conversión de los recursos naturales de propiedad del Estado Plurinacional conforme a procedimientos establecidos y de acuerdo a normativa vigente.;egreso
+27120;Pago por Utilidades;Pagos por distribución de utilidades por la prestación de servicios por operaciones de extracción, transformación y conversión de los recursos naturales de propiedad del Estado Plurinacional, de acuerdo a procedimientos establecidos y normativa vigente.;egreso
+30000;MATERIALES Y SUMINISTROS;Comprende la adquisición de artículos, materiales y bienes que se consumen o cambien de valor durante la gestión. Se incluyen los materiales que se destinan a conservación y reparación de bienes de capital.;egreso
+31000;Alimentos y Productos Agroforestales;"Gastos destinados a la adquisición de bebidas y productos alimenticios, manufacturados o no, incluye animales vivos para consumo, aceites, grasas animales y vegetales, forrajes y otros alimentos para animales; además, comprende productos agrícolas, ganaderos, de silvicultura, caza y pesca. Comprende madera y productos de este material.";egreso
+31100;Alimentos y Bebidas para Personas, Desayuno Escolar y Otros;"Gastos destinados al pago de comida y bebida en establecimientos hospitalarios, penitenciarios, de orfandad, cuarteles, aeronaves y para el personal de seguridad según convenio interinstitucional; incluye pago de refrigerio: al personal permanente, eventual y consultores individuales de línea de cada entidad, por procesos electorales, emergencias y/o desastres naturales; así como almuerzos o cenas de trabajo según disposición legal, desayuno escolar y otros relacionados de acuerdo a normativa vigente.";egreso
+31110;Gastos por Refrigerios al Personal Permanente, Eventual y Consultores Individuales de Línea de las Instituciones Públicas.;Incluye pago por refrigerios al personal de seguridad de la Policía Boliviana, según convenio interinstitucional.;egreso
+31120;Gastos por Alimentación y Otros Similares;"Incluye los efectuados en reuniones, seminarios y otras actividades propias de cada entidad; así como los gastos por dotación de víveres a la Policía Boliviana y Fuerzas Armadas.";egreso
+31130;Alimentación Complementaria Escolar;;egreso
+31140;Alimentación Hospitalaria, Penitenciaria, Aeronaves y Otras Específicas;;egreso
+31150;Alimentos y Bebidas para la atención de emergencias y desastres naturales.;;egreso
+31200;Alimentos para Animales;"Gastos destinados a la adquisición de forrajes y otros alimentos para animales de propiedad de instituciones públicas; alimentación de los animales de propiedad del Ejército y de la Policía Boliviana, parques zoológicos, laboratorios de experimentación y otros.";egreso
+31300;Productos Agrícolas, Pecuarios y Forestales;"Gastos para la adquisición de granos básicos, frutas y flores silvestres, goma, caña, semillas y otros productos agroforestales y agropecuarios en bruto; además, gastos por concepto de adquisición de maderas de construcción, puertas, ventanas, vigas, callapos, durmientes manufacturados o no, y todo otro producto proveniente de esta rama, incluido carbón vegetal. Incluye gastos por la compra de ganado y otros animales vivos, destinados al consumo, repoblamiento, mejoramiento genético o para usos industriales y científicos; incluye productos derivados de los mismos, como ser leche, huevos, lana, miel, pieles y otros.";egreso
+32000;Productos de Papel, Cartón e Impresos;"Gastos destinados a la adquisición de papel y cartón en sus diversas formas y clases; libros y revistas, textos de enseñanza, compra y suscripción de periódicos.";egreso
+32100;Papel;Gastos destinados a la adquisición de papel de escritorio y otros.;egreso
+32200;Productos de Artes Gráficas;Gastos para la adquisición de productos de artes gráficas y otros relacionados. Incluye gastos destinados a la adquisición de artículos hechos de papel y cartón.;egreso
+32300;Libros, Manuales y Revistas;Gastos destinados a la adquisición de libros, manuales y revistas para bibliotecas y oficinas.;egreso
+32400;Textos de Enseñanza;Gastos destinados a la compra de libros para uso docente.;egreso
+32500;Periódicos y Boletines;Gastos para la compra y suscripción de periódicos y boletines, incluye gacetas oficiales.;egreso
+33000;Textiles y Vestuario;Gastos para la compra de ropa de trabajo, vestuario, uniformes, adquisición de calzados, hilados, telas de lino, algodón, seda, lana, fibras artificiales y tapices, alfombras, sábanas, toallas, sacos de fibras y otros artículos conexos de cáñamo, yute y otros.;egreso
+33100;Hilados, Telas, Fibras y Algodón;Gastos destinados para la compra de hilados y telas de lino, algodón, seda, lana y fibras artificiales, no utilizados aún en procesos de confección.;egreso
+33200;Confecciones Textiles;Gastos destinados a la adquisición de tapices, alfombras, sábanas, toallas, sacos de fibras, colchones, carpas, cortinas y otros textiles similares.;egreso
+33300;Prendas de Vestir;Gastos destinados a la adquisición de uniformes, vestimenta de diversos tipos, ropa de trabajo, distintivos y accesorios, independientemente del material de fabricación y otras de seguridad industrial de trabajo establecidas por disposiciones en vigencia.;egreso
+33400;Calzados;Gastos destinados a la compra de calzados o zapatos complementarios de uniformes y los de uso exclusivo de servidores públicos que, por razones de seguridad industrial de trabajo establecidas por disposiciones en vigencia.;egreso
+34000;Combustibles, Productos Químicos, Farmacéuticos y Otras Fuentes de Energía;"Gastos destinados a la compra de combustibles, lubricantes, energía eléctrica, productos químicos y farmacéuticos, llantas, neumáticos y otras. Se incluye gastos por compra de cueros en sus distintos tipos (excepto vestimenta) elaborados o semi elaborados en forma de tientos, correas, suelas y demás formas empleadas en distintos usos, cauchos en sus distintas formas de producción (planchas, trozos o bajo forma de caños), tubos, caucho en bruto; gastos por compra de cemento, cal y productos elaborados con arcilla, vidrio, loza, porcelana, cemento, asbesto, yeso y plástico para fines de uso o consumo, producción, mantenimiento o construcción de obras; gastos por la compra de productos siderúrgicos férricos y no férricos, de estructuras metálicas acabadas, herramientas menores, material y equipo militar y otros productos metálicos. Comprende adicionalmente recursos para la adquisición de minerales sólidos, minerales metálicos y no metálicos.";egreso
+34100;Combustibles, Lubricantes, Derivados y otras Fuentes de Energía;Gastos para la adquisición de petróleo crudo y parcialmente refinado, gasolina, kerosene, alcohol, aceites, grasas, fuel-oil, diésel, alquitrán, energía eléctrica y otros, como gas y cemento asfáltico. Se excluye la compra de leña y carbón. Se desagrega en:;egreso
+34110;Combustibles, Lubricantes y Derivados para consumo;;egreso
+34120;Combustibles, Lubricantes y Derivados para comercialización;;egreso
+34130;Energía Eléctrica para Comercialización;;egreso
+34200;Productos Químicos y Farmacéuticos;"Gastos para la adquisición de compuestos químicos, tales como ácidos, sales, bases industriales, oxígeno, salitres, calcáreos, pinturas, colorantes, pulimentos; abonos y fertilizantes destinados a labores agrícolas; insecticidas, fumigantes y otros utilizados en labores agropecuarias; medicamentos e insumos para hospitales, clínicas, policlínicas y dispensarios, incluyendo productos básicos para botiquines y los utilizados en veterinaria. Además de los insumos requeridos en la construcción, remodelación y mantenimiento de activos fijos y otros materiales químicos, anticongelantes.";egreso
+34300;Llantas y Neumáticos;Gastos destinados a la compra de aros, llantas y neumáticos para utilización en los equipos de tracción, transporte y elevación.;egreso
+34400;Productos de Cuero y Caucho;"Gastos destinados a la compra de cueros, pieles, curtidos y sin curtir; maletines, portafolios y otros artículos confeccionados con cuero; además de artículos elaborados con caucho, excepto prendas de vestir, llantas y cámaras de aire.";egreso
+34500;Productos de Minerales no Metálicos y Plásticos;"Gastos por la adquisición de productos de arcilla como macetas, floreros, ceniceros, adornos y otros. Comprende además productos de vidrio como floreros, adornos y vidrio plano. Productos elaborados en loza y porcelana como ser: jarros, inodoros, lavamanos y otros. Adquisición de cemento, cal y yeso para construcción, remodelación o mantenimiento de edificaciones públicas. Compra de tubos sanitarios, bloques, tejas y otros productos elaborados con cemento. Incluye la adquisición de productos en cuya elaboración se utilizaron minerales no metálicos; además de tubos utilizados en instalaciones eléctricas y sanitarias, envases, mochilas para fumigación y otros productos en cuya elaboración se utilizó material plástico. Se excluye aquellos considerados como material de escritorio.";egreso
+34600;Productos Metálicos;"Gastos destinados a la adquisición de lingotes, planchas, planchones, hojalata, perfiles, alambres, varillas y otros, siempre que sean de hierro o acero. Incluye productos elaborados con base en aluminio, cobre, zinc, bronce y otras aleaciones; además de envases y otros artículos de hojalata, ferretería, estructuras metálicas acabadas y demás productos metálicos. Se excluye la compra de repuestos y/o accesorios de un activo.";egreso
+34700;Minerales;"Gastos destinados a la adquisición de estaño, plomo, oro, plata, wólfram, zinc y otros minerales metálicos; carbón mineral en todas sus variedades; piedra, arcilla, arena y grava para la construcción en general, además de diversos metaloides.";egreso
+34800;Herramientas Menores;Gastos para la adquisición de herramientas y equipos menores para uso agropecuario, industrial, de transporte, de construcción, tales como destornilladores, alicates, martillos, tenazas, serruchos, picos, palas, tarrajas y otras herramientas menores no activables.;egreso
+34900;Material y Equipo Militar;Gastos a ser efectuados por los Ministerios de Defensa y Gobierno para la adquisición de material y equipo militar de tipo fungible. Así como por las Entidades Territoriales Autónomas para equipos de protección individual para la Policía Boliviana, de acuerdo a normativa vigente.;egreso
+39000;Productos Varios;Gastos en productos de limpieza, material deportivo, utensilios de cocina y comedor, instrumental menor médico-quirúrgico, útiles de escritorio, de oficina y enseñanza, materiales eléctricos, repuestos y accesorios en general.;egreso
+39100;Material de Limpieza e Higiene;Gastos destinados a la adquisición de materiales como jabones, detergentes, desinfectantes, paños, ceras, cepillos, escobas y otros.;egreso
+39200;Material Deportivo y Recreativo;Gastos destinados a la adquisición de material deportivo. Incluye las compras para proveer material deportivo a las delegaciones deportivas destacadas dentro y fuera del país en representación oficial. Se incluye, además, el material destinado a usos recreativos. Se exceptúan las adquisiciones para donaciones a servidores públicos del Estado Plurinacional o personas del sector privado, de acuerdo a normativa vigente.;egreso
+39300;Utensilios de Cocina y Comedor;Gastos destinados a la adquisición de menaje de cocina y vajilla de comedor a ser utilizada en hospitales, hogares de niños, asilos y otros.;egreso
+39400;Instrumental Menor Médico-Quirúrgico;Gastos destinados a la compra de estetoscopios, termómetros, probetas, desfibriladores, además de material y útiles menores médicos quirúrgicos utilizados en hospitales, clínicas, establecimientos de salud, veterinarias, líneas aéreas y demás dependencias médicas del sector público. Incluye implementos de bioseguridad.;egreso
+39500;Útiles de Escritorio y Oficina;Gastos destinados a la adquisición de útiles de escritorio como ser: tintas, lápices, bolígrafos, engrapadoras, perforadoras, calculadoras, medios magnéticos, tóner para impresoras y fotocopiadoras y otros destinados al funcionamiento de oficinas.;egreso
+39600;Útiles Educacionales, Culturales y de Capacitación;Gastos destinados a la compra de útiles y materiales de apoyo educacional, cultural y de capacitación.;egreso
+39700;Útiles y Materiales Eléctricos;Gastos para la adquisición de focos, cables eléctricos y de transmisión de datos, sockets, tubos fluorescentes, accesorios de radios, lámparas de escritorio, electrodos, planchas, linternas, conductores, aisladores, fusibles, baterías, pilas, interruptores, conmutadores, enchufes y otros relacionados.;egreso
+39800;Otros Repuestos y Accesorios;Gastos destinados a la compra de repuestos y accesorios para los equipos comprendidos en el Subgrupo 43000. Se exceptúan las llantas y neumáticos y los clasificados en las partidas anteriores.;egreso
+39900;Otros Materiales y Suministros;Gastos por acuñación de monedas e impresión de billetes, vituallas por atención de emergencias, desastres naturales y todos aquellos materiales y suministros que no se clasificaron en las partidas anteriores.;egreso
+39910;Acuñación de Monedas e Impresión de Billetes;;egreso
+39911;Acuñación de monedas;;egreso
+39912;Impresión de billetes;;egreso
+39990;Otros Materiales y Suministros;;egreso
+40000;ACTIVOS REALES;Gastos para la adquisición de bienes duraderos, construcción de obras por terceros, compra de maquinaria y equipo y semovientes. Se incluyen los estudios, investigaciones y proyectos realizados por terceros y la contratación de servicios de supervisión de construcciones y mejoras de bienes públicos de dominio privado y público, cuando corresponda incluirlos como parte del activo institucional. Comprende asimismo los activos intangibles.;egreso
+41000;Inmobiliarios;Gastos para la adquisición de bienes inmuebles. Comprende la compra de inmuebles, terrenos y otros tipos de activos fijos afines.;egreso
+41100;Edificios;"Gastos destinados a la adquisición de edificios. El concepto “edificio"" incluye todas las instalaciones unidas permanentemente y que forman parte del mismo, las cuales no pueden instalarse o removerse sin romper las paredes, techos o pisos de la edificación.";egreso
+41200;Tierras y Terrenos;Gastos para la adquisición de tierras y terrenos, cualquiera sea su destino. Ejemplo: terrenos para edificaciones escolares, construcción de vías, edificios, expropiaciones y otros.;egreso
+41300;Otras Adquisiciones;Gastos destinados a la adquisición de inmuebles no contemplados en las partidas anteriores.;egreso
+42000;Construcciones;"Gastos para financiar construcciones nuevas, complementarias y mejoras que signifiquen incremento de valor y de vida útil, comprendiendo: unidades sanitarias, hospitales, edificios para oficinas, viviendas, penitenciarías, construcciones del sector defensa y seguridad, edificaciones para escuelas y colegios, restaurantes, almacenes, galpones. Comprende los costos por obras que pueden ser de tierra, pavimento o asfalto; trabajos de plataformas, cortes, obras de arte, alcantarillados, pasos, puentes y túneles, colocación de balasto; construcción de obras aeroportuarias, incluyendo el edificio terminal, pistas de aterrizaje, calles de carreteo y el cerco con malla olímpica; construcciones de puertos fluviales; obras urbanísticas como ser: apertura de calles, avenidas urbanas, muros de contención, plazas, parques, paseos, jardines, monumentos, campos deportivos, teatros al aire libre, zoológicos, y otras efectuadas en embalses, diques para almacenamiento de agua con fines de riego, energía hidroeléctrica, obras para riegos, y otras destinadas a la producción industrial, petrolera y/o minera. Comprende asimismo, los proyectos cuya ejecución está bajo la modalidad de llave en mano, la supervisión contratada de terceros para las construcciones y mejoras de bienes de dominio privado y público. Las partidas de este subgrupo de gasto, pueden ser presupuestadas en proyectos capitalizables y excepcionalmente en proyectos no capitalizables.";egreso
+42200;Construcciones y Mejoras de Bienes Públicos Nacionales de Dominio Privado;Comprende las construcciones y mejoras que se incorporan al patrimonio institucional de las entidades públicas. Se incluye la contratación de terceros para la supervisión de obras, cuando su costo pueda ser determinado en forma separada de la construcción y mejora de bienes públicos de dominio privado.;egreso
+42210;Construcciones y Mejoras de Viviendas;Gastos para la construcción y mejoramiento de viviendas y obras complementarias que incrementen el valor de las mismas, tales como rejas, protecciones, garajes, jardines y otros. Incluye el costo de construcción y mejoramiento de viviendas para uso de personal militar o policial.;egreso
+42220;Construcciones y Mejoras para Defensa y Seguridad;Gastos en infraestructura para la prestación del servicio de defensa y policía. Comprende la construcción y mejoramiento de edificios militares y policiales, cuarteles, aeropuertos, puertos y otras instalaciones militares. No incluye la construcción de viviendas, aun cuando las mismas se destinen a uso del personal militar o policial, la misma deberá ser imputada en la partida 42210 “Construcciones y Mejoras de Viviendas”;egreso
+42230;Otras Construcciones y Mejoras de Bienes Públicos de Dominio Privado;Gastos realizados en la construcción y mejoramiento de obras públicas del dominio privado tales como: edificios para oficinas públicas, escuelas, hospitales, electrificación, hidroeléctrica, agua potable, alcantarillado sanitario, infraestructura y equipamiento de industrialización de hidrocarburos, gas y minería, redes de distribución de gas, estadios y coliseos deportivos, y otras edificaciones destinadas al desarrollo de actividades comerciales, industriales y de servicios.;egreso
+42240;Supervisión de Construcciones y Mejoras de Bienes Públicos de Dominio Privado;Gastos realizados en la contratación de terceros para la supervisión de construcciones y mejoras de bienes públicos de dominio privado. Estos gastos se realizan durante la ejecución física de las obras y serán aplicados integralmente al costo total del activo institucional. Incluye los gastos por contratación a terceros para el Control y Monitoreo en proyectos contratados bajo la modalidad llave en mano.;egreso
+42300;Construcciones y Mejoras de Bienes Nacionales de Dominio Público;Comprende las construcciones y mejoras en infraestructura física que no pueden ser enajenadas por tratarse de bienes de dominio público. Se incluye la contratación de terceros para la supervisión de obras cuando su costo pueda ser determinado en forma separada de la construcción y mejora de bienes de dominio público.;egreso
+42310;Construcciones y Mejoras de Bienes de Dominio Público;Gastos destinados a la construcción de obras del dominio público tales como: calles, caminos, carreteras, túneles, parques, plazas, monumentos, canales, puentes, sistemas de riego y micro riego, y cualquier otra obra pública construida para utilidad común.;egreso
+42320;Supervisión de Construcciones y Mejoras de Bienes de Dominio Público;Gastos realizados en la contratación de terceros para la supervisión de construcciones y mejoras de bienes de dominio público. Estos gastos se realizan durante la ejecución física de las obras y serán aplicados integralmente al costo total. Incluye los gastos por contratación a terceros para el Control y Monitoreo en proyectos contratados bajo la modalidad llave en mano.;egreso
+42400;Construcciones y Mejoras de Bienes Públicos Nacionales de Dominio Privado - Llave en Mano;Comprende las construcciones y mejoras de bienes públicos de dominio privado, que se incorporan al patrimonio institucional de las Entidades públicas ejecutadas bajo la modalidad Llave en Mano que incluye: estudios, infraestructura, supervisión, equipamiento, capacitación, transferencia de tecnología, puesta en marcha, mantenimiento por el periodo de garantías y otros, establecidos en el contrato de ejecución.;egreso
+42500;Construcciones y Mejoras de Bienes Públicos Nacionales de Dominio Público - Llave en Mano;Comprende las construcciones y mejoras de bienes públicos de dominio público, ejecutadas bajo la modalidad Llave en Mano que incluye: estudios, infraestructura, supervisión, equipamiento, capacitación, transferencia de tecnología, puesta en marcha, mantenimiento por el periodo de garantías y otros, establecidos en el contrato de ejecución.;egreso
+43000;Maquinaria y Equipo;Gastos para la adquisición de maquinarias, equipos y aditamentos que se usan o complementan a la unidad principal, comprendiendo: maquinaria y equipo de oficina, de producción, equipos agropecuarios, industriales, de transporte en general, energía, riego, frigoríficos, de comunicaciones, médicos, odontológicos, educativos y otros.;egreso
+43100;Equipo de Oficina y Muebles;Gastos para la adquisición de muebles, equipos de computación, fotocopiadoras, relojes para control, equipos biométricos, mesas para dibujo y otros.;egreso
+43110;Equipo de Oficina y Muebles;Gastos para la adquisición de equipos de oficina, muebles y enseres para el equipamiento de los ambientes de las instituciones públicas.;egreso
+43120;Equipo de Computación;Gastos para la adquisición de equipos de computación y otros relacionados.;egreso
+43200;Maquinaria y Equipo de Producción;Gastos para la adquisición de maquinaria y equipo de producción, que comprende: equipos agropecuarios e industriales destinados a la producción de bienes, permitiendo la transformación de materias primas en productos acabados o semielaborados y otros.;egreso
+43300;Equipo de Transporte, Tracción y Elevación;Gastos para la adquisición de equipos mecánicos, comprendiendo: equipos de transporte por vía terrestre, equipos ferroviarios, equipos para transporte por vía marítima, lacustre y fluvial, equipos para transporte por vía aérea. Comprende además, equipos de tracción, tales como: tractores, auto guías, montacargas, motoniveladoras, además de motocicletas, bicicletas, tráiler y carretas. Asimismo, se incluye equipos de elevación, transformación de vehículos automotores a gas natural vehicular y otros.;egreso
+43310;Vehículos Livianos para Funciones Administrativas;Asignaciones destinadas a la adquisición de vehículos livianos para uso administrativo y funciones operativas de las instituciones públicas, incluye: motocicletas, bicicletas, cuadratracks y otros.;egreso
+43320;Vehículos Livianos para Proyectos de Inversión Pública;Asignaciones destinadas a la adquisición de vehículos livianos para uso en la ejecución de proyectos de inversión pública, incluye: motocicletas, bicicletas, cuadratracks y otros.;egreso
+43330;Maquinaria y Equipo de Transporte;Asignaciones para la adquisición de equipos mecánicos, comprendiendo: equipos de transporte por vía terrestre, equipos ferroviarios, equipos para transporte por vía marítima, lacustre, fluvial, aérea y otros. Comprende además, equipos de tracción, tales como: tractores, autoguías, motoniveladoras y retroexcavadoras. Además de tráileres, carretas, cisternas, volquetas, ambulancias, carro para bomberos, plantas asfálticas, grúas para remolcar vehículos, montacargas, remolques de plataforma y equipos de auxiliares de transporte para maniobras de puertos, aeropuertos, almacenes, patios de recepción, despacho de productos y otros no comprendidos en las partidas 43310 y 43320.;egreso
+43340;Equipo de Elevación;Comprende las asignaciones destinadas a la adquisición de elevadores, ascensores, escaleras mecánicas, y otros.;egreso
+43400;Equipo Médico y de Laboratorio;Gastos para la adquisición de equipos médicos, odontológicos, sanitarios y de investigación, tales como: mesas de operación, bombas de cobalto, aparatos de rayos X, equipos de rayos láser, resonancia magnética, tomógrafos, hemodiálisis, instrumental mayor médico-quirúrgico, compresoras, sillones, aparatos de prótesis, microscopios, centrifugadoras, refrigeradores especiales, laboratorios bioquímicos, esterilizadores, amplímetros, teodolitos, cubicadores, balanzas de precisión, detectores de minerales, telescopios y otros.;egreso
+43500;Equipo de Comunicación;"Gastos destinados a la adquisición de equipos para la transmisión y recepción de datos, como ser: plantas transmisoras, receptores de radios, equipo de televisión, vídeo y audio, aparatos telegráficos, teletipos y aparatos de radio; incluye instalaciones como: torres de transmisión, equipos utilizados en aeronavegación y actividades marítimas y lacustres, equipos de posicionamiento y medición (GPS), centrales telefónicas, aparatos telefónicos, equipos de telefonía IP, antenas de comunicación Wi-Fi, Access Point, redes de área amplia, equipos de vigilancia y otros relacionados.";egreso
+43600;Equipo Educacional y Recreativo;Gastos en bienes duraderos destinados a la enseñanza y a la recreación, comprenden aparatos audiovisuales, tales como: proyectores, micrófonos y otros. Además incluye equipos recreativos: carruseles, aparatos para parques infantiles y equipo menor de gimnasia, muebles especializados para uso escolar, tales como: pupitres, pizarrones y globos terráqueos. Se excluye mobiliario como sillas, mesas y anaqueles, aun estando destinados para uso docente.;egreso
+43700;Otra Maquinaria y Equipo;Gastos para la adquisición de maquinaria y equipo especializados no contemplados en las partidas anteriores, incluye ventiladores y/o extractores de aire, calentadores de ambiente, enceradoras, refrigeradores, cocinas, aspiradoras, cámaras fotográficas digitales, cámaras de video digital, equipos para maniobra en aeropuertos y otros.;egreso
+46000;Estudios y Proyectos para Inversión;Gastos para la contratación de estudios y otros realizados por terceros, tales como: la formulación de proyectos, realización de investigaciones y otras actividades técnico - profesionales, cuando corresponda incluir el resultado de estas investigaciones y actividades al activo institucional. Las partidas de este subgrupo de gasto, deberán ser presupuestadas en proyectos capitalizables.;egreso
+46100;Para Construcciones de Bienes Públicos de Dominio Privado;Gastos por servicio de terceros contratados para la realización de investigaciones y otras actividades técnico - profesionales, necesarias para la construcción y mejoramiento de bienes públicos de dominio privado.;egreso
+46110;Consultoría por Producto para Construcciones de Bienes Públicos de Dominio Privado.;Gastos por servicios de terceros contratados por producto para la realización de estudios para proyectos de construcción, de equipamiento y de mejoramiento de bienes públicos de dominio privado.;egreso
+46120;Consultoría de Línea para Construcciones de Bienes Públicos de Dominio Privado.;Gastos por servicios de consultores en proyectos de inversión pública necesarias para la construcción y mejoramiento de bienes públicos de dominio privado que desempeñen actividades técnico - operativas, cuya relación contractual está dentro del marco de los convenios de financiamiento.;egreso
+46200;Para Construcciones de Bienes de Dominio Público;Gastos por servicio de terceros contratados para la realización de investigaciones y otras actividades técnico - profesionales, necesarias para la construcción y mejoramiento de bienes de dominio público.;egreso
+46210;Consultoría por Producto para Construcciones de Bienes Públicos de Dominio Público.;Gastos por servicios de terceros contratados por producto para la realización de estudios para proyectos de construcción, de equipamiento y de mejoramiento de bienes de dominio público.;egreso
+46220;Consultoría de Línea para Construcciones de Bienes Públicos de Dominio Público.;Gastos por servicios de consultores en proyectos de inversión pública necesarias para la construcción y mejoramiento de bienes de dominio público que desempeñen actividades técnico - operativas, financieras y administrativas, cuya relación contractual está dentro del marco de los convenios de financiamiento.;egreso
+46300;Consultoría para capacitación, transferencia de tecnología y organización para procesos productivos, en proyectos de Inversión específicos.;Gastos por servicios de terceros contratados para la realización de eventos de capacitación, transferencia de tecnología y organización para procesos productivos, cuya relación contractual está dentro del marco de los convenios de financiamiento.;egreso
+46310;Consultoría por Producto;;egreso
+46320;Consultoría de Línea;;egreso
+49000;Otros Activos;Gastos destinados a la adquisición de otros activos no especificados en las partidas anteriores. Incluye los gastos en la compra de activos intangibles, gastos en bienes muebles existentes usados y la adquisición de activos biológicos.;egreso
+49100;Activos Intangibles;Gastos destinados a la adquisición de derechos y licencias para el uso de bienes, activos de la propiedad industrial, comercial, intelectual y otros. Asimismo, incluye la adquisición y actualización de versiones de programas de computación.;egreso
+49300;Activos de Origen Animal;Gastos para la adquisición de animales de diferentes especies ornamentales, de reproducción y trabajo, en el marco de la normativa vigente.;egreso
+49400;Activos Museológicos y Culturales;Gastos destinados a la adquisición y/o restauración de activos museológicos y culturales, que no son depreciables.;egreso
+49500;Activos de Origen Vegetal;Gastos destinados a la adquisición de activos agrícolas de diferentes especies, en el marco de la normativa vigente.;egreso
+49900;Otros;Gastos destinados a la adquisición de otros activos no descritos anteriormente. Incluye objetos valiosos y bibliotecas, no depreciables.;egreso
+50000;ACTIVOS FINANCIEROS;Compra de acciones, participaciones de capital, inversiones, concesión de préstamos de acuerdo a normativa vigente y adquisición de títulos y valores. Incluye el incremento de saldos del activo disponible y exigible, además de los recursos inherentes a fideicomisos.;egreso
+51000;Compra de Acciones, Participaciones de Capital e Inversiones;Aportes de capital directo que generan participación patrimonial o mediante la adquisición de acciones u otros valores representativos del capital de empresas públicas, privadas e internacionales, radicadas en el país o en el exterior, incluye inversiones en instrumentos financieros en el exterior.;egreso
+51100;Acciones y Participaciones de Capital en Empresas Privadas Nacionales;Gastos destinados a la adquisición de acciones y participaciones de capital en empresas privadas nacionales, incluye acciones y certificados de aportación en cooperativas telefónicas.;egreso
+51200;Acciones y Participaciones de Capital en Empresas Públicas Nacionales;Gastos destinados a la adquisición de acciones y participaciones de capital en empresas públicas nacionales.;egreso
+51300;Acciones y Participaciones de Capital en Empresas Públicas Territoriales;Gastos destinados a la adquisición de acciones y participaciones de capital en empresas territoriales.;egreso
+51310;Del Gobierno Autónomo Departamental;;egreso
+51320;Del Gobierno Autónomo Municipal;;egreso
+51330;Del Gobierno Autónomo Indígena Originario Campesino;;egreso
+51340;Del Gobierno Autónomo Regional;;egreso
+51500;Acciones y Participaciones de Capital en Instituciones Públicas Financieras No Bancarias;Gastos destinados a la adquisición de acciones y participaciones de capital en Instituciones Públicas Financieras no Bancarias.;egreso
+51600;Acciones y Participaciones de Capital en Instituciones Públicas Financieras Bancarias;Gastos destinados a la adquisición de acciones y participaciones de capital en Instituciones Financieras Bancarias.;egreso
+51700;Acciones y Participaciones de Capital en Organismos Internacionales;Gastos destinados a la adquisición de acciones y participaciones de capital en Organismos Internacionales.;egreso
+51800;Otras Acciones y Participaciones de Capital en el Exterior;Gastos destinados a la adquisición de otras acciones y participaciones de capital realizadas en el exterior.;egreso
+51900;Inversiones en el Exterior;Recursos destinados para realizar inversiones en instrumentos financieros en el exterior, de acuerdo a normativa vigente.;egreso
+52000;Concesión de Préstamos a Corto Plazo al Sector Público No Financiero;Préstamos directos a corto plazo concedidos al Sector Público No Financiero.;egreso
+52100;Concesión de Préstamos a Corto Plazo a los Órganos del Estado Plurinacional;;egreso
+52200;Concesión de Préstamos a Corto Plazo a Instituciones Públicas Descentralizadas;;egreso
+52400;Concesión de Préstamos a Corto Plazo a Entidades Territoriales Autónomas;;egreso
+52410;Gobierno Autónomo Departamental;;egreso
+52420;Gobierno Autónomo Municipal;;egreso
+52430;Gobierno Autónomo Indígena Originario Campesino;;egreso
+52440;Gobierno Autónomo Regional;;egreso
+52600;Concesión de Préstamos a Corto Plazo a Instituciones de Seguridad Social;;egreso
+52700;Concesión de Préstamos a Corto Plazo a Empresas Públicas Nacionales;;egreso
+52800;Concesión de Préstamos a Corto Plazo a Empresas Públicas Territoriales;;egreso
+52810;Del Gobierno Autónomo Departamental;;egreso
+52820;Del Gobierno Autónomo Municipal;;egreso
+52830;Del Gobierno Autónomo Indígena Originario Campesino;;egreso
+52840;Del Gobierno Autónomo Regional;;egreso
+53000;Concesión de Préstamos a Largo Plazo al Sector Público No Financiero;Préstamos directos a largo plazo concedidos al Sector Público No Financiero.;egreso
+53100;Concesión de Préstamos a Largo Plazo a los Órganos del Estado Plurinacional;;egreso
+53200;Concesión de Préstamos a Largo Plazo a Instituciones Públicas Descentralizadas;;egreso
+53400;Concesión de Préstamos a Largo Plazo a Entidades Territoriales Autónomas;;egreso
+53410;Gobierno Autónomo Departamental;;egreso
+53420;Gobierno Autónomo Municipal;;egreso
+53430;Gobierno Autónomo Indígena Originario Campesino;;egreso
+53440;Gobierno Autónomo Regional;;egreso
+53600;Concesión de Préstamos a Largo Plazo a Instituciones de Seguridad Social;;egreso
+53700;Concesión de Préstamos a Largo Plazo a Empresas Públicas Nacionales;;egreso
+53800;Concesión de Préstamos a Largo Plazo a Empresas Públicas Territoriales;;egreso
+53810;Del Gobierno Autónomo Departamental;;egreso
+53820;Del Gobierno Autónomo Municipal;;egreso
+53830;Del Gobierno Autónomo Indígena Originario Campesino;;egreso
+53840;Del Gobierno Autónomo Regional;;egreso
+54000;Concesión de Préstamos al Sector Público Financiero y a los Sectores Privado y del Exterior;Préstamos directos que se conceden al Sector Público Financiero y a los sectores privado y externo.;egreso
+54100;Concesión de Préstamos a Corto Plazo a Instituciones Públicas Financieras No Bancarias;;egreso
+54200;Concesión de Préstamos a Corto Plazo a Instituciones Públicas Financieras Bancarias;;egreso
+54300;Concesión de Préstamos a Corto Plazo al Sector Privado;;egreso
+54400;Concesión de Préstamos a Corto Plazo al Exterior;;egreso
+54600;Concesión de Préstamos a Largo Plazo a Instituciones Públicas Financieras No Bancarias;;egreso
+54700;Concesión de Préstamos a Largo Plazo a Instituciones Públicas Financieras Bancarias;;egreso
+54800;Concesión de Préstamos a Largo Plazo al Sector Privado;;egreso
+54900;Concesión de Préstamos a Largo Plazo al Exterior;;egreso
+55000;Compra de Títulos y Valores;Compra de títulos y valores que representan inversión financiera para las instituciones que realizan la adquisición y pasivos para el ente emisor y, por tanto, no representan participación o propiedad sobre su patrimonio.;egreso
+55100;Títulos y Valores a Corto Plazo;Adquisición de títulos y valores a corto plazo.;egreso
+55110;Letras del Tesoro;;egreso
+55120;Bonos del Tesoro;;egreso
+55130;Otros;;egreso
+55200;Títulos y Valores a Largo Plazo;Adquisición de títulos y valores a largo plazo.;egreso
+55210;Letras del Tesoro;;egreso
+55220;Bonos del Tesoro;;egreso
+55230;Otros;;egreso
+56000;Constitución de Fideicomisos y Servicios Financieros;Comprende los recursos otorgados para la constitución de fideicomisos y aquellos administrados para el cumplimiento de la finalidad de los mismos y para que las instituciones públicas legalmente facultadas, suscriban contratos de administración y prestación de servicios financieros con entidades de intermediación financiera.;egreso
+56100;Colocación de Fondos en Fideicomiso;;egreso
+56200;Concesiones de Recursos de Fideicomisos;;egreso
+56300;Colocación de Fondos por Servicios Financieros;;egreso
+57000;Incremento de Disponibilidades;Aplicaciones financieras que se originan en el incremento neto de los saldos de caja y bancos e inversiones temporales.;egreso
+57100;Incremento de Caja y Bancos;Aplicaciones financieras que se originan en el incremento neto de saldos de caja y bancos. Resulta de comparar los saldos iniciales y finales de caja y bancos que están determinados por las magnitudes de recibos y pagos de las instituciones públicas.;egreso
+57200;Incremento de Inversiones Temporales;Aplicaciones financieras que se originan en el incremento neto de saldos de inversiones temporales. Esta cuenta indica las variaciones del nivel de colocaciones que realizan las tesorerías como consecuencia de la existencia de superávit temporal de caja.;egreso
+58000;Incremento de Cuentas y Documentos por Cobrar y Otros Activos Financieros;Aplicaciones financieras que se originan en el incremento neto de cuentas del activo exigible a corto y largo plazo documentada y no documentada que constituye una institución pública. Su cálculo es consecuencia de políticas financieras de cobros.;egreso
+58100;Incremento de Cuentas por Cobrar a Corto Plazo;Aplicaciones financieras que se originan en el incremento neto de saldos de las cuentas por cobrar a corto plazo.;egreso
+58200;Incremento de Documentos por Cobrar y Otros Activos Financieros a Corto Plazo;Aplicaciones financieras que se originan en el incremento neto de saldos de documentos y efectos por cobrar y otros activos financieros a corto plazo. Incluye las variaciones netas de saldos de anticipos financieros, activos diferidos y débitos por apertura de cartas de crédito a corto plazo.;egreso
+58210;Incremento de Documentos por Cobrar a Corto Plazo;;egreso
+58220;Incremento de Otros Activos Financieros a Corto Plazo;;egreso
+58300;Incremento de Cuentas por Cobrar a Largo Plazo;Aplicaciones financieras que se originan en el incremento neto de saldos de las cuentas por cobrar a largo plazo.;egreso
+58400;Incremento de Documentos por Cobrar y Otros Activos Financieros a Largo Plazo;Aplicaciones financieras que se originan en el incremento neto de saldos de documentos y efectos por cobrar y otros activos financieros a largo plazo. Incluye las variaciones de saldos de anticipos financieros, activos diferidos y débitos por apertura de cartas de crédito a largo plazo.;egreso
+58410;Incremento de Documentos por Cobrar a Largo Plazo;;egreso
+58420;Incremento de Otros Activos Financieros a Largo Plazo;;egreso
+59000;Afectaciones al Tesoro General de la Nación;Afectaciones a las cuentas fiscales del Tesoro General de la Nación y operaciones sin movimiento de efectivo, por transacciones efectuadas por el Tesoro General de la Nación por cuenta de las entidades del sector público y privado.;egreso
+59100;Afectaciones al Tesoro General de la Nación;;egreso
+60000;SERVICIO DE LA DEUDA PÚBLICA Y DISMINUCIÓN DE OTROS PASIVOS;"Asignación de recursos para atender el pago de amortizaciones, intereses, comisiones de corto plazo y largo plazo con residentes (Deuda Interna) y no residentes (Deuda Externa); la disminución de cuentas a pagar de corto plazo y largo plazo, gastos devengados no pagados, disminución de depósitos de Instituciones Financieras; documentos y efectos a pagar y pasivos diferidos. Incluye el pago de beneficios sociales.";egreso
+61000;Servicio de la Deuda Pública Interna;Gastos destinados para atender el servicio de la Deuda Pública con residentes en el país. Incluye el rescate de títulos y valores y la cancelación de préstamos.;egreso
+61100;Amortización de la Deuda Pública Interna a Corto Plazo;;egreso
+61200;Intereses de la Deuda Pública Interna a Corto Plazo;;egreso
+61300;Comisiones y Otros Gastos de la Deuda Pública Interna a Corto Plazo;;egreso
+61400;Intereses por Mora y Multas de la Deuda Pública Interna a Corto Plazo;;egreso
+61600;Amortización de la Deuda Pública Interna a Largo Plazo;;egreso
+61700;Intereses de la Deuda Pública Interna a Largo Plazo;;egreso
+61800;Comisiones y Otros Gastos de la Deuda Pública Interna a Largo Plazo;;egreso
+61900;Intereses por Mora y Multas de la Deuda Pública Interna a Largo Plazo;;egreso
+62000;Servicio de la Deuda Pública Externa;Gastos destinados para atender el servicio de la Deuda Pública con no residentes en el país. Incluye el rescate de títulos y valores y la cancelación de préstamos.;egreso
+62100;Amortización de la Deuda Pública Externa a Corto Plazo;;egreso
+62200;Intereses de la Deuda Pública Externa a Corto Plazo;;egreso
+62300;Comisiones y Otros Gastos de la Deuda Pública Externa a Corto Plazo;;egreso
+62400;Intereses por Mora y Multas de la Deuda Pública Externa a Corto Plazo;;egreso
+62600;Amortización de la Deuda Pública Externa a Largo Plazo;;egreso
+62700;Intereses de la Deuda Pública Externa a Largo Plazo;;egreso
+62800;Comisiones y Otros Gastos de la Deuda Pública Externa a Largo Plazo;;egreso
+62900;Intereses por Mora y Multas de la Deuda Pública Externa a Largo Plazo;;egreso
+63000;Disminución de Cuentas por Pagar a Corto Plazo;Aplicaciones financieras que se originan en la disminución neta de saldos de cuentas por pagar a corto plazo, documentada y no documentada que constituye una institución pública con proveedores, contratistas y otros. Su cálculo es el resultado de realizar mayores pagos que gastos devengados en el ejercicio, de tal manera que la política financiera genere una disminución neta de los pasivos.;egreso
+63100;Disminución de Cuentas por Pagar a Corto Plazo por Deudas Comerciales con Proveedores;;egreso
+63200;Disminución de Cuentas por Pagar a Corto Plazo con Contratistas;;egreso
+63300;Disminución de Cuentas por Pagar a Corto Plazo por Sueldos y Jornales;;egreso
+63400;Disminución de Cuentas por Pagar a Corto Plazo por Aportes Patronales;;egreso
+63500;Disminución de Cuentas por Pagar a Corto Plazo por Retenciones;;egreso
+63600;Disminución de Cuentas por Pagar a Corto Plazo por Impuestos, Regalías y Tasas;;egreso
+63700;Disminución de Cuentas por Pagar a Corto Plazo por Jubilaciones y Pensiones;;egreso
+63800;Disminución de Cuentas por Pagar a Corto Plazo por Intereses;;egreso
+63900;Disminución de Otros Pasivos y Otras Cuentas por Pagar a Corto Plazo;Aplicaciones financieras que se originan en la disminución neta de saldos de otros pasivos y otras cuentas por pagar a corto plazo. Incluye las variaciones netas de saldos de depósitos a la vista, depósitos en caja de ahorro y a plazo fijo de las instituciones financieras y la disminución neta de documentos y efectos comerciales por pagar, otros documentos y pasivos diferidos a corto plazo.;egreso
+64000;Disminución de Cuentas por Pagar a Largo Plazo;Aplicaciones financieras que se originan en la disminución neta de saldos de cuentas por pagar a largo plazo, documentada y no documentada que tiene una institución pública con proveedores y contratistas.;egreso
+64100;Disminución de Cuentas por Pagar a Largo Plazo por Deudas Comerciales;Aplicaciones financieras que se originan en la disminución neta de saldos de cuentas por pagar a largo plazo que tiene una institución pública por deudas comerciales con proveedores.;egreso
+64200;Disminución de Otras Cuentas por Pagar a Largo Plazo;Aplicaciones financieras que se originan en la disminución neta de saldos de otras cuentas por pagar a largo plazo. Incluye las variaciones netas de saldos de documentos y efectos comerciales por pagar, otros documentos por pagar y pasivos diferidos a largo plazo.;egreso
+65000;Gastos Devengados No Pagados – TGN;Asignación de recursos destinados a cubrir gastos devengados en ejercicios anteriores que no han sido cancelados. Se utiliza en el Tesoro General de la Nación.;egreso
+65100;Gastos Devengados No Pagados por Servicios Personales;Asignación de recursos destinados a cubrir obligaciones generadas por gastos devengados en ejercicios anteriores por concepto de servicios personales que no han sido cancelados.;egreso
+65200;Gastos Devengados No Pagados por Servicios No Personales, Materiales y Suministros, Activos Reales y Financieros;Asignación de recursos destinados a cubrir obligaciones generadas por gastos devengados en ejercicios anteriores por concepto de servicios no personales, materiales y suministros, activos reales y activos financieros que no han sido cancelados.;egreso
+65210;Gastos Devengados No Pagados por Servicios No Personales;;egreso
+65220;Gastos Devengados No Pagados por Materiales y Suministros;;egreso
+65230;Gastos Devengados No Pagados por Activos Reales;;egreso
+65240;Gastos Devengados No Pagados por Activos Financieros;;egreso
+65300;Gastos Devengados No Pagados por Transferencias;Asignación de recursos destinados a cubrir obligaciones generadas por gastos devengados en ejercicios anteriores por concepto de transferencias que no han sido canceladas.;egreso
+65400;Gastos Devengados No Pagados por Retenciones;Asignación de recursos destinados a cubrir obligaciones generadas en ejercicios anteriores por concepto de retenciones no canceladas, en favor de acreedores.;egreso
+65500;Gastos Devengados No Pagados por Intereses Deuda Pública Interna;Asignación de recursos destinados a cubrir obligaciones generadas en ejercicios anteriores por concepto de intereses de Deuda Pública Interna no canceladas.;egreso
+65600;Gastos Devengados No Pagados por Intereses Deuda Pública Externa;Asignación de recursos destinados a cubrir obligaciones generadas en ejercicios anteriores por concepto de intereses de Deuda Pública Externa no canceladas.;egreso
+65700;Gastos Devengados No Pagados por Comisiones Deuda Pública Interna;Asignación de recursos destinados a cubrir obligaciones generadas en ejercicios anteriores por concepto de comisiones de Deuda Pública Interna no canceladas.;egreso
+65800;Gastos Devengados No Pagados por Comisiones Deuda Pública Externa;Asignación de recursos destinados a cubrir obligaciones generadas en ejercicios anteriores por concepto de comisiones de Deuda Pública Externa no canceladas.;egreso
+65900;Otros Gastos Devengados No Pagados;Asignación de recursos destinados a cubrir obligaciones generadas por gastos devengados y no pagados en ejercicios anteriores, por conceptos no incorporados en las partidas anteriores.;egreso
+66000;Gastos Devengados No Pagados – Otras Fuentes;Asignación de recursos destinados a cubrir gastos devengados no pagados en ejercicios anteriores, con recursos diferentes al T.G.N.;egreso
+66100;Gastos Devengados No Pagados por Servicios Personales;Asignación de recursos destinados a cubrir obligaciones generadas por gastos devengados no pagados en ejercicios anteriores, por concepto de servicios personales.;egreso
+66200;Gastos Devengados No Pagados por Servicios No Personales, Materiales y Suministros, Activos Reales y Financieros, y Servicio de la Deuda;Asignación de recursos destinados a cubrir obligaciones generadas por gastos devengados no pagados en ejercicios anteriores por concepto de servicios no personales, materiales y suministros, activos reales y activos financieros, y servicio de la deuda.;egreso
+66210;Gastos Devengados No Pagados por Servicios No Personales;;egreso
+66220;Gastos Devengados No Pagados por Materiales y Suministros;;egreso
+66230;Gastos Devengados No Pagados por Activos Reales;;egreso
+66240;Gastos Devengados No Pagados por Activos Financieros;;egreso
+66250;Gastos Devengados No Pagados por Servicio de la Deuda;;egreso
+66300;Gastos Devengados No Pagados por Transferencias;Asignación de recursos destinados a cubrir obligaciones generadas por gastos devengados no pagados en ejercicios anteriores, por concepto de transferencias.;egreso
+66400;Gastos Devengados No pagados por Retenciones;Asignación de recursos destinados a cubrir obligaciones generadas en ejercicios anteriores por concepto de retenciones no canceladas, en favor de acreedores.;egreso
+66900;Otros Gastos No Pagados;Asignación de recursos destinados a cubrir obligaciones generadas por gastos devengados no pagados en ejercicios anteriores, por conceptos no incorporados en las partidas anteriores.;egreso
+67000;Obligaciones por Afectaciones al Tesoro General de la Nación;"Obligaciones por concepto de afectaciones realizadas a las cuentas fiscales del Tesoro General de la Nación y por operaciones sin movimiento de efectivo; así como para el pago del servicio de la deuda pública y disminución de otros pasivos.";egreso
+67100;Obligaciones por Afectaciones al Tesoro General de la Nación;;egreso
+68000;Disminución de Otros Pasivos;Asignación de recursos para cubrir el pago de beneficios sociales.;egreso
+68200;Pago de Beneficios Sociales;Asignación de recursos para cubrir el pago efectivo realizado por las entidades del sector público a favor de sus servidores públicos, por concepto de beneficios sociales, de acuerdo a la normativa vigente.;egreso
+69000;Devolución de Fondos - Fideicomisos;Asignación de recursos para cubrir la devolución de fondos recibidos en fideicomiso de corto y largo plazo realizados por la institución fiduciaria y el pago de recursos recibidos de fideicomisos por la institución beneficiaria.;egreso
+69100;Devolución de Fondos - Fideicomiso de Corto Plazo;Asignación de recursos para cubrir la devolución de fondos recibidos en fideicomiso de corto plazo realizados por la institución fiduciaria.;egreso
+69200;Devolución de Fondos - Fideicomiso de Largo Plazo;Asignación de recursos para cubrir la devolución de fondos recibidos en fideicomiso de largo plazo realizados por la institución fiduciaria.;egreso
+70000;TRANSFERENCIAS;Gastos que corresponden a transacciones que no suponen contraprestación en bienes o servicios y cuyos importes no son reintegrados por los beneficiarios. Asimismo, contempla transferencias en el marco de convenios específicos.;egreso
+71000;Transferencias Corrientes al Sector Privado;Transferencias corrientes en efectivo y/o en especie que se otorgan al sector privado de la economía.;egreso
+71100;Pensiones y Jubilaciones;Créditos asignados para gastos por concepto de pensiones y jubilaciones y otros de la misma naturaleza.;egreso
+71200;Becas;Becas de estudios otorgadas a servidores públicos, estudiantes universitarios y particulares.;egreso
+71210;Becas de Estudios Otorgadas a los Servidores Públicos;Son los recursos destinados al pago de becas de estudio otorgadas a servidores públicos.;egreso
+71220;Becas de Estudios Otorgadas a los Estudiantes Universitarios;Recursos destinados al pago de auxiliares de docencia, auxiliares de investigación, internado rotatorio, becas trabajo, trabajo dirigido y otros establecidos por norma.;egreso
+71230;Becas de Estudios Otorgadas a Particulares;Son los recursos destinados al pago de becas de estudio otorgadas a particulares.;egreso
+71300;Donaciones, Ayudas Sociales y Premios a Personas;Donaciones, ayudas y premios de tipo social e incentivos que mejoren las condiciones de competitividad, conforme a normativa vigente.;egreso
+71500;Subsidios a Personas ó Instituciones Privadas;Subsidios a Personas ó Instituciones Privadas que realizan actividades de producción agrícola, de acuerdo a normativa vigente.;egreso
+71600;Subsidios y Donaciones a Personas e Instituciones Privadas sin Fines de Lucro;Subvenciones destinadas a Personas e Instituciones privadas sin fines de lucro, a efecto de auxiliar y estimular la actividad que éstas realizan, y otros de acuerdo a normativa vigente.;egreso
+71610;A Personas e Instituciones Privadas sin Fines de Lucro;;egreso
+71630;Otros de Carácter Social Establecidos por Norma Legal;;egreso
+71700;Subvenciones Económicas a Empresas;Recursos destinados para financiar las operaciones o gastos financieros de empresas del sector privado.;egreso
+71800;Pensiones Vitalicias;Transferencias a beneméritos de guerra, personajes notables y otras pensiones concedidas de acuerdo a normativa vigente.;egreso
+71900;Transferencias por las Compras de Control Tributario;Transferencias por concepto de la ejecución de operativos de control, a través de la modalidad de Compras de Control, que por su naturaleza no pueden ser devueltos a los sujetos pasivos o terceros, los mismos que son transferidos a entidades de beneficencia o asistencia social.;egreso
+72000;Transferencias Corrientes al Sector Público No Financiero por Participación en Tributos;Transferencias corrientes a entidades públicas por participación de recaudaciones tributarias, según el sistema tributario vigente.;egreso
+72200;Transferencias Corrientes a Instituciones Públicas Descentralizadas, Universidades Públicas por Participación en Tributos;Transferencias a Instituciones Públicas Descentralizadas, Universidades Públicas por participaciones en tributos, de acuerdo a normativa vigente.;egreso
+72400;Transferencias Corrientes al Gobierno Autónomo Departamental por Participación en Tributos;Transferencias al Gobierno Departamental por participación en tributos, de acuerdo a normativa vigente.;egreso
+72410;Para Educación;;egreso
+72420;Otras;;egreso
+72500;Transferencias Corrientes a los Gobiernos Autónomos Municipales e Indígena Originario Campesino por Participación en Tributos;Transferencias por participación en tributos, de acuerdo a normativa vigente.;egreso
+72510;Para Salud;;egreso
+72520;Otras;;egreso
+73000;Transferencias Corrientes al Sector Público No Financiero por Subsidios o Subvenciones;Transferencias corrientes al Sector Público No Financiero por concepto de subsidios y subvenciones, de acuerdo a disposiciones legales específicas o por acto administrativo del gobierno, destinadas a financiar sus actividades corrientes. Incluye asignaciones para programas y gastos específicos no contemplados en la categoría proyectos.;egreso
+73100;Transferencias Corrientes al Órgano Ejecutivo del Estado Plurinacional por Subsidios o Subvenciones;;egreso
+73200;Transferencias Corrientes a los Órganos Legislativo, Judicial y Electoral, Entidades de Control y Defensa, Descentralizadas y Universidades por Subsidios o Subvenciones;;egreso
+73300;Transferencias Corrientes del Fondo Compensatorio Nacional de Salud;Transferencias del Ministerio de Salud, a los Gobiernos Autónomos Municipales e Indígena Originario Campesino, a objeto de apoyar el financiamiento de las prestaciones de servicios de salud integral, de acuerdo a normativa vigente.;egreso
+73400;Transferencias Corrientes a Entidades Territoriales Autónomas por Subsidios o Subvenciones;;egreso
+73410;Gobierno Autónomo Departamental;;egreso
+73420;Gobierno Autónomo Municipal;;egreso
+73430;Gobierno Autónomo Indígena Originario Campesino;;egreso
+73440;Gobierno Autónomo Regional;;egreso
+73600;Transferencias Corrientes a Instituciones de Seguridad Social por Subsidios o Subvenciones;;egreso
+73700;Transferencias Corrientes a Empresas Públicas Nacionales por Subsidios o Subvenciones;;egreso
+73800;Transferencias Corrientes a Empresas Públicas de las Entidades Territoriales Autónomas por Subsidios o Subvenciones;;egreso
+73810;Empresas Públicas Departamentales;;egreso
+73820;Empresas Públicas Municipales;;egreso
+73830;Empresas Públicas Indígenas Originarias Campesinas;;egreso
+73840;Empresas Públicas Regionales;;egreso
+74000;Transferencias Corrientes al Sector Público Financiero;Transferencias a entidades del Sector Público Financiero, Bancario y no Bancario, de acuerdo a disposiciones legales específicas o por acto administrativo del gobierno. Incluye asignaciones para programas y gastos específicos no contemplados en la categoría proyectos.;egreso
+74100;Transferencias Corrientes a Instituciones Públicas Financieras No Bancarias;;egreso
+74200;Transferencias Corrientes a Instituciones Públicas Financieras Bancarias;;egreso
+75000;Transferencias de Capital al Sector Privado;Transferencias de capital en efectivo y/o en especie que tienen por finalidad financiar programas específicos de inversión de personas naturales o jurídicas privadas, de acuerdo a normativa vigente.;egreso
+75100;Transferencias de Capital a Personas;Transferencias a personas naturales que tengan por destino financiar las adquisiciones de equipos, construcciones u otros activos.;egreso
+75110;En Efectivo;;egreso
+75120;En Especie;;egreso
+75200;Transferencias de Capital a Instituciones Privadas sin Fines de Lucro;Transferencias a Instituciones Privadas sin fines de lucro que tienen por destino financiar la adquisición de equipos, construcciones, inversiones financieras u otros gastos de capital. Incluye transferencias para programas y proyectos de desarrollo económico, productivo y social, de acuerdo a normativa vigente.;egreso
+75210;A Instituciones Privadas sin Fines de Lucro;;egreso
+75211;En Efectivo;;egreso
+75212;En Especie;;egreso
+75220;Otras de carácter económico – productivo;;egreso
+75221;En Efectivo;;egreso
+75222;En Especie;;egreso
+75300;Transferencias de Capital a Empresas Privadas;Transferencias a empresas privadas que tengan por destino financiar la adquisición de equipos, construcciones, proveer fondos para inversiones financieras u otros gastos de capital.;egreso
+75310;En Efectivo;;egreso
+75320;En Especie;;egreso
+77000;Transferencias de Capital al Sector Público No Financiero por Subsidios o Subvenciones;Subsidios o subvenciones a entidades del Sector Público No Financiero, para financiar gastos de capital.;egreso
+77100;Transferencias de Capital al Órgano Ejecutivo del Estado Plurinacional por Subsidios o Subvenciones;;egreso
+77200;Transferencias de Capital a los Órganos Legislativo, Judicial y Electoral, Entidades de Control y Defensa, Descentralizadas y Universidades por Subsidios o Subvenciones;;egreso
+77400;Transferencias de Capital a los Gobiernos Autónomos Departamentales y Regional por Subsidios o Subvenciones;;egreso
+77410;Al Gobierno Autónomo Departamental;;egreso
+77440;Al Gobierno Autónomo Regional;;egreso
+77500;Transferencias de Capital a los Gobiernos Autónomos Municipales e Indígena Originario Campesino por Subsidios o Subvenciones;;egreso
+77520;Por Patentes Petroleras;;egreso
+77530;Otras;;egreso
+77600;Transferencias de Capital a Instituciones de Seguridad Social por Subsidios o Subvenciones;;egreso
+77700;Transferencias de Capital a Empresas Públicas Nacionales por Subsidios o Subvenciones;;egreso
+77800;Transferencias de Capital a Empresas Públicas de las Entidades Territoriales Autónomas por Subsidios o Subvenciones;;egreso
+77810;A Empresas Públicas Departamentales;;egreso
+77820;A Empresas Públicas Municipales;;egreso
+77830;A Empresas Públicas Indígenas Originarias y Campesinas;;egreso
+77840;A Empresas Públicas Regionales;;egreso
+78000;Transferencias de Capital al Sector Público Financiero;Transferencias de capital otorgadas a Instituciones Públicas Financieras, Bancarias y no Bancarias para financiar gastos específicos de capital.;egreso
+78100;Transferencias de Capital a Instituciones Públicas Financieras No Bancarias;;egreso
+78200;Transferencias de Capital a Instituciones Públicas Financieras Bancarias;;egreso
+79000;Transferencias a Gobiernos Extranjeros, Organismos Internacionales y otros;Transferencias al exterior que se realizan a gobiernos extranjeros, organismos internacionales o a cualquier otro beneficiario del exterior. Asimismo, incluye transferencias a organismos internacionales en territorio nacional.;egreso
+79100;Transferencias Corrientes a Gobiernos Extranjeros y Organismos Internacionales por Cuotas Regulares;Transferencias efectuadas a Organismos Internacionales por cuotas establecidas de acuerdo con el carácter de Estado Miembro o por participación en una organización internacional determinada como: PNUD, UNICEF, OIT, CIAT, etc.;egreso
+79200;Transferencias Corrientes a Gobiernos Extranjeros y Organismos Internacionales por Cuotas Extraordinarias;Transferencias efectuadas a Organismos Internacionales por cuotas extraordinarias acordadas y de acuerdo con el carácter de Estado Miembro. Incluye también, transferencias extraordinarias a gobiernos extranjeros, de acuerdo con convenios establecidos.;egreso
+79300;Otras Transferencias Corrientes al Exterior;Se refiere a otras transferencias corrientes efectuadas al exterior, no contempladas en las partidas anteriores, incluye donaciones y ayudas de tipo social en efectivo y/o especie, que no revisten carácter permanente a organismos extranjeros, de acuerdo a normativa vigente.;egreso
+79310;Transferencias al Exterior en Efectivo;;egreso
+79320;Transferencias al Exterior en Especie;;egreso
+79400;Transferencias de Capital al Exterior;Transferencias que se realizan a favor de gobiernos u organismos del exterior, que tienen por destino financiar gastos de capital, incluye donaciones.;egreso
+79500;Transferencias a Organismos Internacionales;"Transferencias efectuadas a organismos internacionales en territorio nacional en el marco de las Leyes N° 018 de 16 de junio de 2010 “del Órgano Electoral Plurinacional” y N° 1266 de 24 de noviembre de 2019, “de Régimen Excepcional y Transitorio para la Realización de Elecciones Generales” y convenios específicos, que coadyuven en materia de registros civil y electoral; así como en la ejecución de procesos electorales.";egreso
+80000;IMPUESTOS, REGALÍAS Y TASAS;Gastos realizados por las instituciones públicas destinados a cubrir el pago de impuestos, regalías, tasas y acuotaciones.;egreso
+81000;Renta Interna;Gastos realizados por las instituciones públicas destinados a cubrir las obligaciones impositivas.;egreso
+81100;Impuesto sobre las Utilidades de las Empresas;Créditos destinados al pago de impuestos a las utilidades de las empresas, de acuerdo a normativa vigente. Incluye las utilidades de las empresas mineras.;egreso
+81200;Impuesto a las Transacciones;Créditos destinados al pago de impuestos sobre los ingresos brutos devengados durante el período fiscal por el ejercicio de industria, comercio, oficio, negocio, alquiler de bienes, ejecución de obras o prestación de servicios de cualquier índole, sean éstas lucrativas o no, de acuerdo a normativa vigente.;egreso
+81300;Impuesto al Valor Agregado Mercado Interno;Créditos destinados al pago del Impuesto al Valor Agregado (IVA), por concepto de venta de mercancías en general, contratos de obra, servicios técnicos y profesionales, servicios públicos y privados, alquileres y otros tipos de ingresos, realizados con agentes económicos residentes en el país.;egreso
+81400;Impuesto al Valor Agregado Importaciones;Créditos destinados al pago del Impuesto al Valor Agregado (IVA), por concepto de importación de mercancías en general.;egreso
+81500;Impuesto a los Consumos Específicos Mercado Interno;Créditos destinados al pago de impuestos por la producción o consumo de bebidas alcohólicas, alcoholes, cigarrillos y tabacos, vehículos automóviles y otras establecidas por norma legal vigente, realizadas en el país.;egreso
+81600;Impuesto a los Consumos Específicos Importaciones;Créditos destinados al pago de impuestos por la importación de cigarrillos y tabacos, bebida no alcohólicas y alcohólicas, alcoholes sin desnaturalizar y vehículos automóviles.;egreso
+81700;Impuesto Especial a los Hidrocarburos y sus Derivados Mercado Interno;Créditos destinados a las empresas comercializadoras de hidrocarburos para el pago del impuesto especial a los Hidrocarburos y sus derivados de importaciones.;egreso
+81800;Impuesto Especial a los Hidrocarburos y sus Derivados Importación;Créditos destinados a las empresas comercializadoras de hidrocarburos para el pago de Impuesto Especial a los Hidrocarburos y sus Derivados de Importación.;egreso
+81900;Otros Impuestos;Créditos destinados a cubrir otros impuestos no detallados anteriormente como por ejemplo:;egreso
+81910;Impuesto a las Salidas Aéreas al Exterior;;egreso
+81950;Impuesto a la Transmisión Gratuita de Bienes- ITGB;;egreso
+81960;Impuesto a las Transacciones Financieras – ITF;;egreso
+81990;Otros;;egreso
+82000;Renta Aduanera;Gastos realizados por las instituciones públicas destinados a cubrir las obligaciones impositivas por importaciones realizadas.;egreso
+82100;Gravamen Arancelario;Créditos destinados al pago del gravamen sobre el valor de las importaciones CIF Frontera o CIF Aduana que ingresen a recintos aduaneros, de acuerdo al medio de transporte utilizado.;egreso
+83000;Impuestos Municipales;Gastos realizados por las entidades públicas destinados a cubrir las obligaciones impositivas por tenencia de bienes inmuebles y vehículos automotores, y las transferencias de estos bienes.;egreso
+83100;Impuesto a la Propiedad de Bienes;Créditos destinados al pago de los impuestos a la propiedad de bienes inmuebles y vehículos automotores situados o registrados en el territorio nacional, recaudados por las municipalidades en cuya jurisdicción se encuentren situados o registrados los mismos, de acuerdo a normativa tributaria vigente.;egreso
+83110;Bienes Inmuebles;;egreso
+83120;Vehículos Automotores;;egreso
+83200;Impuesto a las Transferencias onerosas de bienes inmuebles y vehículos automotores;Créditos destinados al pago del impuesto que grava a la transferencia de bienes inmuebles y vehículos automotores, de acuerdo a normativa vigente.;egreso
+83210;Bienes Inmuebles;;egreso
+83220;Vehículos Automotores;;egreso
+84000;Regalías;Gastos realizados por las instituciones públicas destinados al pago de regalías por la explotación de recursos agropecuarios, yacimientos mineros, petrolíferos y otros.;egreso
+84100;Regalías Mineras;Créditos destinados al pago de regalías por la explotación de yacimientos mineros.;egreso
+84200;Regalías por Hidrocarburos;Créditos destinados al pago de regalías por la explotación de yacimientos petrolíferos.;egreso
+84230;6% Participación TGN;;egreso
+84240;11% Sobre Producción por Regalías Departamentales;;egreso
+84250;1% Sobre Producción para Regalías Compensatoria Departamental;;egreso
+84300;Regalías Agropecuarias;Créditos destinados al pago de regalías por la explotación de recursos agropecuarios.;egreso
+84900;Otras Regalías;Créditos destinados al pago de regalías por la explotación de otros recursos no descritos anteriormente.;egreso
+85000;Tasas, Multas y Otros;Gastos realizados por las instituciones públicas destinados al pago por concepto de tasas, derechos, multas, intereses penales, acuotaciones y otros.;egreso
+85100;Tasas;Créditos destinados al pago por la prestación efectiva de un servicio público individualizado en el contribuyente, como el arancel de derechos reales, peajes, valores fiscales, servicio civil y otros.;egreso
+85200;Derechos;Créditos destinados al pago por la prestación efectiva de derechos administrativos, como ser matrículas e inscripciones en instituciones públicas y otros.;egreso
+85300;Contribuciones por Mejoras;Créditos destinados al pago para la ejecución de obras de mejoramiento público.;egreso
+85400;Multas;Créditos destinados al pago por concepto de penas pecuniarias originadas en el incumplimiento del ordenamiento legal vigente.;egreso
+85500;Intereses Penales;Créditos destinados al pago de penas pecuniarias debido a la falta de pago o pago atrasado por la entrega de un bien o la prestación de un servicio público.;egreso
+85900;Otros;Créditos destinados al pago de otros conceptos no clasificados anteriormente, incluye el pago de presentación de planillas salariales al Registro Obligatorio de Empleadores – ROE, y acuotaciones a la ASFI.;egreso
+86000;Patentes;Gastos realizados por las entidades públicas destinados a cubrir el costo por el uso y aprovechamiento de bienes de dominio público y la realización de actividades económicas en una determinada jurisdicción territorial.;egreso
+86100;Patentes;;egreso
+90000;OTROS GASTOS;"Gastos destinados a intereses por operaciones de las instituciones financieras; beneficios sociales y otros.";egreso
+91000;Intereses de Instituciones Financieras;"Gastos por intereses ocasionados por las operaciones regulares de las instituciones financieras; tales como los intereses que pagan los bancos a los ahorristas.";egreso
+91100;Intereses de Instituciones Públicas Financieras no Bancarias;Gastos por intereses ocasionados por las operaciones regulares financieras que realizan las Instituciones Financieras no Bancarias.;egreso
+91200;Intereses de Instituciones Públicas Financieras Bancarias;Gastos por intereses ocasionados por las operaciones regulares financieras que realizan las Instituciones Financieras Bancarias.;egreso
+92000;Otros Gastos Financieros;Gastos destinados a cubrir costos emergentes de operaciones efectuadas con activos virtuales, en el marco de la normativa vigente.;egreso
+92100;Gastos Financieros por Operaciones con Activos Virtuales;Gastos derivados de las operaciones con activos virtuales en el marco de la normativa vigente.;egreso
+94000;Beneficios Sociales y Otros;Gastos destinados a cubrir el pago por concepto de desahucio y otros de naturaleza similar.;egreso
+94100;Indemnización;Asignación de recursos destinados a cubrir pagos por concepto de retiros, de acuerdo a normativa vigente.;egreso
+94200;Desahucio;Asignación de recursos destinados a cubrir pagos por concepto derivado del incumplimiento del preaviso de retiro, de acuerdo a normativa vigente.;egreso
+94300;Otros Beneficios Sociales;Son otros gastos relacionados con beneficios sociales no contemplados en las partidas anteriores, de acuerdo a normativa vigente.;egreso
+95000;Contingencias Judiciales y otras;Gastos destinados a cubrir pagos por obligaciones legales en el marco de la normativa vigente. No incluye gastos correspondientes a servicios judiciales.;egreso
+95100;Contingencias Judiciales y otras;Gastos destinados a cubrir pagos que se originan en sentencias que tengan calidad de cosa juzgada formal y material o pronunciamientos definitivos, resultantes de procesos de carácter nacional o internacional, según corresponda, en el marco de la normativa vigente.;egreso
+96000;Otras Pérdidas y Devoluciones;"Otras pérdidas no contempladas en las partidas anteriores que suelen ocurrir en las instituciones, como ser: pérdidas por operaciones cambiarias. Incluye devoluciones de impuestos, tasas, multas, regalías cuyos pagos se hayan realizado en exceso; así como los provenientes de organismos financiadores o entidades del Sector Público, y otras que correspondan a gestiones anteriores.";egreso
+96100;Pérdidas en Operaciones Cambiarias;Pérdidas en operaciones que se realizan con divisas extranjeras y con mantenimiento de valor, por incremento o disminución del tipo de cambio.;egreso
+96200;Devoluciones;Comprende gastos por devoluciones en general tales como impuestos, tasas, multas, regalías, patentes, y otros pagados en exceso en gestiones anteriores. Incluye devoluciones por concepto de incapacidad temporal, la devolución de recursos monetizables y no monetizables al organismo financiador o entidad del Sector Público, y otras devoluciones enmarcadas en las actividades de las entidades públicas. No incluye las devoluciones de impuestos clasificados como Certificado de Devolución de Impuestos (CEDEIM).;egreso
+96900;Otras Pérdidas;Incorpora otras pérdidas no consideradas en las partidas anteriores.;egreso
+97000;Comisiones y Bonificaciones;Representan gastos por comisiones y bonificaciones a terceros por la venta de bienes o servicios.;egreso
+97100;Comisiones por Ventas;Apropiación por concepto de comisión en ventas que realizan las instituciones.;egreso
+97200;Bonificaciones por Ventas;Apropiación por concepto de bonificaciones en ventas que realizan las instituciones en sus operaciones.;egreso
+98000;Retiros de Capital;Apropiación por concepto de retiros de capital, tanto del sector público como privado.;egreso
+98100;Del Sector Público;Apropiaciones para retiros de las instituciones públicas.;egreso
+98200;Del Sector Privado;Apropiaciones para retiros de las instituciones privadas.;egreso
+98300;Pago de Dividendos;Gastos emergentes de la distribución de utilidades generadas en el periodo anterior a accionistas por participación y aporte de capital en empresas del sector público, de acuerdo a normativa vigente.;egreso
+99000;Previsiones para Gastos Corrientes y de Capital;;egreso
+99100;Previsiones para Gastos de Capital;Previsiones de recursos para financiar gastos de capital.;egreso
+99200;Previsiones para Gastos Corrientes;Previsiones de recursos para financiar contingencias y otros gastos corrientes.;egreso

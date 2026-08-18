@@ -1,13 +1,18 @@
-# Dependencias del proyecto React + Vite
+# ==========================================
+# FRONTEND - React + Vite
+# ==========================================
+
+# Dependencias
 node_modules/
 
 # Build de producción
 dist/
+build/
 
 # Caché de Vite
 .vite/
 
-# Logs de npm
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -16,11 +21,65 @@ pnpm-debug.log*
 # Caché de TypeScript
 *.tsbuildinfo
 
-# Configuración local de VS Code
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
 
-# Archivos generados por el sistema
+# ==========================================
+# BACKEND - Python / Django
+# ==========================================
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+**/__pycache__/
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+ENV/
+
+# Logs de Python/Django
+*.log
+
+# Base de datos SQLite local
+db.sqlite3
+db.sqlite3-journal
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+
+# ==========================================
+# IDE / EDITORES
+# ==========================================
+
+# Visual Studio Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# ==========================================
+# SISTEMA OPERATIVO
+# ==========================================
+
 .DS_Store
 Thumbs.db
+desktop.ini
+
+
+# ==========================================
+# ARCHIVOS TEMPORALES
+# ==========================================
+
+*.tmp
+*.temp
+*.swp
+*.swo
