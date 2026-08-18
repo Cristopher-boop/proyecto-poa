@@ -1,17 +1,61 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* MODO DÍA: Blancos, grises y AMARILLO TAM predominante */
+    --bg-base: #F8FAFC;       /* Fondo de la app (slate-50) */
+    --bg-surface: #FFFFFF;    /* Fondo de tarjetas (blanco) */
+    --bg-sidebar: #FFFFFF;    /* Sidebar blanco */
+    --border: #E2E8F0;        /* Bordes grises (slate-200) */
+    --text-main: #0F172A;     /* Texto negro (slate-900) */
+    --text-muted: #64748B;    /* Texto gris (slate-500) */
+    
+    --theme-primary: #FFCD05;       /* Amarillo TAM */
+    --theme-primary-hover: #CCAC2D; /* Amarillo oscuro TAM */
+    --theme-primary-text: #33312A;  /* Texto oscuro sobre botón amarillo */
+  }
+
+  .dark {
+    /* MODO NOCHE: Azules TAM puros */
+    --bg-base: #1E2736;       /* Fondo de la app (brand-700) */
+    --bg-surface: #272B33;    /* Fondo de tarjetas (brand-800) */
+    --bg-sidebar: #2B2E33;    /* Sidebar el más oscuro (brand-900) */
+    --border: #263E69;        /* Bordes azul medio (brand-600) */
+    --text-main: #FFFFFF;     /* Texto blanco puro */
+    --text-muted: #AECAEF;    /* Texto gris-azulado claro (brand-200) */
+    
+    --theme-primary: #19499C;       /* Azul Base TAM para botones */
+    --theme-primary-hover: #4A7FCC; /* Azul claro para hover */
+    --theme-primary-text: #FFFFFF;  /* Texto blanco sobre botón azul */
+  }
+
   html { @apply antialiased; }
-  body { @apply bg-slate-50 text-slate-900 font-sans m-0; }
-  h1, h2, h3, h4 { @apply font-display; }
-  ::selection { background: #FFCD05; color: #19499C; }
-  :focus-visible { outline: 2px solid #FFCD05; outline-offset: 2px; }
+
+  body {
+    @apply bg-theme-base text-theme-main font-sans m-0 transition-colors duration-200;
+  }
+
+  h1, h2, h3, h4, h5, h6, p, span {
+    @apply transition-colors duration-200;
+  }
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-xl border border-slate-200 shadow-panel;
+    @apply bg-theme-surface border border-theme-border shadow-panel dark:shadow-panel-dark rounded-2xl transition-colors duration-200 overflow-hidden;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-theme-primary px-4 py-2.5 
+           text-sm font-semibold text-theme-primaryText shadow-sm transition-all duration-200
+           hover:bg-theme-primaryHover active:scale-[.98] disabled:opacity-50;
+  }
+
+  .input-theme {
+    @apply w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 
+           text-sm text-theme-main placeholder:text-theme-muted transition-colors duration-200
+           focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none;
   }
 }
