@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ArrowLeftRight, BookOpenText, Building2, LayoutDashboard, WalletCards } from "lucide-react";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
 import MainLayout from "./components/layout/MainLayout";
 import type { ModuleKey } from "./components/layout/Sidebar";
 
@@ -87,12 +91,33 @@ function EmptyModule({ module }: { module: Exclude<ModuleKey, "dashboard"> }) {
   );
 }
 
-export default function App() {
+function AppShell() {
   const [activeModule, setActiveModule] = useState<ModuleKey>("dashboard");
 
   return (
     <MainLayout activeModule={activeModule} onModuleChange={setActiveModule}>
       {activeModule === "dashboard" ? <Dashboard /> : <EmptyModule module={activeModule} />}
     </MainLayout>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          {/* Ruta pública */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Rutas protegidas */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<AppShell />} />
+          </Route>
+
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

@@ -1,8 +1,28 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, ChevronDown, LogOut, User } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const initials = user
+    ? (user.first_name?.[0] ?? user.username[0]).toUpperCase()
+    : "U";
+
+  const displayName = user?.first_name
+    ? `${user.first_name} ${user.last_name ?? ""}`.trim()
+    : user?.username ?? "Usuario";
+
+  const displayRole = user?.rol_nombre ?? user?.cargo ?? "Administrador";
+
+  function handleLogout() {
+    setMenuOpen(false);
+    logout();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <header className="h-16 sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-[#19499C]/10 flex items-center justify-between px-6 shadow-sm">
@@ -33,11 +53,11 @@ export default function Navbar() {
             className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-lg hover:bg-[#19499C]/5 transition-colors"
           >
             <div className="w-8 h-8 rounded-full bg-[#19499C] text-white flex items-center justify-center text-sm font-semibold ring-2 ring-[#FFCD05]/30">
-              U
+              {initials}
             </div>
             <div className="hidden sm:block text-left leading-tight">
-              <p className="text-sm font-medium text-[#19499C]">Usuario</p>
-              <p className="text-xs text-slate-500">Administrador</p>
+              <p className="text-sm font-medium text-[#19499C]">{displayName}</p>
+              <p className="text-xs text-slate-500">{displayRole}</p>
             </div>
             <ChevronDown size={16} className="text-[#19499C]/55" />
           </button>
@@ -47,7 +67,11 @@ export default function Navbar() {
               <button type="button" className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#19499C]/5 text-[#19499C]">
                 <User size={16} /> Mi perfil
               </button>
-              <button type="button" className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 text-red-600">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 text-red-600"
+              >
                 <LogOut size={16} /> Cerrar sesión
               </button>
             </div>
