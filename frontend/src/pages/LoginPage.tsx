@@ -25,7 +25,7 @@ export default function LoginPage() {
     }
 
     try {
-      await login(username, password);
+      await login({ username, password });
     } catch (err: any) {
       setError(err.response?.data?.detail || "Credenciales incorrectas o error de conexión.");
     }
@@ -117,3 +117,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
