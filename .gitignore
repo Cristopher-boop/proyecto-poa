@@ -30,6 +30,12 @@ pnpm-debug.log*
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+**/__pycache__/
 
 # Entornos virtuales
 venv/
