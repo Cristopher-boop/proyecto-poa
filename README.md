@@ -118,6 +118,37 @@ python seed_admin.py
 
 ---
 
+## 📥 6. Importación Inicial de Partidas Presupuestarias
+
+El catálogo oficial de partidas (ingresos y gastos) se carga desde un CSV mediante un *management command* dedicado.
+
+### Formato esperado del CSV
+- Delimitador: `;`
+- Encabezados: `partida;nombre;descripsion;clase`
+- Valores de `clase`: `ingreso` | `egreso`
+
+### Mapeo de `clase`
+| Valor en CSV | Valor en `Partida.clase` |
+|---|---|
+| `ingreso` | `INGRESO` |
+| `egreso`  | `GASTO` |
+
+> Nota: `GASTO_CORRIENTE` y `GASTO_CAPITAL` siguen existiendo para clasificación económica manual; `INGRESO`/`GASTO` se usan para la carga masiva inicial, ya que el CSV fuente no distingue corriente/capital.
+
+### Ejecución
+```powershell
+python manage.py migrate
+python manage.py import_partidas
+### Ubicación del archivo fuente
+El CSV vive en el propio módulo: `backend/apps/presupuestos/data/partidas_presupuestarias.csv`.
+```
+
+El comando hace `update_or_create` por `(codigo, clase)`, por lo que se puede ejecutar varias veces sin duplicar registros.
+
+
+
+---
+
 ## 🚀 4. Ejecución del Servidor y Acceso
 
 Para iniciar el servidor de desarrollo:
