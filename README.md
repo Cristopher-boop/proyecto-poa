@@ -71,7 +71,7 @@ proyecto-poa/
 Desde la raíz del proyecto (`proyecto-poa`):
 ```powershell
 cd backend
-python -m venv venv
+python -m venv venv o jhair "& "C:\Users\ASUS\AppData\Local\Programs\Python\Python314\python.exe" -m venv venv"
 .\venv\Scripts\Activate.ps1
 ```
 
@@ -149,7 +149,57 @@ Si tú tienes la base de datos e iniciaste el servidor y tus compañeros quieren
 
 ## 🗺️ 6. Próximos Pasos
 
-1. [ ] Desarrollar los **Serializers** y **ViewSets** (CRUDs y Endpoints de negocio en Django REST Framework).
-2. [ ] Configurar autenticación mediante **JWT (SimpleJWT)** para login desde el frontend.
-3. [ ] Implementar la capa de servicios (`services.py`) para validaciones automáticas de saldos y traspasos.
-4. [ ] Inicializar la aplicación **React con Vite, Tailwind CSS / Shadcn UI** y enrutamiento protegido.
+```bash
+node -v
+```
+
+## Instalación
+
+1. Instala las dependencias:
+
+```bash
+cd frontend
+npm install
+```
+
+## Ejecutar en desarrollo
+
+```bash
+npm run dev
+```
+
+Esto levanta el servidor de Vite. Abre en el navegador:
+
+```
+http://localhost:5173
+```
+
+## Otros comandos
+
+```bash
+npm run build     # compila TypeScript y genera el build de producción en /dist
+npm run preview   # sirve localmente el build de producción
+npm run lint      # corre ESLint sobre src/
+```
+
+## Variables de entorno
+
+Definidas en `.env`:
+
+```
+VITE_API_BASE_URL=http://localhost:8000/api
+VITE_APP_NAME=SIGEP
+```
+
+Ajusta `VITE_API_BASE_URL` cuando el backend Django esté disponible.
+
+## Estado del proyecto
+
+Módulos con navegación funcionando pero **sin lógica de negocio real** (pantallas vacías / placeholders):
+
+- Organizacional
+- Presupuestos (Partidas, Techos por área)
+- Memorias (Listado, Formulario, Revisión)
+- Traspasos
+
+El Dashboard muestra datos de ejemplo (mock) hasta que se conecte el backend.
