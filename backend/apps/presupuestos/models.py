@@ -24,6 +24,8 @@ class Partida(TimeStampedModel):
     class ClasePartida(models.TextChoices):
         GASTO_CORRIENTE = 'GASTO_CORRIENTE', 'Gasto Corriente'
         GASTO_CAPITAL = 'GASTO_CAPITAL', 'Gasto de Capital / Inversión'
+        INGRESO = 'INGRESO', 'Ingreso'       
+        GASTO = 'GASTO', 'Gasto (sin clasificar)'
 
     codigo = models.CharField(max_length=20, verbose_name="Código")
     nombre = models.CharField(max_length=200, verbose_name="Nombre")
