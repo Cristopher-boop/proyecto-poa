@@ -10,14 +10,14 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('memorias', '0001_initial'),
+        ('ejecucion', '0002_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='registromemoriausuario',
-            name='usuario',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memorias_asociadas', to=settings.AUTH_USER_MODEL, verbose_name='Usuario'),
+            model_name='gasto',
+            name='usuario_registro',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='gastos_registrados', to=settings.AUTH_USER_MODEL, verbose_name='Registrado por'),
         ),
     ]
