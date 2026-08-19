@@ -22,7 +22,9 @@ python manage.py makemigrations
 python manage.py migrate
 
 # Poblar la base de datos con Programas, Áreas y Secciones (Script inicial)
+python seed_admin.py
 python manage.py seed_organizacional
+python manage.py import_partidas
 
 # Crear un superusuario (para acceder al sistema y al /admin)
 python manage.py createsuperuser
