@@ -8,17 +8,16 @@ from apps.usuarios.models import Usuario
 class MemoriaCalculo(TimeStampedModel):
     class EstadoMemoria(models.TextChoices):
         BORRADOR = 'BORRADOR', 'Borrador'
-        ENVIADO_REVISION = 'ENVIADO_REVISION', 'Enviado para Revisión'
-        APROBADO = 'APROBADO', 'Aprobado'
+        PENDIENTE_GERENCIA = 'PENDIENTE_GERENCIA', 'Pendiente de Gerencia'
+        APROBADO_GERENCIA = 'APROBADO_GERENCIA', 'Aprobado por Gerencia'
+        APROBADO_FINANZAS = 'APROBADO_FINANZAS', 'Aprobado por Finanzas'
         RECHAZADO = 'RECHAZADO', 'Rechazado'
-        EJECUTADO = 'EJECUTADO', 'Ejecutado'
 
     codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
     gestion = models.ForeignKey(Gestion, on_delete=models.CASCADE, related_name='memorias_calculo', verbose_name="Gestión")
     seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE, related_name='memorias_calculo', verbose_name="Sección")
     justificacion = models.TextField(verbose_name="Justificación")
     estado = models.CharField(max_length=20, choices=EstadoMemoria.choices, default=EstadoMemoria.BORRADOR, verbose_name="Estado")
-    observacion_revision = models.TextField(blank=True, null=True, verbose_name="Observación Revisión")
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Aprobación")
 
     class Meta:
@@ -31,8 +30,8 @@ class MemoriaCalculo(TimeStampedModel):
 class RegistroMemoriaUsuario(TimeStampedModel):
     class TipoParticipacion(models.TextChoices):
         ELABORADOR = 'ELABORADOR', 'Elaborador de la Memoria'
-        EJECUTOR = 'EJECUTOR', 'Responsable de Ejecutar la Tarea'
-        REVISOR_APROBADOR = 'REVISOR_APROBADOR', 'Revisor / Aprobador'
+        REVISOR = 'REVISOR', 'Revisor'
+        APROBADOR = 'APROBADOR', 'Aprobador'
 
     memoria = models.ForeignKey(MemoriaCalculo, on_delete=models.CASCADE, related_name='participaciones', verbose_name="Memoria")
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='memorias_asociadas', verbose_name="Usuario")
@@ -47,9 +46,9 @@ class RegistroMemoriaUsuario(TimeStampedModel):
 
 class DetallePresupuestoMemoria(TimeStampedModel):
     class EstadoGasto(models.TextChoices):
-        PENDIENTE = 'PENDIENTE', 'Pendiente de Gasto'
-        EJECUTADO = 'EJECUTADO', 'Gasto Realizado / Ejecutado'
-        NO_EJECUTADO = 'NO_EJECUTADO', 'No Ejecutado / Cancelado'
+        PENDIENTE = 'PENDIENTE', 'Pendiente'
+        EJECUTADO_PARCIAL = 'EJECUTADO_PARCIAL', 'Ejecutado Parcialmente'
+        COMPLETADO = 'COMPLETADO', 'Completado'
 
     memoria = models.ForeignKey(MemoriaCalculo, on_delete=models.CASCADE, related_name='detalles', verbose_name="Memoria")
     partida = models.ForeignKey(Partida, on_delete=models.CASCADE, related_name='detalles_memoria', verbose_name="Partida")

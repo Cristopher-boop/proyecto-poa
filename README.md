@@ -100,7 +100,7 @@ DB_PORT=3306
 ### Paso 4: Migrar las Tablas a MySQL
 Con Laragon iniciado (*Start All*), crea la estructura de tablas corriendo:
 ```powershell
-python manage.py makemigrations core organizacional usuarios presupuestos memorias traspasos
+python manage.py makemigrations core organizacional usuarios presupuestos memorias ejecucion
 python manage.py migrate
 ```
 
