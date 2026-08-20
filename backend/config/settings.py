@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'apps.usuarios',
     'apps.presupuestos',
     'apps.memorias',
-    'apps.traspasos',
+    'apps.ejecucion',
 ]
 
 MIDDLEWARE = [
