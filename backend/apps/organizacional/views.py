@@ -1,38 +1,117 @@
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 from .models import Programa, Area, Seccion
 from .serializers import ProgramaSerializer, AreaSerializer, SeccionSerializer
 
 
 class ProgramaViewSet(viewsets.ModelViewSet):
-    queryset = Programa.objects.all().order_by('codigo')
+    queryset = (
+        Programa.objects.all()
+        .prefetch_related('areas__secciones')
+        .order_by('codigo')
+    )
     serializer_class = ProgramaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail=True, methods=['get'])
+    def areas(self, request, pk=None):
+        programa = self.get_object()
+        areas = programa.areas.filter(estado=True).order_by('codigo')
+        return Response(AreaSerializer(areas, many=True).data)
+
+    @action(detail=True, methods=['get'])
+    def secciones(self, request, pk=None):
+        programa = self.get_object()
+        secciones = (
+            Seccion.objects
+            .filter(area__programa=programa, estado=True)
+            .select_related('area')
+            .order_by('nombre')
+        )
+        return Response(SeccionSerializer(secciones, many=True).data)
+
 
 class AreaViewSet(viewsets.ModelViewSet):
-    queryset = Area.objects.select_related('programa').prefetch_related('secciones').all().order_by('codigo')
+    queryset = (
+        Area.objects
+        .select_related('programa')
+        .prefetch_related('secciones')
+        .all()
+        .order_by('codigo')
+    )
     serializer_class = AreaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         qs = super().get_queryset()
         programa_id = self.request.query_params.get('programa')
+        if not programa_id:
+            programa_id = self.request.query_params.get('programa_id')
         tipo = self.request.query_params.get('tipo')
+        estado = self.request.query_params.get('estado')
+
         if programa_id:
             qs = qs.filter(programa_id=programa_id)
         if tipo:
             qs = qs.filter(tipo=tipo)
+        if estado is not None:
+            qs = qs.filter(estado=estado.lower() in ('true', '1', 'si', 'activo'))
+
         return qs
+
+    @action(detail=True, methods=['get'])
+    def secciones(self, request, pk=None):
+        area = self.get_object()
+        secciones = area.secciones.filter(estado=True).order_by('nombre')
+        return Response(SeccionSerializer(secciones, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def por_programa(self, request):
+        programa_id = request.query_params.get('programa_id') or request.query_params.get('programa')
+        if not programa_id:
+            return Response(
+                {'error': 'Se requiere programa_id'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        areas = self.get_queryset().filter(programa_id=programa_id, estado=True)
+        return Response(self.get_serializer(areas, many=True).data)
 
 
 class SeccionViewSet(viewsets.ModelViewSet):
-    queryset = Seccion.objects.select_related('area').all().order_by('nombre')
+    queryset = (
+        Seccion.objects
+        .select_related('area', 'area__programa')
+        .all()
+        .order_by('nombre')
+    )
     serializer_class = SeccionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         qs = super().get_queryset()
         area_id = self.request.query_params.get('area')
+        if not area_id:
+            area_id = self.request.query_params.get('area_id')
+        estado = self.request.query_params.get('estado')
+
         if area_id:
             qs = qs.filter(area_id=area_id)
+        if estado is not None:
+            qs = qs.filter(estado=estado.lower() in ('true', '1', 'si', 'activo'))
+
         return qs
+
+    @action(detail=False, methods=['get'])
+    def por_area(self, request):
+        area_id = request.query_params.get('area_id') or request.query_params.get('area')
+        if not area_id:
+            return Response(
+                {'error': 'Se requiere area_id'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        secciones = self.get_queryset().filter(area_id=area_id, estado=True)
+        return Response(self.get_serializer(secciones, many=True).data)
