@@ -21,10 +21,14 @@ cd backend
 python manage.py makemigrations
 python manage.py migrate
 
-# Poblar la base de datos con Programas, Áreas y Secciones (Script inicial)
-python seed_admin.py
+# 1. Poblar Estructura Organizacional (Programas, Áreas y Secciones)
 python manage.py seed_organizacional
-python manage.py import_partidas
+
+# 2. Poblar Consolidado TAMEP (Partidas y Grupos Presupuestarios)
+python manage.py seed_consolidado
+
+# 3. Poblar Memorias de Cálculo detalladas desde el archivo Excel oficial (300+ memorias, 1400+ detalles)
+python manage.py seed_memorias
 
 # Crear un superusuario (para acceder al sistema y al /admin)
 python manage.py createsuperuser
@@ -55,4 +59,5 @@ npm run dev
 
 - **Autenticación:** Utiliza JWT (SimpleJWT). Las llamadas al backend deben enviar el encabezado `Authorization: Bearer <token>`.
 - **Axios Interceptors:** El frontend renueva el token automáticamente por detrás si este expira y el `refresh_token` aún es válido.
+- **Memorias de Cálculo & Consolidado:** Los comandos `seed_consolidado` y `seed_memorias` procesan automáticamente el archivo Excel oficial ubicado en `temporal/1. CONSOLIDADO GENERAL POA 2026 OFICIAL.xlsx` y cargan 302 memorias de cálculo con sus 1,454 detalles presupuestarios individuales a la base de datos MySQL.
 - **Tailwind y CSS:** La arquitectura del diseño está en `tailwind.config.js` e `index.css`, utilizando variables nativas (`--bg-base`, `--theme-primary`) para habilitar el modo Dark / Light automáticamente con la paleta de colores institucional.
