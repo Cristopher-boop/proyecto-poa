@@ -18,6 +18,7 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
     queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area').prefetch_related('detalles__partida', 'participaciones__usuario').all().order_by('-created_at')
     serializer_class = MemoriaCalculoSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()
