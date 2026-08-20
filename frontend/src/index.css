@@ -33,6 +33,9 @@
 
   html { @apply antialiased; }
 
+    html.dark { color-scheme: dark; }
+    html.light { color-scheme: light; }
+
   body {
     @apply bg-theme-base text-theme-main font-sans m-0 transition-colors duration-200;
   }
