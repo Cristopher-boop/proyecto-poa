@@ -8,8 +8,10 @@ from django.db import transaction
 from apps.presupuestos.models import Partida
 
 CLASE_MAP = {
-    'ingreso': Partida.ClasePartida.INGRESO,
-    'egreso': Partida.ClasePartida.GASTO,
+    'ingreso': Partida.ClasePartida.GASTO_CORRIENTE,
+    'egreso': Partida.ClasePartida.GASTO_CORRIENTE,
+    'gasto_corriente': Partida.ClasePartida.GASTO_CORRIENTE,
+    'gasto_capital': Partida.ClasePartida.GASTO_CAPITAL,
 }
 
 

@@ -1,23 +1,47 @@
-﻿import { useState } from "react";
-import { ArrowLeftRight, BookOpenText, ChevronsLeft, ChevronsRight, ClipboardList, LayoutDashboard, WalletCards, Building2 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  ClipboardList,
+  LayoutDashboard,
+  WalletCards,
+  BookOpenText,
+  TrendingDown,
+  Building2,
+} from "lucide-react";
 
-export type ModuleKey = "dashboard" | "organizacional" | "presupuestos" | "memorias" | "traspasos";
+export type ModuleKey = "dashboard" | "presupuestos" | "memorias" | "ejecucion" | "organizacional";
 
-interface SidebarProps {
-  activeModule: ModuleKey;
-  onModuleChange: (module: ModuleKey) => void;
+interface ModuleItem {
+  key: ModuleKey;
+  label: string;
+  icon: any;
+  path: string;
 }
 
-const modules = [
-  { key: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
-  { key: "organizacional" as const, label: "Organizacional", icon: Building2 },
-  { key: "presupuestos" as const, label: "Presupuestos", icon: WalletCards },
-  { key: "memorias" as const, label: "Memorias", icon: BookOpenText },
-  { key: "traspasos" as const, label: "Traspasos", icon: ArrowLeftRight },
+const modules: ModuleItem[] = [
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { key: "presupuestos", label: "Presupuestos & POA", icon: WalletCards, path: "/presupuestos" },
+  { key: "memorias", label: "Memorias de Cálculo", icon: BookOpenText, path: "/memorias" },
+  { key: "ejecucion", label: "Ejecución Presupuestaria", icon: TrendingDown, path: "/ejecucion" },
+  { key: "organizacional", label: "Estructura Org.", icon: Building2, path: "/organizacional" },
 ];
 
-export default function Sidebar({ activeModule, onModuleChange }: SidebarProps) {
+export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const getActiveKey = (): ModuleKey => {
+    if (location.pathname.startsWith('/memorias')) return 'memorias';
+    if (location.pathname.startsWith('/ejecucion')) return 'ejecucion';
+    if (location.pathname.startsWith('/presupuestos')) return 'presupuestos';
+    if (location.pathname.startsWith('/organizacional')) return 'organizacional';
+    return 'dashboard';
+  };
+
+  const activeKey = getActiveKey();
 
   return (
     <aside className={`h-screen sticky top-0 flex flex-col bg-theme-sidebar border-r border-theme-border transition-all duration-200 ${collapsed ? "w-[76px]" : "w-64"}`}>
@@ -39,15 +63,17 @@ export default function Sidebar({ activeModule, onModuleChange }: SidebarProps) 
         )}
 
         <div className="space-y-0.5">
-          {modules.map(({ key, label, icon: Icon }) => {
-            const active = activeModule === key;
+          {modules.map(({ key, label, icon: Icon, path }) => {
+            const active = activeKey === key;
             return (
               <button
                 key={key}
                 type="button"
-                onClick={() => onModuleChange(key)}
+                onClick={() => navigate(path)}
                 className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                  active ? "bg-theme-primary text-theme-primaryText shadow-sm" : "text-theme-muted hover:bg-theme-border/50 hover:text-theme-main"
+                  active
+                    ? "bg-theme-primary text-theme-primaryText shadow-sm font-semibold"
+                    : "text-theme-muted hover:bg-theme-border/50 hover:text-theme-main"
                 }`}
                 title={collapsed ? label : undefined}
               >
@@ -64,7 +90,7 @@ export default function Sidebar({ activeModule, onModuleChange }: SidebarProps) 
           <div className="mb-3 rounded-xl border border-theme-border bg-theme-base px-3 py-2.5">
             <div className="flex items-center gap-2 text-xs text-theme-muted">
               <ClipboardList size={14} />
-              <span>Espacio para widgets</span>
+              <span>Superadministrador</span>
             </div>
           </div>
         )}
