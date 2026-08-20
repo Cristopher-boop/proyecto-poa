@@ -15,14 +15,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  XCircle,
   Layers,
   Receipt,
   FileText,
   ArrowRight,
   BookOpenText,
-  ShieldCheck,
-  BarChart3,
+  ChevronLeft,
 } from 'lucide-react';
 import {
   Gestion,
@@ -58,25 +56,31 @@ export default function PresupuestosPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // UI states
-  const [showModalGestion, setShowModalGestion] = useState(false);
-  const [nuevoAnio, setNuevoAnio] = useState(new Date().getFullYear() + 1);
-
-  // Drill-down: área seleccionada para ver detalle
+  // UI Navigation states
+  const [viewMode, setViewMode] = useState<'general' | 'area' | 'seccion'>('general');
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
+  const [selectedSeccionId, setSelectedSeccionId] = useState<number | null>(null);
+  const [tabSeccion, setTabSeccion] = useState<'presupuesto' | 'gastos'>('presupuesto');
+
   const [detalleArea, setDetalleArea] = useState<DetalleArea | null>(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
 
-  // Expansión de secciones / memorias
-  const [expandedSecciones, setExpandedSecciones] = useState<Set<number>>(new Set());
+  // UI state for creating gestion
+  const [showModalGestion, setShowModalGestion] = useState(false);
+  const [nuevoAnio, setNuevoAnio] = useState(new Date().getFullYear() + 1);
+
+  // Expansiones en vista sección
   const [expandedMemorias, setExpandedMemorias] = useState<Set<number>>(new Set());
   const [expandedPartidas, setExpandedPartidas] = useState<Set<string>>(new Set());
 
   useEffect(() => { cargarBase(); }, []);
   useEffect(() => { if (selectedGestionId) cargarDatos(selectedGestionId); }, [selectedGestionId]);
   useEffect(() => {
-    if (selectedGestionId && selectedAreaId) cargarDetalleArea(selectedGestionId, selectedAreaId);
-    else setDetalleArea(null);
+    if (selectedGestionId && selectedAreaId) {
+      cargarDetalleArea(selectedGestionId, selectedAreaId);
+    } else {
+      setDetalleArea(null);
+    }
   }, [selectedGestionId, selectedAreaId]);
 
   async function cargarBase() {
@@ -106,7 +110,6 @@ export default function PresupuestosPage() {
 
   async function cargarDetalleArea(gId: number, aId: number) {
     setDetalleLoading(true);
-    setExpandedSecciones(new Set());
     setExpandedMemorias(new Set());
     setExpandedPartidas(new Set());
     try {
@@ -153,13 +156,23 @@ export default function PresupuestosPage() {
     );
   };
 
-  const toggleSeccion = (id: number) => {
-    setExpandedSecciones(prev => {
-      const s = new Set(prev);
-      s.has(id) ? s.delete(id) : s.add(id);
-      return s;
-    });
-  };
+  // Navegación
+  function irAGeneral() {
+    setViewMode('general');
+    setSelectedAreaId(null);
+    setSelectedSeccionId(null);
+  }
+
+  function irAArea(areaId: number) {
+    setSelectedAreaId(areaId);
+    setSelectedSeccionId(null);
+    setViewMode('area');
+  }
+
+  function irASeccion(seccionId: number) {
+    setSelectedSeccionId(seccionId);
+    setViewMode('seccion');
+  }
 
   const toggleMemoria = (id: number) => {
     setExpandedMemorias(prev => {
@@ -177,7 +190,7 @@ export default function PresupuestosPage() {
     });
   };
 
-  // Acciones de gestión
+  // Acciones de la gestión
   async function handleCerrarFormulacion() {
     if (!selectedGestionId || !confirm('¿Desea cerrar la formulación? Se consolidarán automáticamente los techos presupuestarios.')) return;
     setActionLoading(true);
@@ -234,6 +247,7 @@ export default function PresupuestosPage() {
     finally { setActionLoading(false); }
   }
 
+  // Cálculos globales
   const totalInicial = useMemo(() =>
     presupuestosArea.reduce((a, p) => a + parseFloat(p.monto_inicial || '0'), 0), [presupuestosArea]);
   const totalEjecutado = useMemo(() =>
@@ -244,8 +258,42 @@ export default function PresupuestosPage() {
     totalInicial > 0 ? Math.min(100, Math.round(totalEjecutado / totalInicial * 10000) / 100) : 0,
     [totalInicial, totalEjecutado]);
 
-  const selectedAreaPresupuesto = useMemo(() =>
-    presupuestosArea.find(p => p.area === selectedAreaId) || null, [presupuestosArea, selectedAreaId]);
+  // Sección activa en vista sección
+  const seccionActivaData = useMemo(() => {
+    if (viewMode !== 'seccion' || !detalleArea || !selectedSeccionId) return null;
+    return detalleArea.secciones.find(s => s.seccion_id === selectedSeccionId) || null;
+  }, [viewMode, detalleArea, selectedSeccionId]);
+
+  // Recolectar egresos cronológicos de la sección activa
+  const todosLosGastosSeccion = useMemo(() => {
+    if (!seccionActivaData) return [];
+    const list: Array<{
+      gasto_id: number;
+      fecha_gasto: string;
+      monto: string;
+      comprobante: string;
+      observacion: string;
+      item_descripcion: string;
+      memoria_codigo: string;
+      partida_codigo: string;
+      partida_nombre: string;
+    }> = [];
+
+    seccionActivaData.memorias.forEach(mem => {
+      mem.partidas.forEach(part => {
+        part.gastos_detalle.forEach(g => {
+          list.push({
+            ...g,
+            memoria_codigo: mem.memoria_codigo,
+            partida_codigo: part.partida_codigo,
+            partida_nombre: part.partida_nombre
+          });
+        });
+      });
+    });
+
+    return list.sort((a, b) => new Date(b.fecha_gasto).getTime() - new Date(a.fecha_gasto).getTime());
+  }, [seccionActivaData]);
 
   if (loading) {
     return (
@@ -260,7 +308,7 @@ export default function PresupuestosPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Feedback */}
+      {/* Feedback de acciones */}
       {feedbackMsg && (
         <div className={`p-4 rounded-xl flex items-center justify-between shadow-md ${
           feedbackMsg.type === 'success'
@@ -295,7 +343,10 @@ export default function PresupuestosPage() {
               <span className="text-xs font-semibold text-theme-muted">Gestión:</span>
               <select
                 value={selectedGestionId || ''}
-                onChange={e => setSelectedGestionId(Number(e.target.value))}
+                onChange={e => {
+                  setSelectedGestionId(Number(e.target.value));
+                  irAGeneral();
+                }}
                 className="bg-transparent font-bold text-sm text-theme-main focus:outline-none"
               >
                 {gestiones.map(g => (
@@ -337,7 +388,7 @@ export default function PresupuestosPage() {
           </div>
         </div>
 
-        {/* Badge de estado actual de la gestión */}
+        {/* Banner Informativo */}
         {activeGestion && (
           <div className="mt-4 flex flex-wrap gap-3">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${
@@ -355,405 +406,556 @@ export default function PresupuestosPage() {
         )}
       </div>
 
-      {/* KPI Cards Globales */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Presupuesto Inicial</span>
-            <div className="p-2 rounded-xl bg-blue-500/10"><DollarSign size={16} className="text-blue-600 dark:text-blue-400" /></div>
-          </div>
-          <p className="text-xl font-bold text-theme-main">{formatMoney(totalInicial)}</p>
-          <p className="text-[11px] text-theme-muted mt-1">{presupuestosArea.length} áreas con techo asignado</p>
-        </div>
-
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Total Ejecutado</span>
-            <div className="p-2 rounded-xl bg-rose-500/10"><TrendingDown size={16} className="text-rose-600 dark:text-rose-400" /></div>
-          </div>
-          <p className="text-xl font-bold text-rose-600 dark:text-rose-400">{formatMoney(totalEjecutado)}</p>
-          <p className="text-[11px] text-theme-muted mt-1">Gastos reales registrados</p>
-        </div>
-
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Saldo Disponible</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10"><WalletCards size={16} className="text-emerald-600 dark:text-emerald-400" /></div>
-          </div>
-          <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(totalDisponible)}</p>
-          <p className="text-[11px] text-theme-muted mt-1">Fondos aún disponibles</p>
-        </div>
-
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">% Ejecutado</span>
-            <div className="p-2 rounded-xl bg-amber-500/10"><BarChart3 size={16} className="text-amber-600 dark:text-amber-400" /></div>
-          </div>
-          <p className="text-xl font-bold text-theme-main">{pctGlobal}%</p>
-          <div className="w-full bg-theme-border/60 rounded-full h-1.5 mt-2 overflow-hidden">
-            <div className={`h-full ${pctGlobal > 85 ? 'bg-rose-500' : pctGlobal > 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-              style={{ width: `${pctGlobal}%` }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Accesos Rápidos a módulos relacionados */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button onClick={() => navigate('/memorias')}
-          className="card p-4 flex items-center gap-4 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all text-left group">
-          <div className="p-3 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-            <BookOpenText size={22} className="text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-sm text-theme-main">Módulo de Memorias de Cálculo</p>
-            <p className="text-xs text-theme-muted mt-0.5">Formular, revisar y aprobar memorias de cálculo por área y gestión</p>
-          </div>
-          <ArrowRight size={18} className="text-theme-muted group-hover:text-blue-600 transition-colors" />
+      {/* Breadcrumbs de Navegación */}
+      <div className="flex items-center gap-2 px-1 text-xs font-medium text-theme-muted bg-theme-base p-2.5 rounded-xl border border-theme-border/60 font-semibold">
+        <button onClick={irAGeneral} className="hover:text-theme-primary transition-colors flex items-center gap-1">
+          <WalletCards size={13} /> Presupuestos
         </button>
-
-        <button onClick={() => navigate('/ejecucion')}
-          className="card p-4 flex items-center gap-4 hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-md transition-all text-left group">
-          <div className="p-3 rounded-xl bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors">
-            <TrendingDown size={22} className="text-rose-600 dark:text-rose-400" />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-sm text-theme-main">Módulo de Ejecución Presupuestaria</p>
-            <p className="text-xs text-theme-muted mt-0.5">Registrar gastos, controlar comprobantes y monitorear saldos en tiempo real</p>
-          </div>
-          <ArrowRight size={18} className="text-theme-muted group-hover:text-rose-600 transition-colors" />
-        </button>
-      </div>
-
-      {/* Sección Principal: Panel de Áreas + Detalle */}
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
-
-        {/* Lista de Áreas con techos presupuestarios */}
-        <div className="xl:col-span-2 space-y-2">
-          <div className="flex items-center justify-between px-1 mb-3">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-theme-muted flex items-center gap-2">
-              <Building2 size={15} /> Áreas / Gerencias
-            </h2>
-            <span className="text-xs text-theme-muted">{presupuestosArea.length > 0 ? `${presupuestosArea.length} con techo` : 'Sin datos'}</span>
-          </div>
-
-          {presupuestosArea.length === 0 ? (
-            <div className="card p-8 text-center">
-              <Building2 size={32} className="mx-auto mb-3 opacity-30 text-theme-muted" />
-              <p className="text-sm font-medium text-theme-muted">Sin presupuestos consolidados</p>
-              <p className="text-xs text-theme-muted mt-1">
-                {activeGestion?.estado === 'FORMULACION'
-                  ? 'Cierra la formulación para consolidar los techos.'
-                  : 'Aprueba memorias de cálculo y consolida los presupuestos.'}
-              </p>
-            </div>
-          ) : (
-            presupuestosArea.map(p => {
-              const pct = p.porcentaje_ejecucion || 0;
-              const isSelected = selectedAreaId === p.area;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedAreaId(isSelected ? null : p.area)}
-                  className={`w-full text-left card p-4 transition-all hover:shadow-md ${
-                    isSelected ? 'ring-2 ring-theme-primary bg-theme-primary/5' : 'hover:border-theme-primary/40'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-theme-border/80 text-theme-muted font-mono">
-                          {p.area_codigo}
-                        </span>
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                          p.area_tipo === 'GERENCIA' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300'
-                        }`}>{p.area_tipo}</span>
-                      </div>
-                      <p className="text-sm font-semibold text-theme-main leading-tight truncate">{p.area_nombre}</p>
-                    </div>
-                    <ChevronRight size={15} className={`text-theme-muted mt-1 shrink-0 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                    <div>
-                      <p className="text-[10px] text-theme-muted">Inicial</p>
-                      <p className="text-xs font-bold text-theme-main">{formatMoney(p.monto_inicial)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-theme-muted">Ejecutado</p>
-                      <p className="text-xs font-bold text-rose-600 dark:text-rose-400">{formatMoney(p.monto_ejecutado)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-theme-muted">Disponible</p>
-                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(p.monto_actual)}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-2.5 w-full bg-theme-border/60 rounded-full h-1.5 overflow-hidden">
-                    <div className={`h-full transition-all ${pct > 80 ? 'bg-rose-500' : pct > 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                      style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-[10px] text-theme-muted text-right mt-0.5">{pct}% ejecutado</p>
-                </button>
-              );
-            })
-          )}
-
-          {/* Áreas sin techo asignado todavía */}
-          {areas.filter(a => !presupuestosArea.find(p => p.area === a.id)).map(a => (
-            <button key={a.id}
-              onClick={() => setSelectedAreaId(selectedAreaId === a.id ? null : a.id)}
-              className={`w-full text-left card p-4 opacity-60 hover:opacity-80 transition-all ${
-                selectedAreaId === a.id ? 'ring-2 ring-theme-primary' : ''
-              }`}
+        {selectedAreaId && (
+          <>
+            <ChevronRight size={12} />
+            <button
+              onClick={() => irAArea(selectedAreaId)}
+              className={`hover:text-theme-primary transition-colors ${viewMode === 'area' ? 'text-theme-main font-bold' : ''}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-theme-border/80 text-theme-muted">{a.codigo}</span>
-              </div>
-              <p className="text-sm font-semibold text-theme-main">{a.nombre}</p>
-              <p className="text-[11px] text-theme-muted mt-1">Sin presupuesto asignado en Gestión {activeGestion?.anio}</p>
+              {detalleArea?.area_nombre || `Área ${selectedAreaId}`}
             </button>
-          ))}
-        </div>
+          </>
+        )}
+        {selectedSeccionId && seccionActivaData && (
+          <>
+            <ChevronRight size={12} />
+            <span className="text-theme-main font-bold">
+              {seccionActivaData.seccion_nombre}
+            </span>
+          </>
+        )}
+      </div>
 
-        {/* Panel de Detalle del Área seleccionada */}
-        <div className="xl:col-span-3">
-          {!selectedAreaId ? (
-            <div className="card p-12 text-center h-full flex flex-col items-center justify-center">
-              <Building2 size={42} className="text-theme-muted/40 mb-4" />
-              <p className="font-semibold text-theme-muted">Selecciona un Área</p>
-              <p className="text-xs text-theme-muted mt-1">Haz clic en un área para ver el desglose financiero por sección, memoria de cálculo y partida presupuestaria.</p>
+      {/* VISTA GENERAL: Cards de Áreas */}
+      {viewMode === 'general' && (
+        <div className="space-y-6">
+          {/* KPI Cards Globales */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="card p-5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-theme-muted block">Presupuesto Inicial</span>
+              <p className="text-2xl font-bold text-theme-main mt-1.5">{formatMoney(totalInicial)}</p>
             </div>
-          ) : detalleLoading ? (
-            <div className="card p-12 text-center h-full flex flex-col items-center justify-center">
-              <RefreshCw size={24} className="animate-spin text-theme-muted mb-3" />
-              <p className="text-sm text-theme-muted">Cargando desglose financiero...</p>
+            <div className="card p-5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-theme-muted block">Total Ejecutado</span>
+              <p className="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1.5">{formatMoney(totalEjecutado)}</p>
+            </div>
+            <div className="card p-5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-theme-muted block">Saldo Disponible</span>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1.5">{formatMoney(totalDisponible)}</p>
+            </div>
+            <div className="card p-5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-theme-muted block">% Ejecutado</span>
+              <p className="text-2xl font-bold text-theme-main mt-1.5">{pctGlobal}%</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {presupuestosArea.map(p => {
+              const pct = p.porcentaje_ejecucion || 0;
+              return (
+                <div key={p.id} className="card p-5 flex flex-col justify-between hover:border-theme-primary/40 hover:shadow-md transition-all">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-theme-border/85 text-theme-muted font-mono">
+                        {p.area_codigo}
+                      </span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                        p.area_tipo === 'GERENCIA' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300'
+                      }`}>{p.area_tipo}</span>
+                    </div>
+                    <h3 className="text-base font-bold text-theme-main leading-tight line-clamp-2 min-h-[2.5rem]">
+                      {p.area_nombre}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-2 mt-4">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-theme-muted">Presupuesto Inicial:</span>
+                      <span className="font-bold text-theme-main">{formatMoney(p.monto_inicial)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-theme-muted">Gasto Ejecutado:</span>
+                      <span className="font-bold text-rose-600 dark:text-rose-400">{formatMoney(p.monto_ejecutado)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs border-t border-theme-border/60 pt-1.5">
+                      <span className="text-theme-muted font-medium">Disponible:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(p.monto_actual)}</span>
+                    </div>
+
+                    <div className="w-full bg-theme-border/60 rounded-full h-2 mt-3 overflow-hidden">
+                      <div className={`h-full transition-all ${pct > 80 ? 'bg-rose-500' : pct > 50 ? 'bg-amber-500' : 'bg-theme-primary'}`}
+                        style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-theme-muted mt-1">
+                      <span>Progreso de Ejecución</span>
+                      <span className="font-bold text-theme-main">{pct}%</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => irAArea(p.area)}
+                    className="btn-primary mt-5 text-xs py-2 w-full flex items-center justify-center gap-1.5 bg-theme-primary/10 text-theme-primary hover:bg-theme-primary hover:text-white"
+                  >
+                    Ingresar al Área <ArrowRight size={14} />
+                  </button>
+                </div>
+              );
+            })}
+
+            {/* Áreas sin presupuesto inicial asignado */}
+            {areas.filter(a => !presupuestosArea.find(p => p.area === a.id)).map(a => (
+              <div key={a.id} className="card p-5 opacity-60 flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-theme-border/80 text-theme-muted">{a.codigo}</span>
+                  <h3 className="text-base font-bold text-theme-main mt-2 leading-tight">{a.nombre}</h3>
+                </div>
+                <div className="mt-6">
+                  <p className="text-xs text-theme-muted">Sin presupuesto formulado en la Gestión {activeGestion?.anio}.</p>
+                  <button
+                    onClick={() => irAArea(a.id)}
+                    className="w-full border border-theme-border/80 hover:bg-theme-base/60 text-xs text-theme-muted font-bold py-2 mt-4 rounded-xl flex items-center justify-center gap-1"
+                  >
+                    Ver detalles de sección
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* VISTA DETALLE DE ÁREA: Secciones */}
+      {viewMode === 'area' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <button onClick={irAGeneral} className="flex items-center gap-1.5 text-xs font-bold text-theme-primary hover:underline">
+              <ChevronLeft size={16} /> Volver a General
+            </button>
+          </div>
+
+          {detalleLoading ? (
+            <div className="card p-12 text-center">
+              <RefreshCw size={24} className="animate-spin mx-auto text-theme-muted mb-3" />
+              <p className="text-sm text-theme-muted">Cargando secciones...</p>
             </div>
           ) : !detalleArea ? (
-            <div className="card p-12 text-center h-full flex flex-col items-center justify-center">
-              <FileText size={36} className="text-theme-muted/40 mb-3" />
-              <p className="font-semibold text-theme-muted">Sin memorias registradas</p>
-              <p className="text-xs text-theme-muted mt-1">Esta área no tiene memorias de cálculo en la gestión seleccionada.</p>
-              <button onClick={() => navigate('/memorias')} className="btn-primary mt-4 text-xs flex items-center gap-1.5">
-                <BookOpenText size={14} /> Ir a Módulo de Memorias
-              </button>
+            <div className="card p-12 text-center">
+              <FileText size={36} className="mx-auto mb-3 opacity-30 text-theme-muted" />
+              <p className="text-sm font-semibold text-theme-muted">Área sin presupuesto configurado</p>
+              <p className="text-xs text-theme-muted mt-1">No hay presupuestos ni memorias para este periodo.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Header del Área */}
-              <div className="card p-5">
-                <div className="flex items-start justify-between gap-3">
+            <div className="space-y-6">
+              {/* Resumen del Área */}
+              <div className="card p-5 bg-gradient-to-r from-theme-surface to-theme-base/30">
+                <h2 className="text-xl font-bold text-theme-main">{detalleArea.area_nombre}</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-theme-border/80 text-theme-muted">{detalleArea.area_codigo}</span>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
-                        detalleArea.area_tipo === 'GERENCIA' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300'
-                      }`}>{detalleArea.area_tipo}</span>
-                    </div>
-                    <h2 className="text-lg font-bold text-theme-main">{detalleArea.area_nombre}</h2>
-                    <p className="text-xs text-theme-muted">Gestión {detalleArea.gestion_anio}</p>
+                    <span className="text-[10px] text-theme-muted uppercase font-semibold">Techo Inicial</span>
+                    <p className="text-lg font-bold text-theme-main mt-0.5">{formatMoney(detalleArea.monto_inicial)}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] text-theme-muted uppercase font-semibold">% Ejecución</p>
-                    <p className="text-2xl font-bold text-theme-main">{detalleArea.porcentaje_ejecucion}%</p>
+                  <div>
+                    <span className="text-[10px] text-theme-muted uppercase font-semibold">Monto Ejecutado</span>
+                    <p className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5">{formatMoney(detalleArea.monto_ejecutado)}</p>
                   </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-3 gap-3">
-                  <div className="p-3 rounded-xl bg-theme-base border border-theme-border text-center">
-                    <p className="text-[10px] font-semibold uppercase text-theme-muted">Presupuesto Inicial</p>
-                    <p className="text-sm font-bold text-theme-main mt-0.5">{formatMoney(detalleArea.monto_inicial)}</p>
+                  <div>
+                    <span className="text-[10px] text-theme-muted uppercase font-semibold">Disponible</span>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{formatMoney(detalleArea.monto_actual)}</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-rose-50/60 border border-rose-200/80 dark:bg-rose-950/30 dark:border-rose-800/60 text-center">
-                    <p className="text-[10px] font-semibold uppercase text-rose-700 dark:text-rose-400">Gastado</p>
-                    <p className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-0.5">{formatMoney(detalleArea.monto_ejecutado)}</p>
+                  <div>
+                    <span className="text-[10px] text-theme-muted uppercase font-semibold">Porcentaje de Avance</span>
+                    <p className="text-lg font-bold text-theme-main mt-0.5">{detalleArea.porcentaje_ejecucion}%</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200/80 dark:bg-emerald-950/30 dark:border-emerald-800/60 text-center">
-                    <p className="text-[10px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">Disponible</p>
-                    <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{formatMoney(detalleArea.monto_actual)}</p>
-                  </div>
-                </div>
-
-                <div className="mt-3 w-full bg-theme-border/60 rounded-full h-2 overflow-hidden">
-                  <div className={`h-full transition-all ${detalleArea.porcentaje_ejecucion > 80 ? 'bg-rose-500' : detalleArea.porcentaje_ejecucion > 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                    style={{ width: `${detalleArea.porcentaje_ejecucion}%` }} />
                 </div>
               </div>
 
-              {/* Desglose por Sección */}
-              {detalleArea.secciones.length === 0 ? (
-                <div className="card p-8 text-center">
-                  <p className="text-sm text-theme-muted">No hay secciones con memorias registradas.</p>
-                </div>
-              ) : (
-                detalleArea.secciones.map(seccion => {
-                  const secExpanded = expandedSecciones.has(seccion.seccion_id);
-                  const pctSec = parseFloat(seccion.total_presupuestado) > 0
-                    ? Math.min(100, Math.round(parseFloat(seccion.total_gastado) / parseFloat(seccion.total_presupuestado) * 10000) / 100)
-                    : 0;
+              {/* Grid de Secciones */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {detalleArea.secciones.map(sec => {
+                  const pres = parseFloat(sec.total_presupuestado);
+                  const gast = parseFloat(sec.total_gastado);
+                  const disp = parseFloat(sec.total_disponible);
+                  const pct = pres > 0 ? Math.min(100, Math.round(gast / pres * 10000) / 100) : 0;
 
                   return (
-                    <div key={seccion.seccion_id} className="card overflow-hidden">
-                      {/* Cabecera de sección */}
+                    <div key={sec.seccion_id} className="card p-5 flex flex-col justify-between hover:border-theme-primary/40 hover:shadow-md transition-all">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="p-1 rounded bg-theme-primary/10 text-theme-primary"><Layers size={14} /></span>
+                          <span className="text-[10px] font-bold text-theme-muted uppercase">Sección Operativa</span>
+                        </div>
+                        <h3 className="text-base font-bold text-theme-main min-h-[2.5rem] line-clamp-2 leading-snug">
+                          {sec.seccion_nombre}
+                        </h3>
+                        <p className="text-xs text-theme-muted mt-1">{sec.memorias.length} memoria(s) de cálculo formuladas.</p>
+                      </div>
+
+                      <div className="space-y-2 mt-5 border-t border-theme-border/60 pt-4">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-theme-muted">Presupuesto Formulado:</span>
+                          <span className="font-semibold text-theme-main">{formatMoney(pres)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-theme-muted">Gasto Real:</span>
+                          <span className="font-semibold text-rose-600 dark:text-rose-400">{formatMoney(gast)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-theme-muted font-medium">Disponible:</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(disp)}</span>
+                        </div>
+
+                        <div className="w-full bg-theme-border/60 rounded-full h-1.5 mt-3 overflow-hidden">
+                          <div className={`h-full ${pct > 80 ? 'bg-rose-500' : pct > 50 ? 'bg-amber-500' : 'bg-theme-primary'}`}
+                            style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+
                       <button
-                        onClick={() => toggleSeccion(seccion.seccion_id)}
-                        className="w-full flex items-center gap-3 p-4 hover:bg-theme-border/20 transition-colors text-left"
+                        onClick={() => irASeccion(sec.seccion_id)}
+                        className="btn-primary mt-5 text-xs py-2 w-full flex items-center justify-center gap-1.5 bg-theme-primary/10 text-theme-primary hover:bg-theme-primary hover:text-white"
                       >
-                        <div className={`p-1.5 rounded-lg ${secExpanded ? 'bg-theme-primary/15 text-theme-primary' : 'bg-theme-border/60 text-theme-muted'}`}>
-                          <Layers size={15} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-theme-main">{seccion.seccion_nombre}</span>
-                            <span className="text-[10px] text-theme-muted">({seccion.memorias.length} memória{seccion.memorias.length !== 1 ? 's' : ''})</span>
-                          </div>
-                          <div className="flex items-center gap-4 mt-0.5 text-[11px]">
-                            <span className="text-theme-muted">Presup: <strong className="text-theme-main">{formatMoney(seccion.total_presupuestado)}</strong></span>
-                            <span className="text-rose-600 dark:text-rose-400">Gasto: <strong>{formatMoney(seccion.total_gastado)}</strong></span>
-                            <span className="text-emerald-600 dark:text-emerald-400">Disp: <strong>{formatMoney(seccion.total_disponible)}</strong></span>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className={`text-xs font-bold ${pctSec > 80 ? 'text-rose-600' : pctSec > 50 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                            {pctSec}%
-                          </span>
-                        </div>
-                        <ChevronDown size={16} className={`text-theme-muted transition-transform ${secExpanded ? 'rotate-180' : ''}`} />
+                        Explorar Presupuestos <ArrowRight size={14} />
                       </button>
-
-                      {/* Contenido expandido de sección */}
-                      {secExpanded && (
-                        <div className="border-t border-theme-border divide-y divide-theme-border/60">
-                          {seccion.memorias.length === 0 ? (
-                            <div className="p-6 text-center text-xs text-theme-muted">Sin memorias en esta sección.</div>
-                          ) : (
-                            seccion.memorias.map(memoria => {
-                              const memExpanded = expandedMemorias.has(memoria.memoria_id);
-                              return (
-                                <div key={memoria.memoria_id}>
-                                  {/* Cabecera de Memoria */}
-                                  <button
-                                    onClick={() => toggleMemoria(memoria.memoria_id)}
-                                    className="w-full flex items-center gap-3 p-3.5 pl-8 hover:bg-theme-border/15 transition-colors text-left"
-                                  >
-                                    <FileText size={14} className="text-theme-muted shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-mono text-xs font-bold text-theme-main">{memoria.memoria_codigo}</span>
-                                        {getBadgeEstado(memoria.estado)}
-                                        <span className="text-[10px] text-theme-muted">{memoria.partidas.length} partida{memoria.partidas.length !== 1 ? 's' : ''}</span>
-                                      </div>
-                                      <p className="text-[11px] text-theme-muted mt-0.5 line-clamp-1">{memoria.justificacion}</p>
-                                    </div>
-                                    <div className="text-right text-[11px] shrink-0">
-                                      <p className="text-theme-main font-semibold">{formatMoney(memoria.total_presupuestado)}</p>
-                                      <p className="text-rose-600 dark:text-rose-400">{formatMoney(memoria.total_gastado)} gasto</p>
-                                    </div>
-                                    <ChevronDown size={14} className={`text-theme-muted transition-transform shrink-0 ${memExpanded ? 'rotate-180' : ''}`} />
-                                  </button>
-
-                                  {/* Partidas de la Memoria */}
-                                  {memExpanded && (
-                                    <div className="pl-12 pr-4 pb-3 space-y-2">
-                                      {memoria.partidas.length === 0 ? (
-                                        <p className="text-xs text-theme-muted py-2">Sin partidas asociadas.</p>
-                                      ) : (
-                                        memoria.partidas.map(partida => {
-                                          const pKey = `${memoria.memoria_id}-${partida.partida_codigo}`;
-                                          const prtExpanded = expandedPartidas.has(pKey);
-                                          const pctP = parseFloat(partida.presupuestado) > 0
-                                            ? Math.min(100, Math.round(parseFloat(partida.gastado) / parseFloat(partida.presupuestado) * 10000) / 100)
-                                            : 0;
-
-                                          return (
-                                            <div key={pKey} className="border border-theme-border/80 rounded-xl overflow-hidden">
-                                              <button
-                                                onClick={() => togglePartida(pKey)}
-                                                className="w-full flex items-center gap-3 p-3 hover:bg-theme-border/20 transition-colors text-left"
-                                              >
-                                                <div className="flex-1 min-w-0">
-                                                  <div className="flex items-center gap-2">
-                                                    <span className="font-mono text-[11px] font-bold text-theme-muted">{partida.partida_codigo}</span>
-                                                    <span className="text-xs font-medium text-theme-main truncate">{partida.partida_nombre}</span>
-                                                  </div>
-                                                  <div className="flex items-center gap-3 mt-1 text-[10px]">
-                                                    <span className="text-theme-muted">Presup: <strong className="text-theme-main">{formatMoney(partida.presupuestado)}</strong></span>
-                                                    <span className="text-rose-600 dark:text-rose-400">Gasto: <strong>{formatMoney(partida.gastado)}</strong></span>
-                                                    <span className="text-emerald-600 dark:text-emerald-400">Saldo: <strong>{formatMoney(partida.disponible)}</strong></span>
-                                                  </div>
-                                                  <div className="w-full bg-theme-border/60 rounded-full h-1 mt-1.5 overflow-hidden">
-                                                    <div className={`h-full ${pctP > 80 ? 'bg-rose-500' : pctP > 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                                      style={{ width: `${pctP}%` }} />
-                                                  </div>
-                                                </div>
-                                                <div className="shrink-0 flex items-center gap-2">
-                                                  {partida.gastos_detalle.length > 0 && (
-                                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
-                                                      {partida.gastos_detalle.length} gasto{partida.gastos_detalle.length !== 1 ? 's' : ''}
-                                                    </span>
-                                                  )}
-                                                  <ChevronDown size={13} className={`text-theme-muted transition-transform ${prtExpanded ? 'rotate-180' : ''}`} />
-                                                </div>
-                                              </button>
-
-                                              {/* Gastos individuales de la partida */}
-                                              {prtExpanded && (
-                                                <div className="border-t border-theme-border/60 bg-theme-base/60">
-                                                  {partida.gastos_detalle.length === 0 ? (
-                                                    <p className="p-4 text-xs text-center text-theme-muted">Sin gastos ejecutados en esta partida.</p>
-                                                  ) : (
-                                                    <table className="w-full text-xs border-collapse">
-                                                      <thead>
-                                                        <tr className="text-[10px] font-semibold uppercase text-theme-muted border-b border-theme-border/60">
-                                                          <th className="py-2 px-3 text-left">Fecha</th>
-                                                          <th className="py-2 px-3 text-left">Ítem / Descripción</th>
-                                                          <th className="py-2 px-3 text-left">N° Comprobante</th>
-                                                          <th className="py-2 px-3 text-left">Observación</th>
-                                                          <th className="py-2 px-3 text-right">Monto</th>
-                                                        </tr>
-                                                      </thead>
-                                                      <tbody className="divide-y divide-theme-border/40">
-                                                        {partida.gastos_detalle.map(g => (
-                                                          <tr key={g.gasto_id} className="hover:bg-theme-border/20">
-                                                            <td className="py-2 px-3 font-mono text-theme-muted whitespace-nowrap">{g.fecha_gasto}</td>
-                                                            <td className="py-2 px-3 text-theme-main font-medium">{g.item_descripcion}</td>
-                                                            <td className="py-2 px-3 font-mono text-theme-muted">{g.comprobante || 'S/N'}</td>
-                                                            <td className="py-2 px-3 text-theme-muted">{g.observacion || '—'}</td>
-                                                            <td className="py-2 px-3 text-right font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                                                              {formatMoney(g.monto)}
-                                                            </td>
-                                                          </tr>
-                                                        ))}
-                                                      </tbody>
-                                                      <tfoot>
-                                                        <tr className="border-t border-theme-border/60 bg-theme-base">
-                                                          <td colSpan={4} className="py-2 px-3 text-[10px] font-bold uppercase text-theme-muted text-right">Total gastado en partida:</td>
-                                                          <td className="py-2 px-3 text-right font-bold text-rose-600 dark:text-rose-400 text-xs">{formatMoney(partida.gastado)}</td>
-                                                        </tr>
-                                                      </tfoot>
-                                                    </table>
-                                                  )}
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      )}
                     </div>
                   );
-                })
-              )}
+                })}
+              </div>
             </div>
           )}
         </div>
-      </div>
+      )}
+
+      {/* VISTA DETALLE DE SECCIÓN: Memorias, Partidas y Gastos detallados con fecha */}
+      {viewMode === 'seccion' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <button onClick={() => irAArea(selectedAreaId!)} className="flex items-center gap-1.5 text-xs font-bold text-theme-primary hover:underline">
+              <ChevronLeft size={16} /> Volver al Área
+            </button>
+          </div>
+
+          {seccionActivaData ? (
+            <div className="space-y-6">
+              {/* Banner de Sección */}
+              <div className="card p-5 bg-gradient-to-r from-theme-surface to-theme-base/30">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-theme-border text-theme-muted font-mono uppercase">
+                      {detalleArea?.area_codigo} — Sección
+                    </span>
+                    <h2 className="text-lg font-bold text-theme-main mt-1">{seccionActivaData.seccion_nombre}</h2>
+                    <p className="text-xs text-theme-muted mt-0.5">Área: {detalleArea?.area_nombre}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] text-theme-muted font-semibold uppercase block">Memorias</span>
+                    <span className="text-xl font-bold text-theme-main">{seccionActivaData.memorias.length}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 mt-5">
+                  <div className="p-3 rounded-xl bg-theme-base border border-theme-border text-center">
+                    <p className="text-[10px] font-semibold text-theme-muted uppercase">Presupuestado</p>
+                    <p className="text-base font-bold text-theme-main mt-0.5">{formatMoney(seccionActivaData.total_presupuestado)}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50/60 border border-rose-200/80 dark:bg-rose-950/30 dark:border-rose-800/60 text-center">
+                    <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-400 uppercase">Ejecutado</p>
+                    <p className="text-base font-bold text-rose-600 dark:text-rose-400 mt-0.5">{formatMoney(seccionActivaData.total_gastado)}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200/80 dark:bg-emerald-950/30 dark:border-emerald-800/60 text-center">
+                    <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase">Disponible</p>
+                    <p className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{formatMoney(seccionActivaData.total_disponible)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sub-Tabs de Sección */}
+              <div className="flex border-b border-theme-border gap-2">
+                <button
+                  onClick={() => setTabSeccion('presupuesto')}
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+                    tabSeccion === 'presupuesto' ? 'border-theme-primary text-theme-main font-extrabold' : 'border-transparent text-theme-muted hover:text-theme-main'
+                  }`}
+                >
+                  <Layers size={14} /> Estructura POA y Partidas
+                </button>
+                <button
+                  onClick={() => setTabSeccion('gastos')}
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+                    tabSeccion === 'gastos' ? 'border-rose-500 text-rose-600 font-extrabold' : 'border-transparent text-theme-muted hover:text-theme-main'
+                  }`}
+                >
+                  <Receipt size={14} /> Libro Auxiliar de Gastos ({
+                    seccionActivaData.memorias.reduce((total, m) =>
+                      total + m.partidas.reduce((ptotal, p) => ptotal + p.gastos_detalle.length, 0), 0
+                    )
+                  })
+                </button>
+              </div>
+
+              {tabSeccion === 'presupuesto' ? (
+                /* Listado de Memorias de Cálculo */
+                <div className="space-y-4">
+                  <div className="px-1">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-theme-muted">
+                      Estructura y Desglose de Presupuestos Formulados
+                    </h3>
+                  </div>
+
+                  {seccionActivaData.memorias.length === 0 ? (
+                    <div className="card p-10 text-center text-theme-muted">
+                      No hay memorias de cálculo aprobadas en esta sección.
+                    </div>
+                  ) : (
+                    seccionActivaData.memorias.map(memoria => {
+                      const memExpanded = expandedMemorias.has(memoria.memoria_id);
+                      return (
+                        <div key={memoria.memoria_id} className="card overflow-hidden">
+                          {/* Cabecera de Memoria */}
+                          <button
+                            onClick={() => toggleMemoria(memoria.memoria_id)}
+                            className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 text-left hover:bg-theme-border/10 transition-colors"
+                          >
+                            <div className="flex items-start gap-2.5 min-w-0">
+                              <FileText size={18} className="text-theme-muted shrink-0 mt-0.5" />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-mono text-sm font-bold text-theme-main">{memoria.memoria_codigo}</span>
+                                  {getBadgeEstado(memoria.estado)}
+                                </div>
+                                <p className="text-xs text-theme-muted mt-1 leading-normal">{memoria.justificacion}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-4 ml-auto sm:ml-0 shrink-0 text-right">
+                              <div>
+                                <p className="text-[10px] text-theme-muted font-semibold">PRESUPUESTADO</p>
+                                <p className="text-sm font-bold text-theme-main">{formatMoney(memoria.total_presupuestado)}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-theme-muted font-semibold">SALDO DISPONIBLE</p>
+                                <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(memoria.total_disponible)}</p>
+                              </div>
+                              <ChevronDown size={18} className={`text-theme-muted transition-transform ${memExpanded ? 'rotate-180' : ''}`} />
+                            </div>
+                          </button>
+
+                          {/* Partidas y gastos asociados de la memoria */}
+                          {memExpanded && (
+                            <div className="border-t border-theme-border bg-theme-base/20 p-4 space-y-4">
+                              {memoria.partidas.length === 0 ? (
+                                <p className="text-xs text-theme-muted text-center py-2">Sin partidas asignadas en esta memoria.</p>
+                              ) : (
+                                memoria.partidas.map(partida => {
+                                  const pKey = `${memoria.memoria_id}-${partida.partida_codigo}`;
+                                  const prtExpanded = expandedPartidas.has(pKey);
+                                  const pctP = parseFloat(partida.presupuestado) > 0
+                                    ? Math.min(100, Math.round(parseFloat(partida.gastado) / parseFloat(partida.presupuestado) * 10000) / 100)
+                                    : 0;
+
+                                  return (
+                                    <div key={pKey} className="border border-theme-border rounded-xl bg-theme-surface overflow-hidden">
+                                      {/* Cabecera Partida */}
+                                      <button
+                                        onClick={() => togglePartida(pKey)}
+                                        className="w-full p-4 flex items-center justify-between gap-4 hover:bg-theme-border/10 transition-colors text-left"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-mono text-xs font-bold text-theme-primary">{partida.partida_codigo}</span>
+                                            <span className="text-xs font-semibold text-theme-main truncate">{partida.partida_nombre}</span>
+                                          </div>
+
+                                          <div className="grid grid-cols-3 gap-2 mt-3 text-left">
+                                            <div>
+                                              <span className="text-[10px] text-theme-muted">Presupuesto</span>
+                                              <p className="text-xs font-bold text-theme-main">{formatMoney(partida.presupuestado)}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-[10px] text-theme-muted text-rose-600">Ejecutado</span>
+                                              <p className="text-xs font-bold text-rose-600 dark:text-rose-400">{formatMoney(partida.gastado)}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-[10px] text-theme-muted text-emerald-600">Disponible</span>
+                                              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(partida.disponible)}</p>
+                                            </div>
+                                          </div>
+
+                                          <div className="w-full bg-theme-border/60 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                                            <div className={`h-full ${pctP > 80 ? 'bg-rose-500' : pctP > 50 ? 'bg-amber-500' : 'bg-theme-primary'}`}
+                                              style={{ width: `${pctP}%` }} />
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 shrink-0">
+                                          {partida.gastos_detalle.length > 0 && (
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                                              {partida.gastos_detalle.length} gasto(s)
+                                            </span>
+                                          )}
+                                          <ChevronDown size={15} className={`text-theme-muted transition-transform ${prtExpanded ? 'rotate-180' : ''}`} />
+                                        </div>
+                                      </button>
+
+                                      {/* Tabla de Gastos Ejecutados */}
+                                      {prtExpanded && (
+                                        <div className="border-t border-theme-border/80 bg-theme-base/40">
+                                          {partida.gastos_detalle.length === 0 ? (
+                                            <p className="p-4 text-xs text-center text-theme-muted">Sin gastos registrados todavía.</p>
+                                          ) : (
+                                            <div className="overflow-x-auto">
+                                              <table className="w-full text-xs border-collapse">
+                                                <thead>
+                                                  <tr className="text-[10px] font-bold uppercase text-theme-muted border-b border-theme-border/60 bg-theme-base/60">
+                                                    <th className="py-2 px-4 text-left">Fecha de Gasto</th>
+                                                    <th className="py-2 px-4 text-left">Descripción del Ítem</th>
+                                                    <th className="py-2 px-4 text-left">N° Comprobante / Factura</th>
+                                                    <th className="py-2 px-4 text-left">Observación</th>
+                                                    <th className="py-2 px-4 text-right">Monto</th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-theme-border/40">
+                                                  {partida.gastos_detalle.map(gasto => (
+                                                    <tr key={gasto.gasto_id} className="hover:bg-theme-border/10">
+                                                      <td className="py-2.5 px-4 font-mono font-semibold text-theme-muted">{gasto.fecha_gasto}</td>
+                                                      <td className="py-2.5 px-4 text-theme-main font-medium">{gasto.item_descripcion}</td>
+                                                      <td className="py-2.5 px-4 font-mono font-bold text-theme-muted">{gasto.comprobante || 'S/N'}</td>
+                                                      <td className="py-2.5 px-4 text-theme-muted">{gasto.observacion || '—'}</td>
+                                                      <td className="py-2.5 px-4 text-right font-bold text-rose-600 dark:text-rose-400">
+                                                        {formatMoney(gasto.monto)}
+                                                      </td>
+                                                    </tr>
+                                                  ))}
+                                                </tbody>
+                                                <tfoot>
+                                                  <tr className="bg-theme-base/80 font-bold border-t border-theme-border/60">
+                                                    <td colSpan={4} className="py-2 px-4 text-right uppercase text-theme-muted text-[10px]">
+                                                      Total Gastado en Partida:
+                                                    </td>
+                                                    <td className="py-2 px-4 text-right text-rose-600 dark:text-rose-400 text-xs">
+                                                      {formatMoney(partida.gastado)}
+                                                    </td>
+                                                  </tr>
+                                                </tfoot>
+                                              </table>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                /* Libro Auxiliar de Gastos - Historial Cronológico Detallado */
+                <div className="card overflow-hidden bg-theme-surface">
+                  <div className="p-4 bg-theme-base/60 border-b border-theme-border/60 flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-theme-main flex items-center gap-1.5">
+                      <Receipt size={14} className="text-rose-500" />
+                      Historial Detallado de Egresos y Gastos Ejecutados
+                    </h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                      {todosLosGastosSeccion.length} transacción(es)
+                    </span>
+                  </div>
+
+                  {todosLosGastosSeccion.length === 0 ? (
+                    <div className="p-12 text-center text-theme-muted space-y-2">
+                      <Receipt size={36} className="mx-auto opacity-30 text-rose-500" />
+                      <p className="font-semibold text-sm">Sin gastos registrados en esta sección.</p>
+                      <p className="text-xs max-w-sm mx-auto">
+                        Los gastos se registran desde el Módulo de Ejecución Presupuestaria imputando renglones aprobados.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left border-collapse">
+                        <thead>
+                          <tr className="bg-theme-base/40 text-[10px] font-bold uppercase tracking-wider text-theme-muted border-b border-theme-border/60">
+                            <th className="py-3 px-4">Fecha</th>
+                            <th className="py-3 px-4">Memoria</th>
+                            <th className="py-3 px-4">Partida Presupuestaria</th>
+                            <th className="py-3 px-4">Renglón Imputado</th>
+                            <th className="py-3 px-4">N° Comprobante / Factura</th>
+                            <th className="py-3 px-4">Justificación / Observación</th>
+                            <th className="py-3 px-4 text-right">Monto Ejecutado</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-theme-border/50">
+                          {todosLosGastosSeccion.map((gasto, index) => (
+                            <tr key={gasto.gasto_id || index} className="hover:bg-theme-border/10 transition-colors">
+                              {/* Fecha */}
+                              <td className="py-3 px-4 whitespace-nowrap">
+                                <span className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-theme-muted bg-theme-base px-2 py-0.5 rounded">
+                                  <Clock size={11} />
+                                  {gasto.fecha_gasto}
+                                </span>
+                              </td>
+                              {/* Código memoria */}
+                              <td className="py-3 px-4 font-mono font-bold text-[11px] text-theme-main">
+                                {gasto.memoria_codigo}
+                              </td>
+                              {/* Partida */}
+                              <td className="py-3 px-4">
+                                <p className="font-mono font-bold text-[11px] text-theme-main">{gasto.partida_codigo}</p>
+                                <p className="text-[10px] text-theme-muted line-clamp-1 truncate max-w-[150px]" title={gasto.partida_nombre}>
+                                  {gasto.partida_nombre}
+                                </p>
+                              </td>
+                              {/* Renglón */}
+                              <td className="py-3 px-4 font-medium text-theme-main max-w-xs">
+                                {gasto.item_descripcion}
+                              </td>
+                              {/* Comprobante */}
+                              <td className="py-3 px-4 whitespace-nowrap">
+                                <span className="font-mono font-bold px-2 py-0.5 rounded border border-theme-border bg-theme-base/40 text-theme-muted text-[11px]">
+                                  {gasto.comprobante || 'S/N'}
+                                </span>
+                              </td>
+                              {/* Observación */}
+                              <td className="py-3 px-4 text-theme-muted max-w-xs truncate" title={gasto.observacion || ''}>
+                                {gasto.observacion || '—'}
+                              </td>
+                              {/* Monto */}
+                              <td className="py-3 px-4 text-right font-extrabold text-[13px] text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                                {formatMoney(gasto.monto)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-theme-base font-bold border-t border-theme-border/60 text-xs">
+                            <td colSpan={6} className="py-3 px-4 text-right uppercase text-theme-muted text-[10px]">
+                              Total acumulado ejecutado en sección:
+                            </td>
+                            <td className="py-3 px-4 text-right text-rose-600 dark:text-rose-400 text-sm">
+                              {formatMoney(seccionActivaData.total_gastado)}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="card p-10 text-center">Sección no encontrada.</div>
+          )}
+        </div>
+      )}
 
       {/* Modal Crear Gestión */}
       {showModalGestion && (

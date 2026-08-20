@@ -16,7 +16,7 @@ export interface Partida {
   id: number;
   codigo: string;
   nombre: string;
-  clase: 'GASTO_CORRIENTE' | 'GASTO_CAPITAL';
+  clase: 'INGRESO' | 'EGRESO';
   clase_display: string;
   descripcion: string | null;
   estado: boolean;
