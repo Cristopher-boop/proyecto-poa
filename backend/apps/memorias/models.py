@@ -1,4 +1,4 @@
-﻿from django.db import models
+from django.db import models
 from decimal import Decimal
 from apps.core.models import TimeStampedModel
 from apps.presupuestos.models import Gestion, Partida
@@ -52,7 +52,7 @@ class DetallePresupuestoMemoria(TimeStampedModel):
 
     memoria = models.ForeignKey(MemoriaCalculo, on_delete=models.CASCADE, related_name='detalles', verbose_name="Memoria")
     partida = models.ForeignKey(Partida, on_delete=models.CASCADE, related_name='detalles_memoria', verbose_name="Partida")
-    descripcion = models.CharField(max_length=255, verbose_name="Descripción")
+    descripcion = models.TextField(verbose_name="Descripción")
     unidad_medida = models.CharField(max_length=50, verbose_name="Unidad de Medida")
     cantidad = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cantidad")
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Precio Unitario")
