@@ -63,35 +63,6 @@ El proyecto utiliza **SweetAlert2** para confirmaciones de acciones críticas (c
 cd frontend
 npm install sweetalert2
 ```
-
-### Uso en el proyecto (`src/utils/alerts.ts`):
-Se cuenta con un servicio centralizado que mantiene la coherencia visual con la paleta de colores institucional:
-
-```typescript
-import alertService from '../utils/alerts'; // o '../../utils/alerts'
-
-// 1. Diálogo de Confirmación (Bajas Lógicas / Eliminaciones)
-const confirmado = await alertService.confirm({
-  title: '¿Desactivar registro?',
-  text: 'El elemento pasará a estado inactivo (baja lógica).',
-  confirmButtonText: 'Sí, desactivar',
-  isDanger: true, // Estiliza el botón en color de advertencia
-});
-
-if (confirmado) {
-  // Ejecutar acción
-}
-
-// 2. Notificación de Éxito
-alertService.success('¡Operación exitosa!', 'El registro fue guardado correctamente.');
-
-// 3. Notificación de Error
-alertService.error('Error al guardar', 'No se pudo conectar con el servidor.');
-
-// 4. Toast flotante en esquina superior derecha
-alertService.toast('Acción completada', 'success');
-```
-
 ## Notas Importantes de Arquitectura
 
 - **Autenticación:** Utiliza JWT (SimpleJWT). Las llamadas al backend deben enviar el encabezado `Authorization: Bearer <token>`.
