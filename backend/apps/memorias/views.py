@@ -10,6 +10,7 @@ from .models import MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMe
 from .utils import recalcular_saldos_memoria
 from .serializers import (
     MemoriaCalculoSerializer,
+    MemoriaCalculoListSerializer,
     DetallePresupuestoMemoriaSerializer,
     RegistroMemoriaUsuarioSerializer,
     TraspasoSerializer,
@@ -18,10 +19,15 @@ from apps.presupuestos.models import Gestion
 
 
 class MemoriaCalculoViewSet(viewsets.ModelViewSet):
-    queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area').prefetch_related('detalles__partida', 'detalles__gastos', 'participaciones__usuario').all().order_by('-created_at')
+    queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area').prefetch_related('detalles__partida', 'participaciones__usuario').all().order_by('-created_at')
     serializer_class = MemoriaCalculoSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return MemoriaCalculoListSerializer
+        return MemoriaCalculoSerializer
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -157,14 +163,25 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
 
 
 class DetallePresupuestoMemoriaViewSet(viewsets.ModelViewSet):
-    queryset = DetallePresupuestoMemoria.objects.select_related('memoria', 'partida').all()
+    queryset = DetallePresupuestoMemoria.objects.select_related('memoria__seccion__area', 'memoria__gestion', 'partida').all()
     serializer_class = DetallePresupuestoMemoriaSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()
+        gestion_id = self.request.query_params.get('gestion')
+        gestion_anio = self.request.query_params.get('anio')
+        area_id = self.request.query_params.get('area')
         memoria_id = self.request.query_params.get('memoria')
         partida_id = self.request.query_params.get('partida')
+
+        if gestion_id:
+            qs = qs.filter(memoria__gestion_id=gestion_id)
+        if gestion_anio:
+            qs = qs.filter(memoria__gestion__anio=gestion_anio)
+        if area_id:
+            qs = qs.filter(memoria__seccion__area_id=area_id)
         if memoria_id:
             qs = qs.filter(memoria_id=memoria_id)
         if partida_id:

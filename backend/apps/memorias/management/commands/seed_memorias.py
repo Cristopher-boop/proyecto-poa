@@ -8,6 +8,7 @@ from django.db import transaction
 from apps.presupuestos.models import Gestion, Partida, PresupuestoArea
 from apps.organizacional.models import Area, Seccion
 from apps.memorias.models import MemoriaCalculo, DetallePresupuestoMemoria
+from apps.memorias.utils import recalcular_saldos_memoria
 
 class Command(BaseCommand):
     help = 'Limpia y puebla la BD con las Memorias de Cálculo y sus Detalles exactos desde el Excel TAMEP'
@@ -223,6 +224,8 @@ class Command(BaseCommand):
                     )
                     monto_total_memoria += detalle.precio_total
                     count_detalles += 1
+
+                recalcular_saldos_memoria(memoria)
 
                 # 5. Actualizar PresupuestoArea acumulativo
                 presupuesto_area, _ = PresupuestoArea.objects.get_or_create(

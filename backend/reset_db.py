@@ -83,6 +83,13 @@ def reset():
     except Exception as e:
         print(f"  [!] Error en seed_memorias: {e}")
 
+    print("  [*] Recalculando y poblando saldos de memorias y detalles...")
+    try:
+        call_command('recalcular_saldos')
+        print("  [OK] Saldos calculados y guardados.")
+    except Exception as e:
+        print(f"  [!] Error en recalcular_saldos: {e}")
+
     # ────────────────────────────────────────────────────────────
     # RESUMEN FINAL
     # ────────────────────────────────────────────────────────────
