@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   BookOpenText,
   Plus,
@@ -22,6 +22,9 @@ import {
   Check,
   RefreshCw,
   Sparkles,
+  ArrowRightLeft,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import {
   Gestion,
@@ -29,6 +32,8 @@ import {
   Partida,
   Area,
   Seccion,
+  Traspaso,
+  SaldoMemoria,
   getGestiones,
   getMemorias,
   createMemoria,
@@ -42,6 +47,9 @@ import {
   getPartidas,
   getAreas,
   getSecciones,
+  getTraspasos,
+  createTraspaso,
+  getSaldoMemoria,
 } from '../../services/presupuestoService';
 
 export default function MemoriasPage() {
@@ -64,6 +72,125 @@ export default function MemoriasPage() {
   const [showModalMemoria, setShowModalMemoria] = useState<boolean>(false);
   const [editingMemoria, setEditingMemoria] = useState<MemoriaCalculo | null>(null);
   const [fichaMemoria, setFichaMemoria] = useState<MemoriaCalculo | null>(null);
+
+  // Traspasos State
+  const [saldoMemoria, setSaldoMemoria] = useState<SaldoMemoria | null>(null);
+  const [traspasosHistory, setTraspasosHistory] = useState<Traspaso[]>([]);
+  const [loadingSaldoTraspasos, setLoadingSaldoTraspasos] = useState<boolean>(false);
+  const [showModalTraspaso, setShowModalTraspaso] = useState<boolean>(false);
+  const [traspasoActionLoading, setTraspasoActionLoading] = useState<boolean>(false);
+  const [traspasoErrorMsg, setTraspasoErrorMsg] = useState<string | null>(null);
+  const [formTraspaso, setFormTraspaso] = useState<{
+    memoriaDestinoId: number | '';
+    monto: number | '';
+    motivo: string;
+  }>({
+    memoriaDestinoId: '',
+    monto: '',
+    motivo: '',
+  });
+
+  // Load Saldo & Traspasos when fichaMemoria changes
+  useEffect(() => {
+    if (fichaMemoria && fichaMemoria.estado === 'APROBADO_FINANZAS') {
+      cargarSaldoYTraspasos(fichaMemoria.id);
+    } else {
+      setSaldoMemoria(null);
+      setTraspasosHistory([]);
+    }
+  }, [fichaMemoria]);
+
+  async function cargarSaldoYTraspasos(memoriaId: number) {
+    setLoadingSaldoTraspasos(true);
+    try {
+      const [saldoData, traspasosData] = await Promise.all([
+        getSaldoMemoria(memoriaId),
+        getTraspasos({ memoria: memoriaId }),
+      ]);
+      setSaldoMemoria(saldoData);
+      setTraspasosHistory(traspasosData);
+    } catch (err) {
+      console.error('Error al cargar saldo/traspasos:', err);
+    } finally {
+      setLoadingSaldoTraspasos(false);
+    }
+  }
+
+  // Memorias candidatas para destino en traspaso (Misma Área, Misma Gestión, APROBADO_FINANZAS, Distinto ID)
+  const memoriasDestinoCandidatas = useMemo(() => {
+    if (!fichaMemoria) return [];
+    return memorias.filter(
+      (m) =>
+        m.area_id === fichaMemoria.area_id &&
+        m.gestion === fichaMemoria.gestion &&
+        m.estado === 'APROBADO_FINANZAS' &&
+        m.id !== fichaMemoria.id
+    );
+  }, [memorias, fichaMemoria]);
+
+  function handleOpenTraspaso() {
+    setFormTraspaso({
+      memoriaDestinoId: memoriasDestinoCandidatas[0]?.id || '',
+      monto: '',
+      motivo: '',
+    });
+    setTraspasoErrorMsg(null);
+    setShowModalTraspaso(true);
+  }
+
+  async function handleGuardarTraspaso(e: React.FormEvent) {
+    e.preventDefault();
+    if (!fichaMemoria || !formTraspaso.memoriaDestinoId || !formTraspaso.monto || !formTraspaso.motivo.trim()) {
+      setTraspasoErrorMsg('Por favor complete todos los campos del traspaso.');
+      return;
+    }
+
+    if (fichaMemoria.gestion_estado !== 'EN_EJECUCION') {
+      setTraspasoErrorMsg('Solo se pueden realizar traspasos presupuestarios cuando la gestión se encuentra En Ejecución.');
+      return;
+    }
+
+    const montoNum = Number(formTraspaso.monto);
+    const disponibleNum = Number(saldoMemoria?.disponible || 0);
+
+    if (montoNum <= 0) {
+      setTraspasoErrorMsg('El monto debe ser mayor a 0.');
+      return;
+    }
+
+    if (montoNum > disponibleNum) {
+      setTraspasoErrorMsg(`El monto ingresado (${formatMoney(montoNum)}) supera el saldo disponible actual (${formatMoney(disponibleNum)}).`);
+      return;
+    }
+
+    setTraspasoActionLoading(true);
+    setTraspasoErrorMsg(null);
+    try {
+      await createTraspaso({
+        memoria_origen: fichaMemoria.id,
+        memoria_destino: Number(formTraspaso.memoriaDestinoId),
+        monto: montoNum,
+        motivo: formTraspaso.motivo.trim(),
+      });
+
+      mostrarMensaje('success', 'Traspaso presupuestario realizado exitosamente.');
+      setShowModalTraspaso(false);
+      await cargarSaldoYTraspasos(fichaMemoria.id);
+      if (selectedGestionId) await cargarMemorias(selectedGestionId);
+    } catch (err: any) {
+      console.error(err);
+      const errMsg =
+        err.response?.data?.non_field_errors?.[0] ||
+        err.response?.data?.monto?.[0] ||
+        err.response?.data?.memoria_destino?.[0] ||
+        err.response?.data?.memoria_origen?.[0] ||
+        err.response?.data?.detail ||
+        'Error al procesar el traspaso presupuestario.';
+      setTraspasoErrorMsg(errMsg);
+    } finally {
+      setTraspasoActionLoading(false);
+    }
+  }
 
   // Formulario
   const [formMemoria, setFormMemoria] = useState<{
@@ -146,14 +273,103 @@ export default function MemoriasPage() {
     activeGestion?.estado === 'EN_EJECUCION' ||
     activeGestion?.estado === 'FINALIZADO';
 
-  // Partidas filtradas para selector
+  const [partidaSelectorOpen, setPartidaSelectorOpen] = useState(false);
+  const partidaSelectorRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (partidaSelectorRef.current && !partidaSelectorRef.current.contains(e.target as Node)) {
+        setPartidaSelectorOpen(false);
+      }
+    }
+    if (partidaSelectorOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [partidaSelectorOpen]);
+
+  // ── Partidas de EGRESO: jerarquía de hojas ──────────────────────────────
+  // Una partida es "hoja" si ninguna otra partida tiene un código que empiece
+  // por el prefijo significativo de ésta (sin ceros finales).
+  // Ej.: 24100 → prefijo "241" → tiene hijos 24110, 24120, 24130 → NO es hoja
+  //      24110 → prefijo "2411" → nadie más empieza en "2411" → ES hoja
+  //      24200 → prefijo "242" → nadie más → ES hoja
+
+  const egresoPartidas = useMemo(
+    () => partidas.filter((p) => p.clase === 'EGRESO'),
+    [partidas]
+  );
+
+  const egresoCodes = useMemo(
+    () => egresoPartidas.map((p) => p.codigo),
+    [egresoPartidas]
+  );
+
+  const egresoLeafs = useMemo(() => {
+    return egresoPartidas.filter((p) => {
+      const prefix = p.codigo.replace(/0+$/, '');
+      if (!prefix) return false; // código todo-ceros → padre
+      // Si ALGÚN otro código empieza con este prefijo → es padre, no hoja
+      return !egresoCodes.some((c) => c !== p.codigo && c.startsWith(prefix));
+    });
+  }, [egresoPartidas, egresoCodes]);
+
+  // Para cada hoja, obtener su padre directo (prefijo más largo que la engloba)
+  const parentMap = useMemo(() => {
+    const map = new Map<string, Partida>();
+    for (const leaf of egresoLeafs) {
+      const leafPrefix = leaf.codigo.replace(/0+$/, '');
+      // Todos los ancestros: otros códigos cuyo prefijo-sin-ceros es prefijo de leafPrefix
+      const ancestors = egresoPartidas.filter((p) => {
+        if (p.codigo === leaf.codigo) return false;
+        const pPrefix = p.codigo.replace(/0+$/, '');
+        return pPrefix && leafPrefix.startsWith(pPrefix);
+      });
+      // El padre directo es el ancestro con el prefijo más largo (más específico)
+      if (ancestors.length > 0) {
+        ancestors.sort(
+          (a, b) =>
+            b.codigo.replace(/0+$/, '').length - a.codigo.replace(/0+$/, '').length
+        );
+        map.set(leaf.codigo, ancestors[0]);
+      }
+    }
+    return map;
+  }, [egresoLeafs, egresoPartidas]);
+
+  // Lista de hojas filtrada por búsqueda
   const filteredPartidas = useMemo(() => {
-    if (!searchPartidaQuery.trim()) return partidas.slice(0, 20);
+    if (!searchPartidaQuery.trim()) return egresoLeafs;
     const q = searchPartidaQuery.toLowerCase();
-    return partidas
-      .filter((p) => p.codigo.toLowerCase().includes(q) || p.nombre.toLowerCase().includes(q))
-      .slice(0, 30);
-  }, [partidas, searchPartidaQuery]);
+    return egresoLeafs.filter(
+      (p) =>
+        p.codigo.toLowerCase().includes(q) ||
+        p.nombre.toLowerCase().includes(q) ||
+        parentMap.get(p.codigo)?.nombre.toLowerCase().includes(q)
+    );
+  }, [egresoLeafs, searchPartidaQuery, parentMap]);
+
+  // Hojas agrupadas por padre directo (para la vista sin búsqueda)
+  type GroupedPartidas = { parent: Partida | null; leafs: Partida[] }[];
+  const groupedPartidas = useMemo((): GroupedPartidas => {
+    const groups = new Map<string | null, { parent: Partida | null; leafs: Partida[] }>();
+    for (const leaf of filteredPartidas) {
+      const parent = parentMap.get(leaf.codigo) ?? null;
+      const key = parent ? parent.codigo : null;
+      if (!groups.has(key)) {
+        groups.set(key, { parent, leafs: [] });
+      }
+      groups.get(key)!.leafs.push(leaf);
+    }
+    // Ordenar grupos por código de padre
+    return Array.from(groups.values()).sort((a, b) => {
+      const ac = a.parent?.codigo ?? '';
+      const bc = b.parent?.codigo ?? '';
+      return ac.localeCompare(bc);
+    });
+  }, [filteredPartidas, parentMap]);
+
 
   // Contadores por estado
   const conteos = useMemo(() => {
@@ -207,10 +423,11 @@ export default function MemoriasPage() {
       codigo: `MEM-${anio}-${correlativo}`,
       seccionId: defaultSeccion,
       justificacion: '',
-      partidaId: partidas[0]?.id || '',
+      partidaId: partidas.find((p) => p.clase === 'EGRESO')?.id || '',
       renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: 0 }],
     });
     setSearchPartidaQuery('');
+    setPartidaSelectorOpen(false);
     setShowModalMemoria(true);
   }
 
@@ -220,7 +437,7 @@ export default function MemoriasPage() {
       codigo: mem.codigo,
       seccionId: mem.seccion,
       justificacion: mem.justificacion,
-      partidaId: mem.partida_id || partidas[0]?.id || '',
+      partidaId: mem.partida_id || partidas.find((p) => p.clase === 'EGRESO')?.id || '',
       renglones: mem.detalles.map((d) => ({
         descripcion: d.descripcion,
         unidad_medida: d.unidad_medida,
@@ -229,6 +446,7 @@ export default function MemoriasPage() {
       })),
     });
     setSearchPartidaQuery('');
+    setPartidaSelectorOpen(false);
     setShowModalMemoria(true);
   }
 
@@ -726,7 +944,7 @@ export default function MemoriasPage() {
             </div>
 
             <form onSubmit={handleGuardarMemoria} className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
                     Código de Memoria *
@@ -760,23 +978,155 @@ export default function MemoriasPage() {
                   </select>
                 </div>
 
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
-                    Partida Presupuestaria de Gasto *
+                    Partida Presupuestaria de Egreso *
                   </label>
-                  <select
-                    required
-                    value={formMemoria.partidaId}
-                    onChange={(e) => setFormMemoria({ ...formMemoria, partidaId: Number(e.target.value) })}
-                    className="input-theme text-xs"
-                  >
-                    <option value="">Seleccione Partida...</option>
-                    {partidas.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.codigo} - {p.nombre}
-                      </option>
-                    ))}
-                  </select>
+
+                  {/* Combobox selector de partida */}
+                  <div className="relative" ref={partidaSelectorRef}>
+                    {/* Partida seleccionada – actúa como trigger */}
+                    {(() => {
+                      const selected = partidas.find((p) => p.id === Number(formMemoria.partidaId));
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setPartidaSelectorOpen(!partidaSelectorOpen)}
+                          className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-theme-border bg-theme-surface hover:border-theme-primary focus:outline-none focus:border-theme-primary transition-colors text-left"
+                        >
+                          {selected ? (
+                            <span className="flex-1 min-w-0">
+                              <span className="font-mono font-bold text-xs text-theme-primary mr-2">
+                                {selected.codigo}
+                              </span>
+                              <span className="text-xs text-theme-main line-clamp-1">{selected.nombre}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-theme-muted">Seleccione una partida de egreso...</span>
+                          )}
+                          <svg
+                            className={`w-4 h-4 shrink-0 text-theme-muted transition-transform ${partidaSelectorOpen ? 'rotate-180' : ''}`}
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      );
+                    })()}
+
+                    {/* Dropdown con búsqueda y lista */}
+                    {partidaSelectorOpen && (
+                      <div className="absolute z-50 mt-1 w-full bg-theme-surface border border-theme-border rounded-xl shadow-xl overflow-hidden flex flex-col"
+                           style={{ maxHeight: '320px' }}>
+                        <div className="p-2 border-b border-theme-border sticky top-0 bg-theme-surface z-10">
+                          <div className="relative">
+                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                            <input
+                              autoFocus
+                              type="text"
+                              value={searchPartidaQuery}
+                              onChange={(e) => setSearchPartidaQuery(e.target.value)}
+                              placeholder="Buscar por código, nombre o grupo..."
+                              className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted"
+                            />
+                          </div>
+                          <p className="text-[10px] text-theme-muted mt-1 ml-1">
+                            {filteredPartidas.length} partidas seleccionables (solo hojas de egreso)
+                          </p>
+                        </div>
+
+                        {/* Lista de resultados agrupados */}
+                        <div className="overflow-y-auto" style={{ maxHeight: '300px' }}>
+                          {filteredPartidas.length === 0 ? (
+                            <div className="py-8 text-center text-theme-muted text-xs">
+                              No se encontraron partidas de egreso
+                            </div>
+                          ) : (
+                            groupedPartidas.map((group, gIdx) => (
+                              <div key={gIdx}>
+                                {/* Encabezado de grupo (padre – no seleccionable) */}
+                                {group.parent && (
+                                  <div className="flex items-center gap-2 px-3 py-1.5 bg-theme-base/80 border-b border-theme-border/60 sticky top-0 z-[5]">
+                                    <span className="font-mono text-[10px] font-bold text-theme-muted/70 bg-theme-border/60 px-1 rounded">
+                                      {group.parent.codigo}
+                                    </span>
+                                    <span className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide line-clamp-1">
+                                      {group.parent.nombre}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Hojas seleccionables del grupo */}
+                                {group.leafs.map((p) => {
+                                  const isActive = p.id === Number(formMemoria.partidaId);
+                                  const parent = parentMap.get(p.codigo);
+                                  return (
+                                    <button
+                                      key={p.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setFormMemoria({ ...formMemoria, partidaId: p.id });
+                                        setPartidaSelectorOpen(false);
+                                        setSearchPartidaQuery('');
+                                      }}
+                                      className={`w-full flex items-start gap-3 pl-5 pr-3 py-2.5 text-left transition-colors border-b border-theme-border/30 last:border-0 ${
+                                        isActive
+                                          ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
+                                          : 'hover:bg-theme-border/30'
+                                      }`}
+                                    >
+                                      {/* Línea de indentación visual */}
+                                      <span className="shrink-0 flex items-start pt-0.5">
+                                        <span className="w-3 h-px bg-theme-border/70 mt-2 mr-1" />
+                                      </span>
+
+                                      <span
+                                        className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
+                                          isActive
+                                            ? 'bg-theme-primary text-white'
+                                            : 'bg-theme-base text-theme-primary border border-theme-border'
+                                        }`}
+                                      >
+                                        {p.codigo}
+                                      </span>
+
+                                      <div className="flex-1 min-w-0">
+                                        <p className={`text-xs leading-tight ${isActive ? 'font-semibold text-theme-main' : 'text-theme-main'}`}>
+                                          {p.nombre}
+                                        </p>
+                                        {/* Breadcrumb de padre en modo búsqueda */}
+                                        {searchPartidaQuery.trim() && parent && (
+                                          <p className="text-[10px] text-theme-muted mt-0.5 flex items-center gap-1">
+                                            <span className="font-mono">{parent.codigo}</span>
+                                            <span className="opacity-50">›</span>
+                                            <span className="line-clamp-1">{parent.nombre}</span>
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      {isActive && (
+                                        <Check size={14} className="shrink-0 text-theme-primary mt-0.5" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hidden input for form validation */}
+                    <input
+                      type="text"
+                      required
+                      readOnly
+                      tabIndex={-1}
+                      value={formMemoria.partidaId}
+                      className="absolute opacity-0 h-0 w-0 pointer-events-none"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1027,6 +1377,145 @@ export default function MemoriasPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Bloque de Saldo Presupuestario y Traspasos (solo visible si APROBADO_FINANZAS) */}
+              {fichaMemoria.estado === 'APROBADO_FINANZAS' && (
+                <div className="border-t border-theme-border pt-4 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-theme-base/60 p-3.5 rounded-xl border border-theme-border">
+                    <div>
+                      <h4 className="font-bold text-theme-main uppercase tracking-wider text-xs flex items-center gap-1.5">
+                        <ArrowRightLeft size={16} className="text-theme-primary" />
+                        Estado Financiero y Saldo Disponible
+                      </h4>
+                      <p className="text-[11px] text-theme-muted mt-0.5">
+                        Suma del presupuesto asignado ± traspasos presupuestarios entre memorias de la misma área.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleOpenTraspaso}
+                      disabled={fichaMemoria.gestion_estado !== 'EN_EJECUCION'}
+                      title={fichaMemoria.gestion_estado !== 'EN_EJECUCION' ? 'Los traspasos presupuestarios solo están permitidos cuando la gestión se encuentra En Ejecución.' : 'Traspasar saldo a otra memoria'}
+                      className="btn-primary text-xs font-semibold px-4 py-2 flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ArrowRightLeft size={14} /> Traspasar Saldo
+                    </button>
+                  </div>
+
+                  {fichaMemoria.gestion_estado !== 'EN_EJECUCION' && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300 rounded-xl flex items-center gap-2 text-xs font-medium">
+                      <Lock size={15} className="shrink-0" />
+                      <span>Los traspasos presupuestarios solo están habilitados cuando la gestión está <strong>En Ejecución</strong> (Estado actual: {fichaMemoria.gestion_estado_display || fichaMemoria.gestion_estado}).</span>
+                    </div>
+                  )}
+
+                  {loadingSaldoTraspasos ? (
+                    <div className="p-6 text-center text-theme-muted text-xs flex items-center justify-center gap-2">
+                      <RefreshCw size={16} className="animate-spin" /> Cargando saldo y traspasos...
+                    </div>
+                  ) : (
+                    <>
+                      {/* Tarjetas resumen de saldo */}
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
+                          <span className="text-[10px] font-bold uppercase text-theme-muted block">Monto Asignado</span>
+                          <p className="font-mono font-bold text-xs text-theme-main mt-1">
+                            {formatMoney(saldoMemoria?.monto_asignado || 0)}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                          <span className="text-[10px] font-bold uppercase text-emerald-800 dark:text-emerald-300 block flex items-center gap-1">
+                            <TrendingUp size={12} /> Entradas (+)
+                          </span>
+                          <p className="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-400 mt-1">
+                            + {formatMoney(saldoMemoria?.monto_entrante || 0)}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800">
+                          <span className="text-[10px] font-bold uppercase text-rose-800 dark:text-rose-300 block flex items-center gap-1">
+                            <TrendingDown size={12} /> Salidas (-)
+                          </span>
+                          <p className="font-mono font-bold text-xs text-rose-700 dark:text-rose-400 mt-1">
+                            - {formatMoney(saldoMemoria?.monto_saliente || 0)}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                          <span className="text-[10px] font-bold uppercase text-amber-800 dark:text-amber-300 block">Monto Ejecutado</span>
+                          <p className="font-mono font-bold text-xs text-amber-700 dark:text-amber-400 mt-1">
+                            {formatMoney(saldoMemoria?.monto_ejecutado || 0)}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-theme-primary/10 border border-theme-primary/30 col-span-2 sm:col-span-1">
+                          <span className="text-[10px] font-bold uppercase text-theme-primary block">Saldo Disponible</span>
+                          <p className="font-mono font-bold text-sm text-theme-primary mt-1">
+                            {formatMoney(saldoMemoria?.disponible || 0)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Historial de Traspasos */}
+                      <div>
+                        <h5 className="font-bold text-theme-main text-xs uppercase tracking-wider mb-2">
+                          Historial de Traspasos de esta Memoria ({traspasosHistory.length})
+                        </h5>
+                        {traspasosHistory.length === 0 ? (
+                          <p className="p-3 text-center text-theme-muted text-xs border border-theme-border rounded-xl bg-theme-base/40">
+                            Esta memoria no registra traspasos entrantes ni salientes.
+                          </p>
+                        ) : (
+                          <div className="border border-theme-border rounded-xl overflow-hidden">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="bg-theme-base border-b border-theme-border font-semibold text-theme-muted">
+                                  <th className="py-2 px-3">Tipo</th>
+                                  <th className="py-2 px-3">Origen ➔ Destino</th>
+                                  <th className="py-2 px-3 text-right">Monto</th>
+                                  <th className="py-2 px-3">Motivo / Justificación</th>
+                                  <th className="py-2 px-3 text-right">Fecha</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-theme-border">
+                                {traspasosHistory.map((t) => {
+                                  const esEntrante = t.memoria_destino === fichaMemoria.id;
+                                  return (
+                                    <tr key={t.id} className="hover:bg-theme-border/20">
+                                      <td className="py-2 px-3">
+                                        {esEntrante ? (
+                                          <span className="inline-flex items-center gap-1 font-bold text-[11px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                            <TrendingUp size={12} /> Entrada
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 font-bold text-[11px] px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                                            <TrendingDown size={12} /> Salida
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="py-2 px-3 font-mono font-semibold text-theme-main">
+                                        {t.memoria_origen_codigo} ➔ {t.memoria_destino_codigo}
+                                      </td>
+                                      <td className={`py-2 px-3 text-right font-mono font-bold ${esEntrante ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                        {esEntrante ? '+' : '-'} {formatMoney(t.monto)}
+                                      </td>
+                                      <td className="py-2 px-3 text-theme-main max-w-xs truncate">{t.motivo}</td>
+                                      <td className="py-2 px-3 text-right text-theme-muted text-[11px]">
+                                        {t.created_at ? new Date(t.created_at).toLocaleDateString('es-BO') : '-'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="p-4 border-t border-theme-border flex justify-end">
@@ -1034,6 +1523,127 @@ export default function MemoriasPage() {
                 Cerrar Ficha
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Registrar Traspaso Presupuestario */}
+      {showModalTraspaso && fichaMemoria && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="card w-full max-w-lg shadow-2xl bg-theme-surface flex flex-col">
+            <div className="p-5 border-b border-theme-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="text-theme-primary" size={20} />
+                <h3 className="text-sm font-bold text-theme-main uppercase tracking-wider">
+                  Traspaso de Saldo Presupuestario
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowModalTraspaso(false)}
+                className="text-theme-muted hover:text-theme-main text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarTraspaso} className="p-6 space-y-4 text-xs">
+              {traspasoErrorMsg && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-200 flex items-start gap-2">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <div className="font-medium text-xs">{traspasoErrorMsg}</div>
+                </div>
+              )}
+
+              <div className="p-3 rounded-xl bg-theme-base border border-theme-border space-y-1">
+                <span className="text-theme-muted font-semibold uppercase text-[10px] block">
+                  Memoria de Origen (Cedente)
+                </span>
+                <div className="flex justify-between items-center">
+                  <span className="font-mono font-bold text-xs text-theme-main">
+                    {fichaMemoria.codigo} ({fichaMemoria.area_nombre})
+                  </span>
+                  <span className="text-theme-primary font-bold font-mono">
+                    Disponible: {formatMoney(saldoMemoria?.disponible || 0)}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
+                  Memoria de Destino (Receptora - Misma Área) *
+                </label>
+                {memoriasDestinoCandidatas.length === 0 ? (
+                  <p className="p-2.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-800 text-xs">
+                    No existen otras memorias aprobadas por finanzas en la misma área para realizar traspasos.
+                  </p>
+                ) : (
+                  <select
+                    required
+                    value={formTraspaso.memoriaDestinoId}
+                    onChange={(e) => setFormTraspaso({ ...formTraspaso, memoriaDestinoId: Number(e.target.value) })}
+                    className="input-theme text-xs"
+                  >
+                    {memoriasDestinoCandidatas.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.codigo} - {m.justificacion.slice(0, 50)}... ({formatMoney(m.total_presupuesto)})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
+                  Monto a Traspasar (Bs.) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0.01"
+                  max={Number(saldoMemoria?.disponible || 0)}
+                  step="any"
+                  value={formTraspaso.monto}
+                  onChange={(e) => setFormTraspaso({ ...formTraspaso, monto: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 })}
+                  className="input-theme font-mono font-bold text-xs"
+                  placeholder="0.00"
+                />
+                <p className="text-[10px] text-theme-muted mt-1">
+                  El monto máximo a traspasar es de {formatMoney(saldoMemoria?.disponible || 0)}.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
+                  Motivo / Justificación del Traspaso *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={formTraspaso.motivo}
+                  onChange={(e) => setFormTraspaso({ ...formTraspaso, motivo: e.target.value })}
+                  placeholder="Explique la necesidad operativa de transferir saldo a la memoria de destino..."
+                  className="input-theme text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-theme-border">
+                <button
+                  type="button"
+                  onClick={() => setShowModalTraspaso(false)}
+                  className="px-4 py-2 rounded-xl border border-theme-border text-xs font-semibold text-theme-muted hover:text-theme-main"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={traspasoActionLoading || memoriasDestinoCandidatas.length === 0}
+                  className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5"
+                >
+                  {traspasoActionLoading && <RefreshCw size={14} className="animate-spin" />}
+                  Confirmar Traspaso
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

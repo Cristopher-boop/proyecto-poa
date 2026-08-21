@@ -64,7 +64,7 @@ class Command(BaseCommand):
                 tipo_area = Area.TipoArea.GERENCIA if "Gerencia" in area_nombre else Area.TipoArea.UNIDAD
                 
                 # Crear un código único simple basado en el nombre para el Área
-                area_codigo = f"A-{cod_programa}-{area_nombre[:4].upper()}-{uuid.uuid4().hex[:4].upper()}"
+                area_codigo = f"P-{cod_programa}-{area_nombre[:4].upper()}-{uuid.uuid4().hex[:4].upper()}"
 
                 # Buscar si el área ya existe (por nombre dentro de este programa)
                 area = Area.objects.filter(programa=programa, nombre=area_nombre).first()
