@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Programa, ProgramaFormData } from '../../types/organizacional';
 import { organizacionalService } from '../../services/organizacionalService';
+import alertService from '../../utils/alerts';
 
 export const ProgramasList: React.FC = () => {
     const [programas, setProgramas] = useState<Programa[]>([]);
@@ -38,15 +39,30 @@ export const ProgramasList: React.FC = () => {
         );
     }, [programas, search]);
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm('¿Está seguro de eliminar este programa?')) {
-            try {
-                await organizacionalService.deletePrograma(id);
-                await fetchProgramas();
-            } catch (error) {
-                console.error('Error deleting programa:', error);
-                alert('Error al eliminar el programa');
-            }
+    const handleToggleEstado = async (item: Programa) => {
+        const nuevoEstado = !item.estado;
+
+        const confirmado = await alertService.confirm({
+            title: nuevoEstado ? '¿Activar programa?' : '¿Desactivar programa?',
+            text: nuevoEstado
+                ? `El programa "${item.nombre}" (${item.codigo}) pasará a estado activo.`
+                : `El programa "${item.nombre}" (${item.codigo}) se dará de baja lógica.`,
+            confirmButtonText: nuevoEstado ? 'Sí, activar' : 'Sí, desactivar',
+            isDanger: !nuevoEstado,
+        });
+
+        if (!confirmado) return;
+
+        try {
+            await organizacionalService.toggleEstadoPrograma(item.id, nuevoEstado);
+            alertService.success(
+                nuevoEstado ? '¡Programa activado!' : '¡Programa desactivado!',
+                `El estado de "${item.nombre}" fue actualizado correctamente.`
+            );
+            await fetchProgramas();
+        } catch (error: any) {
+            console.error('Error actualizando estado:', error);
+            alertService.error('Error', error?.response?.data?.detail || 'No se pudo actualizar el estado del programa');
         }
     };
 
@@ -193,10 +209,12 @@ export const ProgramasList: React.FC = () => {
                                             </button>
 
                                             <button
-                                                onClick={() => handleDelete(programa.id)}
-                                                className="text-triad-rose-600 dark:text-triad-rose-500 hover:text-triad-rose-500"
+                                                onClick={() => handleToggleEstado(programa)}
+                                                className={programa.estado
+                                                    ? "text-triad-rose-600 dark:text-triad-rose-500 hover:text-triad-rose-500"
+                                                    : "text-triad-green-600 dark:text-triad-green-500 hover:text-triad-green-500"}
                                             >
-                                                Eliminar
+                                                {programa.estado ? 'Desactivar' : 'Activar'}
                                             </button>
                                         </td>
                                     </tr>
@@ -242,14 +260,16 @@ const ProgramaModal: React.FC<{
         try {
             if (programa) {
                 await organizacionalService.updatePrograma(programa.id, formData);
+                alertService.success('¡Programa actualizado!', `El programa "${formData.nombre}" se guardó correctamente.`);
             } else {
                 await organizacionalService.createPrograma(formData);
+                alertService.success('¡Programa creado!', `El programa "${formData.nombre}" fue registrado con éxito.`);
             }
 
             onSave();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving programa:', error);
-            alert('Error al guardar el programa');
+            alertService.error('Error al guardar el programa', error?.response?.data?.detail || 'No se pudo guardar la información del programa.');
         } finally {
             setLoading(false);
         }
