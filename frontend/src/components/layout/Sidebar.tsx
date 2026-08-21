@@ -9,9 +9,10 @@ import {
   BookOpenText,
   TrendingDown,
   Building2,
+  FileSpreadsheet,
 } from "lucide-react";
 
-export type ModuleKey = "dashboard" | "presupuestos" | "memorias" | "ejecucion" | "organizacional";
+export type ModuleKey = "dashboard" | "presupuestos" | "partidas" | "memorias" | "ejecucion" | "organizacional";
 
 interface ModuleItem {
   key: ModuleKey;
@@ -23,6 +24,7 @@ interface ModuleItem {
 const modules: ModuleItem[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { key: "presupuestos", label: "Presupuestos & POA", icon: WalletCards, path: "/presupuestos" },
+  { key: "partidas", label: "Partidas Presup.", icon: FileSpreadsheet, path: "/partidas" },
   { key: "memorias", label: "Memorias de Cálculo", icon: BookOpenText, path: "/memorias" },
   { key: "ejecucion", label: "Ejecución Presupuestaria", icon: TrendingDown, path: "/ejecucion" },
   { key: "organizacional", label: "Estructura Org.", icon: Building2, path: "/organizacional" },
@@ -34,6 +36,7 @@ export default function Sidebar() {
   const location = useLocation();
 
   const getActiveKey = (): ModuleKey => {
+    if (location.pathname.startsWith('/partidas')) return 'partidas';
     if (location.pathname.startsWith('/memorias')) return 'memorias';
     if (location.pathname.startsWith('/ejecucion')) return 'ejecucion';
     if (location.pathname.startsWith('/presupuestos')) return 'presupuestos';

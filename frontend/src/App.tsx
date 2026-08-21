@@ -9,6 +9,7 @@ import PresupuestosPage from "./pages/presupuestos/PresupuestosPage";
 import MemoriasPage from "./pages/memorias/MemoriasPage";
 import EjecucionPage from "./pages/ejecucion/EjecucionPage";
 import OrganizacionalPage from "./pages/organizacional/OrganizacionalPage";
+import PartidasPage from "./pages/partidas/PartidasPage";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
               <Route path="/" element={<AppShell />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="presupuestos" element={<PresupuestosPage />} />
+                <Route path="partidas" element={<PartidasPage />} />
                 <Route path="memorias" element={<MemoriasPage />} />
                 <Route path="ejecucion" element={<EjecucionPage />} />
                 <Route path="organizacional" element={<OrganizacionalPage />} />

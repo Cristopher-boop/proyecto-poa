@@ -53,7 +53,7 @@ class PartidaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Partida
-        fields = ['id', 'codigo', 'nombre', 'clase', 'clase_display', 'descripcion', 'estado', 'created_at']
+        fields = ['id', 'codigo', 'nombre', 'clase', 'clase_display', 'descripcion', 'estado', 'created_at', 'updated_at']
 
 
 class PresupuestoAreaSerializer(serializers.ModelSerializer):
