@@ -24,8 +24,82 @@ class MemoriaCalculo(TimeStampedModel):
         verbose_name = "Memoria de Cálculo"
         verbose_name_plural = "Memorias de Cálculo"
 
+    def obtener_saldo_calculado(self):
+        from apps.ejecucion.models import Gasto
+        from django.db.models import Sum
+
+        detalles = self.detalles.all()
+        monto_asignado = sum(
+            ((d.cantidad or Decimal('0.00')) * (d.precio_unitario or Decimal('0.00')))
+            for d in detalles
+        )
+
+        monto_ejecutado = Gasto.objects.filter(
+            detalle_memoria__memoria=self
+        ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
+
+        monto_entrante = self.traspasos_entrada.filter(
+            estado='APROBADO'
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+
+        monto_saliente = self.traspasos_salida.filter(
+            estado='APROBADO'
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+
+        disponible = (monto_asignado + monto_entrante) - monto_saliente - monto_ejecutado
+
+        return {
+            'monto_asignado': str(monto_asignado),
+            'monto_ejecutado': str(monto_ejecutado),
+            'monto_entrante': str(monto_entrante),
+            'monto_saliente': str(monto_saliente),
+            'disponible': str(disponible)
+        }
+
     def __str__(self):
         return f"{self.codigo} [{self.get_estado_display()}]"
+
+
+class TraspasoPresupuestario(TimeStampedModel):
+    class EstadoTraspaso(models.TextChoices):
+        APROBADO = 'APROBADO', 'Aprobado'
+
+    monto = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
+    motivo = models.TextField(verbose_name="Motivo")
+    estado = models.CharField(
+        max_length=20,
+        choices=EstadoTraspaso.choices,
+        default=EstadoTraspaso.APROBADO,
+        verbose_name="Estado"
+    )
+    memoria_origen = models.ForeignKey(
+        MemoriaCalculo,
+        on_delete=models.CASCADE,
+        related_name='traspasos_salida',
+        verbose_name="Memoria Origen"
+    )
+    memoria_destino = models.ForeignKey(
+        MemoriaCalculo,
+        on_delete=models.CASCADE,
+        related_name='traspasos_entrada',
+        verbose_name="Memoria Destino"
+    )
+    usuario_registro = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='traspasos_registrados',
+        verbose_name="Usuario Registro"
+    )
+
+    class Meta:
+        verbose_name = "Traspaso Presupuestario"
+        verbose_name_plural = "Traspasos Presupuestarios"
+
+    def __str__(self):
+        return f"Traspaso Bs. {self.monto} ({self.memoria_origen.codigo} -> {self.memoria_destino.codigo})"
+
 
 class RegistroMemoriaUsuario(TimeStampedModel):
     class TipoParticipacion(models.TextChoices):

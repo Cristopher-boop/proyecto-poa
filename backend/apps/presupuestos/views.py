@@ -291,6 +291,36 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                 total_pres_mem = sum(p['presupuestado'] for p in partidas_data.values())
                 total_gast_mem = sum(p['gastado'] for p in partidas_data.values())
 
+                saldo_info = memoria.obtener_saldo_calculado()
+                monto_entrante = Decimal(saldo_info['monto_entrante'])
+                monto_saliente = Decimal(saldo_info['monto_saliente'])
+                disponible_real = Decimal(saldo_info['disponible'])
+
+                num_partidas = len(partidas_data)
+                partidas_list = []
+                for v in partidas_data.values():
+                    if num_partidas == 1:
+                        p_entrante = monto_entrante
+                        p_saliente = monto_saliente
+                    elif total_pres_mem > Decimal('0.00'):
+                        ratio = v['presupuestado'] / total_pres_mem
+                        p_entrante = round(monto_entrante * ratio, 2)
+                        p_saliente = round(monto_saliente * ratio, 2)
+                    else:
+                        p_entrante = Decimal('0.00')
+                        p_saliente = Decimal('0.00')
+
+                    p_disponible = (v['presupuestado'] + p_entrante - p_saliente) - v['gastado']
+
+                    partidas_list.append({
+                        **v,
+                        'presupuestado': str(v['presupuestado']),
+                        'monto_entrante': str(p_entrante),
+                        'monto_saliente': str(p_saliente),
+                        'gastado': str(v['gastado']),
+                        'disponible': str(p_disponible),
+                    })
+
                 memorias_data.append({
                     'memoria_id': memoria.id,
                     'memoria_codigo': memoria.codigo,
@@ -298,17 +328,11 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                     'estado_display': memoria.get_estado_display(),
                     'justificacion': memoria.justificacion,
                     'total_presupuestado': str(total_pres_mem),
+                    'monto_entrante': str(monto_entrante),
+                    'monto_saliente': str(monto_saliente),
                     'total_gastado': str(total_gast_mem),
-                    'total_disponible': str(max(Decimal('0.00'), total_pres_mem - total_gast_mem)),
-                    'partidas': [
-                        {
-                            **v,
-                            'presupuestado': str(v['presupuestado']),
-                            'gastado': str(v['gastado']),
-                            'disponible': str(max(Decimal('0.00'), v['presupuestado'] - v['gastado'])),
-                        }
-                        for v in partidas_data.values()
-                    ],
+                    'total_disponible': str(disponible_real),
+                    'partidas': partidas_list,
                 })
 
             # Totales de la sección
@@ -321,12 +345,16 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                 Decimal(m['total_presupuestado']) for m in memorias_data
             )
 
+            disponible_seccion = sum(
+                Decimal(m['total_disponible']) for m in memorias_data
+            )
+
             secciones_data.append({
                 'seccion_id': seccion.id,
                 'seccion_nombre': seccion.nombre,
                 'total_presupuestado': str(pres_seccion),
                 'total_gastado': str(gastos_seccion),
-                'total_disponible': str(max(Decimal('0.00'), pres_seccion - gastos_seccion)),
+                'total_disponible': str(disponible_seccion),
                 'memorias': memorias_data,
             })
 
