@@ -21,10 +21,14 @@ cd backend
 python manage.py makemigrations
 python manage.py migrate
 
-# Poblar la base de datos con Programas, Áreas y Secciones (Script inicial)
-python seed_admin.py
+# 1. Poblar Estructura Organizacional (Programas, Áreas y Secciones)
 python manage.py seed_organizacional
-python manage.py import_partidas
+
+# 2. Poblar Consolidado TAMEP (Partidas y Grupos Presupuestarios)
+python manage.py seed_consolidado
+
+# 3. Poblar Memorias de Cálculo detalladas desde el archivo Excel oficial (300+ memorias, 1400+ detalles)
+python manage.py seed_memorias
 
 # Crear un superusuario (para acceder al sistema y al /admin)
 python manage.py createsuperuser

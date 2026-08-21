@@ -267,11 +267,10 @@ export default function EjecucionPage() {
       {/* Feedback */}
       {feedbackMsg && (
         <div
-          className={`p-4 rounded-xl flex items-center justify-between shadow-md ${
-            feedbackMsg.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-100 dark:border-emerald-800'
-              : 'bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/80 dark:text-rose-100 dark:border-rose-800'
-          }`}
+          className={`p-4 rounded-xl flex items-center justify-between shadow-md ${feedbackMsg.type === 'success'
+            ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-100 dark:border-emerald-800'
+            : 'bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/80 dark:text-rose-100 dark:border-rose-800'
+            }`}
         >
           <div className="flex items-center gap-2">
             {feedbackMsg.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
@@ -291,7 +290,7 @@ export default function EjecucionPage() {
             <div>
               <h1 className="text-2xl font-bold text-theme-main tracking-tight">Módulo de Ejecución Presupuestaria</h1>
               <p className="text-sm text-theme-muted">
-                Registro de facturas, control de gastos reales y deducción automática del presupuesto ($Monto\_Actual = Monto\_Inicial - Gastos$).
+                Registro de facturas, control de gastos reales y deducción automática del presupuesto.
               </p>
             </div>
           </div>
@@ -386,27 +385,24 @@ export default function EjecucionPage() {
       <div className="flex border-b border-theme-border gap-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('gastos')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'gastos' ? 'border-rose-500 text-rose-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'gastos' ? 'border-rose-500 text-rose-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <Receipt size={16} /> 1. Historial de Gastos y Comprobantes ({gastos.length})
         </button>
 
         <button
           onClick={() => setActiveTab('areas')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'areas' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'areas' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <Building2 size={16} /> 2. Avance por Gerencia / Área ({presupuestosArea.length})
         </button>
 
         <button
           onClick={() => setActiveTab('items')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'items' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'items' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <Layers size={16} /> 3. Control de Ítems Presupuestados ({renglonesDisponibles.length})
         </button>
@@ -604,13 +600,12 @@ export default function EjecucionPage() {
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          r.estadoGasto === 'COMPLETADO'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                            : r.estadoGasto === 'EJECUTADO_PARCIAL'
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estadoGasto === 'COMPLETADO'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                          : r.estadoGasto === 'EJECUTADO_PARCIAL'
                             ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                             : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                        }`}
+                          }`}
                       >
                         {r.estadoGasto}
                       </span>
@@ -697,10 +692,10 @@ export default function EjecucionPage() {
               </div>
 
               <div>
-                <label className="block font-semibold uppercase text-theme-muted mb-1">N° Comprobante / Factura</label>
+                <label className="block font-semibold uppercase text-theme-muted mb-1">N° Hoja de ruta</label>
                 <input
                   type="text"
-                  placeholder="Ej. FAC-9842 / VALE-102"
+                  placeholder="Ej.TAMP-GEROP-XXXXX-2026"
                   value={formGasto.comprobante}
                   onChange={(e) => setFormGasto({ ...formGasto, comprobante: e.target.value })}
                   className="input-theme text-xs"

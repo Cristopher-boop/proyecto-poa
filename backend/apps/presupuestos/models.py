@@ -1,4 +1,4 @@
-﻿from django.db import models
+from django.db import models
 from decimal import Decimal
 from apps.core.models import TimeStampedModel
 from apps.organizacional.models import Area
@@ -23,18 +23,19 @@ class Gestion(TimeStampedModel):
 
 class Partida(TimeStampedModel):
     class ClasePartida(models.TextChoices):
-        GASTO_CORRIENTE = 'GASTO_CORRIENTE', 'Gasto Corriente'
-        GASTO_CAPITAL = 'GASTO_CAPITAL', 'Gasto de Capital / Inversión'
+        INGRESO = 'INGRESO', 'Ingreso'
+        EGRESO = 'EGRESO', 'Egreso'
 
-    codigo = models.CharField(max_length=20, unique=True, verbose_name="Código")
+    codigo = models.CharField(max_length=20, verbose_name="Código")
     nombre = models.CharField(max_length=200, verbose_name="Nombre")
-    clase = models.CharField(max_length=25, choices=ClasePartida.choices, default=ClasePartida.GASTO_CORRIENTE, verbose_name="Clase")
+    clase = models.CharField(max_length=25, choices=ClasePartida.choices, default=ClasePartida.EGRESO, verbose_name="Clase")
     descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
     estado = models.BooleanField(default=True, verbose_name="Activa")
     
     class Meta:
         verbose_name = "Partida Presupuestaria"
         verbose_name_plural = "Partidas Presupuestarias"
+        unique_together = ('codigo', 'clase')
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre} ({self.get_clase_display()})"

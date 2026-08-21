@@ -16,7 +16,7 @@ export interface Partida {
   id: number;
   codigo: string;
   nombre: string;
-  clase: 'GASTO_CORRIENTE' | 'GASTO_CAPITAL';
+  clase: 'INGRESO' | 'EGRESO';
   clase_display: string;
   descripcion: string | null;
   estado: boolean;
@@ -114,6 +114,30 @@ export interface Gasto {
   created_at: string;
 }
 
+export interface Traspaso {
+  id: number;
+  monto: string | number;
+  motivo: string;
+  estado: string;
+  estado_display?: string;
+  memoria_origen: number;
+  memoria_origen_codigo?: string;
+  memoria_destino: number;
+  memoria_destino_codigo?: string;
+  usuario_registro?: number | null;
+  usuario_registro_nombre?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SaldoMemoria {
+  monto_asignado: string;
+  monto_ejecutado: string;
+  monto_entrante: string;
+  monto_saliente: string;
+  disponible: string;
+}
+
 export interface ResumenGestion {
   gestion: Gestion;
   total_inicial: string;
@@ -195,6 +219,66 @@ export async function getPresupuestosArea(params?: { gestion?: number; anio?: nu
 
 export async function getResumenGestion(params?: { gestion?: number; anio?: number }): Promise<ResumenGestion> {
   const { data } = await api.get<ResumenGestion>('/api/v1/presupuestos/techos-area/resumen-gestion/', { params });
+  return data;
+}
+
+export interface GastoDetalle {
+  gasto_id: number;
+  fecha_gasto: string;
+  monto: string;
+  comprobante: string;
+  observacion: string;
+  item_descripcion: string;
+}
+
+export interface PartidaDetalleArea {
+  partida_codigo: string;
+  partida_nombre: string;
+  presupuestado: string;
+  monto_entrante?: string;
+  monto_saliente?: string;
+  gastado: string;
+  disponible: string;
+  gastos_detalle: GastoDetalle[];
+}
+
+export interface MemoriaDetalleArea {
+  memoria_id: number;
+  memoria_codigo: string;
+  estado: string;
+  estado_display: string;
+  justificacion: string;
+  total_presupuestado: string;
+  total_gastado: string;
+  total_disponible: string;
+  partidas: PartidaDetalleArea[];
+}
+
+export interface SeccionDetalleArea {
+  seccion_id: number;
+  seccion_nombre: string;
+  total_presupuestado: string;
+  total_gastado: string;
+  total_disponible: string;
+  memorias: MemoriaDetalleArea[];
+}
+
+export interface DetalleArea {
+  area_id: number;
+  area_codigo: string;
+  area_nombre: string;
+  area_tipo: string;
+  gestion_anio: number;
+  gestion_estado: string;
+  monto_inicial: string;
+  monto_actual: string;
+  monto_ejecutado: string;
+  porcentaje_ejecucion: number;
+  secciones: SeccionDetalleArea[];
+}
+
+export async function getDetalleArea(params: { gestion: number; area: number }): Promise<DetalleArea> {
+  const { data } = await api.get<DetalleArea>('/api/v1/presupuestos/techos-area/detalle-area/', { params });
   return data;
 }
 
@@ -354,4 +438,30 @@ export async function getSecciones(areaId?: number): Promise<Seccion[]> {
     params: areaId ? { area: areaId } : undefined,
   });
   return unpackList<Seccion>(data);
+}
+
+// ── Traspasos Presupuestarios ─────────────────────────────────────────────
+export async function getTraspasos(params?: {
+  memoria?: number;
+  area?: number;
+  gestion?: number;
+  search?: string;
+}): Promise<Traspaso[]> {
+  const { data } = await api.get<any>('/api/v1/memorias/traspasos/', { params });
+  return unpackList<Traspaso>(data);
+}
+
+export async function createTraspaso(payload: {
+  memoria_origen: number;
+  memoria_destino: number;
+  monto: number | string;
+  motivo: string;
+}): Promise<Traspaso> {
+  const { data } = await api.post<Traspaso>('/api/v1/memorias/traspasos/', payload);
+  return data;
+}
+
+export async function getSaldoMemoria(memoriaId: number): Promise<SaldoMemoria> {
+  const { data } = await api.get<SaldoMemoria>(`/api/v1/memorias/memorias-calculo/${memoriaId}/saldo-disponible/`);
+  return data;
 }
