@@ -1,4 +1,4 @@
-export type ClasePartida = 'GASTO_CORRIENTE' | 'GASTO_CAPITAL';
+export type ClasePartida = 'EGRESO' | 'INGRESO';
 
 export interface Partida {
   id: number;

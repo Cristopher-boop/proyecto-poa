@@ -7,12 +7,9 @@ import {
   CheckCircle2,
   XCircle,
   SlidersHorizontal,
-  FolderTree,
-  Building2,
   Layers,
-  Sparkles,
 } from 'lucide-react';
-import { Partida, PartidaFormData, ClasePartida } from '../../types/partida';
+import { Partida, PartidaFormData } from '../../types/partida';
 import { partidaService } from '../../services/partidaService';
 import alertService from '../../utils/alerts';
 
@@ -20,7 +17,6 @@ export default function PartidasPage() {
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedClase, setSelectedClase] = useState<string>('TODAS');
   const [selectedEstado, setSelectedEstado] = useState<string>('TODOS');
   const [showModal, setShowModal] = useState(false);
   const [editingPartida, setEditingPartida] = useState<Partida | null>(null);
@@ -28,8 +24,11 @@ export default function PartidasPage() {
   const fetchPartidas = async () => {
     try {
       setLoading(true);
-      const response = await partidaService.getPartidas();
-      setPartidas(response.data);
+      const response = await partidaService.getPartidas({ clase: 'EGRESO' });
+      const egresos = (response.data || []).filter(
+        (p) => (p.clase || '').toUpperCase() === 'EGRESO'
+      );
+      setPartidas(egresos);
     } catch (error) {
       console.error('Error cargando catálogo de partidas:', error);
       alertService.error('Error de carga', 'No se pudieron obtener las partidas presupuestarias.');
@@ -52,23 +51,18 @@ export default function PartidasPage() {
         partida.nombre.toLowerCase().includes(term) ||
         (partida.descripcion ?? '').toLowerCase().includes(term);
 
-      const matchClase =
-        selectedClase === 'TODAS' || partida.clase === selectedClase;
-
       const matchEstado =
         selectedEstado === 'TODOS' ||
         (selectedEstado === 'ACTIVAS' && partida.estado) ||
         (selectedEstado === 'INACTIVAS' && !partida.estado);
 
-      return matchSearch && matchClase && matchEstado;
+      return matchSearch && matchEstado;
     });
-  }, [partidas, search, selectedClase, selectedEstado]);
+  }, [partidas, search, selectedEstado]);
 
   const totalPartidas = partidas.length;
   const partidasActivas = partidas.filter((p) => p.estado).length;
   const partidasInactivas = totalPartidas - partidasActivas;
-  const gastoCorrienteCount = partidas.filter((p) => p.clase === 'GASTO_CORRIENTE').length;
-  const gastoCapitalCount = partidas.filter((p) => p.clase === 'GASTO_CAPITAL').length;
 
   const handleToggleEstado = async (item: Partida) => {
     const nuevoEstado = !item.estado;
@@ -117,7 +111,7 @@ export default function PartidasPage() {
                 Partidas Presupuestarias
               </h1>
               <p className="text-sm text-theme-muted">
-                Catálogo oficial de partidas de gasto corriente y capital para la formulación del POA.
+                Catálogo oficial de partidas presupuestarias de egreso para la formulación del POA.
               </p>
             </div>
           </div>
@@ -137,7 +131,7 @@ export default function PartidasPage() {
       </div>
 
       {/* Cards de Métricas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="card p-5">
           <div className="flex items-center justify-between">
             <div className="p-2.5 rounded-xl bg-theme-primary/10 text-theme-primary">
@@ -146,7 +140,7 @@ export default function PartidasPage() {
             <span className="text-xs font-semibold text-theme-muted uppercase tracking-wider">Total</span>
           </div>
           <p className="text-3xl font-bold text-theme-main mt-3">{totalPartidas}</p>
-          <p className="text-xs text-theme-muted mt-1">Partidas registradas en el catálogo</p>
+          <p className="text-xs text-theme-muted mt-1">Partidas de egreso registradas</p>
         </div>
 
         <div className="card p-5">
@@ -170,23 +164,6 @@ export default function PartidasPage() {
           <p className="text-3xl font-bold text-theme-main mt-3">{partidasInactivas}</p>
           <p className="text-xs text-theme-muted mt-1">Dadas de baja lógica en el sistema</p>
         </div>
-
-        <div className="card p-5">
-          <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-xl bg-purple-100 text-purple-700 dark:bg-blue-500/15 dark:text-blue-400">
-              <FolderTree size={20} />
-            </div>
-            <span className="text-xs font-semibold text-theme-muted uppercase tracking-wider">Clasificación</span>
-          </div>
-          <div className="flex items-baseline gap-2 mt-3">
-            <span className="text-2xl font-bold text-theme-main">{gastoCorrienteCount}</span>
-            <span className="text-xs text-theme-muted font-medium">Corriente</span>
-            <span className="text-muted text-xs">/</span>
-            <span className="text-2xl font-bold text-theme-main">{gastoCapitalCount}</span>
-            <span className="text-xs text-theme-muted font-medium">Capital</span>
-          </div>
-          <p className="text-xs text-theme-muted mt-1">Estructura según tipo de gasto</p>
-        </div>
       </div>
 
       {/* Barra de Búsqueda y Filtros */}
@@ -209,17 +186,6 @@ export default function PartidasPage() {
               <span>Filtros:</span>
             </div>
 
-            {/* Filtro de Clase */}
-            <select
-              value={selectedClase}
-              onChange={(e) => setSelectedClase(e.target.value)}
-              className="border border-theme-border rounded-xl px-3 py-2 text-xs bg-theme-surface text-theme-main focus:outline-none focus:ring-2 focus:ring-theme-primary"
-            >
-              <option value="TODAS">Todas las Clases</option>
-              <option value="GASTO_CORRIENTE">Gasto Corriente</option>
-              <option value="GASTO_CAPITAL">Gasto de Capital / Inversión</option>
-            </select>
-
             {/* Filtro de Estado */}
             <select
               value={selectedEstado}
@@ -233,7 +199,7 @@ export default function PartidasPage() {
           </div>
         </div>
 
-        {(search.trim() || selectedClase !== 'TODAS' || selectedEstado !== 'TODOS') && (
+        {(search.trim() || selectedEstado !== 'TODOS') && (
           <div className="flex items-center justify-between pt-2 border-t border-theme-border text-xs text-theme-muted">
             <span>
               Mostrando <strong>{partidasFiltradas.length}</strong> de <strong>{totalPartidas}</strong> partidas
@@ -242,7 +208,6 @@ export default function PartidasPage() {
               type="button"
               onClick={() => {
                 setSearch('');
-                setSelectedClase('TODAS');
                 setSelectedEstado('TODOS');
               }}
               className="text-theme-primary hover:underline font-medium"
