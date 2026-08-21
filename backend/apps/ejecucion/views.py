@@ -120,17 +120,24 @@ class GastoViewSet(viewsets.ModelViewSet):
         if not gestion:
             return Response({'error': 'No se encontró la gestión solicitada.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Gastos por Área
+        # Gastos por Área (Optimizado en 2 consultas en lugar de N+1)
+        presupuestos_map = {
+            p.area_id: p.monto_inicial
+            for p in PresupuestoArea.objects.filter(gestion=gestion)
+        }
+        gastos_por_area_map = {
+            item['detalle_memoria__memoria__seccion__area_id']: item['total'] or Decimal('0.00')
+            for item in Gasto.objects.filter(detalle_memoria__memoria__gestion=gestion)
+            .values('detalle_memoria__memoria__seccion__area_id')
+            .annotate(total=Sum('monto_ejecutado'))
+        }
+
         from apps.organizacional.models import Area
         areas = Area.objects.filter(estado=True)
         por_area = []
         for a in areas:
-            pres = PresupuestoArea.objects.filter(gestion=gestion, area=a).first()
-            m_inicial = pres.monto_inicial if pres else Decimal('0.00')
-            gastado = Gasto.objects.filter(
-                detalle_memoria__memoria__gestion=gestion,
-                detalle_memoria__memoria__seccion__area=a
-            ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
+            m_inicial = presupuestos_map.get(a.id, Decimal('0.00'))
+            gastado = gastos_por_area_map.get(a.id, Decimal('0.00'))
             disponible = max(Decimal('0.00'), m_inicial - gastado)
             pct = round((gastado / m_inicial * Decimal('100.0')), 2) if m_inicial > Decimal('0.00') else 0.0
 

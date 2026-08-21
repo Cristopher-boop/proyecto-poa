@@ -16,12 +16,18 @@ class DetallePresupuestoMemoriaSerializer(serializers.ModelSerializer):
     precio_total = serializers.SerializerMethodField()
     monto_ejecutado = serializers.CharField(source='total_ejecutado', read_only=True)
     monto_disponible = serializers.CharField(source='saldo_disponible', read_only=True)
+    memoria_codigo = serializers.CharField(source='memoria.codigo', read_only=True)
+    memoria_estado = serializers.CharField(source='memoria.estado', read_only=True)
+    area_nombre = serializers.CharField(source='memoria.seccion.area.nombre', read_only=True)
 
     class Meta:
         model = DetallePresupuestoMemoria
         fields = [
             'id',
             'memoria',
+            'memoria_codigo',
+            'memoria_estado',
+            'area_nombre',
             'partida',
             'partida_codigo',
             'partida_nombre',
@@ -62,6 +68,61 @@ class RegistroMemoriaUsuarioSerializer(serializers.ModelSerializer):
 
     def get_usuario_nombre(self, obj):
         return obj.usuario.get_full_name() or obj.usuario.username
+
+
+class MemoriaCalculoListSerializer(serializers.ModelSerializer):
+    gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
+    gestion_estado = serializers.CharField(source='gestion.estado', read_only=True)
+    seccion_nombre = serializers.CharField(source='seccion.nombre', read_only=True)
+    area_id = serializers.IntegerField(source='seccion.area.id', read_only=True)
+    area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
+    area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+
+    partida_codigo = serializers.SerializerMethodField()
+    partida_nombre = serializers.SerializerMethodField()
+
+    total_presupuesto = serializers.CharField(source='total_presupuestado', read_only=True)
+    total_ejecutado = serializers.CharField(read_only=True)
+    total_disponible = serializers.CharField(source='saldo_disponible', read_only=True)
+    monto_entrante = serializers.CharField(read_only=True)
+    monto_saliente = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = MemoriaCalculo
+        fields = [
+            'id',
+            'codigo',
+            'gestion',
+            'gestion_anio',
+            'gestion_estado',
+            'seccion',
+            'seccion_nombre',
+            'area_id',
+            'area_nombre',
+            'area_codigo',
+            'justificacion',
+            'estado',
+            'estado_display',
+            'fecha_aprobacion',
+            'partida_codigo',
+            'partida_nombre',
+            'total_presupuesto',
+            'total_ejecutado',
+            'total_disponible',
+            'monto_entrante',
+            'monto_saliente',
+            'created_at',
+            'updated_at',
+        ]
+
+    def get_partida_codigo(self, obj):
+        primer_detalle = obj.detalles.first()
+        return primer_detalle.partida.codigo if primer_detalle and primer_detalle.partida else None
+
+    def get_partida_nombre(self, obj):
+        primer_detalle = obj.detalles.first()
+        return primer_detalle.partida.nombre if primer_detalle and primer_detalle.partida else None
 
 
 class MemoriaCalculoSerializer(serializers.ModelSerializer):

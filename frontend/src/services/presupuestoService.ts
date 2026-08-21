@@ -41,6 +41,10 @@ export interface PresupuestoArea {
 
 export interface DetallePresupuestoMemoria {
   id?: number;
+  memoria?: number;
+  memoria_codigo?: string;
+  memoria_estado?: string;
+  area_nombre?: string;
   partida: number;
   partida_codigo?: string;
   partida_nombre?: string;
@@ -464,4 +468,15 @@ export async function createTraspaso(payload: {
 export async function getSaldoMemoria(memoriaId: number): Promise<SaldoMemoria> {
   const { data } = await api.get<SaldoMemoria>(`/api/v1/memorias/memorias-calculo/${memoriaId}/saldo-disponible/`);
   return data;
+}
+
+export async function getDetallesPresupuesto(params?: {
+  gestion?: number;
+  anio?: number;
+  area?: number;
+  memoria?: number;
+  partida?: number;
+}): Promise<DetallePresupuestoMemoria[]> {
+  const { data } = await api.get<any>('/api/v1/memorias/detalles-presupuesto/', { params });
+  return unpackList<DetallePresupuestoMemoria>(data);
 }
