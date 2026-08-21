@@ -286,6 +286,11 @@ class TraspasoSerializer(serializers.ModelSerializer):
                 'non_field_errors': ['Solo se puede traspasar saldo entre memorias de la misma gestión.']
             })
 
+        if memoria_origen.gestion.estado != Gestion.EstadoGestion.EN_EJECUCION:
+            raise serializers.ValidationError({
+                'non_field_errors': [f'Solo se pueden realizar traspasos presupuestarios en gestiones que estén En Ejecución (La Gestión {memoria_origen.gestion.anio} se encuentra {memoria_origen.gestion.get_estado_display().lower()}).']
+            })
+
         if memoria_origen.estado != MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS:
             raise serializers.ValidationError({
                 'memoria_origen': [f'La memoria de origen {memoria_origen.codigo} no está aprobada por Finanzas (Estado actual: {memoria_origen.get_estado_display()}).']

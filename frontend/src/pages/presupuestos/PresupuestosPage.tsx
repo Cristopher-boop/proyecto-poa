@@ -8,6 +8,8 @@ import {
   RefreshCw,
   DollarSign,
   TrendingDown,
+  TrendingUp,
+  ArrowRightLeft,
   Building2,
   Calendar,
   ChevronDown,
@@ -727,6 +729,16 @@ export default function PresupuestosPage() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-mono text-sm font-bold text-theme-main">{memoria.memoria_codigo}</span>
                                   {getBadgeEstado(memoria.estado)}
+                                  {Number(memoria.monto_entrante || 0) > 0 && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                      <TrendingUp size={11} /> +{formatMoney(memoria.monto_entrante || 0)}
+                                    </span>
+                                  )}
+                                  {Number(memoria.monto_saliente || 0) > 0 && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                                      <TrendingDown size={11} /> -{formatMoney(memoria.monto_saliente || 0)}
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="text-xs text-theme-muted mt-1 leading-normal">{memoria.justificacion}</p>
                               </div>
@@ -737,6 +749,17 @@ export default function PresupuestosPage() {
                                 <p className="text-[10px] text-theme-muted font-semibold">PRESUPUESTADO</p>
                                 <p className="text-sm font-bold text-theme-main">{formatMoney(memoria.total_presupuestado)}</p>
                               </div>
+
+                              {(Number(memoria.monto_entrante || 0) > 0 || Number(memoria.monto_saliente || 0) > 0) && (
+                                <div>
+                                  <p className="text-[10px] text-theme-muted font-semibold">TRASPASOS (ENT / SAL)</p>
+                                  <p className="text-xs font-mono font-bold">
+                                    <span className="text-emerald-600 dark:text-emerald-400">+{formatMoney(memoria.monto_entrante || 0)}</span> /{' '}
+                                    <span className="text-rose-600 dark:text-rose-400">-{formatMoney(memoria.monto_saliente || 0)}</span>
+                                  </p>
+                                </div>
+                              )}
+
                               <div>
                                 <p className="text-[10px] text-theme-muted font-semibold">SALDO DISPONIBLE</p>
                                 <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(memoria.total_disponible)}</p>
@@ -748,6 +771,28 @@ export default function PresupuestosPage() {
                           {/* Partidas y gastos asociados de la memoria */}
                           {memExpanded && (
                             <div className="border-t border-theme-border bg-theme-base/20 p-4 space-y-4">
+                              {(Number(memoria.monto_entrante || 0) > 0 || Number(memoria.monto_saliente || 0) > 0) && (
+                                <div className="p-3 bg-blue-50/70 border border-blue-200 text-blue-900 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-200 rounded-xl flex items-center justify-between gap-3 text-xs">
+                                  <div className="flex items-center gap-2">
+                                    <ArrowRightLeft size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                                    <span>
+                                      <strong>Aviso de Traspasos Presupuestarios:</strong> El saldo disponible real incluye traspasos de saldo.
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 font-mono text-[11px] font-bold shrink-0">
+                                    {Number(memoria.monto_entrante || 0) > 0 && (
+                                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                        + {formatMoney(memoria.monto_entrante || 0)} Recibido
+                                      </span>
+                                    )}
+                                    {Number(memoria.monto_saliente || 0) > 0 && (
+                                      <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                                        - {formatMoney(memoria.monto_saliente || 0)} Cedido
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                               {memoria.partidas.length === 0 ? (
                                 <p className="text-xs text-theme-muted text-center py-2">Sin partidas asignadas en esta memoria.</p>
                               ) : (
@@ -758,33 +803,43 @@ export default function PresupuestosPage() {
                                     ? Math.min(100, Math.round(parseFloat(partida.gastado) / parseFloat(partida.presupuestado) * 10000) / 100)
                                     : 0;
 
-                                  return (
-                                    <div key={pKey} className="border border-theme-border rounded-xl bg-theme-surface overflow-hidden">
-                                      {/* Cabecera Partida */}
-                                      <button
-                                        onClick={() => togglePartida(pKey)}
-                                        className="w-full p-4 flex items-center justify-between gap-4 hover:bg-theme-border/10 transition-colors text-left"
-                                      >
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2">
-                                            <span className="font-mono text-xs font-bold text-theme-primary">{partida.partida_codigo}</span>
-                                            <span className="text-xs font-semibold text-theme-main truncate">{partida.partida_nombre}</span>
-                                          </div>
+                                          const tieneTraspasosP = Number(partida.monto_entrante || 0) > 0 || Number(partida.monto_saliente || 0) > 0;
+                                          return (
+                                            <div key={pKey} className="border border-theme-border rounded-xl bg-theme-surface overflow-hidden">
+                                              {/* Cabecera Partida */}
+                                              <button
+                                                onClick={() => togglePartida(pKey)}
+                                                className="w-full p-4 flex items-center justify-between gap-4 hover:bg-theme-border/10 transition-colors text-left"
+                                              >
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="font-mono text-xs font-bold text-theme-primary">{partida.partida_codigo}</span>
+                                                    <span className="text-xs font-semibold text-theme-main truncate">{partida.partida_nombre}</span>
+                                                  </div>
 
-                                          <div className="grid grid-cols-3 gap-2 mt-3 text-left">
-                                            <div>
-                                              <span className="text-[10px] text-theme-muted">Presupuesto</span>
-                                              <p className="text-xs font-bold text-theme-main">{formatMoney(partida.presupuestado)}</p>
-                                            </div>
-                                            <div>
-                                              <span className="text-[10px] text-theme-muted text-rose-600">Ejecutado</span>
-                                              <p className="text-xs font-bold text-rose-600 dark:text-rose-400">{formatMoney(partida.gastado)}</p>
-                                            </div>
-                                            <div>
-                                              <span className="text-[10px] text-theme-muted text-emerald-600">Disponible</span>
-                                              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(partida.disponible)}</p>
-                                            </div>
-                                          </div>
+                                                  <div className={`grid gap-2 mt-3 text-left ${tieneTraspasosP ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+                                                    <div>
+                                                      <span className="text-[10px] text-theme-muted">Presupuesto</span>
+                                                      <p className="text-xs font-bold text-theme-main">{formatMoney(partida.presupuestado)}</p>
+                                                    </div>
+                                                    {tieneTraspasosP && (
+                                                      <div>
+                                                        <span className="text-[10px] text-theme-muted">Traspasos (Ent / Sal)</span>
+                                                        <p className="text-xs font-mono font-bold">
+                                                          <span className="text-emerald-600 dark:text-emerald-400">+{formatMoney(partida.monto_entrante || 0)}</span> /{' '}
+                                                          <span className="text-rose-600 dark:text-rose-400">-{formatMoney(partida.monto_saliente || 0)}</span>
+                                                        </p>
+                                                      </div>
+                                                    )}
+                                                    <div>
+                                                      <span className="text-[10px] text-theme-muted text-rose-600">Ejecutado</span>
+                                                      <p className="text-xs font-bold text-rose-600 dark:text-rose-400">{formatMoney(partida.gastado)}</p>
+                                                    </div>
+                                                    <div>
+                                                      <span className="text-[10px] text-theme-muted text-emerald-600">Disponible</span>
+                                                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(partida.disponible)}</p>
+                                                    </div>
+                                                  </div>
 
                                           <div className="w-full bg-theme-border/60 rounded-full h-1.5 mt-2.5 overflow-hidden">
                                             <div className={`h-full ${pctP > 80 ? 'bg-rose-500' : pctP > 50 ? 'bg-amber-500' : 'bg-theme-primary'}`}

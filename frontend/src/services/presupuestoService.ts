@@ -114,6 +114,30 @@ export interface Gasto {
   created_at: string;
 }
 
+export interface Traspaso {
+  id: number;
+  monto: string | number;
+  motivo: string;
+  estado: string;
+  estado_display?: string;
+  memoria_origen: number;
+  memoria_origen_codigo?: string;
+  memoria_destino: number;
+  memoria_destino_codigo?: string;
+  usuario_registro?: number | null;
+  usuario_registro_nombre?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SaldoMemoria {
+  monto_asignado: string;
+  monto_ejecutado: string;
+  monto_entrante: string;
+  monto_saliente: string;
+  disponible: string;
+}
+
 export interface ResumenGestion {
   gestion: Gestion;
   total_inicial: string;
@@ -211,6 +235,8 @@ export interface PartidaDetalleArea {
   partida_codigo: string;
   partida_nombre: string;
   presupuestado: string;
+  monto_entrante?: string;
+  monto_saliente?: string;
   gastado: string;
   disponible: string;
   gastos_detalle: GastoDetalle[];
@@ -412,4 +438,30 @@ export async function getSecciones(areaId?: number): Promise<Seccion[]> {
     params: areaId ? { area: areaId } : undefined,
   });
   return unpackList<Seccion>(data);
+}
+
+// ── Traspasos Presupuestarios ─────────────────────────────────────────────
+export async function getTraspasos(params?: {
+  memoria?: number;
+  area?: number;
+  gestion?: number;
+  search?: string;
+}): Promise<Traspaso[]> {
+  const { data } = await api.get<any>('/api/v1/memorias/traspasos/', { params });
+  return unpackList<Traspaso>(data);
+}
+
+export async function createTraspaso(payload: {
+  memoria_origen: number;
+  memoria_destino: number;
+  monto: number | string;
+  motivo: string;
+}): Promise<Traspaso> {
+  const { data } = await api.post<Traspaso>('/api/v1/memorias/traspasos/', payload);
+  return data;
+}
+
+export async function getSaldoMemoria(memoriaId: number): Promise<SaldoMemoria> {
+  const { data } = await api.get<SaldoMemoria>(`/api/v1/memorias/memorias-calculo/${memoriaId}/saldo-disponible/`);
+  return data;
 }
