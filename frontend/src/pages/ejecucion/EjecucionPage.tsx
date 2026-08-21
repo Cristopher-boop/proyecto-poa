@@ -24,7 +24,7 @@ import {
   Gestion,
   Gasto,
   PresupuestoArea,
-  MemoriaCalculo,
+  DetallePresupuestoMemoria,
   ResumenEjecucion,
   Area,
   getGestiones,
@@ -32,7 +32,7 @@ import {
   createGasto,
   deleteGasto,
   getPresupuestosArea,
-  getMemorias,
+  getDetallesPresupuesto,
   getResumenEjecucion,
   getAreas,
 } from '../../services/presupuestoService';
@@ -52,7 +52,7 @@ export default function EjecucionPage() {
   const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [presupuestosArea, setPresupuestosArea] = useState<PresupuestoArea[]>([]);
-  const [memorias, setMemorias] = useState<MemoriaCalculo[]>([]);
+  const [detallesPresupuesto, setDetallesPresupuesto] = useState<DetallePresupuestoMemoria[]>([]);
   const [resumen, setResumen] = useState<ResumenEjecucion | null>(null);
   const [areas, setAreas] = useState<Area[]>([]);
 
@@ -111,15 +111,15 @@ export default function EjecucionPage() {
 
   async function cargarDatosEjecucion(gId: number) {
     try {
-      const [listaGastos, techos, mems, resData] = await Promise.all([
+      const [listaGastos, techos, detalles, resData] = await Promise.all([
         getGastos({ gestion: gId }),
         getPresupuestosArea({ gestion: gId }),
-        getMemorias({ gestion: gId }),
+        getDetallesPresupuesto({ gestion: gId }),
         getResumenEjecucion({ gestion: gId }).catch(() => null),
       ]);
       setGastos(Array.isArray(listaGastos) ? listaGastos : []);
       setPresupuestosArea(Array.isArray(techos) ? techos : []);
-      setMemorias(Array.isArray(mems) ? mems : []);
+      setDetallesPresupuesto(Array.isArray(detalles) ? detalles : []);
       setResumen(resData);
     } catch (err) {
       console.error(err);
@@ -166,43 +166,26 @@ export default function EjecucionPage() {
 
   // Ítems aprobados disponibles para ejecutar
   const renglonesDisponibles = useMemo(() => {
-    const items: Array<{
-      detalleId: number;
-      descripcion: string;
-      memoriaCodigo: string;
-      areaNombre: string;
-      partidaCodigo: string;
-      partidaNombre: string;
-      montoTotal: number;
-      montoGastado: number;
-      saldoDisponible: number;
-      estadoGasto: string;
-    }> = [];
-
-    (Array.isArray(memorias) ? memorias : [])
-      .filter((m) => ['APROBADO_FINANZAS', 'APROBADO_GERENCIA'].includes(m.estado))
-      .forEach((m) => {
-        m.detalles.forEach((d) => {
-          const totalItem = parseFloat(d.precio_total || '0');
-          const gastado = parseFloat(d.monto_ejecutado || '0');
-          const saldo = Math.max(0, totalItem - gastado);
-          items.push({
-            detalleId: d.id!,
-            descripcion: d.descripcion,
-            memoriaCodigo: m.codigo,
-            areaNombre: m.area_nombre,
-            partidaCodigo: d.partida_codigo || '',
-            partidaNombre: d.partida_nombre || '',
-            montoTotal: totalItem,
-            montoGastado: gastado,
-            saldoDisponible: saldo,
-            estadoGasto: d.estado_ejecucion || 'PENDIENTE',
-          });
-        });
+    return (Array.isArray(detallesPresupuesto) ? detallesPresupuesto : [])
+      .filter((d) => ['APROBADO_FINANZAS', 'APROBADO_GERENCIA'].includes(d.memoria_estado || ''))
+      .map((d) => {
+        const totalItem = parseFloat(d.precio_total || '0');
+        const gastado = parseFloat(d.monto_ejecutado || '0');
+        const saldo = parseFloat(d.monto_disponible || String(Math.max(0, totalItem - gastado)));
+        return {
+          detalleId: d.id!,
+          descripcion: d.descripcion,
+          memoriaCodigo: d.memoria_codigo || '',
+          areaNombre: d.area_nombre || '',
+          partidaCodigo: d.partida_codigo || '',
+          partidaNombre: d.partida_nombre || '',
+          montoTotal: totalItem,
+          montoGastado: gastado,
+          saldoDisponible: saldo,
+          estadoGasto: d.estado_ejecucion || 'PENDIENTE',
+        };
       });
-
-    return items;
-  }, [memorias]);
+  }, [detallesPresupuesto]);
 
   const selectedItemForGasto = useMemo(() => {
     if (!formGasto.detalleMemoriaId) return null;

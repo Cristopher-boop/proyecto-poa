@@ -20,7 +20,9 @@ export const organizacionalService = {
     getProgramas: () => getList<Programa>(`${API_BASE_URL}/programas/`),
     getPrograma: (id: number) => api.get(`${API_BASE_URL}/programas/${id}/`),
     createPrograma: (data: unknown) => api.post(`${API_BASE_URL}/programas/`, data),
-    updatePrograma: (id: number, data: unknown) => api.put(`${API_BASE_URL}/programas/${id}/`, data),
+    updatePrograma: (id: number, data: unknown) => api.patch(`${API_BASE_URL}/programas/${id}/`, data),
+    toggleEstadoPrograma: (id: number, estado?: boolean) =>
+        api.post(`${API_BASE_URL}/programas/${id}/toggle-estado/`, { estado }),
     deletePrograma: (id: number) => api.delete(`${API_BASE_URL}/programas/${id}/`),
     getProgramaAreas: (id: number) => getList<Area>(`${API_BASE_URL}/programas/${id}/areas/`),
     getProgramaSecciones: (id: number) => getList<Seccion>(`${API_BASE_URL}/programas/${id}/secciones/`),
@@ -36,7 +38,9 @@ export const organizacionalService = {
     },
     getArea: (id: number) => api.get(`${API_BASE_URL}/areas/${id}/`),
     createArea: (data: unknown) => api.post(`${API_BASE_URL}/areas/`, data),
-    updateArea: (id: number, data: unknown) => api.put(`${API_BASE_URL}/areas/${id}/`, data),
+    updateArea: (id: number, data: unknown) => api.patch(`${API_BASE_URL}/areas/${id}/`, data),
+    toggleEstadoArea: (id: number, estado?: boolean) =>
+        api.post(`${API_BASE_URL}/areas/${id}/toggle-estado/`, { estado }),
     deleteArea: (id: number) => api.delete(`${API_BASE_URL}/areas/${id}/`),
     getAreaSecciones: (id: number) => getList<Seccion>(`${API_BASE_URL}/areas/${id}/secciones/`),
     getAreasPorPrograma: (programaId: number) =>
@@ -52,7 +56,9 @@ export const organizacionalService = {
     },
     getSeccion: (id: number) => api.get(`${API_BASE_URL}/secciones/${id}/`),
     createSeccion: (data: unknown) => api.post(`${API_BASE_URL}/secciones/`, data),
-    updateSeccion: (id: number, data: unknown) => api.put(`${API_BASE_URL}/secciones/${id}/`, data),
+    updateSeccion: (id: number, data: unknown) => api.patch(`${API_BASE_URL}/secciones/${id}/`, data),
+    toggleEstadoSeccion: (id: number, estado?: boolean) =>
+        api.post(`${API_BASE_URL}/secciones/${id}/toggle-estado/`, { estado }),
     deleteSeccion: (id: number) => api.delete(`${API_BASE_URL}/secciones/${id}/`),
     getSeccionesPorArea: (areaId: number) =>
         getList<Seccion>(`${API_BASE_URL}/secciones/por_area/?area_id=${areaId}`),

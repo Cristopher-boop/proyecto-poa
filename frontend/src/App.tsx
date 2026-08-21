@@ -22,6 +22,7 @@ export default function App() {
               <Route path="/" element={<AppShell />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="presupuestos" element={<PresupuestosPage />} />
+                <Route path="partidas" element={<PartidasPage />} />
                 <Route path="memorias" element={<MemoriasPage />} />
                 <Route path="ejecucion" element={<EjecucionPage />} />
                 <Route path="organizacional" element={<OrganizacionalPage />} />
