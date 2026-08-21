@@ -20,41 +20,31 @@ class MemoriaCalculo(TimeStampedModel):
     estado = models.CharField(max_length=20, choices=EstadoMemoria.choices, default=EstadoMemoria.BORRADOR, verbose_name="Estado")
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Aprobación")
 
+    # Campos almacenados de saldo (actualizados automáticamente en cada movimiento)
+    total_presupuestado = models.DecimalField(
+        max_digits=14, decimal_places=4, default=Decimal('0.0000'),
+        verbose_name="Total Presupuestado"
+    )
+    total_ejecutado = models.DecimalField(
+        max_digits=14, decimal_places=4, default=Decimal('0.0000'),
+        verbose_name="Total Ejecutado"
+    )
+    monto_entrante = models.DecimalField(
+        max_digits=14, decimal_places=4, default=Decimal('0.0000'),
+        verbose_name="Monto Entrante (Traspasos)"
+    )
+    monto_saliente = models.DecimalField(
+        max_digits=14, decimal_places=4, default=Decimal('0.0000'),
+        verbose_name="Monto Saliente (Traspasos)"
+    )
+    saldo_disponible = models.DecimalField(
+        max_digits=14, decimal_places=4, default=Decimal('0.0000'),
+        verbose_name="Saldo Disponible"
+    )
+
     class Meta:
         verbose_name = "Memoria de Cálculo"
         verbose_name_plural = "Memorias de Cálculo"
-
-    def obtener_saldo_calculado(self):
-        from apps.ejecucion.models import Gasto
-        from django.db.models import Sum
-
-        detalles = self.detalles.all()
-        monto_asignado = sum(
-            ((d.cantidad or Decimal('0.00')) * (d.precio_unitario or Decimal('0.00')))
-            for d in detalles
-        )
-
-        monto_ejecutado = Gasto.objects.filter(
-            detalle_memoria__memoria=self
-        ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-
-        monto_entrante = self.traspasos_entrada.filter(
-            estado='APROBADO'
-        ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
-
-        monto_saliente = self.traspasos_salida.filter(
-            estado='APROBADO'
-        ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
-
-        disponible = (monto_asignado + monto_entrante) - monto_saliente - monto_ejecutado
-
-        return {
-            'monto_asignado': str(monto_asignado),
-            'monto_ejecutado': str(monto_ejecutado),
-            'monto_entrante': str(monto_entrante),
-            'monto_saliente': str(monto_saliente),
-            'disponible': str(disponible)
-        }
 
     def __str__(self):
         return f"{self.codigo} [{self.get_estado_display()}]"
@@ -131,6 +121,16 @@ class DetallePresupuestoMemoria(TimeStampedModel):
     cantidad = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cantidad")
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Precio Unitario")
     estado_ejecucion = models.CharField(max_length=20, choices=EstadoGasto.choices, default=EstadoGasto.PENDIENTE, verbose_name="Estado Gasto")
+
+    # Campos almacenados de saldo por ítem
+    total_ejecutado = models.DecimalField(
+        max_digits=14, decimal_places=4, default=Decimal('0.0000'),
+        verbose_name="Total Ejecutado"
+    )
+    saldo_disponible = models.DecimalField(
+        max_digits=14, decimal_places=4, default=Decimal('0.0000'),
+        verbose_name="Saldo Disponible"
+    )
 
     class Meta:
         verbose_name = "Detalle de Presupuesto en Memoria"

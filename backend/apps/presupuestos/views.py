@@ -291,10 +291,9 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                 total_pres_mem = sum(p['presupuestado'] for p in partidas_data.values())
                 total_gast_mem = sum(p['gastado'] for p in partidas_data.values())
 
-                saldo_info = memoria.obtener_saldo_calculado()
-                monto_entrante = Decimal(saldo_info['monto_entrante'])
-                monto_saliente = Decimal(saldo_info['monto_saliente'])
-                disponible_real = Decimal(saldo_info['disponible'])
+                monto_entrante = memoria.monto_entrante
+                monto_saliente = memoria.monto_saliente
+                disponible_real = memoria.saldo_disponible
 
                 num_partidas = len(partidas_data)
                 partidas_list = []

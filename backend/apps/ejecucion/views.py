@@ -8,6 +8,7 @@ from decimal import Decimal
 from .models import Gasto
 from .serializers import GastoSerializer
 from apps.memorias.models import DetallePresupuestoMemoria, MemoriaCalculo
+from apps.memorias.utils import recalcular_saldos_memoria
 from apps.presupuestos.models import PresupuestoArea, Gestion
 
 
@@ -15,15 +16,19 @@ def recalcular_estado_detalle_y_presupuesto(detalle):
     """
     Función utilitaria que actualiza:
     1. El estado de ejecución del DetallePresupuestoMemoria (PENDIENTE, EJECUTADO_PARCIAL, COMPLETADO)
-    2. El monto_actual del PresupuestoArea correspondiente.
+    2. Los campos almacenados de saldo en MemoriaCalculo y DetallePresupuestoMemoria
+    3. El monto_actual del PresupuestoArea correspondiente.
     """
     memoria = detalle.memoria
     area = memoria.seccion.area
     gestion = memoria.gestion
 
-    # 1. Actualizar estado del detalle
+    # 1. Actualizar saldos almacenados de la memoria y sus detalles
+    recalcular_saldos_memoria(memoria)
+
+    # 2. Actualizar estado del detalle
     monto_total_item = (detalle.cantidad or Decimal('0.00')) * (detalle.precio_unitario or Decimal('0.00'))
-    total_gastado_item = detalle.gastos.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
+    total_gastado_item = detalle.total_ejecutado
 
     if total_gastado_item <= Decimal('0.00'):
         detalle.estado_ejecucion = DetallePresupuestoMemoria.EstadoGasto.PENDIENTE
@@ -33,7 +38,7 @@ def recalcular_estado_detalle_y_presupuesto(detalle):
         detalle.estado_ejecucion = DetallePresupuestoMemoria.EstadoGasto.COMPLETADO
     detalle.save(update_fields=['estado_ejecucion'])
 
-    # 2. Actualizar PresupuestoArea en tiempo real: Monto_Actual = Monto_Inicial - Gastos_Ejecutados
+    # 3. Actualizar PresupuestoArea en tiempo real: Monto_Actual = Monto_Inicial - Gastos_Ejecutados
     presupuesto = PresupuestoArea.objects.filter(gestion=gestion, area=area).first()
     if presupuesto:
         total_gastos_area = Gasto.objects.filter(

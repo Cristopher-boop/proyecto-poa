@@ -7,6 +7,7 @@ from django.db.models import Q
 from decimal import Decimal
 
 from .models import MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria, TraspasoPresupuestario
+from .utils import recalcular_saldos_memoria
 from .serializers import (
     MemoriaCalculoSerializer,
     DetallePresupuestoMemoriaSerializer,
@@ -17,7 +18,7 @@ from apps.presupuestos.models import Gestion
 
 
 class MemoriaCalculoViewSet(viewsets.ModelViewSet):
-    queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area').prefetch_related('detalles__partida', 'participaciones__usuario').all().order_by('-created_at')
+    queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area').prefetch_related('detalles__partida', 'detalles__gastos', 'participaciones__usuario').all().order_by('-created_at')
     serializer_class = MemoriaCalculoSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
@@ -146,8 +147,13 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='saldo-disponible')
     def saldo_disponible(self, request, pk=None):
         memoria = self.get_object()
-        saldo_info = memoria.obtener_saldo_calculado()
-        return Response(saldo_info, status=status.HTTP_200_OK)
+        return Response({
+            'monto_asignado': str(memoria.total_presupuestado),
+            'monto_ejecutado': str(memoria.total_ejecutado),
+            'monto_entrante': str(memoria.monto_entrante),
+            'monto_saliente': str(memoria.monto_saliente),
+            'disponible': str(memoria.saldo_disponible),
+        }, status=status.HTTP_200_OK)
 
 
 class DetallePresupuestoMemoriaViewSet(viewsets.ModelViewSet):
@@ -205,15 +211,20 @@ class TraspasoViewSet(viewsets.ModelViewSet):
             # Bloqueo select_for_update en memorias origen y destino
             memorias = list(MemoriaCalculo.objects.select_for_update().filter(id__in=[origen_id, destino_id]))
             origen = next((m for m in memorias if m.id == origen_id), None)
+            destino = next((m for m in memorias if m.id == destino_id), None)
 
             if origen:
-                saldo_info = origen.obtener_saldo_calculado()
                 monto = serializer.validated_data['monto']
-                if Decimal(saldo_info['disponible']) < monto:
+                if origen.saldo_disponible < monto:
                     raise serializers.ValidationError({
-                        'monto': [f"Saldo insuficiente en la memoria de origen tras bloqueo. Disponible: Bs. {saldo_info['disponible']}."]
+                        'monto': [f"Saldo insuficiente en la memoria de origen tras bloqueo. Disponible: Bs. {origen.saldo_disponible}."]
                     })
 
             user = self.request.user if self.request.user and self.request.user.is_authenticated else None
             serializer.save(usuario_registro=user)
+
+            if origen:
+                recalcular_saldos_memoria(origen)
+            if destino:
+                recalcular_saldos_memoria(destino)
 

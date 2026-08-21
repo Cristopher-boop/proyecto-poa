@@ -2,6 +2,7 @@ from rest_framework import serializers
 from decimal import Decimal
 from django.db.models import Sum
 from .models import MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria, TraspasoPresupuestario
+from .utils import recalcular_saldos_memoria
 from apps.presupuestos.models import Gestion, Partida
 from apps.organizacional.models import Seccion
 from apps.ejecucion.models import Gasto
@@ -13,8 +14,8 @@ class DetallePresupuestoMemoriaSerializer(serializers.ModelSerializer):
     partida_nombre = serializers.CharField(source='partida.nombre', read_only=True)
     partida_clase = serializers.CharField(source='partida.clase', read_only=True)
     precio_total = serializers.SerializerMethodField()
-    monto_ejecutado = serializers.SerializerMethodField()
-    monto_disponible = serializers.SerializerMethodField()
+    monto_ejecutado = serializers.CharField(source='total_ejecutado', read_only=True)
+    monto_disponible = serializers.CharField(source='saldo_disponible', read_only=True)
 
     class Meta:
         model = DetallePresupuestoMemoria
@@ -45,15 +46,6 @@ class DetallePresupuestoMemoriaSerializer(serializers.ModelSerializer):
         cant = obj.cantidad or Decimal('0.00')
         precio = obj.precio_unitario or Decimal('0.00')
         return str(cant * precio)
-
-    def get_monto_ejecutado(self, obj):
-        gastos = obj.gastos.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-        return str(gastos)
-
-    def get_monto_disponible(self, obj):
-        total = (obj.cantidad or Decimal('0.00')) * (obj.precio_unitario or Decimal('0.00'))
-        gastos = obj.gastos.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-        return str(max(Decimal('0.00'), total - gastos))
 
 
 class RegistroMemoriaUsuarioSerializer(serializers.ModelSerializer):
@@ -89,9 +81,11 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     detalles = DetallePresupuestoMemoriaSerializer(many=True, required=False)
     participaciones = RegistroMemoriaUsuarioSerializer(many=True, read_only=True)
 
-    total_presupuesto = serializers.SerializerMethodField()
-    total_ejecutado = serializers.SerializerMethodField()
-    total_disponible = serializers.SerializerMethodField()
+    total_presupuesto = serializers.CharField(source='total_presupuestado', read_only=True)
+    total_ejecutado = serializers.CharField(read_only=True)
+    total_disponible = serializers.CharField(source='saldo_disponible', read_only=True)
+    monto_entrante = serializers.CharField(read_only=True)
+    monto_saliente = serializers.CharField(read_only=True)
 
     class Meta:
         model = MemoriaCalculo
@@ -118,6 +112,8 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
             'total_presupuesto',
             'total_ejecutado',
             'total_disponible',
+            'monto_entrante',
+            'monto_saliente',
             'created_at',
             'updated_at',
         ]
@@ -133,23 +129,6 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     def get_partida_nombre(self, obj):
         primer_detalle = obj.detalles.first()
         return primer_detalle.partida.nombre if primer_detalle and primer_detalle.partida else None
-
-    def get_total_presupuesto(self, obj):
-        total = sum(
-            ((d.cantidad or Decimal('0.00')) * (d.precio_unitario or Decimal('0.00')))
-            for d in obj.detalles.all()
-        )
-        return str(total)
-
-    def get_total_ejecutado(self, obj):
-        gastos = Gasto.objects.filter(
-            detalle_memoria__memoria=obj
-        ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-        return str(gastos)
-
-    def get_total_disponible(self, obj):
-        saldo_info = obj.obtener_saldo_calculado()
-        return saldo_info['disponible']
 
     def validate(self, data):
         data.pop('partida_id', None)
@@ -193,6 +172,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
                     estado_ejecucion=DetallePresupuestoMemoria.EstadoGasto.PENDIENTE,
                 )
 
+        recalcular_saldos_memoria(memoria)
         return memoria
 
     def update(self, instance, validated_data):
@@ -228,6 +208,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
                         estado_ejecucion=item.get('estado_ejecucion', DetallePresupuestoMemoria.EstadoGasto.PENDIENTE),
                     )
 
+        recalcular_saldos_memoria(instance)
         return instance
 
 
@@ -306,8 +287,7 @@ class TraspasoSerializer(serializers.ModelSerializer):
                 'monto': ['El monto del traspaso debe ser mayor a 0.']
             })
 
-        saldo_origen = memoria_origen.obtener_saldo_calculado()
-        disponible_origen = Decimal(saldo_origen['disponible'])
+        disponible_origen = memoria_origen.saldo_disponible
 
         if monto > disponible_origen:
             raise serializers.ValidationError({
