@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from decimal import Decimal
 from django.db.models import Sum
-from .models import MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria
+from .models import MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria, TraspasoPresupuestario
 from apps.presupuestos.models import Gestion, Partida
 from apps.organizacional.models import Seccion
 from apps.ejecucion.models import Gasto
@@ -148,14 +148,8 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
         return str(gastos)
 
     def get_total_disponible(self, obj):
-        total = sum(
-            ((d.cantidad or Decimal('0.00')) * (d.precio_unitario or Decimal('0.00')))
-            for d in obj.detalles.all()
-        )
-        gastos = Gasto.objects.filter(
-            detalle_memoria__memoria=obj
-        ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-        return str(max(Decimal('0.00'), total - gastos))
+        saldo_info = obj.obtener_saldo_calculado()
+        return saldo_info['disponible']
 
     def validate(self, data):
         data.pop('partida_id', None)
@@ -235,3 +229,85 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
                     )
 
         return instance
+
+
+class TraspasoSerializer(serializers.ModelSerializer):
+    memoria_origen_codigo = serializers.CharField(source='memoria_origen.codigo', read_only=True)
+    memoria_destino_codigo = serializers.CharField(source='memoria_destino.codigo', read_only=True)
+    usuario_registro_nombre = serializers.SerializerMethodField()
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+
+    class Meta:
+        model = TraspasoPresupuestario
+        fields = [
+            'id',
+            'monto',
+            'motivo',
+            'estado',
+            'estado_display',
+            'memoria_origen',
+            'memoria_origen_codigo',
+            'memoria_destino',
+            'memoria_destino_codigo',
+            'usuario_registro',
+            'usuario_registro_nombre',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'estado', 'usuario_registro', 'created_at', 'updated_at']
+
+    def get_usuario_registro_nombre(self, obj):
+        if obj.usuario_registro:
+            return obj.usuario_registro.get_full_name() or obj.usuario_registro.username
+        return None
+
+    def validate(self, data):
+        memoria_origen = data.get('memoria_origen')
+        memoria_destino = data.get('memoria_destino')
+        monto = data.get('monto')
+
+        if not memoria_origen or not memoria_destino:
+            raise serializers.ValidationError({
+                'non_field_errors': ['Debe especificar tanto la memoria de origen como la de destino.']
+            })
+
+        if memoria_origen.id == memoria_destino.id:
+            raise serializers.ValidationError({
+                'memoria_destino': ['La memoria de origen y la memoria de destino no pueden ser la misma.']
+            })
+
+        if memoria_origen.seccion.area_id != memoria_destino.seccion.area_id:
+            raise serializers.ValidationError({
+                'non_field_errors': ['Solo se puede traspasar saldo entre memorias de la misma área.']
+            })
+
+        if memoria_origen.gestion_id != memoria_destino.gestion_id:
+            raise serializers.ValidationError({
+                'non_field_errors': ['Solo se puede traspasar saldo entre memorias de la misma gestión.']
+            })
+
+        if memoria_origen.estado != MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS:
+            raise serializers.ValidationError({
+                'memoria_origen': [f'La memoria de origen {memoria_origen.codigo} no está aprobada por Finanzas (Estado actual: {memoria_origen.get_estado_display()}).']
+            })
+
+        if memoria_destino.estado != MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS:
+            raise serializers.ValidationError({
+                'memoria_destino': [f'La memoria de destino {memoria_destino.codigo} no está aprobada por Finanzas (Estado actual: {memoria_destino.get_estado_display()}).']
+            })
+
+        if not monto or monto <= Decimal('0.00'):
+            raise serializers.ValidationError({
+                'monto': ['El monto del traspaso debe ser mayor a 0.']
+            })
+
+        saldo_origen = memoria_origen.obtener_saldo_calculado()
+        disponible_origen = Decimal(saldo_origen['disponible'])
+
+        if monto > disponible_origen:
+            raise serializers.ValidationError({
+                'monto': [f'Saldo insuficiente en la memoria de origen. Disponible: Bs. {disponible_origen:.2f}.']
+            })
+
+        return data
+
