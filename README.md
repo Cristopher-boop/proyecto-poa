@@ -1,4 +1,4 @@
-﻿# Sistema POA (Planificación Operativa Anual)
+# Sistema POA (Planificación Operativa Anual)
 
 Sistema de gestión operativa desarrollado con **Django (Backend)** y **React + Vite (Frontend)**.
 
@@ -55,9 +55,30 @@ npm run dev
 
 *El frontend quedará corriendo en `http://localhost:5173/`*
 
+## 4. Reiniciar la Base de Datos desde Cero (IDs en 1)
+
+Si deseas limpiar la base de datos por completo, reiniciar los autoincrementales (`Primary Keys` de vuelta a `1`) y precargar los datos organizacionales reales y partidas limpias en un solo paso:
+
+Abre la terminal en la carpeta `/backend` (con el entorno virtual activo) y ejecuta:
+
+```powershell
+python reset_db.py
+```
+
+Este script automatizado:
+1. Desactiva la verificación de claves foráneas.
+2. Ejecuta un `TRUNCATE` en todas las tablas operativas (limpieza total sin borrar el esquema).
+3. Crea un usuario superadministrador por defecto con las credenciales:
+   * **Usuario:** `admin`
+   * **Contraseña:** `admin`
+4. Carga los programas, áreas y secciones reales de la institución mediante `seed_organizacional`.
+5. Importa las partidas del catálogo oficial desde el CSV clasificando la columna clase como `INGRESO` o `EGRESO`.
+
+---
+
 ## Notas Importantes de Arquitectura
 
 - **Autenticación:** Utiliza JWT (SimpleJWT). Las llamadas al backend deben enviar el encabezado `Authorization: Bearer <token>`.
 - **Axios Interceptors:** El frontend renueva el token automáticamente por detrás si este expira y el `refresh_token` aún es válido.
-- **Memorias de Cálculo & Consolidado:** Los comandos `seed_consolidado` y `seed_memorias` procesan automáticamente el archivo Excel oficial ubicado en `temporal/1. CONSOLIDADO GENERAL POA 2026 OFICIAL.xlsx` y cargan 302 memorias de cálculo con sus 1,454 detalles presupuestarios individuales a la base de datos MySQL.
+- **Clasificación de Partidas:** Las partidas presupuestarias se clasifican en la base de datos bajo el campo `clase` con los valores oficiales de `INGRESO` o `EGRESO`. El comando de importación maneja de forma automática entradas duplicadas de código si pertenecen a clases diferentes.
 - **Tailwind y CSS:** La arquitectura del diseño está en `tailwind.config.js` e `index.css`, utilizando variables nativas (`--bg-base`, `--theme-primary`) para habilitar el modo Dark / Light automáticamente con la paleta de colores institucional.

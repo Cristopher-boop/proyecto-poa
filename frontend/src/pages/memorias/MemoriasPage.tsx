@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   BookOpenText,
   Plus,
@@ -146,14 +146,103 @@ export default function MemoriasPage() {
     activeGestion?.estado === 'EN_EJECUCION' ||
     activeGestion?.estado === 'FINALIZADO';
 
-  // Partidas filtradas para selector
+  const [partidaSelectorOpen, setPartidaSelectorOpen] = useState(false);
+  const partidaSelectorRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (partidaSelectorRef.current && !partidaSelectorRef.current.contains(e.target as Node)) {
+        setPartidaSelectorOpen(false);
+      }
+    }
+    if (partidaSelectorOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [partidaSelectorOpen]);
+
+  // ── Partidas de EGRESO: jerarquía de hojas ──────────────────────────────
+  // Una partida es "hoja" si ninguna otra partida tiene un código que empiece
+  // por el prefijo significativo de ésta (sin ceros finales).
+  // Ej.: 24100 → prefijo "241" → tiene hijos 24110, 24120, 24130 → NO es hoja
+  //      24110 → prefijo "2411" → nadie más empieza en "2411" → ES hoja
+  //      24200 → prefijo "242" → nadie más → ES hoja
+
+  const egresoPartidas = useMemo(
+    () => partidas.filter((p) => p.clase === 'EGRESO'),
+    [partidas]
+  );
+
+  const egresoCodes = useMemo(
+    () => egresoPartidas.map((p) => p.codigo),
+    [egresoPartidas]
+  );
+
+  const egresoLeafs = useMemo(() => {
+    return egresoPartidas.filter((p) => {
+      const prefix = p.codigo.replace(/0+$/, '');
+      if (!prefix) return false; // código todo-ceros → padre
+      // Si ALGÚN otro código empieza con este prefijo → es padre, no hoja
+      return !egresoCodes.some((c) => c !== p.codigo && c.startsWith(prefix));
+    });
+  }, [egresoPartidas, egresoCodes]);
+
+  // Para cada hoja, obtener su padre directo (prefijo más largo que la engloba)
+  const parentMap = useMemo(() => {
+    const map = new Map<string, Partida>();
+    for (const leaf of egresoLeafs) {
+      const leafPrefix = leaf.codigo.replace(/0+$/, '');
+      // Todos los ancestros: otros códigos cuyo prefijo-sin-ceros es prefijo de leafPrefix
+      const ancestors = egresoPartidas.filter((p) => {
+        if (p.codigo === leaf.codigo) return false;
+        const pPrefix = p.codigo.replace(/0+$/, '');
+        return pPrefix && leafPrefix.startsWith(pPrefix);
+      });
+      // El padre directo es el ancestro con el prefijo más largo (más específico)
+      if (ancestors.length > 0) {
+        ancestors.sort(
+          (a, b) =>
+            b.codigo.replace(/0+$/, '').length - a.codigo.replace(/0+$/, '').length
+        );
+        map.set(leaf.codigo, ancestors[0]);
+      }
+    }
+    return map;
+  }, [egresoLeafs, egresoPartidas]);
+
+  // Lista de hojas filtrada por búsqueda
   const filteredPartidas = useMemo(() => {
-    if (!searchPartidaQuery.trim()) return partidas.slice(0, 20);
+    if (!searchPartidaQuery.trim()) return egresoLeafs;
     const q = searchPartidaQuery.toLowerCase();
-    return partidas
-      .filter((p) => p.codigo.toLowerCase().includes(q) || p.nombre.toLowerCase().includes(q))
-      .slice(0, 30);
-  }, [partidas, searchPartidaQuery]);
+    return egresoLeafs.filter(
+      (p) =>
+        p.codigo.toLowerCase().includes(q) ||
+        p.nombre.toLowerCase().includes(q) ||
+        parentMap.get(p.codigo)?.nombre.toLowerCase().includes(q)
+    );
+  }, [egresoLeafs, searchPartidaQuery, parentMap]);
+
+  // Hojas agrupadas por padre directo (para la vista sin búsqueda)
+  type GroupedPartidas = { parent: Partida | null; leafs: Partida[] }[];
+  const groupedPartidas = useMemo((): GroupedPartidas => {
+    const groups = new Map<string | null, { parent: Partida | null; leafs: Partida[] }>();
+    for (const leaf of filteredPartidas) {
+      const parent = parentMap.get(leaf.codigo) ?? null;
+      const key = parent ? parent.codigo : null;
+      if (!groups.has(key)) {
+        groups.set(key, { parent, leafs: [] });
+      }
+      groups.get(key)!.leafs.push(leaf);
+    }
+    // Ordenar grupos por código de padre
+    return Array.from(groups.values()).sort((a, b) => {
+      const ac = a.parent?.codigo ?? '';
+      const bc = b.parent?.codigo ?? '';
+      return ac.localeCompare(bc);
+    });
+  }, [filteredPartidas, parentMap]);
+
 
   // Contadores por estado
   const conteos = useMemo(() => {
@@ -207,10 +296,11 @@ export default function MemoriasPage() {
       codigo: `MEM-${anio}-${correlativo}`,
       seccionId: defaultSeccion,
       justificacion: '',
-      partidaId: partidas[0]?.id || '',
+      partidaId: partidas.find((p) => p.clase === 'EGRESO')?.id || '',
       renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: 0 }],
     });
     setSearchPartidaQuery('');
+    setPartidaSelectorOpen(false);
     setShowModalMemoria(true);
   }
 
@@ -220,7 +310,7 @@ export default function MemoriasPage() {
       codigo: mem.codigo,
       seccionId: mem.seccion,
       justificacion: mem.justificacion,
-      partidaId: mem.partida_id || partidas[0]?.id || '',
+      partidaId: mem.partida_id || partidas.find((p) => p.clase === 'EGRESO')?.id || '',
       renglones: mem.detalles.map((d) => ({
         descripcion: d.descripcion,
         unidad_medida: d.unidad_medida,
@@ -229,6 +319,7 @@ export default function MemoriasPage() {
       })),
     });
     setSearchPartidaQuery('');
+    setPartidaSelectorOpen(false);
     setShowModalMemoria(true);
   }
 
@@ -726,7 +817,7 @@ export default function MemoriasPage() {
             </div>
 
             <form onSubmit={handleGuardarMemoria} className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
                     Código de Memoria *
@@ -760,23 +851,155 @@ export default function MemoriasPage() {
                   </select>
                 </div>
 
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
-                    Partida Presupuestaria de Gasto *
+                    Partida Presupuestaria de Egreso *
                   </label>
-                  <select
-                    required
-                    value={formMemoria.partidaId}
-                    onChange={(e) => setFormMemoria({ ...formMemoria, partidaId: Number(e.target.value) })}
-                    className="input-theme text-xs"
-                  >
-                    <option value="">Seleccione Partida...</option>
-                    {partidas.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.codigo} - {p.nombre}
-                      </option>
-                    ))}
-                  </select>
+
+                  {/* Combobox selector de partida */}
+                  <div className="relative" ref={partidaSelectorRef}>
+                    {/* Partida seleccionada – actúa como trigger */}
+                    {(() => {
+                      const selected = partidas.find((p) => p.id === Number(formMemoria.partidaId));
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setPartidaSelectorOpen(!partidaSelectorOpen)}
+                          className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-theme-border bg-theme-surface hover:border-theme-primary focus:outline-none focus:border-theme-primary transition-colors text-left"
+                        >
+                          {selected ? (
+                            <span className="flex-1 min-w-0">
+                              <span className="font-mono font-bold text-xs text-theme-primary mr-2">
+                                {selected.codigo}
+                              </span>
+                              <span className="text-xs text-theme-main line-clamp-1">{selected.nombre}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-theme-muted">Seleccione una partida de egreso...</span>
+                          )}
+                          <svg
+                            className={`w-4 h-4 shrink-0 text-theme-muted transition-transform ${partidaSelectorOpen ? 'rotate-180' : ''}`}
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      );
+                    })()}
+
+                    {/* Dropdown con búsqueda y lista */}
+                    {partidaSelectorOpen && (
+                      <div className="absolute z-50 mt-1 w-full bg-theme-surface border border-theme-border rounded-xl shadow-xl overflow-hidden flex flex-col"
+                           style={{ maxHeight: '320px' }}>
+                        <div className="p-2 border-b border-theme-border sticky top-0 bg-theme-surface z-10">
+                          <div className="relative">
+                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                            <input
+                              autoFocus
+                              type="text"
+                              value={searchPartidaQuery}
+                              onChange={(e) => setSearchPartidaQuery(e.target.value)}
+                              placeholder="Buscar por código, nombre o grupo..."
+                              className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted"
+                            />
+                          </div>
+                          <p className="text-[10px] text-theme-muted mt-1 ml-1">
+                            {filteredPartidas.length} partidas seleccionables (solo hojas de egreso)
+                          </p>
+                        </div>
+
+                        {/* Lista de resultados agrupados */}
+                        <div className="overflow-y-auto" style={{ maxHeight: '300px' }}>
+                          {filteredPartidas.length === 0 ? (
+                            <div className="py-8 text-center text-theme-muted text-xs">
+                              No se encontraron partidas de egreso
+                            </div>
+                          ) : (
+                            groupedPartidas.map((group, gIdx) => (
+                              <div key={gIdx}>
+                                {/* Encabezado de grupo (padre – no seleccionable) */}
+                                {group.parent && (
+                                  <div className="flex items-center gap-2 px-3 py-1.5 bg-theme-base/80 border-b border-theme-border/60 sticky top-0 z-[5]">
+                                    <span className="font-mono text-[10px] font-bold text-theme-muted/70 bg-theme-border/60 px-1 rounded">
+                                      {group.parent.codigo}
+                                    </span>
+                                    <span className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide line-clamp-1">
+                                      {group.parent.nombre}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Hojas seleccionables del grupo */}
+                                {group.leafs.map((p) => {
+                                  const isActive = p.id === Number(formMemoria.partidaId);
+                                  const parent = parentMap.get(p.codigo);
+                                  return (
+                                    <button
+                                      key={p.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setFormMemoria({ ...formMemoria, partidaId: p.id });
+                                        setPartidaSelectorOpen(false);
+                                        setSearchPartidaQuery('');
+                                      }}
+                                      className={`w-full flex items-start gap-3 pl-5 pr-3 py-2.5 text-left transition-colors border-b border-theme-border/30 last:border-0 ${
+                                        isActive
+                                          ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
+                                          : 'hover:bg-theme-border/30'
+                                      }`}
+                                    >
+                                      {/* Línea de indentación visual */}
+                                      <span className="shrink-0 flex items-start pt-0.5">
+                                        <span className="w-3 h-px bg-theme-border/70 mt-2 mr-1" />
+                                      </span>
+
+                                      <span
+                                        className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
+                                          isActive
+                                            ? 'bg-theme-primary text-white'
+                                            : 'bg-theme-base text-theme-primary border border-theme-border'
+                                        }`}
+                                      >
+                                        {p.codigo}
+                                      </span>
+
+                                      <div className="flex-1 min-w-0">
+                                        <p className={`text-xs leading-tight ${isActive ? 'font-semibold text-theme-main' : 'text-theme-main'}`}>
+                                          {p.nombre}
+                                        </p>
+                                        {/* Breadcrumb de padre en modo búsqueda */}
+                                        {searchPartidaQuery.trim() && parent && (
+                                          <p className="text-[10px] text-theme-muted mt-0.5 flex items-center gap-1">
+                                            <span className="font-mono">{parent.codigo}</span>
+                                            <span className="opacity-50">›</span>
+                                            <span className="line-clamp-1">{parent.nombre}</span>
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      {isActive && (
+                                        <Check size={14} className="shrink-0 text-theme-primary mt-0.5" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hidden input for form validation */}
+                    <input
+                      type="text"
+                      required
+                      readOnly
+                      tabIndex={-1}
+                      value={formMemoria.partidaId}
+                      className="absolute opacity-0 h-0 w-0 pointer-events-none"
+                    />
+                  </div>
                 </div>
               </div>
 
