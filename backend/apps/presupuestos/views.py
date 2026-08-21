@@ -143,6 +143,7 @@ class PartidaViewSet(viewsets.ModelViewSet):
     queryset = Partida.objects.all().order_by('codigo')
     serializer_class = PartidaSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None  # El catálogo de partidas se sirve completo, sin paginar
 
     def get_queryset(self):
         qs = super().get_queryset()

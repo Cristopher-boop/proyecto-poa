@@ -1,5 +1,4 @@
 import os
-import sys
 import django
 from django.db import connection
 from django.core.management import call_command
@@ -9,34 +8,43 @@ django.setup()
 
 from apps.usuarios.models import Usuario
 
+
 def reset():
-    print("[*] Iniciando el reinicio completo de la base de datos...")
-    
-    # 1. Obtener todas las tablas de la base de datos
+    print("=" * 60)
+    print(" REINICIO COMPLETO DE BASE DE DATOS - PROYECTO POA")
+    print("=" * 60)
+
+    # ────────────────────────────────────────────────────────────
+    # PASO 1: Eliminar TODAS las tablas (DROP TABLE)
+    # ────────────────────────────────────────────────────────────
+    print("\n[1/5] Eliminando todas las tablas existentes...")
     with connection.cursor() as cursor:
         cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-        
-        # Obtener nombres de las tablas
         db_tables = connection.introspection.table_names()
-        
-        print("[*] Vaciando todas las tablas (TRUNCATE) para reiniciar los contadores ID a 1...")
         for table in db_tables:
-            # Evitar tocar tablas internas de migraciones si se quiere conservar el historial de esquema,
-            # pero dado que queremos vaciar TODO e iniciar de 0, truncamos todo excepto django_migrations
-            if table == 'django_migrations':
-                continue
             try:
-                cursor.execute(f"TRUNCATE TABLE `{table}`;")
-                print(f"  [-] Tabla '{table}' vaciada con éxito.")
+                cursor.execute(f"DROP TABLE IF EXISTS `{table}`;")
+                print(f"  [DROP] '{table}'")
             except Exception as e:
-                print(f"  [!] Error al vaciar '{table}': {e}")
-                
+                print(f"  [!] Error al eliminar '{table}': {e}")
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
-        
-    print("\n[+] Base de datos vaciada con éxito (IDs reiniciados a 1).")
+    print("  [OK] Todas las tablas eliminadas.")
 
-    # 2. Re-crear usuario Administrador por defecto
-    print("\n[*] Creando usuario superadministrador por defecto...")
+    # ────────────────────────────────────────────────────────────
+    # PASO 2: Recrear el esquema aplicando todas las migraciones
+    # ────────────────────────────────────────────────────────────
+    print("\n[2/5] Recreando esquema desde cero (migrate)...")
+    try:
+        call_command('migrate', '--run-syncdb', verbosity=1)
+        print("  [OK] Migraciones aplicadas. Esquema recreado con IDs desde 1.")
+    except Exception as e:
+        print(f"  [!] Error al migrar: {e}")
+        return
+
+    # ────────────────────────────────────────────────────────────
+    # PASO 3: Crear usuario administrador por defecto
+    # ────────────────────────────────────────────────────────────
+    print("\n[3/5] Creando usuario superadministrador por defecto...")
     try:
         admin = Usuario.objects.create_superuser(
             username='admin',
@@ -45,32 +53,64 @@ def reset():
             first_name='Super',
             last_name='Administrador'
         )
-        print(f"  [+] Usuario '{admin.username}' creado exitosamente (Contraseña: 'admin').")
+        print(f"  [OK] Usuario '{admin.username}' creado (Contrasena: 'admin').")
     except Exception as e:
         print(f"  [!] Error al crear superusuario: {e}")
 
-    # 3. Correr seeders de datos iniciales
-    print("\n[*] Cargando datos organizacionales oficiales...")
+    # ────────────────────────────────────────────────────────────
+    # PASO 4: Semillas de datos oficiales
+    # ────────────────────────────────────────────────────────────
+    print("\n[4/5] Cargando datos semilla oficiales...")
+
+    print("  [*] Estructura organizacional (programas, areas, secciones)...")
     try:
         call_command('seed_organizacional')
+        print("  [OK] Datos organizacionales cargados.")
     except Exception as e:
-        print(f"  [!] Error al cargar datos organizacionales: {e}")
+        print(f"  [!] Error en seed_organizacional: {e}")
 
-    print("\n[*] Importando catálogo oficial de partidas presupuestarias...")
+    print("  [*] Catalogo de partidas presupuestarias (INGRESO / EGRESO)...")
     try:
         call_command('import_partidas')
+        print("  [OK] Partidas importadas.")
     except Exception as e:
-        print(f"  [!] Error al importar partidas: {e}")
+        print(f"  [!] Error en import_partidas: {e}")
 
-    print("\n[*] Poblando base de datos con memorias y presupuestos oficiales (seed_memorias)...")
+    print("  [*] Memorias de calculo oficiales desde Excel TAMEP...")
     try:
         call_command('seed_memorias')
+        print("  [OK] Memorias de calculo cargadas.")
     except Exception as e:
-        print(f"  [!] Error al poblar memorias: {e}")
+        print(f"  [!] Error en seed_memorias: {e}")
 
-    print("\n[SUCCESS] ¡Base de datos reiniciada de 0 exitosamente!")
-    print("  - Usuario: admin")
-    print("  - Contrasena: admin")
+    # ────────────────────────────────────────────────────────────
+    # RESUMEN FINAL
+    # ────────────────────────────────────────────────────────────
+    print("\n" + "=" * 60)
+    print("[5/5] RESUMEN - Base de datos reiniciada exitosamente")
+    print("=" * 60)
+    try:
+        from apps.organizacional.models import Area, Seccion, Programa
+        from apps.presupuestos.models import Partida
+        from apps.memorias.models import MemoriaCalculo, DetallePresupuestoMemoria
+
+        print(f"  Programas    : {Programa.objects.count()}")
+        print(f"  Areas        : {Area.objects.count()}")
+        print(f"  Secciones    : {Seccion.objects.count()}")
+        print(f"  Partidas     : {Partida.objects.count()} "
+              f"(INGRESO: {Partida.objects.filter(clase='INGRESO').count()}, "
+              f"EGRESO: {Partida.objects.filter(clase='EGRESO').count()})")
+        print(f"  Memorias     : {MemoriaCalculo.objects.count()}")
+        print(f"  Detalles     : {DetallePresupuestoMemoria.objects.count()}")
+        print(f"  Usuarios     : {Usuario.objects.count()}")
+    except Exception as e:
+        print(f"  [!] No se pudo generar el resumen: {e}")
+
+    print("\n  Credenciales de acceso:")
+    print("    Usuario   : admin")
+    print("    Contrasena: admin")
+    print("=" * 60)
+
 
 if __name__ == '__main__':
     reset()
