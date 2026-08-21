@@ -58,7 +58,25 @@ npm run dev
 
 *El frontend quedará corriendo en `http://localhost:5173/`*
 
-## 4. Alertas y Modales de Confirmación (SweetAlert2)
+## 4. Reiniciar la Base de Datos desde Cero (IDs en 1)
+
+Si deseas limpiar la base de datos por completo, reiniciar los autoincrementales (Primary Keys de vuelta a 1) y precargar los datos organizacionales reales y partidas limpias en un solo paso:
+
+Abre la terminal en la carpeta /backend (con el entorno virtual activo) y ejecuta:
+
+python reset_db.py
+Este script automatizado:
+1. Desactiva la verificación de claves foráneas.
+2. Ejecuta un TRUNCATE en todas las tablas operativas (limpieza total sin borrar el esquema).
+3. Crea un usuario superadministrador por defecto con las credenciales:
+   * Usuario: admin
+   * Contraseña: admin
+4. Carga los programas, áreas y secciones reales de la institución mediante seed_organizacional.
+5. Importa las partidas del catálogo oficial desde el CSV clasificando la columna clase como INGRESO o EGRESO.
+
+---
+
+## 5. Alertas y Modales de Confirmación (SweetAlert2)
 
 El proyecto utiliza **SweetAlert2** para confirmaciones de acciones críticas (como altas y bajas lógicas) y notificaciones de éxito/error, adaptándose automáticamente al tema claro u oscuro (Dark/Light mode).
 
