@@ -9,6 +9,7 @@ import PresupuestosPage from "./pages/presupuestos/PresupuestosPage";
 import MemoriasPage from "./pages/memorias/MemoriasPage";
 import EjecucionPage from "./pages/ejecucion/EjecucionPage";
 import OrganizacionalPage from "./pages/organizacional/OrganizacionalPage";
+import LogsPage from "./pages/logs/LogsPage";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
                 <Route path="memorias" element={<MemoriasPage />} />
                 <Route path="ejecucion" element={<EjecucionPage />} />
                 <Route path="organizacional" element={<OrganizacionalPage />} />
+                <Route path="logs" element={<LogsPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -9,9 +9,11 @@ import {
   BookOpenText,
   TrendingDown,
   Building2,
+  ShieldAlert,
 } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
 
-export type ModuleKey = "dashboard" | "presupuestos" | "memorias" | "ejecucion" | "organizacional";
+export type ModuleKey = "dashboard" | "presupuestos" | "memorias" | "ejecucion" | "organizacional" | "logs";
 
 interface ModuleItem {
   key: ModuleKey;
@@ -20,7 +22,7 @@ interface ModuleItem {
   path: string;
 }
 
-const modules: ModuleItem[] = [
+const baseModules: ModuleItem[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { key: "presupuestos", label: "Presupuestos & POA", icon: WalletCards, path: "/presupuestos" },
   { key: "memorias", label: "Memorias de Cálculo", icon: BookOpenText, path: "/memorias" },
@@ -32,12 +34,19 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const modules = [...baseModules];
+  if (user?.is_superuser) {
+    modules.push({ key: "logs", label: "Auditoría (Logs)", icon: ShieldAlert, path: "/logs" });
+  }
 
   const getActiveKey = (): ModuleKey => {
     if (location.pathname.startsWith('/memorias')) return 'memorias';
     if (location.pathname.startsWith('/ejecucion')) return 'ejecucion';
     if (location.pathname.startsWith('/presupuestos')) return 'presupuestos';
     if (location.pathname.startsWith('/organizacional')) return 'organizacional';
+    if (location.pathname.startsWith('/logs')) return 'logs';
     return 'dashboard';
   };
 

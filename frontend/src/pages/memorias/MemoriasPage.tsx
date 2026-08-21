@@ -23,6 +23,7 @@ import {
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import {
   Gestion,
   MemoriaCalculo,
@@ -146,6 +147,23 @@ export default function MemoriasPage() {
     activeGestion?.estado === 'EN_EJECUCION' ||
     activeGestion?.estado === 'FINALIZADO';
 
+  // Role based variables
+  const { user } = useAuth();
+  const rolUpper = (user?.rol_nombre || '').toUpperCase();
+  const isAdmin = rolUpper === 'ADMINISTRADOR' || Boolean(user?.is_superuser);
+  const isGerente = rolUpper === 'GERENTE';
+  const isElaborador = rolUpper === 'ELABORADOR';
+  const isTrabajador = rolUpper === 'TRABAJADOR';
+
+  // Privileges
+  const canCreate = !isGestionBloqueada && (isAdmin || isElaborador || isGerente);
+  const canEdit = !isGestionBloqueada && (isAdmin || isElaborador || isGerente);
+  const canDelete = !isGestionBloqueada && Boolean(user?.is_superuser); // Admin cannot delete as requested
+  const canSendGerencia = !isGestionBloqueada && (isElaborador || isGerente || isAdmin);
+  const canApproveGerencia = !isGestionBloqueada && (isGerente || isAdmin);
+  const canApproveFinanzas = !isGestionBloqueada && isAdmin;
+  const canReject = !isGestionBloqueada && (isGerente || isAdmin);
+
   // Partidas filtradas para selector
   const filteredPartidas = useMemo(() => {
     if (!searchPartidaQuery.trim()) return partidas.slice(0, 20);
@@ -155,42 +173,51 @@ export default function MemoriasPage() {
       .slice(0, 30);
   }, [partidas, searchPartidaQuery]);
 
-  // Contadores por estado
-  const conteos = useMemo(() => {
-    const arr = Array.isArray(memorias) ? memorias : [];
-    return {
-      todas: arr.length,
-      borrador: arr.filter((m) => m.estado === 'BORRADOR').length,
-      pendiente: arr.filter((m) => m.estado === 'PENDIENTE_GERENCIA').length,
-      finanzas: arr.filter((m) => m.estado === 'APROBADO_GERENCIA').length,
-      aprobadas: arr.filter((m) => m.estado === 'APROBADO_FINANZAS').length,
-      rechazadas: arr.filter((m) => m.estado === 'RECHAZADO').length,
-      montoTotal: arr.reduce((acc, m) => acc + parseFloat(m.total_presupuesto || '0'), 0),
-    };
-  }, [memorias]);
-
-  // Memorias filtradas
-  const memoriasFiltradas = useMemo(() => {
+  // Memorias permitidas por área/rol y filtros de búsqueda/área
+  const memoriasBase = useMemo(() => {
     return (Array.isArray(memorias) ? memorias : []).filter((m) => {
-      let matchTab = true;
-      if (activeTab === 'borrador') matchTab = m.estado === 'BORRADOR';
-      else if (activeTab === 'pendiente') matchTab = m.estado === 'PENDIENTE_GERENCIA';
-      else if (activeTab === 'finanzas') matchTab = m.estado === 'APROBADO_GERENCIA';
-      else if (activeTab === 'aprobadas') matchTab = m.estado === 'APROBADO_FINANZAS';
-      else if (activeTab === 'rechazadas') matchTab = m.estado === 'RECHAZADO';
-
+      // Si no es admin/superadmin, solo ver las de su área
+      if (!isAdmin && user?.area_id && String(m.area_id) !== String(user.area_id)) {
+        return false;
+      }
+      
       const matchArea = filtroArea === 'todas' || String(m.area_id) === filtroArea;
       const matchSearch =
         !searchTerm.trim() ||
-        m.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.area_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.justificacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.codigo && m.codigo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (m.area_nombre && m.area_nombre.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (m.justificacion && m.justificacion.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (m.partida_codigo && m.partida_codigo.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (m.partida_nombre && m.partida_nombre.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      return matchTab && matchArea && matchSearch;
+      return matchArea && matchSearch;
     });
-  }, [memorias, activeTab, filtroArea, searchTerm]);
+  }, [memorias, filtroArea, searchTerm, isAdmin, user?.area_id]);
+
+  // Contadores por estado calculados sobre la base general
+  const conteos = useMemo(() => {
+    return {
+      todas: memoriasBase.length,
+      borrador: memoriasBase.filter((m) => m.estado === 'BORRADOR').length,
+      pendiente: memoriasBase.filter((m) => m.estado === 'PENDIENTE_GERENCIA').length,
+      finanzas: memoriasBase.filter((m) => m.estado === 'APROBADO_GERENCIA').length,
+      aprobadas: memoriasBase.filter((m) => m.estado === 'APROBADO_FINANZAS').length,
+      rechazadas: memoriasBase.filter((m) => m.estado === 'RECHAZADO').length,
+      montoTotal: memoriasBase.reduce((acc, m) => acc + parseFloat(m.total_presupuesto || '0'), 0),
+    };
+  }, [memoriasBase]);
+
+  // Memorias filtradas por la pestaña activa
+  const memoriasFiltradas = useMemo(() => {
+    return memoriasBase.filter((m) => {
+      if (activeTab === 'borrador') return m.estado === 'BORRADOR';
+      if (activeTab === 'pendiente') return m.estado === 'PENDIENTE_GERENCIA';
+      if (activeTab === 'finanzas') return m.estado === 'APROBADO_GERENCIA';
+      if (activeTab === 'aprobadas') return m.estado === 'APROBADO_FINANZAS';
+      if (activeTab === 'rechazadas') return m.estado === 'RECHAZADO';
+      return true;
+    });
+  }, [memoriasBase, activeTab]);
 
   const formatMoney = (val: number | string) => {
     const num = typeof val === 'string' ? parseFloat(val) : val;
@@ -199,7 +226,7 @@ export default function MemoriasPage() {
 
   // Acciones de formulario
   function handleOpenCrear() {
-    const defaultSeccion = secciones[0]?.id || '';
+    const defaultSeccion = user?.seccion || secciones[0]?.id || '';
     const anio = activeGestion?.anio || new Date().getFullYear();
     const correlativo = String(memorias.length + 1).padStart(3, '0');
     setEditingMemoria(null);
@@ -446,13 +473,15 @@ export default function MemoriasPage() {
               </select>
             </div>
 
-            <button
-              onClick={handleOpenCrear}
-              disabled={isGestionBloqueada}
-              className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5"
-            >
-              <Plus size={15} /> Formular Memoria
-            </button>
+            {canCreate && (
+              <button
+                onClick={handleOpenCrear}
+                disabled={isGestionBloqueada}
+                className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5"
+              >
+                <Plus size={15} /> Formular Memoria
+              </button>
+            )}
           </div>
         </div>
 
@@ -571,7 +600,7 @@ export default function MemoriasPage() {
                 <td colSpan={8} className="py-12 text-center text-theme-muted">
                   <FileText size={36} className="mx-auto mb-2 opacity-40" />
                   <p className="font-medium">No se encontraron memorias en esta bandeja.</p>
-                  {!isGestionBloqueada && (
+                  {!isGestionBloqueada && canCreate && (
                     <button onClick={handleOpenCrear} className="btn-primary mt-3 text-xs">
                       Crear Memoria de Cálculo
                     </button>
@@ -616,73 +645,83 @@ export default function MemoriasPage() {
                         {/* Flujo de Estados */}
                         {mem.estado === 'BORRADOR' && (
                           <>
-                            <button
-                              onClick={() => handleEnviar(mem)}
-                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-500/10 transition-colors"
-                              title="Enviar a Revisión de Gerencia"
-                            >
-                              <Send size={15} />
-                            </button>
-                            {!isGestionBloqueada && (
-                              <>
-                                <button
-                                  onClick={() => handleOpenEditar(mem)}
-                                  className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
-                                  title="Editar"
-                                >
-                                  <Edit3 size={15} />
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(mem.id)}
-                                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                                  title="Eliminar"
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              </>
+                            {canSendGerencia && (
+                              <button
+                                onClick={() => handleEnviar(mem)}
+                                className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-500/10 transition-colors"
+                                title="Enviar a Revisión de Gerencia"
+                              >
+                                <Send size={15} />
+                              </button>
+                            )}
+                            {canEdit && (
+                              <button
+                                onClick={() => handleOpenEditar(mem)}
+                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
+                                title="Editar"
+                              >
+                                <Edit3 size={15} />
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDelete(mem.id)}
+                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 size={15} />
+                              </button>
                             )}
                           </>
                         )}
 
                         {mem.estado === 'PENDIENTE_GERENCIA' && (
                           <>
-                            <button
-                              onClick={() => handleAprobarGerente(mem)}
-                              className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1"
-                              title="Aprobar como Gerente de Área"
-                            >
-                              <CheckCircle2 size={13} /> Aprobar Gerencia
-                            </button>
-                            <button
-                              onClick={() => handleRechazar(mem)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                              title="Rechazar"
-                            >
-                              <XCircle size={15} />
-                            </button>
+                            {canApproveGerencia && (
+                              <button
+                                onClick={() => handleAprobarGerente(mem)}
+                                className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1"
+                                title="Aprobar como Gerente de Área"
+                              >
+                                <CheckCircle2 size={13} /> Aprobar Gerencia
+                              </button>
+                            )}
+                            {canReject && (
+                              <button
+                                onClick={() => handleRechazar(mem)}
+                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                title="Rechazar"
+                              >
+                                <XCircle size={15} />
+                              </button>
+                            )}
                           </>
                         )}
 
                         {mem.estado === 'APROBADO_GERENCIA' && (
                           <>
-                            <button
-                              onClick={() => handleAprobarFinanciero(mem)}
-                              className="px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-semibold flex items-center gap-1"
-                              title="Aprobar por Finanzas / Economía (Cierre Septiembre)"
-                            >
-                              <CheckCircle2 size={13} /> Aprobar Finanzas
-                            </button>
-                            <button
-                              onClick={() => handleRechazar(mem)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                              title="Rechazar"
-                            >
-                              <XCircle size={15} />
-                            </button>
+                            {canApproveFinanzas && (
+                              <button
+                                onClick={() => handleAprobarFinanciero(mem)}
+                                className="px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-semibold flex items-center gap-1"
+                                title="Aprobar por Finanzas / Economía (Cierre Septiembre)"
+                              >
+                                <CheckCircle2 size={13} /> Aprobar Finanzas
+                              </button>
+                            )}
+                            {canReject && (
+                              <button
+                                onClick={() => handleRechazar(mem)}
+                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                title="Rechazar"
+                              >
+                                <XCircle size={15} />
+                              </button>
+                            )}
                           </>
                         )}
 
-                        {mem.estado === 'RECHAZADO' && !isGestionBloqueada && (
+                        {mem.estado === 'RECHAZADO' && canEdit && (
                           <button
                             onClick={() => handleVolverABorrador(mem)}
                             className="px-2 py-1 rounded-lg border border-theme-border text-xs text-theme-muted hover:text-theme-main transition-colors"
