@@ -145,6 +145,32 @@ class PartidaViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None  # El catálogo de partidas se sirve completo, sin paginar
 
+    def destroy(self, request, *args, **kwargs):
+        """Baja lógica al recibir DELETE"""
+        instance = self.get_object()
+        instance.estado = False
+        instance.save(update_fields=['estado'])
+        return Response(
+            {'detail': 'Partida dada de baja lógicamente.', 'estado': False},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post', 'patch'], url_path='toggle-estado')
+    def toggle_estado(self, request, pk=None):
+        """Activar o desactivar partida (baja lógica / reactivación)"""
+        instance = self.get_object()
+        nuevo_estado = request.data.get('estado')
+        if nuevo_estado is None:
+            instance.estado = not instance.estado
+        else:
+            instance.estado = bool(nuevo_estado)
+        instance.save(update_fields=['estado'])
+        return Response({
+            'detail': f'Partida {"activada" if instance.estado else "desactivada"} con éxito.',
+            'estado': instance.estado,
+            'id': instance.id,
+        }, status=status.HTTP_200_OK)
+
     def get_queryset(self):
         qs = super().get_queryset()
         search = self.request.query_params.get('search')
@@ -156,7 +182,7 @@ class PartidaViewSet(viewsets.ModelViewSet):
         if clase:
             qs = qs.filter(clase=clase)
         if estado is not None:
-            qs = qs.filter(estado=(estado.lower() == 'true'))
+            qs = qs.filter(estado=estado.lower() in ('true', '1', 'si', 'activo'))
         return qs
 
 
