@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Area, Seccion, SeccionFormData } from '../../types/organizacional';
 import { organizacionalService } from '../../services/organizacionalService';
+import alertService from '../../utils/alerts';
 
 export const SeccionesList: React.FC = () => {
     const [secciones, setSecciones] = useState<Seccion[]>([]);
@@ -67,15 +68,30 @@ export const SeccionesList: React.FC = () => {
         );
     };
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm('¿Está seguro de eliminar esta sección?')) {
-            try {
-                await organizacionalService.deleteSeccion(id);
-                await fetchSecciones();
-            } catch (error) {
-                console.error('Error deleting seccion:', error);
-                alert('Error al eliminar la sección');
-            }
+    const handleToggleEstado = async (item: Seccion) => {
+        const nuevoEstado = !item.estado;
+
+        const confirmado = await alertService.confirm({
+            title: nuevoEstado ? '¿Activar sección?' : '¿Desactivar sección?',
+            text: nuevoEstado
+                ? `La sección "${item.nombre}" pasará a estado activo.`
+                : `La sección "${item.nombre}" se dará de baja lógica.`,
+            confirmButtonText: nuevoEstado ? 'Sí, activar' : 'Sí, desactivar',
+            isDanger: !nuevoEstado,
+        });
+
+        if (!confirmado) return;
+
+        try {
+            await organizacionalService.toggleEstadoSeccion(item.id, nuevoEstado);
+            alertService.success(
+                nuevoEstado ? '¡Sección activada!' : '¡Sección desactivada!',
+                `El estado de "${item.nombre}" fue actualizado correctamente.`
+            );
+            await fetchSecciones();
+        } catch (error: any) {
+            console.error('Error actualizando estado:', error);
+            alertService.error('Error', error?.response?.data?.detail || 'No se pudo actualizar el estado de la sección');
         }
     };
 
@@ -240,12 +256,12 @@ export const SeccionesList: React.FC = () => {
                                             </button>
 
                                             <button
-                                                onClick={() =>
-                                                    handleDelete(seccion.id)
-                                                }
-                                                className="text-triad-rose-600 dark:text-triad-rose-500 hover:text-triad-rose-500"
+                                                onClick={() => handleToggleEstado(seccion)}
+                                                className={seccion.estado
+                                                    ? "text-triad-rose-600 dark:text-triad-rose-500 hover:text-triad-rose-500"
+                                                    : "text-triad-green-600 dark:text-triad-green-500 hover:text-triad-green-500"}
                                             >
-                                                Eliminar
+                                                {seccion.estado ? 'Desactivar' : 'Activar'}
                                             </button>
                                         </td>
                                     </tr>
@@ -296,14 +312,16 @@ const SeccionModal: React.FC<{
                     seccion.id,
                     formData
                 );
+                alertService.success('¡Sección actualizada!', `La sección "${formData.nombre}" se guardó correctamente.`);
             } else {
                 await organizacionalService.createSeccion(formData);
+                alertService.success('¡Sección creada!', `La sección "${formData.nombre}" fue registrada con éxito.`);
             }
 
             onSave();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving seccion:', error);
-            alert('Error al guardar la sección');
+            alertService.error('Error al guardar la sección', error?.response?.data?.detail || 'No se pudo guardar la información de la sección.');
         } finally {
             setLoading(false);
         }

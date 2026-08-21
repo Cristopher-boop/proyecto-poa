@@ -15,6 +15,30 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.estado = False
+        instance.save(update_fields=['estado'])
+        return Response(
+            {'detail': 'Registro dado de baja lógicamente.', 'estado': False},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post', 'patch'], url_path='toggle-estado')
+    def toggle_estado(self, request, pk=None):
+        instance = self.get_object()
+        nuevo_estado = request.data.get('estado')
+        if nuevo_estado is None:
+            instance.estado = not instance.estado
+        else:
+            instance.estado = bool(nuevo_estado)
+        instance.save(update_fields=['estado'])
+        return Response({
+            'detail': f'Programa {"activado" if instance.estado else "desactivado"} con éxito.',
+            'estado': instance.estado,
+            'id': instance.id,
+        }, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['get'])
     def areas(self, request, pk=None):
         programa = self.get_object()
@@ -43,6 +67,30 @@ class AreaViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AreaSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.estado = False
+        instance.save(update_fields=['estado'])
+        return Response(
+            {'detail': 'Registro dado de baja lógicamente.', 'estado': False},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post', 'patch'], url_path='toggle-estado')
+    def toggle_estado(self, request, pk=None):
+        instance = self.get_object()
+        nuevo_estado = request.data.get('estado')
+        if nuevo_estado is None:
+            instance.estado = not instance.estado
+        else:
+            instance.estado = bool(nuevo_estado)
+        instance.save(update_fields=['estado'])
+        return Response({
+            'detail': f'Área {"activada" if instance.estado else "desactivada"} con éxito.',
+            'estado': instance.estado,
+            'id': instance.id,
+        }, status=status.HTTP_200_OK)
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -89,6 +137,30 @@ class SeccionViewSet(viewsets.ModelViewSet):
     )
     serializer_class = SeccionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.estado = False
+        instance.save(update_fields=['estado'])
+        return Response(
+            {'detail': 'Registro dado de baja lógicamente.', 'estado': False},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post', 'patch'], url_path='toggle-estado')
+    def toggle_estado(self, request, pk=None):
+        instance = self.get_object()
+        nuevo_estado = request.data.get('estado')
+        if nuevo_estado is None:
+            instance.estado = not instance.estado
+        else:
+            instance.estado = bool(nuevo_estado)
+        instance.save(update_fields=['estado'])
+        return Response({
+            'detail': f'Sección {"activada" if instance.estado else "desactivada"} con éxito.',
+            'estado': instance.estado,
+            'id': instance.id,
+        }, status=status.HTTP_200_OK)
 
     def get_queryset(self):
         qs = super().get_queryset()

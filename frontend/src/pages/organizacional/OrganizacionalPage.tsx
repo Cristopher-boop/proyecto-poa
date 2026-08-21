@@ -12,6 +12,8 @@ import { organizacionalService } from '../../services/organizacionalService';
 import { Area, Programa, Seccion } from '../../types/organizacional';
 import { AreasList, ProgramasList, SeccionesList } from '../../components/organizacional';
 
+import alertService from '../../utils/alerts';
+
 type Section = 'resumen' | 'secciones' | 'areas' | 'programas';
 
 export default function OrganizacionalPage() {
@@ -36,6 +38,7 @@ export default function OrganizacionalPage() {
       setSecciones(seccionesRes.data);
     } catch (error) {
       console.error('Error cargando módulo organizacional:', error);
+      alertService.error('Error al cargar datos', 'No se pudo sincronizar la información de la estructura organizacional.');
     } finally {
       setLoading(false);
     }
@@ -155,6 +158,7 @@ export default function OrganizacionalPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {areasFiltradas.map((area) => {
                 const areaSecciones = secciones.filter((seccion) => seccion.area === area.id);
+                const programaNombre = area.programa_nombre || programas.find((p) => p.id === area.programa)?.nombre;
 
                 return (
                   <div key={area.id} className="card p-5 space-y-3">
@@ -164,19 +168,27 @@ export default function OrganizacionalPage() {
                           {area.codigo}
                         </span>
                         <h3 className="text-base font-bold text-theme-main mt-1.5">{area.nombre}</h3>
-                        <span className="text-xs text-theme-muted">
-                          {area.tipo === 'GERENCIA' ? 'Gerencia de Área' : 'Unidad Operativa'}
-                          {area.programa_nombre ? ` · ${area.programa_nombre}` : ''}
-                        </span>
+                        <div className="mt-1.5">
+                          <span className="text-xs text-theme-muted">
+                            {area.tipo === 'GERENCIA' ? 'Gerencia de Área' : 'Unidad Operativa'}
+                          </span>
+                        </div>
                       </div>
 
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        area.estado
-                          ? 'bg-triad-green-50 text-triad-green-600 dark:bg-triad-green-500/15 dark:text-triad-green-500'
-                          : 'bg-triad-rose-50 text-triad-rose-600 dark:bg-triad-rose-500/15 dark:text-triad-rose-500'
-                      }`}>
-                        {area.estado ? 'Activa' : 'Inactiva'}
-                      </span>
+                      <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+                        {programaNombre && (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-blue-500/15 dark:text-blue-400">
+                            {programaNombre}
+                          </span>
+                        )}
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          area.estado
+                            ? 'bg-triad-green-50 text-triad-green-600 dark:bg-triad-green-500/15 dark:text-triad-green-500'
+                            : 'bg-triad-rose-50 text-triad-rose-600 dark:bg-triad-rose-500/15 dark:text-triad-rose-500'
+                        }`}>
+                          {area.estado ? 'Activa' : 'Inactiva'}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="border-t border-theme-border pt-3">

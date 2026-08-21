@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Area, AreaFormData, Programa } from '../../types/organizacional';
 import { organizacionalService } from '../../services/organizacionalService';
+import alertService from '../../utils/alerts';
 
 export const AreasList: React.FC = () => {
     const [areas, setAreas] = useState<Area[]>([]);
@@ -52,15 +53,30 @@ export const AreasList: React.FC = () => {
         );
     }, [areas, search]);
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm('¿Está seguro de eliminar esta área?')) {
-            try {
-                await organizacionalService.deleteArea(id);
-                await fetchAreas();
-            } catch (error) {
-                console.error('Error deleting area:', error);
-                alert('Error al eliminar el área');
-            }
+    const handleToggleEstado = async (item: Area) => {
+        const nuevoEstado = !item.estado;
+
+        const confirmado = await alertService.confirm({
+            title: nuevoEstado ? '¿Activar área?' : '¿Desactivar área?',
+            text: nuevoEstado
+                ? `El área "${item.nombre}" (${item.codigo}) pasará a estado activo.`
+                : `El área "${item.nombre}" (${item.codigo}) se dará de baja lógica.`,
+            confirmButtonText: nuevoEstado ? 'Sí, activar' : 'Sí, desactivar',
+            isDanger: !nuevoEstado,
+        });
+
+        if (!confirmado) return;
+
+        try {
+            await organizacionalService.toggleEstadoArea(item.id, nuevoEstado);
+            alertService.success(
+                nuevoEstado ? '¡Área activada!' : '¡Área desactivada!',
+                `El estado de "${item.nombre}" fue actualizado correctamente.`
+            );
+            await fetchAreas();
+        } catch (error: any) {
+            console.error('Error actualizando estado:', error);
+            alertService.error('Error', error?.response?.data?.detail || 'No se pudo actualizar el estado del área');
         }
     };
 
@@ -228,10 +244,12 @@ export const AreasList: React.FC = () => {
                                             </button>
 
                                             <button
-                                                onClick={() => handleDelete(area.id)}
-                                                className="text-triad-rose-600 dark:text-triad-rose-500 hover:text-triad-rose-500"
+                                                onClick={() => handleToggleEstado(area)}
+                                                className={area.estado
+                                                    ? "text-triad-rose-600 dark:text-triad-rose-500 hover:text-triad-rose-500"
+                                                    : "text-triad-green-600 dark:text-triad-green-500 hover:text-triad-green-500"}
                                             >
-                                                Eliminar
+                                                {area.estado ? 'Desactivar' : 'Activar'}
                                             </button>
                                         </td>
                                     </tr>
@@ -281,14 +299,16 @@ const AreaModal: React.FC<{
         try {
             if (area) {
                 await organizacionalService.updateArea(area.id, formData);
+                alertService.success('¡Área actualizada!', `El área "${formData.nombre}" se guardó correctamente.`);
             } else {
                 await organizacionalService.createArea(formData);
+                alertService.success('¡Área creada!', `El área "${formData.nombre}" fue registrada con éxito.`);
             }
 
             onSave();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving area:', error);
-            alert('Error al guardar el área');
+            alertService.error('Error al guardar el área', error?.response?.data?.detail || 'No se pudo guardar la información del área.');
         } finally {
             setLoading(false);
         }
