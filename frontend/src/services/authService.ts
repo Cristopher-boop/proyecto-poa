@@ -1,4 +1,4 @@
-﻿import api from './api';
+import api from './api';
 
 export interface LoginCredentials {
   username: string;
@@ -10,6 +10,16 @@ export interface AuthTokens {
   refresh: string;
 }
 
+export interface RegisterCredentials {
+  username: string;
+  password?: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  rol_id?: number | null;
+  seccion_id?: number | null;
+}
+
 export interface UserProfile {
   id: number;
   username: string;
@@ -19,11 +29,21 @@ export interface UserProfile {
   cargo: string | null;
   estado: boolean;
   rol_nombre: string | null;
+  area_id?: number | null;
+  area_nombre?: string | null;
+  seccion_nombre?: string | null;
+  seccion?: number | null;
+  is_superuser?: boolean;
 }
 
 export async function loginUser(credentials: LoginCredentials): Promise<AuthTokens> {
   const { data } = await api.post<AuthTokens>('/api/v1/auth/token/', credentials);
   return data;
+}
+
+export async function registerUser(data: RegisterCredentials): Promise<UserProfile> {
+  const res = await api.post<UserProfile>('/api/v1/usuarios/register/', data);
+  return res.data;
 }
 
 export async function refreshAccessToken(refresh: string): Promise<AuthTokens> {
@@ -34,6 +54,35 @@ export async function refreshAccessToken(refresh: string): Promise<AuthTokens> {
 export async function getCurrentUser(): Promise<UserProfile> {
   const { data } = await api.get<UserProfile>('/api/v1/usuarios/me/');
   return data;
+}
+
+export interface Rol {
+  id: number;
+  nombre: string;
+  descripcion: string;
+}
+
+export async function getRoles(): Promise<Rol[]> {
+  const { data } = await api.get<any>('/api/v1/usuarios/roles/');
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  return [];
+}
+
+export interface LogEntry {
+  id: number;
+  action_time: string;
+  usuario_nombre: string;
+  usuario_username: string;
+  object_repr: string;
+  action_flag: number;
+  change_message: string;
+}
+
+export async function getLogs(): Promise<LogEntry[]> {
+  const { data } = await api.get<any>('/api/v1/usuarios/logs/');
+  // Django rest framework viewsets paginated response usually returns { results: [] }
+  return Array.isArray(data) ? data : (data.results || []);
 }
 
 export function saveTokens(tokens: AuthTokens) {

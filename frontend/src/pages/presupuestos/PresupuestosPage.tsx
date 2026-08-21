@@ -45,6 +45,7 @@ import {
   getAreas,
 } from '../../services/presupuestoService';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function PresupuestosPage() {
   const navigate = useNavigate();
@@ -57,6 +58,10 @@ export default function PresupuestosPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const { user } = useAuth();
+  const rolName = user?.rol_nombre?.toUpperCase() || '';
+  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'ADMINISTRADOR';
 
   // UI Navigation states
   const [viewMode, setViewMode] = useState<'general' | 'area' | 'seccion'>('general');
@@ -358,7 +363,7 @@ export default function PresupuestosPage() {
             </div>
 
             {/* Acciones de flujo de gestión */}
-            {activeGestion?.estado === 'FORMULACION' && (
+            {isAprobador && activeGestion?.estado === 'FORMULACION' && (
               <>
                 <button onClick={handleConsolidar} disabled={actionLoading}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-theme-border text-xs font-semibold text-theme-muted hover:text-theme-main transition-colors">
@@ -370,7 +375,7 @@ export default function PresupuestosPage() {
                 </button>
               </>
             )}
-            {activeGestion?.estado === 'CERRADO_FORMULACION' && (
+            {isAprobador && activeGestion?.estado === 'CERRADO_FORMULACION' && (
               <>
                 <button onClick={handleReabrir} disabled={actionLoading}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-theme-border text-xs font-semibold text-theme-muted hover:text-theme-main transition-colors">
@@ -383,10 +388,12 @@ export default function PresupuestosPage() {
               </>
             )}
 
-            <button onClick={() => setShowModalGestion(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20 text-xs font-semibold transition-colors">
-              <Plus size={14} /> Nueva Gestión
-            </button>
+            {isAprobador && (
+              <button onClick={() => setShowModalGestion(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20 text-xs font-semibold transition-colors">
+                <Plus size={14} /> Nueva Gestión
+              </button>
+            )}
           </div>
         </div>
 

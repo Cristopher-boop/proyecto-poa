@@ -15,6 +15,11 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'areas', 'secciones']:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
     @action(detail=True, methods=['get'])
     def areas(self, request, pk=None):
         programa = self.get_object()
@@ -61,6 +66,11 @@ class AreaViewSet(viewsets.ModelViewSet):
 
         return qs
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'por_programa', 'secciones']:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
     @action(detail=True, methods=['get'])
     def secciones(self, request, pk=None):
         area = self.get_object()
@@ -103,6 +113,11 @@ class SeccionViewSet(viewsets.ModelViewSet):
             qs = qs.filter(estado=estado.lower() in ('true', '1', 'si', 'activo'))
 
         return qs
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'por_area']:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
 
     @action(detail=False, methods=['get'])
     def por_area(self, request):

@@ -18,8 +18,16 @@ class GestionViewSet(viewsets.ModelViewSet):
     serializer_class = GestionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def check_admin_permission(self):
+        user = self.request.user
+        if user.is_superuser: return True
+        rol = user.rol.nombre.upper() if user.rol else ''
+        return rol in ['ADMINISTRADOR', 'APROBADOR']
+
     @action(detail=True, methods=['post'], url_path='cerrar-formulacion')
     def cerrar_formulacion(self, request, pk=None):
+        if not self.check_admin_permission():
+            return Response({'error': 'No tienes permisos para cerrar la gestión.'}, status=status.HTTP_403_FORBIDDEN)
         """
         Cierra la fase de formulación para la gestión indicada.
         Bloquea nuevas memorias y consolida automáticamente el Presupuesto Inicial de cada Área
@@ -77,6 +85,8 @@ class GestionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='pasar-a-ejecucion')
     def pasar_a_ejecucion(self, request, pk=None):
+        if not self.check_admin_permission():
+            return Response({'error': 'No tienes permisos.'}, status=status.HTTP_403_FORBIDDEN)
         gestion = self.get_object()
         gestion.estado = Gestion.EstadoGestion.EN_EJECUCION
         gestion.save()
@@ -87,6 +97,8 @@ class GestionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='reabrir-formulacion')
     def reabrir_formulacion(self, request, pk=None):
+        if not self.check_admin_permission():
+            return Response({'error': 'No tienes permisos.'}, status=status.HTTP_403_FORBIDDEN)
         gestion = self.get_object()
         gestion.estado = Gestion.EstadoGestion.FORMULACION
         gestion.fecha_cierre = None
@@ -98,6 +110,8 @@ class GestionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='consolidar-presupuestos')
     def consolidar_presupuestos(self, request, pk=None):
+        if not self.check_admin_permission():
+            return Response({'error': 'No tienes permisos.'}, status=status.HTTP_403_FORBIDDEN)
         """Recalcula y consolida los montos de PresupuestoArea sin cambiar el estado de la gestión."""
         gestion = self.get_object()
         with transaction.atomic():

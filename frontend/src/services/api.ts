@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
@@ -11,7 +11,16 @@ const api = axios.create({
 // ── Request interceptor: adjunta el access token en cada petición ──────────
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const isLoginPage = window.location.pathname === '/login';
+  const isPublicUrl =
+    config.url?.includes('/roles/') ||
+    config.url?.includes('/secciones/') ||
+    config.url?.includes('/areas/') ||
+    config.url?.includes('/register/');
+
+  if (token && !(isLoginPage && isPublicUrl)) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -55,7 +64,9 @@ api.interceptors.response.use(
       if (!refreshToken) {
         isRefreshing = false;
         localStorage.removeItem('access_token');
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
       }
 
@@ -75,7 +86,9 @@ api.interceptors.response.use(
         processPendingQueue(refreshError);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

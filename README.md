@@ -17,6 +17,9 @@ cd backend
 # Activar el entorno virtual
 .\venv\Scripts\activate
 
+# Instalar las librerias de requirements
+pip install -r requirements.txt
+
 # Aplicar migraciones (crear tablas de la base de datos)
 python manage.py makemigrations
 python manage.py migrate
@@ -29,6 +32,9 @@ python manage.py seed_consolidado
 
 # 3. Poblar Memorias de Cálculo detalladas desde el archivo Excel oficial (300+ memorias, 1400+ detalles)
 python manage.py seed_memorias
+
+# 4. Poblar Usuarios de Prueba por Rol
+python seed_test_users.py
 
 # Crear un superusuario (para acceder al sistema y al /admin)
 python manage.py createsuperuser
@@ -73,6 +79,26 @@ Este script automatizado:
    * **Contraseña:** `admin`
 4. Carga los programas, áreas y secciones reales de la institución mediante `seed_organizacional`.
 5. Importa las partidas del catálogo oficial desde el CSV clasificando la columna clase como `INGRESO` o `EGRESO`.
+
+---
+
+## 5. Usuarios de Prueba por Rol (Semilla de Pruebas)
+
+Se dispone del script `seed_test_users.py` en la carpeta `/backend` para poblar o actualizar automáticamente los 4 usuarios de prueba para la verificación de roles y permisos:
+
+```powershell
+cd backend
+python seed_test_users.py
+```
+
+### Tabla de Credenciales de Prueba (Contraseña para todos: `12345678`):
+
+| Usuario | Contraseña | Rol | Área / Sección | Descripción de Permisos |
+| :--- | :--- | :--- | :--- | :--- |
+| **`SoyAprobador`** | `12345678` | **Aprobador** | General / Administrativos | Aprobación final de memorias, ejecuciones de gasto, consolidación y apertura/cierre de gestión. |
+| **`SoyGerenteI`** | `12345678` | **Gerente** | Gerencia de Informática | Visualiza todas las áreas. Aprueba, edita o rechaza memorias en Borrador / Pendiente de su área. |
+| **`SoyElaboradorI`** | `12345678` | **Elaborador** | Gerencia de Informática | Formula y edita memorias en Borrador de su área. Envía a revisión a Gerencia. |
+| **`SoyTrabajadorI`** | `12345678` | **Trabajador** | Gerencia de Informática | Solo lectura de memorias y presupuestos de su área. No formula ni ejecuta gastos. |
 
 ---
 

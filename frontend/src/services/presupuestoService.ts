@@ -87,6 +87,8 @@ export interface MemoriaCalculo {
   total_presupuesto: string;
   total_ejecutado: string;
   total_disponible: string;
+  monto_entrante?: string;
+  monto_saliente?: string;
   created_at: string;
   updated_at: string;
 }
@@ -142,6 +144,8 @@ export interface ResumenGestion {
   gestion: Gestion;
   total_inicial: string;
   total_disponible: string;
+  monto_entrante?: string;
+  monto_saliente?: string;
   total_ejecutado: string;
   porcentaje_global: number;
   areas: PresupuestoArea[];
@@ -251,6 +255,8 @@ export interface MemoriaDetalleArea {
   total_presupuestado: string;
   total_gastado: string;
   total_disponible: string;
+  monto_entrante?: string;
+  monto_saliente?: string;
   partidas: PartidaDetalleArea[];
 }
 
@@ -260,6 +266,8 @@ export interface SeccionDetalleArea {
   total_presupuestado: string;
   total_gastado: string;
   total_disponible: string;
+  monto_entrante?: string;
+  monto_saliente?: string;
   memorias: MemoriaDetalleArea[];
 }
 
@@ -401,6 +409,8 @@ export interface ResumenEjecucion {
   total_inicial: string;
   total_ejecutado: string;
   total_disponible: string;
+  monto_entrante?: string;
+  monto_saliente?: string;
   porcentaje_global: number;
   por_area: Array<{
     area_id: number;
