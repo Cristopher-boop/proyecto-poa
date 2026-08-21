@@ -15,29 +15,10 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.estado = False
-        instance.save(update_fields=['estado'])
-        return Response(
-            {'detail': 'Registro dado de baja lógicamente.', 'estado': False},
-            status=status.HTTP_200_OK,
-        )
-
-    @action(detail=True, methods=['post', 'patch'], url_path='toggle-estado')
-    def toggle_estado(self, request, pk=None):
-        instance = self.get_object()
-        nuevo_estado = request.data.get('estado')
-        if nuevo_estado is None:
-            instance.estado = not instance.estado
-        else:
-            instance.estado = bool(nuevo_estado)
-        instance.save(update_fields=['estado'])
-        return Response({
-            'detail': f'Programa {"activado" if instance.estado else "desactivado"} con éxito.',
-            'estado': instance.estado,
-            'id': instance.id,
-        }, status=status.HTTP_200_OK)
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'areas', 'secciones']:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
 
     @action(detail=True, methods=['get'])
     def areas(self, request, pk=None):
@@ -109,6 +90,11 @@ class AreaViewSet(viewsets.ModelViewSet):
 
         return qs
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'por_programa', 'secciones']:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
     @action(detail=True, methods=['get'])
     def secciones(self, request, pk=None):
         area = self.get_object()
@@ -175,6 +161,11 @@ class SeccionViewSet(viewsets.ModelViewSet):
             qs = qs.filter(estado=estado.lower() in ('true', '1', 'si', 'activo'))
 
         return qs
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'por_area']:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
 
     @action(detail=False, methods=['get'])
     def por_area(self, request):

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -35,12 +36,22 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const getActiveKey = (): ModuleKey => {
-    if (location.pathname.startsWith('/partidas')) return 'partidas';
+  const { user } = useAuth();
+  const isAdmin = user?.is_superuser || user?.rol_nombre?.toUpperCase() === 'ADMINISTRADOR' || user?.rol_nombre?.toUpperCase() === 'APROBADOR';
+
+  const visibleModules = useMemo(() => {
+    if (isAdmin) {
+      return [...modules, { key: "logs", label: "Auditoría / Logs", icon: ClipboardList, path: "/logs" }];
+    }
+    return modules;
+  }, [isAdmin]);
+
+  const getActiveKey = (): string => {
     if (location.pathname.startsWith('/memorias')) return 'memorias';
     if (location.pathname.startsWith('/ejecucion')) return 'ejecucion';
     if (location.pathname.startsWith('/presupuestos')) return 'presupuestos';
     if (location.pathname.startsWith('/organizacional')) return 'organizacional';
+    if (location.pathname.startsWith('/logs')) return 'logs';
     return 'dashboard';
   };
 
@@ -66,7 +77,7 @@ export default function Sidebar() {
         )}
 
         <div className="space-y-0.5">
-          {modules.map(({ key, label, icon: Icon, path }) => {
+          {visibleModules.map(({ key, label, icon: Icon, path }) => {
             const active = activeKey === key;
             return (
               <button

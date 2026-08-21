@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import {
   BookOpenText,
   Plus,
@@ -62,6 +63,16 @@ export default function MemoriasPage() {
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [secciones, setSecciones] = useState<Seccion[]>([]);
+
+  const { user } = useAuth();
+  const rolName = user?.rol_nombre?.toUpperCase() || '';
+  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'ADMINISTRADOR';
+  const isGerente = rolName === 'GERENTE';
+  const isElaborador = rolName === 'ELABORADOR';
+  const isTrabajador = rolName === 'TRABAJADOR';
+
+  const canCreate = isAprobador || isElaborador;
+  const canGlobalView = isAprobador || isGerente;
 
   const [activeTab, setActiveTab] = useState<'todas' | 'borrador' | 'pendiente' | 'finanzas' | 'aprobadas' | 'rechazadas'>('todas');
   const [loading, setLoading] = useState<boolean>(true);
@@ -427,7 +438,7 @@ export default function MemoriasPage() {
 
   // Acciones de formulario
   function handleOpenCrear() {
-    const defaultSeccion = secciones[0]?.id || '';
+    const defaultSeccion = user?.seccion || secciones[0]?.id || '';
     const anio = activeGestion?.anio || new Date().getFullYear();
     const correlativo = String(memorias.length + 1).padStart(3, '0');
     setEditingMemoria(null);
@@ -683,13 +694,15 @@ export default function MemoriasPage() {
               </select>
             </div>
 
-            <button
-              onClick={handleOpenCrear}
-              disabled={isGestionBloqueada}
-              className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5"
-            >
-              <Plus size={15} /> Formular Memoria
-            </button>
+            {canCreate && (
+              <button
+                onClick={handleOpenCrear}
+                disabled={isGestionBloqueada}
+                className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5"
+              >
+                <Plus size={15} /> Formular Memoria
+              </button>
+            )}
           </div>
         </div>
 
@@ -861,35 +874,55 @@ export default function MemoriasPage() {
                         {/* Flujo de Estados */}
                         {mem.estado === 'BORRADOR' && (
                           <>
-                            <button
-                              onClick={() => handleEnviar(mem)}
-                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-500/10 transition-colors"
-                              title="Enviar a Revisión de Gerencia"
-                            >
-                              <Send size={15} />
-                            </button>
-                            {!isGestionBloqueada && (
+                            {isElaborador && (
+                              <button
+                                onClick={() => handleEnviar(mem)}
+                                className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-500/10 transition-colors"
+                                title="Enviar a Revisión de Gerencia"
+                              >
+                                <Send size={15} />
+                              </button>
+                            )}
+                            {(isGerente || isAprobador) && (
                               <>
                                 <button
-                                  onClick={() => handleOpenEditar(mem)}
-                                  className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
-                                  title="Editar"
+                                  onClick={() => handleAprobarGerente(mem)}
+                                  className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1"
+                                  title="Aprobar como Gerente de Área"
                                 >
-                                  <Edit3 size={15} />
+                                  <CheckCircle2 size={13} /> Aprobar Gerencia
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(mem.id)}
+                                  onClick={() => handleRechazar(mem)}
                                   className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                                  title="Eliminar"
+                                  title="Rechazar"
                                 >
-                                  <Trash2 size={15} />
+                                  <XCircle size={15} />
                                 </button>
                               </>
+                            )}
+                            {!isGestionBloqueada && (isElaborador || isGerente || isAprobador) && (
+                              <button
+                                onClick={() => handleOpenEditar(mem)}
+                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
+                                title="Editar"
+                              >
+                                <Edit3 size={15} />
+                              </button>
+                            )}
+                            {!isGestionBloqueada && (isElaborador || isAprobador) && (
+                              <button
+                                onClick={() => handleDelete(mem.id)}
+                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 size={15} />
+                              </button>
                             )}
                           </>
                         )}
 
-                        {mem.estado === 'PENDIENTE_GERENCIA' && (
+                        {mem.estado === 'PENDIENTE_GERENCIA' && (isAprobador || isGerente) && (
                           <>
                             <button
                               onClick={() => handleAprobarGerente(mem)}
@@ -905,15 +938,24 @@ export default function MemoriasPage() {
                             >
                               <XCircle size={15} />
                             </button>
+                            {!isGestionBloqueada && (
+                              <button
+                                onClick={() => handleOpenEditar(mem)}
+                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
+                                title="Editar"
+                              >
+                                <Edit3 size={15} />
+                              </button>
+                            )}
                           </>
                         )}
 
-                        {mem.estado === 'APROBADO_GERENCIA' && (
+                        {mem.estado === 'APROBADO_GERENCIA' && isAprobador && (
                           <>
                             <button
                               onClick={() => handleAprobarFinanciero(mem)}
                               className="px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-semibold flex items-center gap-1"
-                              title="Aprobar por Finanzas / Economía (Cierre Septiembre)"
+                              title="Aprobación Final"
                             >
                               <CheckCircle2 size={13} /> Aprobar Finanzas
                             </button>
@@ -924,16 +966,25 @@ export default function MemoriasPage() {
                             >
                               <XCircle size={15} />
                             </button>
+                            {!isGestionBloqueada && (
+                              <button
+                                onClick={() => handleOpenEditar(mem)}
+                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
+                                title="Editar"
+                              >
+                                <Edit3 size={15} />
+                              </button>
+                            )}
                           </>
                         )}
 
-                        {mem.estado === 'RECHAZADO' && !isGestionBloqueada && (
+                        {mem.estado === 'RECHAZADO' && (canCreate || isGerente) && (
                           <button
                             onClick={() => handleVolverABorrador(mem)}
-                            className="px-2 py-1 rounded-lg border border-theme-border text-xs text-theme-muted hover:text-theme-main transition-colors"
-                            title="Regresar a borrador para corregir"
+                            className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-500/10 transition-colors"
+                            title="Volver a Borrador para correcciones"
                           >
-                            Corregir
+                            <RefreshCw size={15} />
                           </button>
                         )}
                       </div>
@@ -1039,19 +1090,32 @@ export default function MemoriasPage() {
                   <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
                     Área / Sección Solicitante *
                   </label>
-                  <select
-                    required
-                    value={formMemoria.seccionId}
-                    onChange={(e) => setFormMemoria({ ...formMemoria, seccionId: Number(e.target.value) })}
-                    className="input-theme text-xs"
-                  >
-                    <option value="">Seleccione Sección...</option>
-                    {secciones.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.nombre} ({s.area_nombre || 'Área'})
-                      </option>
-                    ))}
-                  </select>
+                  {isAprobador ? (
+                    <select
+                      required
+                      value={formMemoria.seccionId}
+                      onChange={(e) => setFormMemoria({ ...formMemoria, seccionId: Number(e.target.value) })}
+                      className="input-theme text-xs"
+                    >
+                      <option value="">Seleccione Sección...</option>
+                      {secciones.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.nombre} ({s.area_nombre || 'Área'})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="input-theme text-xs bg-theme-base/60 text-theme-main font-semibold py-2.5 px-3 flex items-center gap-2 cursor-not-allowed">
+                      <Building2 size={14} className="text-theme-muted" />
+                      <span>
+                        {secciones.find((s) => s.id === formMemoria.seccionId)?.nombre || user?.seccion_nombre || 'Sección Asignada'}
+                        {' '}
+                        <span className="text-[10px] text-theme-muted font-normal">
+                          ({secciones.find((s) => s.id === formMemoria.seccionId)?.area_nombre || user?.area_nombre || 'Área'})
+                        </span>
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="sm:col-span-2">
@@ -1481,7 +1545,7 @@ export default function MemoriasPage() {
                   {fichaMemoria.gestion_estado !== 'EN_EJECUCION' && (
                     <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300 rounded-xl flex items-center gap-2 text-xs font-medium">
                       <Lock size={15} className="shrink-0" />
-                      <span>Los traspasos presupuestarios solo están habilitados cuando la gestión está <strong>En Ejecución</strong> (Estado actual: {fichaMemoria.gestion_estado_display || fichaMemoria.gestion_estado}).</span>
+                      <span>Los traspasos presupuestarios solo están habilitados cuando la gestión está <strong>En Ejecución</strong> (Estado actual: {fichaMemoria.gestion_estado || fichaMemoria.gestion_estado}).</span>
                     </div>
                   )}
 
@@ -1635,6 +1699,9 @@ export default function MemoriasPage() {
                   Memoria de Origen (Cedente)
                 </span>
                 <div className="flex justify-between items-center">
+                  <span className="font-mono font-bold text-xs text-theme-main">
+                    Gestión {fichaMemoria.gestion_anio} — {fichaMemoria.gestion_estado}
+                  </span>
                   <span className="font-mono font-bold text-xs text-theme-main">
                     {fichaMemoria.codigo} ({fichaMemoria.area_nombre})
                   </span>

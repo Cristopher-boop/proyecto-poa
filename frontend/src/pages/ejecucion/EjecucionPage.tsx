@@ -36,8 +36,18 @@ import {
   getResumenEjecucion,
   getAreas,
 } from '../../services/presupuestoService';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function EjecucionPage() {
+  const { user } = useAuth();
+  const rolName = user?.rol_nombre?.toUpperCase() || '';
+  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'ADMINISTRADOR';
+  const isGerente = rolName === 'GERENTE';
+  const isElaborador = rolName === 'ELABORADOR';
+  const isTrabajador = rolName === 'TRABAJADOR';
+
+  const canExecuteGasto = isAprobador;
+
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
   const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
   const [gastos, setGastos] = useState<Gasto[]>([]);
@@ -295,12 +305,14 @@ export default function EjecucionPage() {
               </select>
             </div>
 
-            <button
-              onClick={() => setShowModalGasto(true)}
-              className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
-            >
-              <Plus size={15} /> Registrar Gasto Real
-            </button>
+            {canExecuteGasto && (
+              <button
+                onClick={() => setShowModalGasto(true)}
+                className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
+              >
+                <Plus size={15} /> Registrar Gasto Real
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -476,13 +488,15 @@ export default function EjecucionPage() {
                       </td>
                       <td className="py-3.5 px-4 text-xs text-theme-muted whitespace-nowrap">{g.usuario_nombre || 'Admin'}</td>
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => handleAnularGasto(g.id)}
-                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                          title="Anular gasto y restituir saldo"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                        {canExecuteGasto && (
+                          <button
+                            onClick={() => handleAnularGasto(g.id)}
+                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
+                            title="Anular gasto y restituir saldo"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))

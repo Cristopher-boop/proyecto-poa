@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
@@ -62,6 +62,18 @@ class GastoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        user = self.request.user
+        rol_nombre = user.rol.nombre.upper() if user.rol else ''
+        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
+        is_gerente = rol_nombre == 'GERENTE'
+
+        # Trabajadores y Elaboradores solo ven gastos de su propia área
+        if not (is_admin_aprobador or is_gerente):
+            if user.seccion and user.seccion.area_id:
+                qs = qs.filter(detalle_memoria__memoria__seccion__area_id=user.seccion.area_id)
+            else:
+                qs = qs.none()
+
         gestion_id = self.request.query_params.get('gestion')
         gestion_anio = self.request.query_params.get('anio')
         area_id = self.request.query_params.get('area')
@@ -90,16 +102,34 @@ class GastoViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
+        user = self.request.user
+        rol_nombre = user.rol.nombre.upper() if user.rol else ''
+        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
+        if not is_admin_aprobador:
+            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede registrar ejecuciones presupuestarias.']})
+
         with transaction.atomic():
-            gasto = serializer.save(usuario_registro=self.request.user)
+            gasto = serializer.save(usuario_registro=user)
             recalcular_estado_detalle_y_presupuesto(gasto.detalle_memoria)
 
     def perform_update(self, serializer):
+        user = self.request.user
+        rol_nombre = user.rol.nombre.upper() if user.rol else ''
+        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
+        if not is_admin_aprobador:
+            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede editar ejecuciones presupuestarias.']})
+
         with transaction.atomic():
             gasto = serializer.save()
             recalcular_estado_detalle_y_presupuesto(gasto.detalle_memoria)
 
     def perform_destroy(self, instance):
+        user = self.request.user
+        rol_nombre = user.rol.nombre.upper() if user.rol else ''
+        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
+        if not is_admin_aprobador:
+            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede anular o eliminar ejecuciones presupuestarias.']})
+
         detalle = instance.detalle_memoria
         with transaction.atomic():
             instance.delete()
@@ -134,6 +164,14 @@ class GastoViewSet(viewsets.ModelViewSet):
 
         from apps.organizacional.models import Area
         areas = Area.objects.filter(estado=True)
+        user = request.user
+        rol_nombre = user.rol.nombre.upper() if user.rol and user.is_authenticated else ''
+        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
+        is_gerente = rol_nombre == 'GERENTE'
+
+        if not (is_admin_aprobador or is_gerente) and user.is_authenticated and user.seccion:
+            areas = areas.filter(id=user.seccion.area_id)
+
         por_area = []
         for a in areas:
             m_inicial = presupuestos_map.get(a.id, Decimal('0.00'))
@@ -153,8 +191,12 @@ class GastoViewSet(viewsets.ModelViewSet):
 
         # Gastos por Partida (Top 10)
         from apps.presupuestos.models import Partida
+        qs_gastos = Gasto.objects.filter(detalle_memoria__memoria__gestion=gestion)
+        if not (is_admin_aprobador or is_gerente) and user.is_authenticated and user.seccion:
+            qs_gastos = qs_gastos.filter(detalle_memoria__memoria__seccion__area_id=user.seccion.area_id)
+
         partidas_gastos = (
-            Gasto.objects.filter(detalle_memoria__memoria__gestion=gestion)
+            qs_gastos
             .values('detalle_memoria__partida__codigo', 'detalle_memoria__partida__nombre')
             .annotate(total=Sum('monto_ejecutado'))
             .order_by('-total')[:10]
