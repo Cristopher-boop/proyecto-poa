@@ -36,6 +36,7 @@ import {
   SaldoMemoria,
   getGestiones,
   getMemorias,
+  getMemoria,
   createMemoria,
   updateMemoria,
   deleteMemoria,
@@ -56,6 +57,8 @@ export default function MemoriasPage() {
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
   const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
   const [memorias, setMemorias] = useState<MemoriaCalculo[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const PAGE_SIZE = 15;
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [secciones, setSecciones] = useState<Seccion[]>([]);
@@ -408,6 +411,15 @@ export default function MemoriasPage() {
     });
   }, [memorias, activeTab, filtroArea, searchTerm]);
 
+  // Resetear página cuando cambia el filtro
+  useEffect(() => { setCurrentPage(1); }, [memoriasFiltradas]);
+
+  const totalPages = Math.max(1, Math.ceil(memoriasFiltradas.length / PAGE_SIZE));
+  const memoriasPaginadas = useMemo(
+    () => memoriasFiltradas.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [memoriasFiltradas, currentPage]
+  );
+
   const formatMoney = (val: number | string) => {
     const num = typeof val === 'string' ? parseFloat(val) : val;
     return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', minimumFractionDigits: 2 }).format(num || 0);
@@ -431,23 +443,30 @@ export default function MemoriasPage() {
     setShowModalMemoria(true);
   }
 
-  function handleOpenEditar(mem: MemoriaCalculo) {
-    setEditingMemoria(mem);
-    setFormMemoria({
-      codigo: mem.codigo,
-      seccionId: mem.seccion,
-      justificacion: mem.justificacion,
-      partidaId: mem.partida_id || partidas.find((p) => p.clase === 'EGRESO')?.id || '',
-      renglones: mem.detalles.map((d) => ({
-        descripcion: d.descripcion,
-        unidad_medida: d.unidad_medida,
-        cantidad: Number(d.cantidad),
-        precio_unitario: Number(d.precio_unitario),
-      })),
-    });
-    setSearchPartidaQuery('');
-    setPartidaSelectorOpen(false);
-    setShowModalMemoria(true);
+  async function handleOpenEditar(mem: MemoriaCalculo) {
+    try {
+      // Cargamos la memoria completa (con detalles) antes de abrir el modal
+      const memoriaCompleta = await getMemoria(mem.id);
+      setEditingMemoria(memoriaCompleta);
+      setFormMemoria({
+        codigo: memoriaCompleta.codigo,
+        seccionId: memoriaCompleta.seccion,
+        justificacion: memoriaCompleta.justificacion,
+        partidaId: memoriaCompleta.partida_id || partidas.find((p) => p.clase === 'EGRESO')?.id || '',
+        renglones: (memoriaCompleta.detalles || []).map((d) => ({
+          descripcion: d.descripcion,
+          unidad_medida: d.unidad_medida,
+          cantidad: Number(d.cantidad),
+          precio_unitario: Number(d.precio_unitario),
+        })),
+      });
+      setSearchPartidaQuery('');
+      setPartidaSelectorOpen(false);
+      setShowModalMemoria(true);
+    } catch (err) {
+      console.error('Error al cargar memoria para edición:', err);
+      mostrarMensaje('error', 'No se pudo cargar los detalles de la memoria.');
+    }
   }
 
   function handleAddRenglon() {
@@ -797,7 +816,7 @@ export default function MemoriasPage() {
                 </td>
               </tr>
             ) : (
-              memoriasFiltradas.map((mem) => {
+              memoriasPaginadas.map((mem) => {
                 const total = parseFloat(mem.total_presupuesto || '0');
                 return (
                   <tr key={mem.id} className="hover:bg-theme-border/20 transition-colors">
@@ -824,7 +843,15 @@ export default function MemoriasPage() {
                       <div className="flex items-center justify-center gap-1.5">
                         {/* Ver Ficha Oficial / Detalle */}
                         <button
-                          onClick={() => setFichaMemoria(mem)}
+                          onClick={async () => {
+                            try {
+                              const memoriaCompleta = await getMemoria(mem.id);
+                              setFichaMemoria(memoriaCompleta);
+                            } catch (err) {
+                              console.error('Error al cargar ficha:', err);
+                              mostrarMensaje('error', 'No se pudo cargar la ficha técnica.');
+                            }
+                          }}
                           className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-theme-border/40 transition-colors"
                           title="Ver Ficha Técnica Oficial"
                         >
@@ -918,6 +945,55 @@ export default function MemoriasPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-theme-border">
+          <p className="text-xs text-theme-muted">
+            Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, memoriasFiltradas.length)} de {memoriasFiltradas.length} memorias
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Anterior
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+              .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, idx) =>
+                p === '...' ? (
+                  <span key={`ellipsis-${idx}`} className="px-2 text-xs text-theme-muted">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p as number)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                      currentPage === p
+                        ? 'border-theme-primary bg-theme-primary text-white'
+                        : 'border-theme-border text-theme-muted hover:text-theme-main'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Siguiente →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal Formulación / Edición */}
       {showModalMemoria && (
@@ -1331,7 +1407,7 @@ export default function MemoriasPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-theme-border">
-                      {fichaMemoria.detalles.map((d, idx) => (
+                      {(fichaMemoria.detalles || []).map((d, idx) => (
                         <tr key={d.id || idx}>
                           <td className="py-2.5 px-3 font-bold text-theme-muted">{idx + 1}</td>
                           <td className="py-2.5 px-3 font-medium text-theme-main">{d.descripcion}</td>
