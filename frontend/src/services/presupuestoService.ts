@@ -91,6 +91,7 @@ export interface MemoriaCalculo {
   total_presupuesto: string;
   total_ejecutado: string;
   total_disponible: string;
+  saldo_disponible?: string;
   monto_entrante?: string;
   monto_saliente?: string;
   created_at: string;
@@ -126,10 +127,15 @@ export interface Traspaso {
   motivo: string;
   estado: string;
   estado_display?: string;
+  area_nombre?: string;
+  gestion_anio?: number;
+  gestion_estado?: string;
   memoria_origen: number;
   memoria_origen_codigo?: string;
+  memoria_origen_partida?: string;
   memoria_destino: number;
   memoria_destino_codigo?: string;
+  memoria_destino_partida?: string;
   usuario_registro?: number | null;
   usuario_registro_nombre?: string | null;
   created_at?: string;

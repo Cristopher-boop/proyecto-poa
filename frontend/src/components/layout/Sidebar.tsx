@@ -11,9 +11,10 @@ import {
   TrendingDown,
   Building2,
   FileSpreadsheet,
+  ArrowRightLeft,
 } from "lucide-react";
 
-export type ModuleKey = "dashboard" | "presupuestos" | "partidas" | "memorias" | "ejecucion" | "organizacional";
+export type ModuleKey = "dashboard" | "presupuestos" | "partidas" | "memorias" | "traspasos" | "ejecucion" | "organizacional";
 
 interface ModuleItem {
   key: ModuleKey;
@@ -27,6 +28,7 @@ const modules: ModuleItem[] = [
   { key: "presupuestos", label: "Presupuestos & POA", icon: WalletCards, path: "/presupuestos" },
   { key: "partidas", label: "Partidas Presup.", icon: FileSpreadsheet, path: "/partidas" },
   { key: "memorias", label: "Memorias de Cálculo", icon: BookOpenText, path: "/memorias" },
+  { key: "traspasos", label: "Modificaciones Presup.", icon: ArrowRightLeft, path: "/traspasos" },
   { key: "ejecucion", label: "Ejecución Presupuestaria", icon: TrendingDown, path: "/ejecucion" },
   { key: "organizacional", label: "Estructura Org.", icon: Building2, path: "/organizacional" },
 ];
@@ -48,8 +50,10 @@ export default function Sidebar() {
 
   const getActiveKey = (): string => {
     if (location.pathname.startsWith('/memorias')) return 'memorias';
+    if (location.pathname.startsWith('/traspasos')) return 'traspasos';
     if (location.pathname.startsWith('/ejecucion')) return 'ejecucion';
     if (location.pathname.startsWith('/presupuestos')) return 'presupuestos';
+    if (location.pathname.startsWith('/partidas')) return 'partidas';
     if (location.pathname.startsWith('/organizacional')) return 'organizacional';
     if (location.pathname.startsWith('/logs')) return 'logs';
     return 'dashboard';
