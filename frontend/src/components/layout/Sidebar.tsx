@@ -41,7 +41,7 @@ export default function Sidebar() {
   const location = useLocation();
 
   const { user } = useAuth();
-  const isAdmin = user?.is_superuser || user?.rol_nombre?.toUpperCase() === 'ADMINISTRADOR' || user?.rol_nombre?.toUpperCase() === 'APROBADOR';
+  const isAdmin = user?.is_superuser || user?.rol_nombre?.toUpperCase() === 'ADMINISTRADOR';
 
   const visibleModules = useMemo(() => {
     if (isAdmin) {

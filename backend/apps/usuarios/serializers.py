@@ -31,7 +31,9 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'area_nombre',
             'seccion_nombre',
             'seccion',
-            'is_superuser'
+            'is_superuser',
+            'last_login',
+            'date_joined',
         ]
         read_only_fields = fields
 
