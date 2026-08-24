@@ -345,7 +345,7 @@ export default function EjecucionPage() {
 
         <div className="card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Saldo Disponible ($Monto\_Actual$)</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Saldo Disponible</span>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <WalletCards size={18} />
             </div>
