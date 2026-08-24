@@ -3,47 +3,62 @@ import {
   Compass,
   Target,
   FileCheck2,
+  ListTodo,
   Plus,
+  Edit2,
+  Power,
   X,
 } from 'lucide-react';
 import { planificacionService } from '../../services/planificacionService';
 import { organizacionalService } from '../../services/organizacionalService';
-import { AccionMedianoPlazo, AccionCortoPlazo, Operacion } from '../../types/planificacion';
+import { AccionMedianoPlazo, AccionCortoPlazo, Operacion, Tarea } from '../../types/planificacion';
 import { Area, Programa } from '../../types/organizacional';
 import alertService from '../../utils/alerts';
 
 export default function PlanificacionPage() {
-  const [activeTab, setActiveTab] = useState<'AMP' | 'ACP' | 'OPERACIONES'>('OPERACIONES');
+  const [activeTab, setActiveTab] = useState<'OPERACIONES' | 'TAREAS' | 'ACP' | 'AMP'>('OPERACIONES');
   const [ampList, setAmpList] = useState<AccionMedianoPlazo[]>([]);
   const [acpList, setAcpList] = useState<AccionCortoPlazo[]>([]);
   const [operacionesList, setOperacionesList] = useState<Operacion[]>([]);
+  const [tareasList, setTareasList] = useState<Tarea[]>([]);
   const [programas, setProgramas] = useState<Programa[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modales de creación
+  // Modales de creación / edición
   const [showAmpModal, setShowAmpModal] = useState(false);
+  const [editingAmp, setEditingAmp] = useState<AccionMedianoPlazo | null>(null);
+
   const [showAcpModal, setShowAcpModal] = useState(false);
+  const [editingAcp, setEditingAcp] = useState<AccionCortoPlazo | null>(null);
+
   const [showOpModal, setShowOpModal] = useState(false);
+  const [editingOp, setEditingOp] = useState<Operacion | null>(null);
+
+  const [showTareaModal, setShowTareaModal] = useState(false);
+  const [editingTarea, setEditingTarea] = useState<Tarea | null>(null);
 
   // Form states
   const [ampForm, setAmpForm] = useState({ programa: '', codigo: '', descripcion: '', periodo_inicio: 2026, periodo_fin: 2030 });
   const [acpForm, setAcpForm] = useState({ accion_mediano_plazo: '', codigo: '', descripcion: '' });
   const [opForm, setOpForm] = useState({ accion_corto_plazo: '', area: '', codigo: '', descripcion: '', es_contratacion: true });
+  const [tareaForm, setTareaForm] = useState({ operacion: '', codigo: '', descripcion: '' });
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [amps, acps, ops, progsRes, arsRes] = await Promise.all([
+      const [amps, acps, ops, tareas, progsRes, arsRes] = await Promise.all([
         planificacionService.getAccionesMedianoPlazo(),
         planificacionService.getAccionesCortoPlazo(),
         planificacionService.getOperaciones(),
+        planificacionService.getTareas(),
         organizacionalService.getProgramas(),
         organizacionalService.getAreas(),
       ]);
       setAmpList(amps || []);
       setAcpList(acps || []);
       setOperacionesList(ops || []);
+      setTareasList(tareas || []);
       setProgramas(progsRes.data || []);
       setAreas(arsRes.data || []);
     } catch (err) {
@@ -58,58 +73,251 @@ export default function PlanificacionPage() {
     fetchAll();
   }, []);
 
-  const handleCreateAMP = async (e: React.FormEvent) => {
+  // Handlers AMP
+  const handleOpenCreateAMP = () => {
+    setEditingAmp(null);
+    setAmpForm({ programa: '', codigo: '', descripcion: '', periodo_inicio: 2026, periodo_fin: 2030 });
+    setShowAmpModal(true);
+  };
+
+  const handleOpenEditAMP = (amp: AccionMedianoPlazo) => {
+    setEditingAmp(amp);
+    setAmpForm({
+      programa: String(amp.programa),
+      codigo: amp.codigo,
+      descripcion: amp.descripcion,
+      periodo_inicio: amp.periodo_inicio,
+      periodo_fin: amp.periodo_fin,
+    });
+    setShowAmpModal(true);
+  };
+
+  const handleSaveAMP = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await planificacionService.createAccionMedianoPlazo({
-        programa: Number(ampForm.programa),
-        codigo: ampForm.codigo,
-        descripcion: ampForm.descripcion,
-        periodo_inicio: Number(ampForm.periodo_inicio),
-        periodo_fin: Number(ampForm.periodo_fin),
-      });
-      alertService.success('AMP Creada', 'Acción a Mediano Plazo registrada correctamente.');
+      if (editingAmp) {
+        await planificacionService.updateAccionMedianoPlazo(editingAmp.id, {
+          programa: Number(ampForm.programa),
+          codigo: ampForm.codigo,
+          descripcion: ampForm.descripcion,
+          periodo_inicio: Number(ampForm.periodo_inicio),
+          periodo_fin: Number(ampForm.periodo_fin),
+        });
+        alertService.success('AMP Actualizada', 'Los cambios en la Acción a Mediano Plazo fueron guardados.');
+      } else {
+        await planificacionService.createAccionMedianoPlazo({
+          programa: Number(ampForm.programa),
+          codigo: ampForm.codigo,
+          descripcion: ampForm.descripcion,
+          periodo_inicio: Number(ampForm.periodo_inicio),
+          periodo_fin: Number(ampForm.periodo_fin),
+        });
+        alertService.success('AMP Creada', 'Acción a Mediano Plazo registrada correctamente.');
+      }
       setShowAmpModal(false);
-      setAmpForm({ programa: '', codigo: '', descripcion: '', periodo_inicio: 2026, periodo_fin: 2030 });
       fetchAll();
     } catch (err: any) {
-      alertService.error('Error', err?.response?.data?.detail || 'No se pudo crear la AMP.');
+      alertService.error('Error', err?.response?.data?.detail || 'No se pudo guardar la AMP.');
     }
   };
 
-  const handleCreateACP = async (e: React.FormEvent) => {
+  const handleToggleAMP = async (amp: AccionMedianoPlazo) => {
+    const confirm = await alertService.confirm({
+      title: amp.estado ? '¿Desactivar AMP (Baja Lógica)?' : '¿Reactivar AMP?',
+      text: amp.estado ? `La AMP ${amp.codigo} quedará dada de baja lógica.` : `La AMP ${amp.codigo} volverá a estar activa.`,
+      isDanger: amp.estado,
+    });
+    if (!confirm) return;
+
+    try {
+      await planificacionService.toggleEstadoAMP(amp.id);
+      alertService.success('Estado Actualizado', `La AMP ${amp.codigo} fue ${amp.estado ? 'desactivada' : 'reactivada'}.`);
+      fetchAll();
+    } catch (err) {
+      alertService.error('Error', 'No se pudo cambiar el estado de la AMP.');
+    }
+  };
+
+  // Handlers ACP
+  const handleOpenCreateACP = () => {
+    setEditingAcp(null);
+    setAcpForm({ accion_mediano_plazo: '', codigo: '', descripcion: '' });
+    setShowAcpModal(true);
+  };
+
+  const handleOpenEditACP = (acp: AccionCortoPlazo) => {
+    setEditingAcp(acp);
+    setAcpForm({
+      accion_mediano_plazo: String(acp.accion_mediano_plazo),
+      codigo: acp.codigo,
+      descripcion: acp.descripcion,
+    });
+    setShowAcpModal(true);
+  };
+
+  const handleSaveACP = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await planificacionService.createAccionCortoPlazo({
-        accion_mediano_plazo: Number(acpForm.accion_mediano_plazo),
-        codigo: acpForm.codigo,
-        descripcion: acpForm.descripcion,
-      });
-      alertService.success('ACP Creada', 'Acción a Corto Plazo registrada correctamente.');
+      if (editingAcp) {
+        await planificacionService.updateAccionCortoPlazo(editingAcp.id, {
+          accion_mediano_plazo: Number(acpForm.accion_mediano_plazo),
+          codigo: acpForm.codigo,
+          descripcion: acpForm.descripcion,
+        });
+        alertService.success('ACP Actualizada', 'Los cambios en la Acción a Corto Plazo fueron guardados.');
+      } else {
+        await planificacionService.createAccionCortoPlazo({
+          accion_mediano_plazo: Number(acpForm.accion_mediano_plazo),
+          codigo: acpForm.codigo,
+          descripcion: acpForm.descripcion,
+        });
+        alertService.success('ACP Creada', 'Acción a Corto Plazo registrada correctamente.');
+      }
       setShowAcpModal(false);
-      setAcpForm({ accion_mediano_plazo: '', codigo: '', descripcion: '' });
       fetchAll();
     } catch (err: any) {
-      alertService.error('Error', err?.response?.data?.detail || 'No se pudo crear la ACP.');
+      alertService.error('Error', err?.response?.data?.detail || 'No se pudo guardar la ACP.');
     }
   };
 
-  const handleCreateOp = async (e: React.FormEvent) => {
+  const handleToggleACP = async (acp: AccionCortoPlazo) => {
+    const confirm = await alertService.confirm({
+      title: acp.estado ? '¿Desactivar ACP (Baja Lógica)?' : '¿Reactivar ACP?',
+      text: acp.estado ? `La ACP ${acp.codigo} quedará dada de baja lógica.` : `La ACP ${acp.codigo} volverá a estar activa.`,
+      isDanger: acp.estado,
+    });
+    if (!confirm) return;
+
+    try {
+      await planificacionService.toggleEstadoACP(acp.id);
+      alertService.success('Estado Actualizado', `La ACP ${acp.codigo} fue ${acp.estado ? 'desactivada' : 'reactivada'}.`);
+      fetchAll();
+    } catch (err) {
+      alertService.error('Error', 'No se pudo cambiar el estado de la ACP.');
+    }
+  };
+
+  // Handlers Operación
+  const handleOpenCreateOp = () => {
+    setEditingOp(null);
+    setOpForm({ accion_corto_plazo: '', area: '', codigo: '', descripcion: '', es_contratacion: true });
+    setShowOpModal(true);
+  };
+
+  const handleOpenEditOp = (op: Operacion) => {
+    setEditingOp(op);
+    setOpForm({
+      accion_corto_plazo: String(op.accion_corto_plazo),
+      area: String(op.area),
+      codigo: op.codigo,
+      descripcion: op.descripcion,
+      es_contratacion: op.es_contratacion,
+    });
+    setShowOpModal(true);
+  };
+
+  const handleSaveOp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await planificacionService.createOperacion({
-        accion_corto_plazo: Number(opForm.accion_corto_plazo),
-        area: Number(opForm.area),
-        codigo: opForm.codigo,
-        descripcion: opForm.descripcion,
-        es_contratacion: opForm.es_contratacion,
-      });
-      alertService.success('Operación Creada', 'Operación registrada correctamente.');
+      if (editingOp) {
+        await planificacionService.updateOperacion(editingOp.id, {
+          accion_corto_plazo: Number(opForm.accion_corto_plazo),
+          area: Number(opForm.area),
+          codigo: opForm.codigo,
+          descripcion: opForm.descripcion,
+          es_contratacion: opForm.es_contratacion,
+        });
+        alertService.success('Operación Actualizada', 'Los cambios en la Operación fueron guardados.');
+      } else {
+        await planificacionService.createOperacion({
+          accion_corto_plazo: Number(opForm.accion_corto_plazo),
+          area: Number(opForm.area),
+          codigo: opForm.codigo,
+          descripcion: opForm.descripcion,
+          es_contratacion: opForm.es_contratacion,
+        });
+        alertService.success('Operación Creada', 'Operación registrada correctamente.');
+      }
       setShowOpModal(false);
-      setOpForm({ accion_corto_plazo: '', area: '', codigo: '', descripcion: '', es_contratacion: true });
       fetchAll();
     } catch (err: any) {
-      alertService.error('Error', err?.response?.data?.detail || 'No se pudo crear la Operación.');
+      alertService.error('Error', err?.response?.data?.detail || 'No se pudo guardar la Operación.');
+    }
+  };
+
+  const handleToggleOp = async (op: Operacion) => {
+    const confirm = await alertService.confirm({
+      title: op.estado ? '¿Desactivar Operación (Baja Lógica)?' : '¿Reactivar Operación?',
+      text: op.estado ? `La Operación ${op.codigo} quedará dada de baja lógica.` : `La Operación ${op.codigo} volverá a estar activa.`,
+      isDanger: op.estado,
+    });
+    if (!confirm) return;
+
+    try {
+      await planificacionService.toggleEstadoOperacion(op.id);
+      alertService.success('Estado Actualizado', `La Operación ${op.codigo} fue ${op.estado ? 'desactivada' : 'reactivada'}.`);
+      fetchAll();
+    } catch (err) {
+      alertService.error('Error', 'No se pudo cambiar el estado de la Operación.');
+    }
+  };
+
+  // Handlers Tarea
+  const handleOpenCreateTarea = () => {
+    setEditingTarea(null);
+    setTareaForm({ operacion: '', codigo: '', descripcion: '' });
+    setShowTareaModal(true);
+  };
+
+  const handleOpenEditTarea = (tarea: Tarea) => {
+    setEditingTarea(tarea);
+    setTareaForm({
+      operacion: String(tarea.operacion),
+      codigo: tarea.codigo,
+      descripcion: tarea.descripcion,
+    });
+    setShowTareaModal(true);
+  };
+
+  const handleSaveTarea = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingTarea) {
+        await planificacionService.updateTarea(editingTarea.id, {
+          operacion: Number(tareaForm.operacion),
+          codigo: tareaForm.codigo,
+          descripcion: tareaForm.descripcion,
+        });
+        alertService.success('Tarea Actualizada', 'Los cambios en la Tarea fueron guardados.');
+      } else {
+        await planificacionService.createTarea({
+          operacion: Number(tareaForm.operacion),
+          codigo: tareaForm.codigo,
+          descripcion: tareaForm.descripcion,
+        });
+        alertService.success('Tarea Creada', 'Tarea registrada correctamente.');
+      }
+      setShowTareaModal(false);
+      fetchAll();
+    } catch (err: any) {
+      alertService.error('Error', err?.response?.data?.detail || 'No se pudo guardar la Tarea.');
+    }
+  };
+
+  const handleToggleTarea = async (tarea: Tarea) => {
+    const confirm = await alertService.confirm({
+      title: tarea.estado ? '¿Desactivar Tarea (Baja Lógica)?' : '¿Reactivar Tarea?',
+      text: tarea.estado ? `La Tarea ${tarea.codigo} quedará dada de baja lógica.` : `La Tarea ${tarea.codigo} volverá a estar activa.`,
+      isDanger: tarea.estado,
+    });
+    if (!confirm) return;
+
+    try {
+      await planificacionService.toggleEstadoTarea(tarea.id);
+      alertService.success('Estado Actualizado', `La Tarea ${tarea.codigo} fue ${tarea.estado ? 'desactivada' : 'reactivada'}.`);
+      fetchAll();
+    } catch (err) {
+      alertService.error('Error', 'No se pudo cambiar el estado de la Tarea.');
     }
   };
 
@@ -133,33 +341,29 @@ export default function PlanificacionPage() {
                 Planificación POA & PEI
               </h1>
               <p className="text-sm text-theme-muted">
-                Control de correlación de operaciones y tareas TAMEP contra Objetivos Estratégicos.
+                Gestión de Operaciones, Tareas TAMEP, Objetivos POA (ACP) y PEI (AMP).
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
             {activeTab === 'OPERACIONES' && (
-              <button
-                onClick={() => setShowOpModal(true)}
-                className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer"
-              >
+              <button onClick={handleOpenCreateOp} className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer">
                 <Plus size={16} /> Nueva Operación
               </button>
             )}
+            {activeTab === 'TAREAS' && (
+              <button onClick={handleOpenCreateTarea} className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer">
+                <Plus size={16} /> Nueva Tarea TAMEP
+              </button>
+            )}
             {activeTab === 'ACP' && (
-              <button
-                onClick={() => setShowAcpModal(true)}
-                className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer"
-              >
+              <button onClick={handleOpenCreateACP} className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer">
                 <Plus size={16} /> Nueva ACP (POA)
               </button>
             )}
             {activeTab === 'AMP' && (
-              <button
-                onClick={() => setShowAmpModal(true)}
-                className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer"
-              >
+              <button onClick={handleOpenCreateAMP} className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer">
                 <Plus size={16} /> Nueva AMP (PEI)
               </button>
             )}
@@ -168,7 +372,7 @@ export default function PlanificacionPage() {
       </div>
 
       {/* Pestañas de navegación */}
-      <div className="flex items-center gap-2 border-b border-theme-border pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-theme-border pb-2">
         <button
           onClick={() => setActiveTab('OPERACIONES')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-colors ${
@@ -178,7 +382,19 @@ export default function PlanificacionPage() {
           }`}
         >
           <FileCheck2 size={16} />
-          <span>Operaciones por Área / Unidad</span>
+          <span>Operaciones por Área</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('TAREAS')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-colors ${
+            activeTab === 'TAREAS'
+              ? 'bg-theme-primary text-white shadow-sm'
+              : 'text-theme-muted hover:bg-theme-surface'
+          }`}
+        >
+          <ListTodo size={16} />
+          <span>Tareas TAMEP</span>
         </button>
 
         <button
@@ -190,7 +406,7 @@ export default function PlanificacionPage() {
           }`}
         >
           <Target size={16} />
-          <span>Acciones a Corto Plazo (POA - 1 Año)</span>
+          <span>Acciones a Corto Plazo (POA)</span>
         </button>
 
         <button
@@ -202,7 +418,7 @@ export default function PlanificacionPage() {
           }`}
         >
           <Compass size={16} />
-          <span>Acciones a Mediano Plazo (PEI - 5 Años)</span>
+          <span>Acciones a Mediano Plazo (PEI)</span>
         </button>
       </div>
 
@@ -219,21 +435,21 @@ export default function PlanificacionPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-theme-main flex items-center gap-2">
                   <FileCheck2 className="text-theme-primary" size={18} />
-                  <span>Catálogo de Operaciones Habilitadas para Contrataciones</span>
+                  <span>Catálogo de Operaciones por Área</span>
                 </h3>
                 <span className="text-xs text-theme-muted">
-                  Total Operaciones: <strong>{operacionesList.length}</strong>
+                  Total: <strong>{operacionesList.length}</strong>
                 </span>
               </div>
 
               {operacionesList.length === 0 ? (
                 <div className="card p-12 text-center text-theme-muted">
-                  No hay operaciones registradas aún. Presiona "Nueva Operación" para crear una.
+                  No hay operaciones registradas aún.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {operacionesList.map((op) => (
-                    <div key={op.id} className="card p-5 space-y-3 hover:border-theme-primary/40 transition-colors">
+                    <div key={op.id} className={`card p-5 space-y-3 transition-colors ${!op.estado ? 'opacity-60 bg-theme-base/40' : ''}`}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-theme-primary/10 text-theme-primary border border-theme-primary/20">
@@ -243,26 +459,92 @@ export default function PlanificacionPage() {
                             {op.area_nombre || 'Área General'}
                           </span>
                         </div>
-                        <span className="text-[11px] font-semibold text-theme-muted">
-                          ACP: {op.acp_codigo}
-                        </span>
+
+                        {/* Botones Modificación y Baja Lógica */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleOpenEditOp(op)}
+                            className="p-1 rounded hover:bg-theme-border/50 text-blue-600"
+                            title="Editar Operación"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleToggleOp(op)}
+                            className={`p-1 rounded hover:bg-theme-border/50 ${op.estado ? 'text-rose-600' : 'text-emerald-600'}`}
+                            title={op.estado ? 'Desactivar (Baja Lógica)' : 'Reactivar'}
+                          >
+                            <Power size={14} />
+                          </button>
+                        </div>
                       </div>
 
                       <p className="text-sm font-semibold text-theme-main">{op.descripcion}</p>
 
-                      {op.tareas && op.tareas.length > 0 && (
-                        <div className="pt-2 border-t border-theme-border/60 space-y-1.5">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-theme-muted block">
-                            Tareas TAMEP Asociadas:
-                          </span>
-                          {op.tareas.map((t) => (
-                            <div key={t.id} className="flex items-center gap-2 text-xs text-theme-muted bg-theme-base/40 p-2 rounded-lg">
-                              <span className="font-mono font-bold text-theme-primary text-[10px]">{t.codigo}</span>
-                              <span className="truncate">{t.descripcion}</span>
-                            </div>
-                          ))}
+                      <div className="flex items-center justify-between text-xs text-theme-muted pt-2 border-t border-theme-border/60">
+                        <span>ACP: <strong>{op.acp_codigo}</strong></span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${op.estado ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                          {op.estado ? 'Activa' : 'Baja Lógica'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'TAREAS' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-theme-main flex items-center gap-2">
+                  <ListTodo className="text-theme-primary" size={18} />
+                  <span>Tareas TAMEP (Correlación Operativa)</span>
+                </h3>
+                <span className="text-xs text-theme-muted">
+                  Total Tareas: <strong>{tareasList.length}</strong>
+                </span>
+              </div>
+
+              {tareasList.length === 0 ? (
+                <div className="card p-12 text-center text-theme-muted">
+                  No hay Tareas registradas aún. Presiona "Nueva Tarea TAMEP" para agregar una.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tareasList.map((tarea) => (
+                    <div key={tarea.id} className={`card p-5 space-y-3 transition-colors ${!tarea.estado ? 'opacity-60 bg-theme-base/40' : ''}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                          {tarea.codigo}
+                        </span>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleOpenEditTarea(tarea)}
+                            className="p-1 rounded hover:bg-theme-border/50 text-blue-600"
+                            title="Editar Tarea"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleToggleTarea(tarea)}
+                            className={`p-1 rounded hover:bg-theme-border/50 ${tarea.estado ? 'text-rose-600' : 'text-emerald-600'}`}
+                            title={tarea.estado ? 'Desactivar (Baja Lógica)' : 'Reactivar'}
+                          >
+                            <Power size={14} />
+                          </button>
                         </div>
-                      )}
+                      </div>
+
+                      <p className="text-sm font-semibold text-theme-main">{tarea.descripcion}</p>
+
+                      <div className="flex items-center justify-between text-xs text-theme-muted pt-2 border-t border-theme-border/60">
+                        <span>Operación: <strong>{tarea.operacion_codigo}</strong></span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${tarea.estado ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                          {tarea.estado ? 'Activa' : 'Baja Lógica'}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -286,7 +568,7 @@ export default function PlanificacionPage() {
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {acpList.map((acp) => (
-                    <div key={acp.id} className="card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div key={acp.id} className={`card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 ${!acp.estado ? 'opacity-60 bg-theme-base/40' : ''}`}>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
@@ -298,9 +580,23 @@ export default function PlanificacionPage() {
                       </div>
 
                       <div className="shrink-0 flex items-center gap-3">
-                        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-theme-base text-theme-muted border border-theme-border">
-                          Operaciones: {acp.operaciones?.length || 0}
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${acp.estado ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                          {acp.estado ? 'Activa' : 'Baja Lógica'}
                         </span>
+                        <button
+                          onClick={() => handleOpenEditACP(acp)}
+                          className="p-1.5 rounded hover:bg-theme-border/50 text-blue-600"
+                          title="Editar ACP"
+                        >
+                          <Edit2 size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleToggleACP(acp)}
+                          className={`p-1.5 rounded hover:bg-theme-border/50 ${acp.estado ? 'text-rose-600' : 'text-emerald-600'}`}
+                          title={acp.estado ? 'Desactivar' : 'Reactivar'}
+                        >
+                          <Power size={15} />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -325,7 +621,7 @@ export default function PlanificacionPage() {
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   {ampList.map((amp) => (
-                    <div key={amp.id} className="card p-6 space-y-3">
+                    <div key={amp.id} className={`card p-6 space-y-3 ${!amp.estado ? 'opacity-60 bg-theme-base/40' : ''}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
@@ -335,16 +631,29 @@ export default function PlanificacionPage() {
                             Programa: {amp.programa_codigo} - {amp.programa_nombre}
                           </span>
                         </div>
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-theme-primary/10 text-theme-primary">
-                          Período {amp.periodo_inicio} - {amp.periodo_fin}
-                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-theme-primary/10 text-theme-primary">
+                            Período {amp.periodo_inicio} - {amp.periodo_fin}
+                          </span>
+                          <button
+                            onClick={() => handleOpenEditAMP(amp)}
+                            className="p-1.5 rounded hover:bg-theme-border/50 text-blue-600"
+                            title="Editar AMP"
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleToggleAMP(amp)}
+                            className={`p-1.5 rounded hover:bg-theme-border/50 ${amp.estado ? 'text-rose-600' : 'text-emerald-600'}`}
+                            title={amp.estado ? 'Desactivar' : 'Reactivar'}
+                          >
+                            <Power size={15} />
+                          </button>
+                        </div>
                       </div>
 
                       <p className="text-sm font-bold text-theme-main">{amp.descripcion}</p>
-
-                      <div className="pt-2 border-t border-theme-border text-xs text-theme-muted">
-                        Acciones Corto Plazo asociadas: <strong>{amp.acciones_corto_plazo?.length || 0}</strong>
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -354,15 +663,17 @@ export default function PlanificacionPage() {
         </>
       )}
 
-      {/* Modal Nueva AMP */}
+      {/* Modal AMP (Crear / Editar) */}
       {showAmpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-theme-surface rounded-2xl p-6 w-full max-w-lg border border-theme-border space-y-4">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
-              <h3 className="font-bold text-base text-theme-main">Nueva Acción a Mediano Plazo (PEI)</h3>
+              <h3 className="font-bold text-base text-theme-main">
+                {editingAmp ? 'Editar AMP (PEI)' : 'Nueva Acción a Mediano Plazo (PEI)'}
+              </h3>
               <button onClick={() => setShowAmpModal(false)}><X size={18} /></button>
             </div>
-            <form onSubmit={handleCreateAMP} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveAMP} className="space-y-3 text-xs">
               <div>
                 <label className="block font-semibold mb-1">Programa</label>
                 <select
@@ -371,7 +682,7 @@ export default function PlanificacionPage() {
                   required
                   className="input-theme w-full"
                 >
-                  <option value="">Seleccione un programa...</option>
+                  <option value="">Seleccione programa...</option>
                   {programas.map((p) => (
                     <option key={p.id} value={p.id}>{p.codigo} - {p.nombre}</option>
                   ))}
@@ -427,15 +738,17 @@ export default function PlanificacionPage() {
         </div>
       )}
 
-      {/* Modal Nueva ACP */}
+      {/* Modal ACP (Crear / Editar) */}
       {showAcpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-theme-surface rounded-2xl p-6 w-full max-w-lg border border-theme-border space-y-4">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
-              <h3 className="font-bold text-base text-theme-main">Nueva Acción a Corto Plazo (POA)</h3>
+              <h3 className="font-bold text-base text-theme-main">
+                {editingAcp ? 'Editar ACP (POA)' : 'Nueva Acción a Corto Plazo (POA)'}
+              </h3>
               <button onClick={() => setShowAcpModal(false)}><X size={18} /></button>
             </div>
-            <form onSubmit={handleCreateACP} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveACP} className="space-y-3 text-xs">
               <div>
                 <label className="block font-semibold mb-1">Acción a Mediano Plazo (PEI)</label>
                 <select
@@ -480,15 +793,17 @@ export default function PlanificacionPage() {
         </div>
       )}
 
-      {/* Modal Nueva Operación */}
+      {/* Modal Operación (Crear / Editar) */}
       {showOpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-theme-surface rounded-2xl p-6 w-full max-w-lg border border-theme-border space-y-4">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
-              <h3 className="font-bold text-base text-theme-main">Nueva Operación por Área</h3>
+              <h3 className="font-bold text-base text-theme-main">
+                {editingOp ? 'Editar Operación' : 'Nueva Operación por Área'}
+              </h3>
               <button onClick={() => setShowOpModal(false)}><X size={18} /></button>
             </div>
-            <form onSubmit={handleCreateOp} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveOp} className="space-y-3 text-xs">
               <div>
                 <label className="block font-semibold mb-1">Acción a Corto Plazo (POA)</label>
                 <select
@@ -541,6 +856,61 @@ export default function PlanificacionPage() {
               <div className="flex justify-end gap-2 pt-3">
                 <button type="button" onClick={() => setShowOpModal(false)} className="btn-secondary">Cancelar</button>
                 <button type="submit" className="btn-primary">Guardar Operación</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Tarea (Crear / Editar) */}
+      {showTareaModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-theme-surface rounded-2xl p-6 w-full max-w-lg border border-theme-border space-y-4">
+            <div className="flex items-center justify-between border-b border-theme-border pb-3">
+              <h3 className="font-bold text-base text-theme-main">
+                {editingTarea ? 'Editar Tarea TAMEP' : 'Nueva Tarea TAMEP'}
+              </h3>
+              <button onClick={() => setShowTareaModal(false)}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSaveTarea} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold mb-1">Operación Padre</label>
+                <select
+                  value={tareaForm.operacion}
+                  onChange={(e) => setTareaForm({ ...tareaForm, operacion: e.target.value })}
+                  required
+                  className="input-theme w-full"
+                >
+                  <option value="">Seleccione Operación...</option>
+                  {operacionesList.map((op) => (
+                    <option key={op.id} value={op.id}>{op.codigo} - {op.descripcion}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Código Tarea</label>
+                <input
+                  type="text"
+                  value={tareaForm.codigo}
+                  onChange={(e) => setTareaForm({ ...tareaForm, codigo: e.target.value })}
+                  placeholder="Ej: TAR-INF-01.2"
+                  required
+                  className="input-theme w-full"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Descripción / Detalle TAMEP</label>
+                <textarea
+                  value={tareaForm.descripcion}
+                  onChange={(e) => setTareaForm({ ...tareaForm, descripcion: e.target.value })}
+                  rows={3}
+                  required
+                  className="input-theme w-full"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button type="button" onClick={() => setShowTareaModal(false)} className="btn-secondary">Cancelar</button>
+                <button type="submit" className="btn-primary">Guardar Tarea</button>
               </div>
             </form>
           </div>

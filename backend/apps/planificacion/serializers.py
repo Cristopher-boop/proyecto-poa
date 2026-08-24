@@ -6,7 +6,7 @@ class TareaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tarea
-        fields = ['id', 'operacion', 'operacion_codigo', 'codigo', 'descripcion', 'created_at']
+        fields = ['id', 'operacion', 'operacion_codigo', 'codigo', 'descripcion', 'estado', 'created_at']
 
 
 class OperacionSerializer(serializers.ModelSerializer):

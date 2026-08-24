@@ -93,6 +93,7 @@ class Tarea(TimeStampedModel):
     )
     codigo = models.CharField(max_length=30, verbose_name="Código Tarea")
     descripcion = models.TextField(verbose_name="Descripción de Tarea / Detalle TAMEP")
+    estado = models.BooleanField(default=True, verbose_name="Activo")
 
     class Meta:
         verbose_name = "Tarea"

@@ -31,6 +31,7 @@ export interface Tarea {
   operacion_codigo?: string;
   codigo: string;
   descripcion: string;
+  estado: boolean;
   created_at: string;
 }
 
