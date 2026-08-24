@@ -90,6 +90,22 @@ def reset():
     except Exception as e:
         print(f"  [!] Error en recalcular_saldos: {e}")
 
+    print("  [*] Planificacion Estrategica (PEI / POA por Programa)...")
+    try:
+        from seed_planificacion import sembrar_planificacion
+        sembrar_planificacion()
+        print("  [OK] Planificacion sembrada.")
+    except Exception as e:
+        print(f"  [!] Error en seed_planificacion: {e}")
+
+    print("  [*] Usuarios de prueba por Rol (SoyAprobador, SoyGerenteI, SoyElaboradorI, SoyTrabajadorI)...")
+    try:
+        from seed_test_users import sembrar_usuarios_prueba
+        sembrar_usuarios_prueba()
+        print("  [OK] Usuarios de prueba sembrados.")
+    except Exception as e:
+        print(f"  [!] Error en seed_test_users: {e}")
+
     # ────────────────────────────────────────────────────────────
     # RESUMEN FINAL
     # ────────────────────────────────────────────────────────────
