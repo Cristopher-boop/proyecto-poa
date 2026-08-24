@@ -158,10 +158,7 @@ export default function MemoriasPage() {
     return (Array.isArray(gestiones) ? gestiones : []).find((g) => g.id === selectedGestionId) || null;
   }, [gestiones, selectedGestionId]);
 
-  const isGestionBloqueada =
-    activeGestion?.estado === 'CERRADO_FORMULACION' ||
-    activeGestion?.estado === 'EN_EJECUCION' ||
-    activeGestion?.estado === 'FINALIZADO';
+  const isGestionBloqueada = activeGestion?.estado === 'FINALIZADO';
 
   const [partidaSelectorOpen, setPartidaSelectorOpen] = useState(false);
   const partidaSelectorRef = useRef<HTMLDivElement>(null);
@@ -179,44 +176,66 @@ export default function MemoriasPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [partidaSelectorOpen]);
 
-  // ── Partidas de EGRESO: jerarquía de hojas ──────────────────────────────
-  // Una partida es "hoja" si ninguna otra partida tiene un código que empiece
-  // por el prefijo significativo de ésta (sin ceros finales).
-  // Ej.: 24100 → prefijo "241" → tiene hijos 24110, 24120, 24130 → NO es hoja
-  //      24110 → prefijo "2411" → nadie más empieza en "2411" → ES hoja
-  //      24200 → prefijo "242" → nadie más → ES hoja
+  // Helper para verificar si una partida está activa (estado !== 0 / false)
+  const isPartidaActiva = (p: Partida | null | undefined): boolean => {
+    if (!p) return false;
+    return p.estado === true || (p.estado as any) === 1 || (p.estado as any) === '1';
+  };
 
+  // Helper para verificar que una partida Y TODOS sus ancestros (padres/abuelos) estén activos
+  const isPartidaYAncestrosActivos = (p: Partida, allPartidas: Partida[]): boolean => {
+    if (!isPartidaActiva(p)) return false;
+
+    const leafPrefix = p.codigo.replace(/0+$/, '');
+    if (!leafPrefix) return isPartidaActiva(p);
+
+    // Encontrar todos los ancestros de p en el catálogo
+    const ancestors = allPartidas.filter((anc) => {
+      if (anc.codigo === p.codigo) return false;
+      const ancPrefix = anc.codigo.replace(/0+$/, '');
+      return ancPrefix && leafPrefix.startsWith(ancPrefix);
+    });
+
+    // Si ALGÚN ancestro está inactivo (estado 0/false), entonces la partida NO se puede seleccionar ni ver
+    const algunAncInactivo = ancestors.some((anc) => !isPartidaActiva(anc));
+    return !algunAncInactivo;
+  };
+
+  // ── Partidas de EGRESO: jerarquía de hojas válidas (activas con padres activos) ──────────────────
   const egresoPartidas = useMemo(
     () => partidas.filter((p) => p.clase === 'EGRESO'),
     [partidas]
   );
 
-  const egresoCodes = useMemo(
-    () => egresoPartidas.map((p) => p.codigo),
-    [egresoPartidas]
+  // Filtrar únicamente las partidas que están activas y cuyos padres/ancestros también están activos
+  const egresoPartidasActivas = useMemo(() => {
+    return egresoPartidas.filter((p) => isPartidaYAncestrosActivos(p, egresoPartidas));
+  }, [egresoPartidas]);
+
+  const egresoCodesActivos = useMemo(
+    () => egresoPartidasActivas.map((p) => p.codigo),
+    [egresoPartidasActivas]
   );
 
   const egresoLeafs = useMemo(() => {
-    return egresoPartidas.filter((p) => {
+    return egresoPartidasActivas.filter((p) => {
       const prefix = p.codigo.replace(/0+$/, '');
       if (!prefix) return false; // código todo-ceros → padre
-      // Si ALGÚN otro código empieza con este prefijo → es padre, no hoja
-      return !egresoCodes.some((c) => c !== p.codigo && c.startsWith(prefix));
+      // Si ALGÚN otro código activo empieza con este prefijo → es padre, no hoja
+      return !egresoCodesActivos.some((c) => c !== p.codigo && c.startsWith(prefix));
     });
-  }, [egresoPartidas, egresoCodes]);
+  }, [egresoPartidasActivas, egresoCodesActivos]);
 
-  // Para cada hoja, obtener su padre directo (prefijo más largo que la engloba)
+  // Para cada hoja activa, obtener su padre directo (prefijo más largo activo)
   const parentMap = useMemo(() => {
     const map = new Map<string, Partida>();
     for (const leaf of egresoLeafs) {
       const leafPrefix = leaf.codigo.replace(/0+$/, '');
-      // Todos los ancestros: otros códigos cuyo prefijo-sin-ceros es prefijo de leafPrefix
-      const ancestors = egresoPartidas.filter((p) => {
+      const ancestors = egresoPartidasActivas.filter((p) => {
         if (p.codigo === leaf.codigo) return false;
         const pPrefix = p.codigo.replace(/0+$/, '');
         return pPrefix && leafPrefix.startsWith(pPrefix);
       });
-      // El padre directo es el ancestro con el prefijo más largo (más específico)
       if (ancestors.length > 0) {
         ancestors.sort(
           (a, b) =>
@@ -226,7 +245,7 @@ export default function MemoriasPage() {
       }
     }
     return map;
-  }, [egresoLeafs, egresoPartidas]);
+  }, [egresoLeafs, egresoPartidasActivas]);
 
   // Lista de hojas filtrada por búsqueda
   const filteredPartidas = useMemo(() => {
@@ -259,7 +278,6 @@ export default function MemoriasPage() {
       return ac.localeCompare(bc);
     });
   }, [filteredPartidas, parentMap]);
-
 
   // Contadores por estado
   const conteos = useMemo(() => {
@@ -322,7 +340,7 @@ export default function MemoriasPage() {
       codigo: `MEM-${anio}-${correlativo}`,
       seccionId: defaultSeccion,
       justificacion: '',
-      partidaId: partidas.find((p) => p.clase === 'EGRESO')?.id || '',
+      partidaId: '',
       renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: 0 }],
     });
     setSearchPartidaQuery('');
@@ -335,11 +353,15 @@ export default function MemoriasPage() {
       // Cargamos la memoria completa (con detalles) antes de abrir el modal
       const memoriaCompleta = await getMemoria(mem.id);
       setEditingMemoria(memoriaCompleta);
+      // Verificar si la partida asignada es una hoja activa válida con padres activos
+      const pIdMemoria = memoriaCompleta.partida_id || (memoriaCompleta.detalles && memoriaCompleta.detalles[0]?.partida);
+      const partidaEsValida = egresoLeafs.some((p) => p.id === Number(pIdMemoria));
+
       setFormMemoria({
         codigo: memoriaCompleta.codigo,
         seccionId: memoriaCompleta.seccion,
         justificacion: memoriaCompleta.justificacion,
-        partidaId: memoriaCompleta.partida_id || partidas.find((p) => p.clase === 'EGRESO')?.id || '',
+        partidaId: partidaEsValida ? Number(pIdMemoria) : '',
         renglones: (memoriaCompleta.detalles || []).map((d) => ({
           descripcion: d.descripcion,
           unidad_medida: d.unidad_medida,
@@ -570,11 +592,10 @@ export default function MemoriasPage() {
       {/* Notificación Feedback */}
       {feedbackMsg && (
         <div
-          className={`p-4 rounded-xl flex items-center justify-between shadow-md ${
-            feedbackMsg.type === 'success'
+          className={`p-4 rounded-xl flex items-center justify-between shadow-md ${feedbackMsg.type === 'success'
               ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-100 dark:border-emerald-800'
               : 'bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/80 dark:text-rose-100 dark:border-rose-800'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-2">
             {feedbackMsg.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
@@ -642,54 +663,48 @@ export default function MemoriasPage() {
       <div className="flex border-b border-theme-border gap-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('todas')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'todas' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'todas' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <Layers size={16} /> Todas ({conteos.todas})
         </button>
 
         <button
           onClick={() => setActiveTab('borrador')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'borrador' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'borrador' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <Clock size={16} /> En Borrador ({conteos.borrador})
         </button>
 
         <button
           onClick={() => setActiveTab('pendiente')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'pendiente' ? 'border-amber-500 text-amber-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'pendiente' ? 'border-amber-500 text-amber-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <AlertCircle size={16} /> Pendientes de Gerencia ({conteos.pendiente})
         </button>
 
         <button
           onClick={() => setActiveTab('finanzas')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'finanzas' ? 'border-blue-500 text-blue-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'finanzas' ? 'border-blue-500 text-blue-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <CheckCircle2 size={16} /> Revisión Finanzas / Economía ({conteos.finanzas})
         </button>
 
         <button
           onClick={() => setActiveTab('aprobadas')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'aprobadas' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'aprobadas' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <Sparkles size={16} /> Aprobadas POA ({conteos.aprobadas})
         </button>
 
         <button
           onClick={() => setActiveTab('rechazadas')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-            activeTab === 'rechazadas' ? 'border-rose-500 text-rose-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'rechazadas' ? 'border-rose-500 text-rose-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
         >
           <XCircle size={16} /> Rechazadas ({conteos.rechazadas})
         </button>
@@ -777,8 +792,8 @@ export default function MemoriasPage() {
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-theme-border/60 text-theme-muted">
-                        {mem.detalles?.length || 0}
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-theme-primary/10 text-theme-primary">
+                        {mem.total_items ?? (mem.detalles ? mem.detalles.length : 0)}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right font-bold text-theme-main text-xs">{formatMoney(total)}</td>
@@ -802,7 +817,18 @@ export default function MemoriasPage() {
                           <Eye size={15} />
                         </button>
 
-                        {/* Flujo de Estados */}
+                        {/* Botón Editar para cualquier estado si el usuario tiene permisos */}
+                        {!isGestionBloqueada && (isElaborador || isGerente || isAprobador) && (
+                          <button
+                            onClick={() => handleOpenEditar(mem)}
+                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
+                            title="Editar Datos de la Memoria"
+                          >
+                            <Edit3 size={15} />
+                          </button>
+                        )}
+
+                        {/* Flujo de Estados y Aprobaciones */}
                         {mem.estado === 'BORRADOR' && (
                           <>
                             {isElaborador && (
@@ -832,15 +858,6 @@ export default function MemoriasPage() {
                                 </button>
                               </>
                             )}
-                            {!isGestionBloqueada && (isElaborador || isGerente || isAprobador) && (
-                              <button
-                                onClick={() => handleOpenEditar(mem)}
-                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
-                                title="Editar"
-                              >
-                                <Edit3 size={15} />
-                              </button>
-                            )}
                             {!isGestionBloqueada && (isElaborador || isAprobador) && (
                               <button
                                 onClick={() => handleDelete(mem.id)}
@@ -869,15 +886,6 @@ export default function MemoriasPage() {
                             >
                               <XCircle size={15} />
                             </button>
-                            {!isGestionBloqueada && (
-                              <button
-                                onClick={() => handleOpenEditar(mem)}
-                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
-                                title="Editar"
-                              >
-                                <Edit3 size={15} />
-                              </button>
-                            )}
                           </>
                         )}
 
@@ -897,15 +905,6 @@ export default function MemoriasPage() {
                             >
                               <XCircle size={15} />
                             </button>
-                            {!isGestionBloqueada && (
-                              <button
-                                onClick={() => handleOpenEditar(mem)}
-                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
-                                title="Editar"
-                              >
-                                <Edit3 size={15} />
-                              </button>
-                            )}
                           </>
                         )}
 
@@ -956,11 +955,10 @@ export default function MemoriasPage() {
                   <button
                     key={p}
                     onClick={() => setCurrentPage(p as number)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                      currentPage === p
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${currentPage === p
                         ? 'border-theme-primary bg-theme-primary text-white'
                         : 'border-theme-border text-theme-muted hover:text-theme-main'
-                    }`}
+                      }`}
                   >
                     {p}
                   </button>
@@ -1058,12 +1056,16 @@ export default function MemoriasPage() {
                   <div className="relative" ref={partidaSelectorRef}>
                     {/* Partida seleccionada – actúa como trigger */}
                     {(() => {
-                      const selected = partidas.find((p) => p.id === Number(formMemoria.partidaId));
+                      const selected = egresoLeafs.find((p) => p.id === Number(formMemoria.partidaId));
                       return (
                         <button
                           type="button"
                           onClick={() => setPartidaSelectorOpen(!partidaSelectorOpen)}
-                          className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-theme-border bg-theme-surface hover:border-theme-primary focus:outline-none focus:border-theme-primary transition-colors text-left"
+                          className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left ${
+                            selected
+                              ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
+                              : 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
+                          }`}
                         >
                           {selected ? (
                             <span className="flex-1 min-w-0">
@@ -1073,7 +1075,10 @@ export default function MemoriasPage() {
                               <span className="text-xs text-theme-main line-clamp-1">{selected.nombre}</span>
                             </span>
                           ) : (
-                            <span className="text-xs text-theme-muted">Seleccione una partida de egreso...</span>
+                            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                              <AlertCircle size={14} className="shrink-0" />
+                              Seleccionar partida de egreso obligatoria...
+                            </span>
                           )}
                           <svg
                             className={`w-4 h-4 shrink-0 text-theme-muted transition-transform ${partidaSelectorOpen ? 'rotate-180' : ''}`}
@@ -1088,7 +1093,7 @@ export default function MemoriasPage() {
                     {/* Dropdown con búsqueda y lista */}
                     {partidaSelectorOpen && (
                       <div className="absolute z-50 mt-1 w-full bg-theme-surface border border-theme-border rounded-xl shadow-xl overflow-hidden flex flex-col"
-                           style={{ maxHeight: '320px' }}>
+                        style={{ maxHeight: '320px' }}>
                         <div className="p-2 border-b border-theme-border sticky top-0 bg-theme-surface z-10">
                           <div className="relative">
                             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
@@ -1140,11 +1145,10 @@ export default function MemoriasPage() {
                                         setPartidaSelectorOpen(false);
                                         setSearchPartidaQuery('');
                                       }}
-                                      className={`w-full flex items-start gap-3 pl-5 pr-3 py-2.5 text-left transition-colors border-b border-theme-border/30 last:border-0 ${
-                                        isActive
+                                      className={`w-full flex items-start gap-3 pl-5 pr-3 py-2.5 text-left transition-colors border-b border-theme-border/30 last:border-0 ${isActive
                                           ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
                                           : 'hover:bg-theme-border/30'
-                                      }`}
+                                        }`}
                                     >
                                       {/* Línea de indentación visual */}
                                       <span className="shrink-0 flex items-start pt-0.5">
@@ -1152,11 +1156,10 @@ export default function MemoriasPage() {
                                       </span>
 
                                       <span
-                                        className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
-                                          isActive
+                                        className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${isActive
                                             ? 'bg-theme-primary text-white'
                                             : 'bg-theme-base text-theme-primary border border-theme-border'
-                                        }`}
+                                          }`}
                                       >
                                         {p.codigo}
                                       </span>
@@ -1225,7 +1228,7 @@ export default function MemoriasPage() {
                     onClick={handleAddRenglon}
                     className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
                   >
-                    <Plus size={14} /> Agregar Renglón
+                    <Plus size={14} /> Agregar item
                   </button>
                 </div>
 
@@ -1455,19 +1458,176 @@ export default function MemoriasPage() {
                     ) : (
                       <span className="text-[10px] text-amber-600 font-medium">⏳ Pendiente</span>
                     )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-            <div className="p-4 border-t border-theme-border flex justify-end">
-              <button onClick={() => setFichaMemoria(null)} className="btn-primary text-xs px-5 py-2">
-                Cerrar Ficha
-              </button>
+            <div className="p-4 border-t border-theme-border flex items-center justify-between">
+              {!isGestionBloqueada && (isElaborador || isGerente || isAprobador) && (
+                <button
+                  onClick={() => {
+                    const targetMem = fichaMemoria;
+                    setFichaMemoria(null);
+                    handleOpenEditar(targetMem);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                >
+                  <Edit3 size={14} /> Editar Memoria
+                </button>
+              )}
+              <div className="flex items-center gap-2 ml-auto">
+                <button onClick={() => setFichaMemoria(null)} className="btn-primary text-xs px-5 py-2">
+                  Cerrar Ficha
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Documento de Impresión Oficial - Memoria de Cálculo */}
+      {(() => {
+        // Partida específica seleccionada para la memoria (hoja seleccionada)
+        const partidaEspecifica = useMemo(() => {
+          if (!fichaMemoria) return { codigo: '', nombre: '' };
+          const d0 = (fichaMemoria.detalles || [])[0];
+          if (d0 && d0.partida_codigo) {
+            return { codigo: d0.partida_codigo, nombre: d0.partida_nombre || '' };
+          }
+          if (fichaMemoria.partida_id && partidas.length > 0) {
+            const pObj = partidas.find((p) => p.id === Number(fichaMemoria.partida_id));
+            if (pObj) return { codigo: pObj.codigo, nombre: pObj.nombre };
+          }
+          return {
+            codigo: fichaMemoria.partida_codigo || '',
+            nombre: fichaMemoria.partida_nombre || '',
+          };
+        }, [fichaMemoria, partidas]);
+
+        const headerNavyStyle = {
+          backgroundColor: '#002060',
+          color: '#ffffff',
+          WebkitPrintColorAdjust: 'exact' as const,
+          printColorAdjust: 'exact' as const,
+        };
+
+        if (!fichaMemoria) return null;
+
+        return (
+          <div id="printable-memoria" className="hidden print:block text-black bg-white p-4 font-sans text-xs">
+            {/* Encabezado Principal */}
+            <div className="text-center space-y-1 mb-5">
+              <h1 className="text-xl font-bold uppercase tracking-wider">
+                MEMORIA DE CÁLCULO
+              </h1>
+              <p className="text-xs font-bold uppercase mt-2 tracking-wide">
+                PARTIDA: {partidaEspecifica.codigo} "{partidaEspecifica.nombre?.toUpperCase()}"
+              </p>
+              <p className="text-[11px] font-semibold text-gray-800 uppercase">
+                Fuente 20 - "RECURSOS ESPECIFICOS" Organismo 230 - "OTROS RECURSOS ESPECIFICOS"
+              </p>
+              <p className="text-[11px] italic text-gray-700 mt-1">
+                (Expresado en Cantidades y Bolivianos)
+              </p>
+            </div>
+
+            {/* Tabla Principal de Detalle e Ítems */}
+            <table className="w-full border-collapse border border-black text-xs">
+              <thead>
+                <tr style={headerNavyStyle} className="font-bold text-center uppercase text-[10px]">
+                  <th style={headerNavyStyle} className="border border-black p-1.5 w-8">Nº</th>
+                  <th style={headerNavyStyle} className="border border-black p-1.5 text-center">DESCRIPCIÓN</th>
+                  <th style={headerNavyStyle} className="border border-black p-1.5 w-24 text-center leading-tight">CANTIDAD<br />REQUERIDA</th>
+                  <th style={headerNavyStyle} className="border border-black p-1.5 w-20 text-center">UNIDAD</th>
+                  <th style={headerNavyStyle} className="border border-black p-1.5 w-24 text-center leading-tight">PRECIO<br />UNITARIO</th>
+                  <th style={headerNavyStyle} className="border border-black p-1.5 w-24 text-center">TOTAL</th>
+                  <th style={headerNavyStyle} className="border border-black p-1.5 w-52 text-center">JUSTIFICACIÓN</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(fichaMemoria.detalles || []).map((det, idx) => {
+                  const subtotal = Number(det.precio_total || (det.cantidad * det.precio_unitario));
+                  return (
+                    <tr key={det.id || idx} className="text-[11px]">
+                      <td className="border border-black p-2 text-center align-middle">{idx + 1}</td>
+                      <td className="border border-black p-2 uppercase font-medium leading-snug align-middle">{det.descripcion}</td>
+                      <td className="border border-black p-2 text-center align-middle">{det.cantidad}</td>
+                      <td className="border border-black p-2 text-center uppercase align-middle">{det.unidad_medida}</td>
+                      <td className="border border-black p-2 text-right align-middle font-mono">
+                        {Number(det.precio_unitario).toFixed(2).replace('.', ',')}
+                      </td>
+                      <td className="border border-black p-2 text-right align-middle font-mono font-bold">
+                        {subtotal.toFixed(2).replace('.', ',')}
+                      </td>
+                      {idx === 0 && (
+                        <td
+                          rowSpan={(fichaMemoria.detalles || []).length}
+                          className="border border-black p-2.5 align-middle text-[10px] uppercase leading-relaxed font-normal"
+                        >
+                          {fichaMemoria.justificacion}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+
+                {/* Fila Total Partida */}
+                <tr style={headerNavyStyle} className="font-bold text-[11px]">
+                  <td colSpan={5} style={headerNavyStyle} className="border border-black p-2 text-center uppercase tracking-wider font-bold">
+                    TOTAL PARTIDA
+                  </td>
+                  <td style={headerNavyStyle} className="border border-black p-2 text-right font-mono text-xs font-bold">
+                    {Number(fichaMemoria.total_presupuesto).toFixed(2).replace('.', ',')}
+                  </td>
+                  <td style={headerNavyStyle} className="border border-black"></td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Tabla de Control de Firmas */}
+            <div className="mt-8">
+              <table className="w-full border-collapse border border-black text-xs">
+                <thead>
+                  <tr style={headerNavyStyle} className="font-bold text-center uppercase text-[10px]">
+                    <th style={headerNavyStyle} className="border border-black p-1.5 w-32"></th>
+                    <th style={headerNavyStyle} className="border border-black p-1.5 text-center">NOMBRE</th>
+                    <th style={headerNavyStyle} className="border border-black p-1.5 text-center">CARGO</th>
+                    <th style={headerNavyStyle} className="border border-black p-1.5 w-48 text-center">FIRMA</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[11px]">
+                  {/* Elaborado por */}
+                  <tr>
+                    <td className="border border-black p-2 font-bold bg-white text-left align-middle">Elaborado por:</td>
+                    <td className="border border-black p-2 text-center uppercase font-semibold align-middle">
+                      {(fichaMemoria.participaciones || []).find((p) => p.tipo_participacion === 'ELABORADOR')?.usuario_nombre ||
+                        (user ? `${user.first_name || ''} ${user.last_name || ''}`.trim().toUpperCase() : '')}
+                    </td>
+                    <td className="border border-black p-2 text-center uppercase font-semibold align-middle">
+                      {fichaMemoria.seccion_nombre
+                        ? `JEFE DE LA UNIDAD DE ${fichaMemoria.seccion_nombre.toUpperCase()}`
+                        : 'JEFE DE LA UNIDAD SOLICITANTE'}
+                    </td>
+                    <td className="border border-black p-2 h-16"></td>
+                  </tr>
+                  {/* Aprobado por */}
+                  <tr>
+                    <td className="border border-black p-2 font-bold bg-white text-left align-middle">Aprobado por:</td>
+                    <td className="border border-black p-2 text-center uppercase font-semibold align-middle">
+                      {(fichaMemoria.participaciones || []).find((p) => p.tipo_participacion === 'APROBADOR')?.usuario_nombre || ''}
+                    </td>
+                    <td className="border border-black p-2 text-center uppercase font-semibold align-middle">
+                      {fichaMemoria.area_nombre ? `GERENTE DE ÁREA DE ${fichaMemoria.area_nombre.toUpperCase()}` : 'GERENTE DE ÁREA'}
+                    </td>
+                    <td className="border border-black p-2 h-16"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

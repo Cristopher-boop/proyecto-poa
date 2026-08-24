@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -60,5 +60,50 @@
     @apply w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 
            text-sm text-theme-main placeholder:text-theme-muted transition-colors duration-200
            focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none;
+  }
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 8mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ocultar ABSOLUTAMENTE TODO el árbol DOM durante la impresión */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Revelar ÚNICAMENTE el contenedor #printable-memoria y sus descendientes */
+  #printable-memoria,
+  #printable-memoria * {
+    visibility: visible !important;
+  }
+
+  #printable-memoria {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 5mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    box-sizing: border-box !important;
   }
 }
