@@ -245,8 +245,8 @@ export default function TraspasosPage() {
       {feedbackMsg && (
         <div
           className={`p-4 rounded-xl flex items-center gap-3 text-xs font-semibold shadow-lg transition-all animate-in fade-in slide-in-from-top-2 ${feedbackMsg.type === 'success'
-              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600'
-              : 'bg-rose-500/10 border border-rose-500/30 text-rose-600'
+            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600'
+            : 'bg-rose-500/10 border border-rose-500/30 text-rose-600'
             }`}
         >
           {feedbackMsg.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
@@ -266,9 +266,6 @@ export default function TraspasosPage() {
                 <h1 className="text-2xl font-bold font-display text-theme-main tracking-tight">
                   Modificaciones Presupuestarias
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-theme-primary/10 text-theme-primary">
-                  Modificaciones POA
-                </span>
               </div>
               <p className="text-xs text-theme-muted mt-0.5">
                 Reasignación de recursos financieros y saldos entre memorias de cálculo de una misma área organizacional
@@ -529,8 +526,8 @@ export default function TraspasosPage() {
                       key={p}
                       onClick={() => setCurrentPage(p as number)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${currentPage === p
-                          ? 'border-theme-primary bg-theme-primary text-white'
-                          : 'border-theme-border text-theme-muted hover:text-theme-main'
+                        ? 'border-theme-primary bg-theme-primary text-white'
+                        : 'border-theme-border text-theme-muted hover:text-theme-main'
                         }`}
                     >
                       {p}
@@ -598,7 +595,7 @@ export default function TraspasosPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
-                    2. Memoria de Origen (Afectada / - Saldo) *
+                    2. Memoria de Origen *
                   </label>
                   <select
                     required
@@ -626,7 +623,7 @@ export default function TraspasosPage() {
 
                 <div>
                   <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
-                    3. Memoria de Destino (Beneficiada / + Saldo) *
+                    3. Memoria de Destino *
                   </label>
                   <select
                     required
