@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import alertService from '../../utils/alerts';
 import {
   BookOpenText,
   Plus,
@@ -267,7 +268,7 @@ export default function MemoriasPage() {
       todas: arr.length,
       borrador: arr.filter((m) => m.estado === 'BORRADOR').length,
       pendiente: arr.filter((m) => m.estado === 'PENDIENTE_GERENCIA').length,
-      finanzas: arr.filter((m) => m.estado === 'APROBADO_GERENCIA').length,
+      finanzas: arr.filter((m) => m.estado === 'APROBADO_GERENCIA' || m.estado === 'PENDIENTE_PLANIFICACION' || m.estado === 'APROBADO_PLANIFICACION').length,
       aprobadas: arr.filter((m) => m.estado === 'APROBADO_FINANZAS').length,
       rechazadas: arr.filter((m) => m.estado === 'RECHAZADO').length,
       montoTotal: arr.reduce((acc, m) => acc + parseFloat(m.total_presupuesto || '0'), 0),
@@ -280,7 +281,7 @@ export default function MemoriasPage() {
       let matchTab = true;
       if (activeTab === 'borrador') matchTab = m.estado === 'BORRADOR';
       else if (activeTab === 'pendiente') matchTab = m.estado === 'PENDIENTE_GERENCIA';
-      else if (activeTab === 'finanzas') matchTab = m.estado === 'APROBADO_GERENCIA';
+      else if (activeTab === 'finanzas') matchTab = m.estado === 'APROBADO_GERENCIA' || m.estado === 'PENDIENTE_PLANIFICACION' || m.estado === 'APROBADO_PLANIFICACION';
       else if (activeTab === 'aprobadas') matchTab = m.estado === 'APROBADO_FINANZAS';
       else if (activeTab === 'rechazadas') matchTab = m.estado === 'RECHAZADO';
 
@@ -450,71 +451,117 @@ export default function MemoriasPage() {
   }
 
   // Transiciones de estado
+
   async function handleEnviar(mem: MemoriaCalculo) {
+    const confirm = await alertService.confirm({
+      title: '¿Enviar a Gerencia?',
+      text: `La memoria ${mem.codigo} cambiará a estado Pendiente de Gerencia para su revisión.`,
+      confirmButtonText: 'Sí, enviar a revisión',
+    });
+    if (!confirm) return;
+
     try {
       const res = await enviarMemoriaGerencia(mem.id);
-      mostrarMensaje('success', res.message);
+      alertService.success('Enviado a Gerencia', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
     } catch (err) {
-      mostrarMensaje('error', 'Error al enviar memoria a gerencia.');
+      alertService.error('Error', 'No se pudo enviar a revisión.');
     }
   }
 
   async function handleAprobarGerente(mem: MemoriaCalculo) {
+    const nota = await alertService.prompt({
+      title: 'Aprobar Memoria por Gerencia',
+      text: `¿Desea aprobar la memoria ${mem.codigo}? Puede adjuntar una nota u observación adicional (opcional).`,
+      confirmButtonText: 'Aprobar y Derivar',
+      inputPlaceholder: 'Nota u observación (opcional)...',
+    });
+    if (nota === null) return;
+
     try {
-      const res = await aprobarMemoriaGerencia(mem.id);
-      mostrarMensaje('success', res.message);
+      const res = await aprobarMemoriaGerencia(mem.id, nota);
+      alertService.success('Aprobado por Gerencia', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
     } catch (err) {
-      mostrarMensaje('error', 'Error al aprobar por gerencia.');
+      alertService.error('Error', 'Error al aprobar por gerencia.');
     }
   }
 
   async function handleAprobarFinanciero(mem: MemoriaCalculo) {
+    const nota = await alertService.prompt({
+      title: 'Aprobación Presupuestaria Final',
+      text: `¿Desea otorgar Aprobación Final a la memoria ${mem.codigo}? Puede ingresar una observación o nota de aprobación (opcional).`,
+      confirmButtonText: 'Aprobar Definitivamente',
+      inputPlaceholder: 'Nota de aprobación (opcional)...',
+    });
+    if (nota === null) return;
+
     try {
-      const res = await aprobarMemoriaFinanzas(mem.id);
-      mostrarMensaje('success', res.message);
+      const res = await aprobarMemoriaFinanzas(mem.id, nota);
+      alertService.success('¡Memoria Aprobada!', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
     } catch (err) {
-      mostrarMensaje('error', 'Error al aprobar por finanzas.');
+      alertService.error('Error', 'Error al aprobar por finanzas.');
     }
   }
 
   async function handleRechazar(mem: MemoriaCalculo) {
-    const motivo = prompt('Motivo del rechazo (opcional):') || '';
+    const motivo = await alertService.prompt({
+      title: 'Rechazar Memoria de Cálculo',
+      text: `Por favor indique el motivo de rechazo para la memoria ${mem.codigo}. Se notificará al elaborador.`,
+      confirmButtonText: 'Sí, Rechazar Memoria',
+      inputPlaceholder: 'Indique el motivo del rechazo...',
+      required: true,
+      isDanger: true,
+    });
+    if (!motivo) return;
+
     try {
       const res = await rechazarMemoria(mem.id, motivo);
-      mostrarMensaje('success', res.message);
+      alertService.success('Memoria Rechazada', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
     } catch (err) {
-      mostrarMensaje('error', 'Error al rechazar memoria.');
+      alertService.error('Error', 'Error al rechazar memoria.');
     }
   }
 
   async function handleVolverABorrador(mem: MemoriaCalculo) {
+    const motivo = await alertService.prompt({
+      title: 'Devolver Memoria a Borrador',
+      text: `Indique las observaciones para devolver la memoria ${mem.codigo} a estado Borrador para correcciones.`,
+      confirmButtonText: 'Devolver a Borrador',
+      inputPlaceholder: 'Indique observaciones o motivo de devolución...',
+      required: true,
+    });
+    if (!motivo) return;
+
     try {
-      const res = await volverMemoriaBorrador(mem.id);
-      mostrarMensaje('success', res.message);
+      const res = await volverMemoriaBorrador(mem.id, motivo);
+      alertService.success('Devuelto a Borrador', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
     } catch (err) {
-      mostrarMensaje('error', 'Error al regresar a borrador.');
+      alertService.error('Error', 'Error al regresar a borrador.');
     }
   }
 
   const getBadgeEstado = (estado: string) => {
     switch (estado) {
       case 'BORRADOR':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"><Clock size={12} /> Borrador</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 shadow-sm"><Clock size={12} /> Borrador</span>;
       case 'PENDIENTE_GERENCIA':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"><AlertCircle size={12} /> Pendiente Gerencia</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700 shadow-sm"><AlertCircle size={12} /> Pendiente Gerencia</span>;
       case 'APROBADO_GERENCIA':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"><CheckCircle2 size={12} /> Aprobado Gerencia</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700 shadow-sm"><CheckCircle2 size={12} /> Aprobado Gerencia</span>;
+      case 'PENDIENTE_PLANIFICACION':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-950/90 dark:text-indigo-200 dark:border-indigo-700 shadow-sm"><AlertCircle size={12} /> Pendiente Planificación</span>;
+      case 'APROBADO_PLANIFICACION':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-900 border border-teal-300 dark:bg-teal-950/90 dark:text-teal-200 dark:border-teal-700 shadow-sm"><CheckCircle2 size={12} /> Alineado Planificación</span>;
       case 'APROBADO_FINANZAS':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"><CheckCircle2 size={12} /> Aprobado Finanzas</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700 shadow-sm"><CheckCircle2 size={12} /> Aprobado Finanzas</span>;
       case 'RECHAZADO':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"><XCircle size={12} /> Rechazado</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-900 border border-rose-300 dark:bg-rose-950/90 dark:text-rose-200 dark:border-rose-700 shadow-sm"><XCircle size={12} /> Rechazado</span>;
       default:
-        return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100">{estado}</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600">{estado}</span>;
     }
   };
 
@@ -719,6 +766,15 @@ export default function MemoriasPage() {
                     </td>
                     <td className="py-3.5 px-4 max-w-xs">
                       <p className="text-xs text-theme-main line-clamp-2">{mem.justificacion}</p>
+                      {mem.motivo_rechazo && (
+                        <p className={`text-[11px] font-medium mt-1 p-1.5 rounded-lg border ${
+                          mem.estado === 'RECHAZADO'
+                            ? 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300'
+                            : 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300'
+                        }`}>
+                          💬 <strong>{mem.estado === 'RECHAZADO' ? 'Motivo Rechazo:' : 'Nota / Obs:'}</strong> "{mem.motivo_rechazo}"
+                        </p>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-theme-border/60 text-theme-muted">
@@ -825,7 +881,7 @@ export default function MemoriasPage() {
                           </>
                         )}
 
-                        {mem.estado === 'APROBADO_GERENCIA' && isAprobador && (
+                        {(mem.estado === 'APROBADO_GERENCIA' || mem.estado === 'PENDIENTE_PLANIFICACION' || mem.estado === 'APROBADO_PLANIFICACION') && isAprobador && (
                           <>
                             <button
                               onClick={() => handleAprobarFinanciero(mem)}
@@ -1329,6 +1385,16 @@ export default function MemoriasPage() {
                 <p className="p-3 mt-1 rounded-xl bg-theme-base border border-theme-border text-theme-main text-xs leading-relaxed">
                   {fichaMemoria.justificacion}
                 </p>
+                {fichaMemoria.motivo_rechazo && (
+                  <div className={`mt-2.5 p-3 rounded-xl border text-xs ${
+                    fichaMemoria.estado === 'RECHAZADO'
+                      ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-200'
+                      : 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-200'
+                  }`}>
+                    <strong>💬 {fichaMemoria.estado === 'RECHAZADO' ? 'Motivo del Rechazo:' : 'Nota de Revisión / Aprobación:'}</strong>
+                    <p className="mt-1 font-medium italic">"{fichaMemoria.motivo_rechazo}"</p>
+                  </div>
+                )}
               </div>
 
               <div>

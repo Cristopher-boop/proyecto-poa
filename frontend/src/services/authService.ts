@@ -34,6 +34,8 @@ export interface UserProfile {
   seccion_nombre?: string | null;
   seccion?: number | null;
   is_superuser?: boolean;
+  last_login?: string | null;
+  date_joined?: string;
 }
 
 export async function loginUser(credentials: LoginCredentials): Promise<AuthTokens> {
@@ -79,10 +81,19 @@ export interface LogEntry {
   change_message: string;
 }
 
-export async function getLogs(): Promise<LogEntry[]> {
-  const { data } = await api.get<any>('/api/v1/usuarios/logs/');
-  // Django rest framework viewsets paginated response usually returns { results: [] }
-  return Array.isArray(data) ? data : (data.results || []);
+export async function getLogs(params?: Record<string, any>): Promise<LogEntry[]> {
+  const { data } = await api.get<any>('/api/v1/usuarios/logs/', { params });
+  return Array.isArray(data) ? data : (data?.results || []);
+}
+
+export async function getLoginLogs(): Promise<LogEntry[]> {
+  const { data } = await api.get<any>('/api/v1/usuarios/logs/', { params: { only_logins: 'true' } });
+  return Array.isArray(data) ? data : (data?.results || []);
+}
+
+export async function getUltimosIngresos(): Promise<UserProfile[]> {
+  const { data } = await api.get<any>('/api/v1/usuarios/ultimos-ingresos/');
+  return Array.isArray(data) ? data : (data?.results || []);
 }
 
 export function saveTokens(tokens: AuthTokens) {
