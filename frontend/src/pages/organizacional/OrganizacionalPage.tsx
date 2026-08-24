@@ -23,6 +23,7 @@ export default function OrganizacionalPage() {
   const [secciones, setSecciones] = useState<Seccion[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedPrograma, setSelectedPrograma] = useState<string>('TODOS');
 
   const cargarResumen = async () => {
     setLoading(true);
@@ -50,14 +51,21 @@ export default function OrganizacionalPage() {
 
   const areasFiltradas = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return areas;
 
-    return areas.filter((area) =>
-      area.nombre.toLowerCase().includes(term) ||
-      area.codigo.toLowerCase().includes(term) ||
-      (area.programa_nombre ?? '').toLowerCase().includes(term),
-    );
-  }, [areas, search]);
+    return areas.filter((area) => {
+      const coincideBusqueda =
+        !term ||
+        area.nombre.toLowerCase().includes(term) ||
+        area.codigo.toLowerCase().includes(term) ||
+        (area.programa_nombre ?? '').toLowerCase().includes(term);
+
+      const coincidePrograma =
+        selectedPrograma === 'TODOS' ||
+        String(area.programa) === selectedPrograma;
+
+      return coincideBusqueda && coincidePrograma;
+    });
+  }, [areas, search, selectedPrograma]);
 
   const programasActivos = programas.filter((programa) => programa.estado).length;
   const areasActivas = areas.filter((area) => area.estado).length;
@@ -139,18 +147,67 @@ export default function OrganizacionalPage() {
 
       {section === 'resumen' && (
         <>
-          <div className="card p-4">
-            <div className="relative w-full max-w-md">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
-              <input
-                type="text"
-                placeholder="Buscar área, gerencia o programa..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="input-theme pl-10 text-xs"
-              />
+          <div className="card p-4 space-y-3">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+
+              {/* Buscador */}
+              <div className="relative w-full md:max-w-md">
+                <Search
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted"
+                />
+
+                <input
+                  type="text"
+                  placeholder="Buscar área, gerencia o programa..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="input-theme pl-10 text-xs w-full"
+                />
+              </div>
+
+              {/* Filtro de Programa */}
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <span className="text-xs text-theme-muted whitespace-nowrap">
+                  Programa:
+                </span>
+
+                <select
+                  value={selectedPrograma}
+                  onChange={(event) => setSelectedPrograma(event.target.value)}
+                  className="border border-theme-border rounded-xl px-3 py-2 text-xs bg-theme-surface text-theme-main focus:outline-none focus:ring-2 focus:ring-theme-primary w-full md:w-auto"
+                >
+                  <option value="TODOS">Todos los Programas</option>
+
+                  {programas.map((programa) => (
+                  <option key={programa.id} value={String(programa.id)}>
+                    {programa.nombre}
+                  </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+
+            {(search.trim() || selectedPrograma !== 'TODOS') && (
+              <div className="flex items-center justify-between pt-2 border-t border-theme-border text-xs text-theme-muted">
+                <span>
+                  Mostrando <strong>{areasFiltradas.length}</strong> de{' '}
+                  <strong>{areas.length}</strong> áreas
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('');
+                    setSelectedPrograma('TODOS');
+                  }}
+                  className="text-theme-primary hover:underline font-medium"
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            )}
+</div>
 
           {loading ? (
             <div className="card p-10 text-center text-theme-muted">Cargando estructura organizacional...</div>

@@ -87,6 +87,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     total_presupuesto = serializers.CharField(source='total_presupuestado', read_only=True)
     total_ejecutado = serializers.CharField(read_only=True)
     total_disponible = serializers.CharField(source='saldo_disponible', read_only=True)
+    saldo_disponible = serializers.CharField(read_only=True)
     monto_entrante = serializers.CharField(read_only=True)
     monto_saliente = serializers.CharField(read_only=True)
 
@@ -115,6 +116,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'total_presupuesto',
             'total_ejecutado',
             'total_disponible',
+            'saldo_disponible',
             'monto_entrante',
             'monto_saliente',
             'created_at',
@@ -152,6 +154,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     total_presupuesto = serializers.CharField(source='total_presupuestado', read_only=True)
     total_ejecutado = serializers.CharField(read_only=True)
     total_disponible = serializers.CharField(source='saldo_disponible', read_only=True)
+    saldo_disponible = serializers.CharField(read_only=True)
     monto_entrante = serializers.CharField(read_only=True)
     monto_saliente = serializers.CharField(read_only=True)
 
@@ -183,6 +186,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
             'total_presupuesto',
             'total_ejecutado',
             'total_disponible',
+            'saldo_disponible',
             'monto_entrante',
             'monto_saliente',
             'created_at',
@@ -286,6 +290,11 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
 class TraspasoSerializer(serializers.ModelSerializer):
     memoria_origen_codigo = serializers.CharField(source='memoria_origen.codigo', read_only=True)
     memoria_destino_codigo = serializers.CharField(source='memoria_destino.codigo', read_only=True)
+    memoria_origen_partida = serializers.CharField(source='memoria_origen.partida.codigo', read_only=True)
+    memoria_destino_partida = serializers.CharField(source='memoria_destino.partida.codigo', read_only=True)
+    area_nombre = serializers.CharField(source='memoria_origen.seccion.area.nombre', read_only=True)
+    gestion_anio = serializers.IntegerField(source='memoria_origen.gestion.anio', read_only=True)
+    gestion_estado = serializers.CharField(source='memoria_origen.gestion.estado', read_only=True)
     usuario_registro_nombre = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
@@ -297,10 +306,15 @@ class TraspasoSerializer(serializers.ModelSerializer):
             'motivo',
             'estado',
             'estado_display',
+            'area_nombre',
+            'gestion_anio',
+            'gestion_estado',
             'memoria_origen',
             'memoria_origen_codigo',
+            'memoria_origen_partida',
             'memoria_destino',
             'memoria_destino_codigo',
+            'memoria_destino_partida',
             'usuario_registro',
             'usuario_registro_nombre',
             'created_at',
