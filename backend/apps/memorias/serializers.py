@@ -81,6 +81,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
 
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
+    total_items = serializers.SerializerMethodField()
 
     total_presupuesto = serializers.CharField(source='total_presupuestado', read_only=True)
     total_ejecutado = serializers.CharField(read_only=True)
@@ -108,6 +109,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'fecha_aprobacion',
             'partida_codigo',
             'partida_nombre',
+            'total_items',
             'total_presupuesto',
             'total_ejecutado',
             'total_disponible',
@@ -117,6 +119,9 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+
+    def get_total_items(self, obj):
+        return obj.detalles.count()
 
     def get_partida_codigo(self, obj):
         primer_detalle = obj.detalles.first()
@@ -140,6 +145,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     partida_id = serializers.IntegerField(write_only=True, required=False)
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
+    total_items = serializers.SerializerMethodField()
 
     detalles = DetallePresupuestoMemoriaSerializer(many=True, required=False)
     participaciones = RegistroMemoriaUsuarioSerializer(many=True, read_only=True)
@@ -171,6 +177,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
             'partida_id',
             'partida_codigo',
             'partida_nombre',
+            'total_items',
             'detalles',
             'participaciones',
             'total_presupuesto',
@@ -182,6 +189,9 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+
+    def get_total_items(self, obj):
+        return obj.detalles.count()
 
     def get_partida_id(self, obj):
         primer_detalle = obj.detalles.first()
@@ -197,6 +207,26 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         data.pop('partida_id', None)
+        request = self.context.get('request')
+        request_data = request.data if request else {}
+        partida_id_global = request_data.get('partida_id') or request_data.get('partida')
+        
+        if partida_id_global:
+            try:
+                p = Partida.objects.get(pk=partida_id_global)
+                if not p.estado:
+                    raise serializers.ValidationError({'non_field_errors': [f'La partida {p.codigo} - {p.nombre} está inactiva (estado 0).']})
+                
+                p_prefix = p.codigo.rstrip('0')
+                if p_prefix:
+                    ancestors = Partida.objects.filter(clase=p.clase).exclude(id=p.id)
+                    for anc in ancestors:
+                        anc_prefix = anc.codigo.rstrip('0')
+                        if anc_prefix and p_prefix.startswith(anc_prefix) and not anc.estado:
+                            raise serializers.ValidationError({'non_field_errors': [f'La partida padre "{anc.codigo} - {anc.nombre}" está inactiva (estado 0).']})
+            except Partida.DoesNotExist:
+                pass
+
         return data
 
     def create(self, validated_data):

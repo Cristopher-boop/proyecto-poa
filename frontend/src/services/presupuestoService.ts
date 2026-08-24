@@ -86,6 +86,7 @@ export interface MemoriaCalculo {
   partida_id?: number | null;
   partida_codigo?: string | null;
   partida_nombre?: string | null;
+  total_items?: number;
   detalles: DetallePresupuestoMemoria[];
   participaciones: RegistroParticipacion[];
   total_presupuesto: string;
