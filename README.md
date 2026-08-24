@@ -115,5 +115,6 @@ python seed_test_users.py
 - **Autenticación:** Utiliza JWT (SimpleJWT). Las llamadas al backend deben enviar el encabezado `Authorization: Bearer <token>`.
 - **Axios Interceptors:** El frontend renueva el token automáticamente por detrás si este expira y el `refresh_token` aún es válido.
 - **Bajas Lógicas:** Los endpoints de `toggle-estado` y `destroy` aplican bajas lógicas (`estado = False`) en lugar de eliminaciones físicas.
-- **Notificaciones:** Módulo de alertas en tiempo real con campana 🔔 interactiva en la barra superior.
-- **Tailwind y CSS:** La arquitectura del diseño está en `tailwind.config.js` e `index.css`, utilizando variables nativas (`--bg-base`, `--theme-primary`) para habilitar el modo Dark / Light automáticamente con la paleta de colores institucional.
+- **Notificaciones en Tiempo Real:** Módulo de alertas en tiempo real con campana 🔔 interactiva en la barra superior que notifica a Elaboradores, Gerentes y Aprobadores sobre solicitudes, aprobaciones con nota y motivos de rechazo.
+- **Auditoría & Control de Accesos:** Panel exclusivo para Superadministradores y Administradores que registra el último inicio de sesión (`last_login`) de cada usuario y el historial de sesiones.
+- **Modo Oscuro / Claro:** La paleta del sistema se adapta automáticamente a colores de alto contraste visual (Dark & Light Mode) respetando la identidad institucional de EPTAM.
