@@ -26,7 +26,7 @@ interface ModuleItem {
 
 const modules: ModuleItem[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { key: "presupuestos", label: "Presupuestos & POA", icon: WalletCards, path: "/presupuestos" },
+  { key: "presupuestos", label: "Presupuestos", icon: WalletCards, path: "/presupuestos" },
   { key: "partidas", label: "Partidas Presup.", icon: FileSpreadsheet, path: "/partidas" },
   { key: "memorias", label: "Memorias de Cálculo", icon: BookOpenText, path: "/memorias" },
   { key: "traspasos", label: "Modificaciones Presup.", icon: ArrowRightLeft, path: "/traspasos" },
@@ -91,11 +91,10 @@ export default function Sidebar() {
                 key={key}
                 type="button"
                 onClick={() => navigate(path)}
-                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                  active
+                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${active
                     ? "bg-theme-primary text-theme-primaryText shadow-sm font-semibold"
                     : "text-theme-muted hover:bg-theme-border/50 hover:text-theme-main"
-                }`}
+                  }`}
                 title={collapsed ? label : undefined}
               >
                 <Icon size={17} className="shrink-0" />

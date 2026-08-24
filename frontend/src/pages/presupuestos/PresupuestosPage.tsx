@@ -23,6 +23,8 @@ import {
   ArrowRight,
   BookOpenText,
   ChevronLeft,
+  Printer,
+  X,
 } from 'lucide-react';
 import {
   Gestion,
@@ -32,6 +34,8 @@ import {
   SeccionDetalleArea,
   MemoriaDetalleArea,
   PartidaDetalleArea,
+  ItemDetalleArea,
+  TraspasoDetalleArea,
   Area,
   getGestiones,
   createGestion,
@@ -64,7 +68,7 @@ export default function PresupuestosPage() {
   const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'ADMINISTRADOR';
 
   // UI Navigation states
-  const [viewMode, setViewMode] = useState<'general' | 'area' | 'seccion'>('general');
+  const [viewMode, setViewMode] = useState<'general' | 'area' | 'seccion' | 'reporte'>('general');
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
   const [selectedSeccionId, setSelectedSeccionId] = useState<number | null>(null);
   const [tabSeccion, setTabSeccion] = useState<'presupuesto' | 'gastos'>('presupuesto');
@@ -181,6 +185,10 @@ export default function PresupuestosPage() {
     setViewMode('seccion');
   }
 
+  function irAReporte() {
+    setViewMode('reporte');
+  }
+
   const toggleMemoria = (id: number) => {
     setExpandedMemorias(prev => {
       const s = new Set(prev);
@@ -265,9 +273,9 @@ export default function PresupuestosPage() {
     totalInicial > 0 ? Math.min(100, Math.round(totalEjecutado / totalInicial * 10000) / 100) : 0,
     [totalInicial, totalEjecutado]);
 
-  // Sección activa en vista sección
+  // Sección activa en vista sección o reporte
   const seccionActivaData = useMemo(() => {
-    if (viewMode !== 'seccion' || !detalleArea || !selectedSeccionId) return null;
+    if ((viewMode !== 'seccion' && viewMode !== 'reporte') || !detalleArea || !selectedSeccionId) return null;
     return detalleArea.secciones.find(s => s.seccion_id === selectedSeccionId) || null;
   }, [viewMode, detalleArea, selectedSeccionId]);
 
@@ -661,9 +669,18 @@ export default function PresupuestosPage() {
                     <h2 className="text-lg font-bold text-theme-main mt-1">{seccionActivaData.seccion_nombre}</h2>
                     <p className="text-xs text-theme-muted mt-0.5">Área: {detalleArea?.area_nombre}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] text-theme-muted font-semibold uppercase block">Memorias</span>
-                    <span className="text-xl font-bold text-theme-main">{seccionActivaData.memorias.length}</span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      onClick={irAReporte}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all bg-theme-base border-theme-border text-theme-main hover:border-theme-primary hover:text-theme-primary"
+                    >
+                      <Printer size={14} />
+                      Generar Reporte
+                    </button>
+                    <div className="text-right">
+                      <span className="text-[10px] text-theme-muted font-semibold uppercase block">Memorias</span>
+                      <span className="text-xl font-bold text-theme-main">{seccionActivaData.memorias.length}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1017,6 +1034,232 @@ export default function PresupuestosPage() {
             <div className="card p-10 text-center">Sección no encontrada.</div>
           )}
         </div>
+      )}
+
+      {/* VISTA REPORTE DE GASTOS DETALLADOS POR SECCIÓN */}
+      {viewMode === 'reporte' && (
+        seccionActivaData ? (
+        <div className="space-y-4">
+          {/* Breadcrumb / Toolbar */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setViewMode('seccion')}
+              className="flex items-center gap-1.5 text-xs font-bold text-theme-primary hover:underline"
+            >
+              <ChevronLeft size={16} /> Volver a la Sección
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-theme-primary text-white text-xs font-bold hover:opacity-90 transition-opacity shadow"
+            >
+              <Printer size={14} /> Imprimir Reporte
+            </button>
+          </div>
+
+          {/* Contenido Imprimible */}
+          <div id="reporte-seccion-printable" className="bg-white text-black rounded-2xl border border-theme-border shadow-sm overflow-hidden">
+
+            {/* Cabecera del Reporte */}
+            <div className="p-6 border-b-2 border-black">
+              <div className="text-center mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                  ESTADO PLURINACIONAL DE BOLIVIA
+                </p>
+                <h1 className="text-lg font-extrabold uppercase tracking-wide text-black mt-1">
+                  REPORTE DE GASTOS DETALLADOS POR SECCIÓN
+                </h1>
+                <p className="text-xs font-semibold text-gray-600 mt-1">
+                  {detalleArea?.area_nombre} — {seccionActivaData.seccion_nombre}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Gestión: {detalleArea?.gestion_anio} &nbsp;|&nbsp; Fecha de Generación: {new Date().toLocaleDateString('es-BO')}
+                </p>
+              </div>
+
+              {/* Resumen totales de la sección */}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="border border-gray-300 rounded p-2 text-center">
+                  <p className="text-[9px] font-bold uppercase text-gray-500">Total Presupuestado</p>
+                  <p className="text-sm font-extrabold text-black">{formatMoney(seccionActivaData.total_presupuestado)}</p>
+                </div>
+                <div className="border border-gray-300 rounded p-2 text-center">
+                  <p className="text-[9px] font-bold uppercase text-gray-500">Total Ejecutado</p>
+                  <p className="text-sm font-extrabold text-black">{formatMoney(seccionActivaData.total_gastado)}</p>
+                </div>
+                <div className="border border-gray-300 rounded p-2 text-center">
+                  <p className="text-[9px] font-bold uppercase text-gray-500">Saldo Disponible</p>
+                  <p className="text-sm font-extrabold text-black">{formatMoney(seccionActivaData.total_disponible)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Memorias */}
+            <div className="divide-y divide-gray-200">
+              {seccionActivaData.memorias.map((memoria) => {
+                const totalPres = parseFloat(memoria.total_presupuestado || '0');
+                const totalGast = parseFloat(memoria.total_gastado || '0');
+                const totalDisp = parseFloat(memoria.total_disponible || '0');
+                const hasTraspasos = (memoria.traspasos || []).length > 0;
+
+                return (
+                  <div key={memoria.memoria_id} className="p-5">
+                    {/* Encabezado de Memoria */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-sm font-extrabold text-black">{memoria.memoria_codigo}</span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-gray-400 text-gray-600 uppercase">{memoria.estado_display}</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1 leading-snug max-w-2xl">{memoria.justificacion}</p>
+                      </div>
+                      <div className="text-right shrink-0 ml-4">
+                        <p className="text-[9px] text-gray-500 font-semibold uppercase">Presupuestado</p>
+                        <p className="text-sm font-extrabold text-black">{formatMoney(totalPres)}</p>
+                      </div>
+                    </div>
+
+                    {/* Traspasos de la Memoria */}
+                    {hasTraspasos && (
+                      <div className="mb-3 border border-blue-300 bg-blue-50 rounded p-3">
+                        <p className="text-[10px] font-extrabold uppercase text-blue-700 mb-2 flex items-center gap-1">
+                          <ArrowRightLeft size={11} /> Modificaciones Presupuestarias (Traspasos)
+                        </p>
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-300">
+                              <th className="py-1 pr-3 text-left">Tipo</th>
+                              <th className="py-1 pr-3 text-left">Memoria Contraparte</th>
+                              <th className="py-1 pr-3 text-left">Fecha</th>
+                              <th className="py-1 pr-3 text-left">Motivo</th>
+                              <th className="py-1 text-right">Monto</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {memoria.traspasos.map(t => (
+                              <tr key={t.traspaso_id} className="border-b border-blue-100">
+                                <td className="py-1 pr-3">
+                                  <span className={`font-bold ${t.tipo === 'ENTRADA' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                    {t.tipo === 'ENTRADA' ? '▲ ENTRADA' : '▼ SALIDA'}
+                                  </span>
+                                </td>
+                                <td className="py-1 pr-3 font-mono font-bold text-black">{t.memoria_contraparte_codigo}</td>
+                                <td className="py-1 pr-3 font-mono text-gray-600">{t.fecha}</td>
+                                <td className="py-1 pr-3 text-gray-700">{t.motivo}</td>
+                                <td className={`py-1 text-right font-extrabold ${t.tipo === 'ENTRADA' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                  {t.tipo === 'ENTRADA' ? '+' : '-'}{formatMoney(t.monto)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* Tabla de Ítems */}
+                    {(memoria.items || []).length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">Sin ítems registrados en esta memoria.</p>
+                    ) : (
+                      <table className="w-full text-xs border-collapse border border-gray-400">
+                        <thead>
+                          <tr style={{ backgroundColor: '#002060', color: '#ffffff' }} className="text-[9px] font-bold uppercase">
+                            <th className="border border-gray-600 p-1.5 text-center w-6">N°</th>
+                            <th className="border border-gray-600 p-1.5 text-left">Descripción del Ítem</th>
+                            <th className="border border-gray-600 p-1.5 text-left">Partida</th>
+                            <th className="border border-gray-600 p-1.5 text-center w-16">Cantidad</th>
+                            <th className="border border-gray-600 p-1.5 text-center w-16">Unidad</th>
+                            <th className="border border-gray-600 p-1.5 text-right w-24">P. Unitario</th>
+                            <th className="border border-gray-600 p-1.5 text-right w-24">Presupuestado</th>
+                            <th className="border border-gray-600 p-1.5 text-right w-24">Ejecutado</th>
+                            <th className="border border-gray-600 p-1.5 text-right w-24">Sobrante</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {memoria.items.map((item, iIdx) => {
+                            const sobrante = parseFloat(item.saldo_sobrante || '0');
+                            return (
+                              <React.Fragment key={item.detalle_id}>
+                                {/* Fila del Ítem */}
+                                <tr className="bg-gray-50">
+                                  <td className="border border-gray-300 p-1.5 text-center font-bold text-gray-600">{iIdx + 1}</td>
+                                  <td className="border border-gray-300 p-1.5 font-semibold text-black">{item.descripcion}</td>
+                                  <td className="border border-gray-300 p-1.5">
+                                    <span className="font-mono text-[9px] font-bold text-gray-700">{item.partida_codigo}</span>
+                                  </td>
+                                  <td className="border border-gray-300 p-1.5 text-center font-mono">{item.cantidad}</td>
+                                  <td className="border border-gray-300 p-1.5 text-center uppercase text-gray-600">{item.unidad_medida}</td>
+                                  <td className="border border-gray-300 p-1.5 text-right font-mono">{formatMoney(item.precio_unitario)}</td>
+                                  <td className="border border-gray-300 p-1.5 text-right font-bold text-black">{formatMoney(item.precio_total)}</td>
+                                  <td className="border border-gray-300 p-1.5 text-right font-bold text-rose-700">{formatMoney(item.total_ejecutado)}</td>
+                                  <td className={`border border-gray-300 p-1.5 text-right font-extrabold ${sobrante >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                                    {formatMoney(item.saldo_sobrante)}
+                                  </td>
+                                </tr>
+                                {/* Subfilas de Gastos del Ítem */}
+                                {(item.gastos || []).map(gasto => (
+                                  <tr key={gasto.gasto_id} className="bg-white">
+                                    <td className="border border-gray-200 p-1 text-center text-gray-300">↳</td>
+                                    <td className="border border-gray-200 p-1 pl-4 text-gray-600 italic text-[10px]" colSpan={5}>
+                                      Gasto: {gasto.fecha_gasto}
+                                      {gasto.comprobante ? ` · Comprobante: ${gasto.comprobante}` : ''}
+                                      {gasto.observacion ? ` · ${gasto.observacion}` : ''}
+                                    </td>
+                                    <td className="border border-gray-200 p-1 text-right text-gray-500 text-[10px]">—</td>
+                                    <td className="border border-gray-200 p-1 text-right font-bold text-rose-600 text-[10px]">
+                                      {formatMoney(gasto.monto)}
+                                    </td>
+                                    <td className="border border-gray-200 p-1"></td>
+                                  </tr>
+                                ))}
+                              </React.Fragment>
+                            );
+                          })}
+                        </tbody>
+                        {/* Subtotales de la Memoria */}
+                        <tfoot>
+                          <tr style={{ backgroundColor: '#002060', color: '#ffffff' }} className="font-extrabold text-[10px]">
+                            <td colSpan={6} className="border border-gray-600 p-1.5 text-right uppercase">Subtotal Memoria {memoria.memoria_codigo}:</td>
+                            <td className="border border-gray-600 p-1.5 text-right">{formatMoney(totalPres)}</td>
+                            <td className="border border-gray-600 p-1.5 text-right">{formatMoney(totalGast)}</td>
+                            <td className="border border-gray-600 p-1.5 text-right">{formatMoney(totalDisp)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Totales Generales de la Sección */}
+            <div className="p-5" style={{ backgroundColor: '#002060', color: '#ffffff' }}>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-[9px] font-bold uppercase" style={{ color: '#93c5fd' }}>TOTAL PRESUPUESTADO SECCIÓN</p>
+                  <p className="text-base font-extrabold">{formatMoney(seccionActivaData.total_presupuestado)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold uppercase" style={{ color: '#93c5fd' }}>TOTAL EJECUTADO SECCIÓN</p>
+                  <p className="text-base font-extrabold" style={{ color: '#fca5a5' }}>{formatMoney(seccionActivaData.total_gastado)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold uppercase" style={{ color: '#93c5fd' }}>SALDO DISPONIBLE SECCIÓN</p>
+                  <p className="text-base font-extrabold" style={{ color: '#6ee7b7' }}>{formatMoney(seccionActivaData.total_disponible)}</p>
+                </div>
+              </div>
+              <p className="text-center text-[9px] mt-3" style={{ color: '#94a3b8' }}>
+                Reporte generado el {new Date().toLocaleString('es-BO')} — Sistema de Formulación y Ejecución Presupuestaria
+              </p>
+            </div>
+          </div>
+        </div>
+        ) : (
+          <div className="card p-10 text-center text-theme-muted space-y-3">
+            <p>No se encontraron datos de la sección para el reporte.</p>
+            <button onClick={() => setViewMode('general')} className="btn-primary text-xs px-4 py-2">
+              Volver al inicio
+            </button>
+          </div>
+        )
       )}
 
       {/* Modal Crear Gestión */}

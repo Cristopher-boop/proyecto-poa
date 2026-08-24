@@ -298,7 +298,58 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
 
             memorias_data = []
             for memoria in memorias:
-                # Gastos imputados a esta memoria agrupados por partida
+                # ── Ítems individuales (DetallePresupuestoMemoria) ──────────────
+                items_data = []
+                for detalle in memoria.detalles.all():
+                    gastos_item = []
+                    for gasto in detalle.gastos.all():
+                        gastos_item.append({
+                            'gasto_id': gasto.id,
+                            'fecha_gasto': str(gasto.fecha_gasto),
+                            'monto': str(gasto.monto_ejecutado or Decimal('0.00')),
+                            'comprobante': gasto.comprobante_num or '',
+                            'observacion': gasto.observacion or '',
+                        })
+                    precio_total = (detalle.cantidad or Decimal('0')) * (detalle.precio_unitario or Decimal('0'))
+                    sobrante = precio_total - (detalle.total_ejecutado or Decimal('0'))
+                    items_data.append({
+                        'detalle_id': detalle.id,
+                        'descripcion': detalle.descripcion,
+                        'unidad_medida': detalle.unidad_medida,
+                        'cantidad': str(detalle.cantidad or Decimal('0')),
+                        'precio_unitario': str(detalle.precio_unitario or Decimal('0')),
+                        'precio_total': str(precio_total),
+                        'total_ejecutado': str(detalle.total_ejecutado or Decimal('0')),
+                        'saldo_sobrante': str(sobrante),
+                        'estado_ejecucion': detalle.estado_ejecucion,
+                        'partida_codigo': detalle.partida.codigo if detalle.partida else '',
+                        'partida_nombre': detalle.partida.nombre if detalle.partida else '',
+                        'gastos': gastos_item,
+                    })
+
+                # ── Traspasos involucrados en esta memoria ───────────────────
+                from apps.memorias.models import TraspasoPresupuestario
+                traspasos_data = []
+                for t in memoria.traspasos_entrada.all():
+                    traspasos_data.append({
+                        'traspaso_id': t.id,
+                        'tipo': 'ENTRADA',
+                        'memoria_contraparte_codigo': t.memoria_origen.codigo,
+                        'monto': str(t.monto),
+                        'motivo': t.motivo,
+                        'fecha': str(t.created_at.date()),
+                    })
+                for t in memoria.traspasos_salida.all():
+                    traspasos_data.append({
+                        'traspaso_id': t.id,
+                        'tipo': 'SALIDA',
+                        'memoria_contraparte_codigo': t.memoria_destino.codigo,
+                        'monto': str(t.monto),
+                        'motivo': t.motivo,
+                        'fecha': str(t.created_at.date()),
+                    })
+
+                # ── Agrupación por partida (mantener compatibilidad existente) ──
                 partidas_data = {}
                 for detalle in memoria.detalles.all():
                     codigo = detalle.partida.codigo if detalle.partida else 'SIN_PARTIDA'
@@ -372,6 +423,8 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                     'total_gastado': str(total_gast_mem),
                     'total_disponible': str(disponible_real),
                     'partidas': partidas_list,
+                    'items': items_data,
+                    'traspasos': traspasos_data,
                 })
 
             # Totales de la sección

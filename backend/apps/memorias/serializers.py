@@ -77,8 +77,8 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     area_id = serializers.IntegerField(source='seccion.area.id', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
     area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
-    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True)
-    operacion_descripcion = serializers.CharField(source='operacion.descripcion', read_only=True)
+    operacion_codigo = serializers.SerializerMethodField()
+    operacion_descripcion = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
     partida_codigo = serializers.SerializerMethodField()
@@ -126,16 +126,31 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
+    def get_operacion_codigo(self, obj):
+        return obj.operacion.codigo if obj.operacion else None
+
+    def get_operacion_descripcion(self, obj):
+        return obj.operacion.descripcion if obj.operacion else None
+
     def get_total_items(self, obj):
-        return obj.detalles.count()
+        try:
+            return obj.detalles.count()
+        except Exception:
+            return 0
 
     def get_partida_codigo(self, obj):
-        primer_detalle = obj.detalles.first()
-        return primer_detalle.partida.codigo if primer_detalle and primer_detalle.partida else None
+        try:
+            primer_detalle = obj.detalles.first()
+            return primer_detalle.partida.codigo if primer_detalle and primer_detalle.partida else None
+        except Exception:
+            return None
 
     def get_partida_nombre(self, obj):
-        primer_detalle = obj.detalles.first()
-        return primer_detalle.partida.nombre if primer_detalle and primer_detalle.partida else None
+        try:
+            primer_detalle = obj.detalles.first()
+            return primer_detalle.partida.nombre if primer_detalle and primer_detalle.partida else None
+        except Exception:
+            return None
 
 
 class MemoriaCalculoSerializer(serializers.ModelSerializer):
@@ -145,8 +160,8 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     area_id = serializers.IntegerField(source='seccion.area.id', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
     area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
-    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True)
-    operacion_descripcion = serializers.CharField(source='operacion.descripcion', read_only=True)
+    operacion_codigo = serializers.SerializerMethodField()
+    operacion_descripcion = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
     # Partida principal asociada
@@ -202,8 +217,17 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
+    def get_operacion_codigo(self, obj):
+        return obj.operacion.codigo if obj.operacion else None
+
+    def get_operacion_descripcion(self, obj):
+        return obj.operacion.descripcion if obj.operacion else None
+
     def get_total_items(self, obj):
-        return obj.detalles.count()
+        try:
+            return obj.detalles.count()
+        except Exception:
+            return 0
 
     def get_partida_id(self, obj):
         primer_detalle = obj.detalles.first()
