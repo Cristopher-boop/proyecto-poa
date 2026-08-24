@@ -10,14 +10,24 @@ class MemoriaCalculo(TimeStampedModel):
         BORRADOR = 'BORRADOR', 'Borrador'
         PENDIENTE_GERENCIA = 'PENDIENTE_GERENCIA', 'Pendiente de Gerencia'
         APROBADO_GERENCIA = 'APROBADO_GERENCIA', 'Aprobado por Gerencia'
+        PENDIENTE_PLANIFICACION = 'PENDIENTE_PLANIFICACION', 'Pendiente de Planificación'
+        APROBADO_PLANIFICACION = 'APROBADO_PLANIFICACION', 'Alineado por Planificación'
         APROBADO_FINANZAS = 'APROBADO_FINANZAS', 'Aprobado por Finanzas'
         RECHAZADO = 'RECHAZADO', 'Rechazado'
 
     codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
     gestion = models.ForeignKey(Gestion, on_delete=models.CASCADE, related_name='memorias_calculo', verbose_name="Gestión")
     seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE, related_name='memorias_calculo', verbose_name="Sección")
+    operacion = models.ForeignKey(
+        'planificacion.Operacion',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='memorias_calculo',
+        verbose_name="Operación POA"
+    )
     justificacion = models.TextField(verbose_name="Justificación")
-    estado = models.CharField(max_length=20, choices=EstadoMemoria.choices, default=EstadoMemoria.BORRADOR, verbose_name="Estado")
+    estado = models.CharField(max_length=30, choices=EstadoMemoria.choices, default=EstadoMemoria.BORRADOR, verbose_name="Estado")
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Aprobación")
 
     # Campos almacenados de saldo (actualizados automáticamente en cada movimiento)

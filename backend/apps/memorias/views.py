@@ -144,6 +144,20 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         
         memoria.estado = MemoriaCalculo.EstadoMemoria.PENDIENTE_GERENCIA
         memoria.save()
+
+        # Emitir Notificación a Gerencia
+        try:
+            from apps.notificaciones.services import notificar_rol
+            notificar_rol(
+                rol_nombre='GERENTE',
+                titulo=f"Revisión Pendiente: {memoria.codigo}",
+                mensaje=f"La memoria de cálculo {memoria.codigo} de {memoria.seccion.nombre} ha sido enviada para su revisión gerencial.",
+                enlace=f"/memorias?id={memoria.id}",
+                usuario_origen=request.user
+            )
+        except Exception as e:
+            print("Error enviando notificacion:", e)
+
         return Response({
             'message': 'Memoria enviada a revisión de Gerencia.',
             'memoria': MemoriaCalculoSerializer(memoria, context={'request': request}).data
@@ -157,7 +171,7 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         if not self.check_area_permission(memoria):
             return Response({'error': 'No puedes aprobar memorias de otra área.'}, status=status.HTTP_403_FORBIDDEN)
             
-        memoria.estado = MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA
+        memoria.estado = MemoriaCalculo.EstadoMemoria.PENDIENTE_PLANIFICACION
         memoria.save()
 
         if request.user and request.user.is_authenticated:
@@ -167,8 +181,58 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
                 tipo_participacion=RegistroMemoriaUsuario.TipoParticipacion.REVISOR
             )
 
+        # Emitir Notificación a Planificación
+        try:
+            from apps.notificaciones.services import notificar_rol
+            notificar_rol(
+                rol_nombre='PLANIFICACION',
+                titulo=f"Alineación Estratégica Pendiente: {memoria.codigo}",
+                mensaje=f"La memoria {memoria.codigo} fue aprobada por gerencia y requiere verificación de alineación con Operaciones/POA en Planificación.",
+                enlace=f"/planificacion",
+                usuario_origen=request.user
+            )
+            # Notificar también al Aprobador
+            notificar_rol(
+                rol_nombre='APROBADOR',
+                titulo=f"Avance de Formulación: {memoria.codigo}",
+                mensaje=f"La memoria {memoria.codigo} pasó a revisión de Planificación.",
+                enlace=f"/memorias?id={memoria.id}",
+                usuario_origen=request.user
+            )
+        except Exception as e:
+            print("Error enviando notificacion:", e)
+
         return Response({
-            'message': 'Memoria aprobada por la Gerencia de Área.',
+            'message': 'Memoria aprobada por Gerencia. Pasó a revisión de Planificación.',
+            'memoria': MemoriaCalculoSerializer(memoria, context={'request': request}).data
+        })
+
+    @action(detail=True, methods=['post'], url_path='aprobar-planificacion')
+    def aprobar_planificacion(self, request, pk=None):
+        if not self.check_role_permission(['APROBADOR', 'GERENTE']):
+            # Permitir si el usuario tiene rol Planificación o Aprobador
+            rol_user = request.user.rol.nombre.upper() if request.user and request.user.rol else ''
+            if rol_user not in ['PLANIFICACION', 'APROBADOR', 'ADMINISTRADOR'] and not request.user.is_superuser:
+                return Response({'error': 'Solo personal de Planificación o Aprobadores pueden verificar alineación.'}, status=status.HTTP_403_FORBIDDEN)
+
+        memoria = self.get_object()
+        memoria.estado = MemoriaCalculo.EstadoMemoria.APROBADO_PLANIFICACION
+        memoria.save()
+
+        try:
+            from apps.notificaciones.services import notificar_rol
+            notificar_rol(
+                rol_nombre='APROBADOR',
+                titulo=f"Alineación Confirmada: {memoria.codigo}",
+                mensaje=f"La memoria {memoria.codigo} fue alineada por Planificación y está lista para aprobación financiera final.",
+                enlace=f"/memorias?id={memoria.id}",
+                usuario_origen=request.user
+            )
+        except Exception as e:
+            print("Error enviando notificacion:", e)
+
+        return Response({
+            'message': 'Memoria alineada estratégicamente por Planificación.',
             'memoria': MemoriaCalculoSerializer(memoria, context={'request': request}).data
         })
 
@@ -188,6 +252,25 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
                 tipo_participacion=RegistroMemoriaUsuario.TipoParticipacion.APROBADOR
             )
 
+        try:
+            from apps.notificaciones.services import notificar_rol
+            notificar_rol(
+                rol_nombre='ELABORADOR',
+                titulo=f"¡Memoria Aprobada!: {memoria.codigo}",
+                mensaje=f"La memoria {memoria.codigo} ha obtenido Aprobación Presupuestaria Final por Finanzas.",
+                enlace=f"/memorias?id={memoria.id}",
+                usuario_origen=request.user
+            )
+            notificar_rol(
+                rol_nombre='GERENTE',
+                titulo=f"¡Memoria Aprobada!: {memoria.codigo}",
+                mensaje=f"La memoria {memoria.codigo} de {memoria.seccion.nombre} fue aprobada por Finanzas.",
+                enlace=f"/memorias?id={memoria.id}",
+                usuario_origen=request.user
+            )
+        except Exception as e:
+            print("Error enviando notificacion:", e)
+
         return Response({
             'message': 'Memoria aprobada formalmente por Finanzas / Economía.',
             'memoria': MemoriaCalculoSerializer(memoria, context={'request': request}).data
@@ -204,6 +287,19 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         motivo = request.data.get('motivo', '')
         memoria.estado = MemoriaCalculo.EstadoMemoria.RECHAZADO
         memoria.save()
+
+        try:
+            from apps.notificaciones.services import notificar_rol
+            notificar_rol(
+                rol_nombre='ELABORADOR',
+                titulo=f"Memoria Rechazada: {memoria.codigo}",
+                mensaje=f"La memoria {memoria.codigo} ha sido rechazada. Motivo: {motivo or 'No especificado'}",
+                enlace=f"/memorias?id={memoria.id}",
+                usuario_origen=request.user
+            )
+        except Exception as e:
+            print("Error enviando notificacion:", e)
+
         return Response({
             'message': 'Memoria rechazada.',
             'memoria': MemoriaCalculoSerializer(memoria, context={'request': request}).data

@@ -20,5 +20,7 @@ urlpatterns = [
     path('api/v1/presupuestos/', include('apps.presupuestos.urls')),
     path('api/v1/memorias/', include('apps.memorias.urls')),
     path('api/v1/ejecucion/', include('apps.ejecucion.urls')),
+    path('api/v1/planificacion/', include('apps.planificacion.urls')),
+    path('api/v1/notificaciones/', include('apps.notificaciones.urls')),
 ]
 

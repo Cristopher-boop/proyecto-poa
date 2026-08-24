@@ -6,8 +6,10 @@ import LoginPage from "./pages/LoginPage";
 import AppShell from "./components/layout/AppShell";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import PresupuestosPage from "./pages/presupuestos/PresupuestosPage";
+import PartidasPage from "./pages/partidas/PartidasPage";
 import MemoriasPage from "./pages/memorias/MemoriasPage";
 import EjecucionPage from "./pages/ejecucion/EjecucionPage";
+import PlanificacionPage from "./pages/planificacion/PlanificacionPage";
 import OrganizacionalPage from "./pages/organizacional/OrganizacionalPage";
 import LogsPage from "./pages/logs/LogsPage";
 
@@ -25,6 +27,7 @@ export default function App() {
                 <Route path="partidas" element={<PartidasPage />} />
                 <Route path="memorias" element={<MemoriasPage />} />
                 <Route path="ejecucion" element={<EjecucionPage />} />
+                <Route path="planificacion" element={<PlanificacionPage />} />
                 <Route path="organizacional" element={<OrganizacionalPage />} />
                 <Route path="logs" element={<LogsPage />} />
               </Route>
