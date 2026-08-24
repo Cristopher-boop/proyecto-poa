@@ -9,6 +9,7 @@ import {
   Power,
   X,
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import { planificacionService } from '../../services/planificacionService';
 import { organizacionalService } from '../../services/organizacionalService';
 import { AccionMedianoPlazo, AccionCortoPlazo, Operacion, Tarea } from '../../types/planificacion';
@@ -16,6 +17,19 @@ import { Area, Programa } from '../../types/organizacional';
 import alertService from '../../utils/alerts';
 
 export default function PlanificacionPage() {
+  const { user } = useAuth();
+  const rolName = user?.rol_nombre?.toUpperCase() || '';
+  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'ADMINISTRADOR';
+  const isGerente = rolName === 'GERENTE';
+  const isElaborador = rolName === 'ELABORADOR';
+  const isTrabajador = rolName === 'TRABAJADOR';
+
+  const canCreateOpOrTarea = isAprobador || isGerente || isElaborador;
+  const canEditOrToggleOpOrTarea = isAprobador || isGerente;
+  const canManageAmpOrAcp = isAprobador;
+
+  const userAreaId = user?.area_id;
+
   const [activeTab, setActiveTab] = useState<'OPERACIONES' | 'TAREAS' | 'ACP' | 'AMP'>('OPERACIONES');
   const [ampList, setAmpList] = useState<AccionMedianoPlazo[]>([]);
   const [acpList, setAcpList] = useState<AccionCortoPlazo[]>([]);
@@ -75,12 +89,14 @@ export default function PlanificacionPage() {
 
   // Handlers AMP
   const handleOpenCreateAMP = () => {
+    if (!canManageAmpOrAcp) return;
     setEditingAmp(null);
     setAmpForm({ programa: '', codigo: '', descripcion: '', periodo_inicio: 2026, periodo_fin: 2030 });
     setShowAmpModal(true);
   };
 
   const handleOpenEditAMP = (amp: AccionMedianoPlazo) => {
+    if (!canManageAmpOrAcp) return;
     setEditingAmp(amp);
     setAmpForm({
       programa: String(amp.programa),
@@ -94,6 +110,7 @@ export default function PlanificacionPage() {
 
   const handleSaveAMP = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageAmpOrAcp) return;
     try {
       if (editingAmp) {
         await planificacionService.updateAccionMedianoPlazo(editingAmp.id, {
@@ -122,6 +139,7 @@ export default function PlanificacionPage() {
   };
 
   const handleToggleAMP = async (amp: AccionMedianoPlazo) => {
+    if (!canManageAmpOrAcp) return;
     const confirm = await alertService.confirm({
       title: amp.estado ? '¿Desactivar AMP (Baja Lógica)?' : '¿Reactivar AMP?',
       text: amp.estado ? `La AMP ${amp.codigo} quedará dada de baja lógica.` : `La AMP ${amp.codigo} volverá a estar activa.`,
@@ -140,12 +158,14 @@ export default function PlanificacionPage() {
 
   // Handlers ACP
   const handleOpenCreateACP = () => {
+    if (!canManageAmpOrAcp) return;
     setEditingAcp(null);
     setAcpForm({ accion_mediano_plazo: '', codigo: '', descripcion: '' });
     setShowAcpModal(true);
   };
 
   const handleOpenEditACP = (acp: AccionCortoPlazo) => {
+    if (!canManageAmpOrAcp) return;
     setEditingAcp(acp);
     setAcpForm({
       accion_mediano_plazo: String(acp.accion_mediano_plazo),
@@ -157,6 +177,7 @@ export default function PlanificacionPage() {
 
   const handleSaveACP = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageAmpOrAcp) return;
     try {
       if (editingAcp) {
         await planificacionService.updateAccionCortoPlazo(editingAcp.id, {
@@ -181,6 +202,7 @@ export default function PlanificacionPage() {
   };
 
   const handleToggleACP = async (acp: AccionCortoPlazo) => {
+    if (!canManageAmpOrAcp) return;
     const confirm = await alertService.confirm({
       title: acp.estado ? '¿Desactivar ACP (Baja Lógica)?' : '¿Reactivar ACP?',
       text: acp.estado ? `La ACP ${acp.codigo} quedará dada de baja lógica.` : `La ACP ${acp.codigo} volverá a estar activa.`,
@@ -199,12 +221,20 @@ export default function PlanificacionPage() {
 
   // Handlers Operación
   const handleOpenCreateOp = () => {
+    if (!canCreateOpOrTarea) return;
     setEditingOp(null);
-    setOpForm({ accion_corto_plazo: '', area: '', codigo: '', descripcion: '', es_contratacion: true });
+    setOpForm({
+      accion_corto_plazo: '',
+      area: userAreaId ? String(userAreaId) : '',
+      codigo: '',
+      descripcion: '',
+      es_contratacion: true
+    });
     setShowOpModal(true);
   };
 
   const handleOpenEditOp = (op: Operacion) => {
+    if (!canEditOrToggleOpOrTarea) return;
     setEditingOp(op);
     setOpForm({
       accion_corto_plazo: String(op.accion_corto_plazo),
@@ -219,19 +249,22 @@ export default function PlanificacionPage() {
   const handleSaveOp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const selectedAreaId = isAprobador ? Number(opForm.area) : Number(userAreaId || opForm.area);
       if (editingOp) {
+        if (!canEditOrToggleOpOrTarea) return;
         await planificacionService.updateOperacion(editingOp.id, {
           accion_corto_plazo: Number(opForm.accion_corto_plazo),
-          area: Number(opForm.area),
+          area: selectedAreaId,
           codigo: opForm.codigo,
           descripcion: opForm.descripcion,
           es_contratacion: opForm.es_contratacion,
         });
         alertService.success('Operación Actualizada', 'Los cambios en la Operación fueron guardados.');
       } else {
+        if (!canCreateOpOrTarea) return;
         await planificacionService.createOperacion({
           accion_corto_plazo: Number(opForm.accion_corto_plazo),
-          area: Number(opForm.area),
+          area: selectedAreaId,
           codigo: opForm.codigo,
           descripcion: opForm.descripcion,
           es_contratacion: opForm.es_contratacion,
@@ -241,11 +274,12 @@ export default function PlanificacionPage() {
       setShowOpModal(false);
       fetchAll();
     } catch (err: any) {
-      alertService.error('Error', err?.response?.data?.detail || 'No se pudo guardar la Operación.');
+      alertService.error('Error', err?.response?.data?.detail || err?.response?.data?.non_field_errors?.[0] || 'No se pudo guardar la Operación.');
     }
   };
 
   const handleToggleOp = async (op: Operacion) => {
+    if (!canEditOrToggleOpOrTarea) return;
     const confirm = await alertService.confirm({
       title: op.estado ? '¿Desactivar Operación (Baja Lógica)?' : '¿Reactivar Operación?',
       text: op.estado ? `La Operación ${op.codigo} quedará dada de baja lógica.` : `La Operación ${op.codigo} volverá a estar activa.`,
@@ -264,12 +298,14 @@ export default function PlanificacionPage() {
 
   // Handlers Tarea
   const handleOpenCreateTarea = () => {
+    if (!canCreateOpOrTarea) return;
     setEditingTarea(null);
     setTareaForm({ operacion: '', codigo: '', descripcion: '' });
     setShowTareaModal(true);
   };
 
   const handleOpenEditTarea = (tarea: Tarea) => {
+    if (!canEditOrToggleOpOrTarea) return;
     setEditingTarea(tarea);
     setTareaForm({
       operacion: String(tarea.operacion),
@@ -283,6 +319,7 @@ export default function PlanificacionPage() {
     e.preventDefault();
     try {
       if (editingTarea) {
+        if (!canEditOrToggleOpOrTarea) return;
         await planificacionService.updateTarea(editingTarea.id, {
           operacion: Number(tareaForm.operacion),
           codigo: tareaForm.codigo,
@@ -290,6 +327,7 @@ export default function PlanificacionPage() {
         });
         alertService.success('Tarea Actualizada', 'Los cambios en la Tarea fueron guardados.');
       } else {
+        if (!canCreateOpOrTarea) return;
         await planificacionService.createTarea({
           operacion: Number(tareaForm.operacion),
           codigo: tareaForm.codigo,
@@ -300,11 +338,12 @@ export default function PlanificacionPage() {
       setShowTareaModal(false);
       fetchAll();
     } catch (err: any) {
-      alertService.error('Error', err?.response?.data?.detail || 'No se pudo guardar la Tarea.');
+      alertService.error('Error', err?.response?.data?.detail || err?.response?.data?.non_field_errors?.[0] || 'No se pudo guardar la Tarea.');
     }
   };
 
   const handleToggleTarea = async (tarea: Tarea) => {
+    if (!canEditOrToggleOpOrTarea) return;
     const confirm = await alertService.confirm({
       title: tarea.estado ? '¿Desactivar Tarea (Baja Lógica)?' : '¿Reactivar Tarea?',
       text: tarea.estado ? `La Tarea ${tarea.codigo} quedará dada de baja lógica.` : `La Tarea ${tarea.codigo} volverá a estar activa.`,
@@ -347,22 +386,22 @@ export default function PlanificacionPage() {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            {activeTab === 'OPERACIONES' && (
+            {activeTab === 'OPERACIONES' && canCreateOpOrTarea && (
               <button onClick={handleOpenCreateOp} className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer">
                 <Plus size={16} /> Nueva Operación
               </button>
             )}
-            {activeTab === 'TAREAS' && (
+            {activeTab === 'TAREAS' && canCreateOpOrTarea && (
               <button onClick={handleOpenCreateTarea} className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer">
                 <Plus size={16} /> Nueva Tarea TAMEP
               </button>
             )}
-            {activeTab === 'ACP' && (
+            {activeTab === 'ACP' && canManageAmpOrAcp && (
               <button onClick={handleOpenCreateACP} className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer">
                 <Plus size={16} /> Nueva ACP (POA)
               </button>
             )}
-            {activeTab === 'AMP' && (
+            {activeTab === 'AMP' && canManageAmpOrAcp && (
               <button onClick={handleOpenCreateAMP} className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer">
                 <Plus size={16} /> Nueva AMP (PEI)
               </button>
@@ -444,7 +483,7 @@ export default function PlanificacionPage() {
 
               {operacionesList.length === 0 ? (
                 <div className="card p-12 text-center text-theme-muted">
-                  No hay operaciones registradas aún.
+                  No hay operaciones disponibles para tu área.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -460,23 +499,25 @@ export default function PlanificacionPage() {
                           </span>
                         </div>
 
-                        {/* Botones Modificación y Baja Lógica */}
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleOpenEditOp(op)}
-                            className="p-1 rounded hover:bg-theme-border/50 text-blue-600"
-                            title="Editar Operación"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleToggleOp(op)}
-                            className={`p-1 rounded hover:bg-theme-border/50 ${op.estado ? 'text-rose-600' : 'text-emerald-600'}`}
-                            title={op.estado ? 'Desactivar (Baja Lógica)' : 'Reactivar'}
-                          >
-                            <Power size={14} />
-                          </button>
-                        </div>
+                        {/* Botones Modificación y Baja Lógica (Sólo Gerente o Aprobador) */}
+                        {canEditOrToggleOpOrTarea && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditOp(op)}
+                              className="p-1 rounded hover:bg-theme-border/50 text-blue-600"
+                              title="Editar Operación"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleToggleOp(op)}
+                              className={`p-1 rounded hover:bg-theme-border/50 ${op.estado ? 'text-rose-600' : 'text-emerald-600'}`}
+                              title={op.estado ? 'Desactivar (Baja Lógica)' : 'Reactivar'}
+                            >
+                              <Power size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <p className="text-sm font-semibold text-theme-main">{op.descripcion}</p>
@@ -508,7 +549,7 @@ export default function PlanificacionPage() {
 
               {tareasList.length === 0 ? (
                 <div className="card p-12 text-center text-theme-muted">
-                  No hay Tareas registradas aún. Presiona "Nueva Tarea TAMEP" para agregar una.
+                  No hay Tareas registradas para las operaciones de tu área.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -519,22 +560,24 @@ export default function PlanificacionPage() {
                           {tarea.codigo}
                         </span>
 
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleOpenEditTarea(tarea)}
-                            className="p-1 rounded hover:bg-theme-border/50 text-blue-600"
-                            title="Editar Tarea"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleToggleTarea(tarea)}
-                            className={`p-1 rounded hover:bg-theme-border/50 ${tarea.estado ? 'text-rose-600' : 'text-emerald-600'}`}
-                            title={tarea.estado ? 'Desactivar (Baja Lógica)' : 'Reactivar'}
-                          >
-                            <Power size={14} />
-                          </button>
-                        </div>
+                        {canEditOrToggleOpOrTarea && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEditTarea(tarea)}
+                              className="p-1 rounded hover:bg-theme-border/50 text-blue-600"
+                              title="Editar Tarea"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleToggleTarea(tarea)}
+                              className={`p-1 rounded hover:bg-theme-border/50 ${tarea.estado ? 'text-rose-600' : 'text-emerald-600'}`}
+                              title={tarea.estado ? 'Desactivar (Baja Lógica)' : 'Reactivar'}
+                            >
+                              <Power size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <p className="text-sm font-semibold text-theme-main">{tarea.descripcion}</p>
@@ -583,20 +626,24 @@ export default function PlanificacionPage() {
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${acp.estado ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
                           {acp.estado ? 'Activa' : 'Baja Lógica'}
                         </span>
-                        <button
-                          onClick={() => handleOpenEditACP(acp)}
-                          className="p-1.5 rounded hover:bg-theme-border/50 text-blue-600"
-                          title="Editar ACP"
-                        >
-                          <Edit2 size={15} />
-                        </button>
-                        <button
-                          onClick={() => handleToggleACP(acp)}
-                          className={`p-1.5 rounded hover:bg-theme-border/50 ${acp.estado ? 'text-rose-600' : 'text-emerald-600'}`}
-                          title={acp.estado ? 'Desactivar' : 'Reactivar'}
-                        >
-                          <Power size={15} />
-                        </button>
+                        {canManageAmpOrAcp && (
+                          <>
+                            <button
+                              onClick={() => handleOpenEditACP(acp)}
+                              className="p-1.5 rounded hover:bg-theme-border/50 text-blue-600"
+                              title="Editar ACP"
+                            >
+                              <Edit2 size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleToggleACP(acp)}
+                              className={`p-1.5 rounded hover:bg-theme-border/50 ${acp.estado ? 'text-rose-600' : 'text-emerald-600'}`}
+                              title={acp.estado ? 'Desactivar' : 'Reactivar'}
+                            >
+                              <Power size={15} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -636,20 +683,24 @@ export default function PlanificacionPage() {
                           <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-theme-primary/10 text-theme-primary">
                             Período {amp.periodo_inicio} - {amp.periodo_fin}
                           </span>
-                          <button
-                            onClick={() => handleOpenEditAMP(amp)}
-                            className="p-1.5 rounded hover:bg-theme-border/50 text-blue-600"
-                            title="Editar AMP"
-                          >
-                            <Edit2 size={15} />
-                          </button>
-                          <button
-                            onClick={() => handleToggleAMP(amp)}
-                            className={`p-1.5 rounded hover:bg-theme-border/50 ${amp.estado ? 'text-rose-600' : 'text-emerald-600'}`}
-                            title={amp.estado ? 'Desactivar' : 'Reactivar'}
-                          >
-                            <Power size={15} />
-                          </button>
+                          {canManageAmpOrAcp && (
+                            <>
+                              <button
+                                onClick={() => handleOpenEditAMP(amp)}
+                                className="p-1.5 rounded hover:bg-theme-border/50 text-blue-600"
+                                title="Editar AMP"
+                              >
+                                <Edit2 size={15} />
+                              </button>
+                              <button
+                                onClick={() => handleToggleAMP(amp)}
+                                className={`p-1.5 rounded hover:bg-theme-border/50 ${amp.estado ? 'text-rose-600' : 'text-emerald-600'}`}
+                                title={amp.estado ? 'Desactivar' : 'Reactivar'}
+                              >
+                                <Power size={15} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -664,7 +715,7 @@ export default function PlanificacionPage() {
       )}
 
       {/* Modal AMP (Crear / Editar) */}
-      {showAmpModal && (
+      {showAmpModal && canManageAmpOrAcp && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-theme-surface rounded-2xl p-6 w-full max-w-lg border border-theme-border space-y-4">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
@@ -739,7 +790,7 @@ export default function PlanificacionPage() {
       )}
 
       {/* Modal ACP (Crear / Editar) */}
-      {showAcpModal && (
+      {showAcpModal && canManageAmpOrAcp && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-theme-surface rounded-2xl p-6 w-full max-w-lg border border-theme-border space-y-4">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
@@ -794,7 +845,7 @@ export default function PlanificacionPage() {
       )}
 
       {/* Modal Operación (Crear / Editar) */}
-      {showOpModal && (
+      {showOpModal && canCreateOpOrTarea && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-theme-surface rounded-2xl p-6 w-full max-w-lg border border-theme-border space-y-4">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
@@ -823,8 +874,9 @@ export default function PlanificacionPage() {
                 <select
                   value={opForm.area}
                   onChange={(e) => setOpForm({ ...opForm, area: e.target.value })}
+                  disabled={!isAprobador}
                   required
-                  className="input-theme w-full"
+                  className="input-theme w-full disabled:opacity-60"
                 >
                   <option value="">Seleccione Área...</option>
                   {areas.map((a) => (
@@ -863,7 +915,7 @@ export default function PlanificacionPage() {
       )}
 
       {/* Modal Tarea (Crear / Editar) */}
-      {showTareaModal && (
+      {showTareaModal && canCreateOpOrTarea && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-theme-surface rounded-2xl p-6 w-full max-w-lg border border-theme-border space-y-4">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
