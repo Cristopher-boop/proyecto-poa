@@ -12,7 +12,6 @@ import EjecucionPage from "./pages/ejecucion/EjecucionPage";
 import PlanificacionPage from "./pages/planificacion/PlanificacionPage";
 import OrganizacionalPage from "./pages/organizacional/OrganizacionalPage";
 import LogsPage from "./pages/logs/LogsPage";
-import PartidasPage from "./pages/partidas/PartidasPage";
 import TraspasosPage from "./pages/traspasos/TraspasosPage";
 
 export default function App() {

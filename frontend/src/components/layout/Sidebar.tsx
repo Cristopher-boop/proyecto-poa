@@ -12,11 +12,10 @@ import {
   Building2,
   FileSpreadsheet,
   Compass,
+  ArrowRightLeft,
 } from "lucide-react";
 
 export type ModuleKey = "dashboard" | "presupuestos" | "partidas" | "memorias" | "ejecucion" | "traspasos" | "planificacion" | "organizacional";
-  ArrowRightLeft,
-} from "lucide-react";
 
 interface ModuleItem {
   key: ModuleKey;
