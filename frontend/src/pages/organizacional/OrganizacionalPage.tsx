@@ -181,7 +181,7 @@ export default function OrganizacionalPage() {
 
                   {programas.map((programa) => (
                     <option key={programa.id} value={String(programa.id)}>
-                      {programa.codigo} - {programa.nombre}
+                      {programa.nombre}
                     </option>
                   ))}
                 </select>
