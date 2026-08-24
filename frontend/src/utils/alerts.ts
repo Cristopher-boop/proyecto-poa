@@ -80,6 +80,51 @@ export const alertService = {
   },
 
   /**
+   * Diálogo de entrada de texto / motivo
+   */
+  prompt: async (options: {
+    title: string;
+    text?: string;
+    inputPlaceholder?: string;
+    confirmButtonText?: string;
+    cancelButtonText?: string;
+    required?: boolean;
+    isDanger?: boolean;
+  }): Promise<string | null> => {
+    const dark = isDark();
+    const result = await Swal.fire({
+      title: options.title,
+      text: options.text,
+      input: 'textarea',
+      inputPlaceholder: options.inputPlaceholder || 'Escriba un motivo o observación...',
+      showCancelButton: true,
+      confirmButtonText: options.confirmButtonText || 'Confirmar',
+      cancelButtonText: options.cancelButtonText || 'Cancelar',
+      confirmButtonColor: options.isDanger ? '#E11D48' : '#059669',
+      cancelButtonColor: '#64748B',
+      background: dark ? '#272B33' : '#FFFFFF',
+      color: dark ? '#FFFFFF' : '#0F172A',
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (options.required && (!value || !value.trim())) {
+          return 'Por favor escribe un motivo para continuar';
+        }
+        return null;
+      },
+      customClass: {
+        popup: 'rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700',
+        confirmButton: 'rounded-xl px-4 py-2 text-sm font-semibold',
+        cancelButton: 'rounded-xl px-4 py-2 text-sm font-semibold',
+      },
+    });
+
+    if (result.isConfirmed) {
+      return result.value || '';
+    }
+    return null;
+  },
+
+  /**
    * Toast flotante en esquina superior derecha
    */
   toast: (title: string, icon: 'success' | 'error' | 'info' | 'warning' = 'success') => {

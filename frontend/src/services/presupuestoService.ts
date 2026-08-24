@@ -80,7 +80,8 @@ export interface MemoriaCalculo {
   area_nombre: string;
   area_codigo: string;
   justificacion: string;
-  estado: 'BORRADOR' | 'PENDIENTE_GERENCIA' | 'APROBADO_GERENCIA' | 'APROBADO_FINANZAS' | 'RECHAZADO';
+  motivo_rechazo?: string | null;
+  estado: 'BORRADOR' | 'PENDIENTE_GERENCIA' | 'APROBADO_GERENCIA' | 'PENDIENTE_PLANIFICACION' | 'APROBADO_PLANIFICACION' | 'APROBADO_FINANZAS' | 'RECHAZADO';
   estado_display: string;
   fecha_aprobacion: string | null;
   partida_id?: number | null;
@@ -363,28 +364,28 @@ export async function deleteMemoria(id: number): Promise<void> {
   await api.delete(`/api/v1/memorias/memorias-calculo/${id}/`);
 }
 
-export async function enviarMemoriaGerencia(id: number): Promise<{ message: string; memoria: MemoriaCalculo }> {
-  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/enviar-gerencia/`);
+export async function enviarMemoriaGerencia(id: number, nota?: string): Promise<{ message: string; memoria: MemoriaCalculo }> {
+  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/enviar-gerencia/`, { motivo: nota, nota });
   return data;
 }
 
-export async function aprobarMemoriaGerencia(id: number): Promise<{ message: string; memoria: MemoriaCalculo }> {
-  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/aprobar-gerencia/`);
+export async function aprobarMemoriaGerencia(id: number, nota?: string): Promise<{ message: string; memoria: MemoriaCalculo }> {
+  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/aprobar-gerencia/`, { motivo: nota, nota });
   return data;
 }
 
-export async function aprobarMemoriaFinanzas(id: number): Promise<{ message: string; memoria: MemoriaCalculo }> {
-  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/aprobar-finanzas/`);
+export async function aprobarMemoriaFinanzas(id: number, nota?: string): Promise<{ message: string; memoria: MemoriaCalculo }> {
+  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/aprobar-finanzas/`, { motivo: nota, nota });
   return data;
 }
 
 export async function rechazarMemoria(id: number, motivo?: string): Promise<{ message: string; memoria: MemoriaCalculo }> {
-  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/rechazar/`, { motivo });
+  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/rechazar/`, { motivo, nota: motivo });
   return data;
 }
 
-export async function volverMemoriaBorrador(id: number): Promise<{ message: string; memoria: MemoriaCalculo }> {
-  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/volver-borrador/`);
+export async function volverMemoriaBorrador(id: number, motivo?: string): Promise<{ message: string; memoria: MemoriaCalculo }> {
+  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/volver-borrador/`, { motivo, nota: motivo });
   return data;
 }
 

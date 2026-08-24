@@ -106,7 +106,13 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         if seccion and not self.check_area_permission(type('obj', (object,), {'seccion': seccion})):
             raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para crear memorias en otra área.']})
 
-        serializer.save()
+        memoria = serializer.save()
+        if self.request.user and self.request.user.is_authenticated:
+            RegistroMemoriaUsuario.objects.get_or_create(
+                memoria=memoria,
+                usuario=self.request.user,
+                tipo_participacion=RegistroMemoriaUsuario.TipoParticipacion.ELABORADOR
+            )
 
     def perform_update(self, serializer):
         instance = serializer.instance
@@ -142,16 +148,27 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         if memoria.gestion.estado != Gestion.EstadoGestion.FORMULACION:
             return Response({'error': 'La formulación de esta gestión está cerrada.'}, status=status.HTTP_400_BAD_REQUEST)
         
+        nota = request.data.get('motivo') or request.data.get('nota') or ''
+        if nota:
+            memoria.motivo_rechazo = nota
         memoria.estado = MemoriaCalculo.EstadoMemoria.PENDIENTE_GERENCIA
         memoria.save()
+
+        if request.user and request.user.is_authenticated:
+            RegistroMemoriaUsuario.objects.get_or_create(
+                memoria=memoria,
+                usuario=request.user,
+                tipo_participacion=RegistroMemoriaUsuario.TipoParticipacion.ELABORADOR
+            )
 
         # Emitir Notificación a Gerencia
         try:
             from apps.notificaciones.services import notificar_rol
+            user_name = request.user.get_full_name() or request.user.username
             notificar_rol(
                 rol_nombre='GERENTE',
                 titulo=f"Revisión Pendiente: {memoria.codigo}",
-                mensaje=f"La memoria de cálculo {memoria.codigo} de {memoria.seccion.nombre} ha sido enviada para su revisión gerencial.",
+                mensaje=f"La memoria {memoria.codigo} del área {memoria.seccion.area.nombre} ha sido enviada por {user_name} para revisión gerencial." + (f" Nota: {nota}" if nota else ""),
                 enlace=f"/memorias?id={memoria.id}",
                 usuario_origen=request.user
             )
@@ -170,8 +187,11 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         memoria = self.get_object()
         if not self.check_area_permission(memoria):
             return Response({'error': 'No puedes aprobar memorias de otra área.'}, status=status.HTTP_403_FORBIDDEN)
-            
-        memoria.estado = MemoriaCalculo.EstadoMemoria.PENDIENTE_PLANIFICACION
+
+        nota = request.data.get('motivo') or request.data.get('nota') or ''
+        if nota:
+            memoria.motivo_rechazo = nota
+        memoria.estado = MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA
         memoria.save()
 
         if request.user and request.user.is_authenticated:
@@ -181,21 +201,37 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
                 tipo_participacion=RegistroMemoriaUsuario.TipoParticipacion.REVISOR
             )
 
-        # Emitir Notificación a Planificación
+        # Emitir Notificación a Trabajadores/Elaboradores del área y Aprobadores
         try:
-            from apps.notificaciones.services import notificar_rol
+            from apps.notificaciones.services import notificar_rol, crear_notificacion
+            from apps.usuarios.models import Usuario
+            user_name = request.user.get_full_name() or request.user.username
+
+            # 1. Notificar a todos los usuarios de la sección/área (Elaboradores y Trabajadores)
+            usuarios_area = Usuario.objects.filter(seccion__area_id=memoria.seccion.area_id, is_active=True)
+            for u in usuarios_area:
+                if request.user and u.id == request.user.id:
+                    continue
+                crear_notificacion(
+                    usuario_destino=u,
+                    usuario_origen=request.user,
+                    titulo=f"Memoria Aprobada por Gerencia: {memoria.codigo}",
+                    mensaje=f"La memoria {memoria.codigo} de {memoria.seccion.area.nombre} fue ACEPTADA y APROBADA por la Gerencia ({user_name})." + (f" Nota: {nota}" if nota else ""),
+                    enlace=f"/memorias?id={memoria.id}"
+                )
+
+            # 2. Notificar a Planificación y Aprobadores
             notificar_rol(
                 rol_nombre='PLANIFICACION',
                 titulo=f"Alineación Estratégica Pendiente: {memoria.codigo}",
-                mensaje=f"La memoria {memoria.codigo} fue aprobada por gerencia y requiere verificación de alineación con Operaciones/POA en Planificación.",
+                mensaje=f"La memoria {memoria.codigo} de {memoria.seccion.area.nombre} fue aprobada por gerencia ({user_name}) y requiere verificación en Planificación.",
                 enlace=f"/planificacion",
                 usuario_origen=request.user
             )
-            # Notificar también al Aprobador
             notificar_rol(
                 rol_nombre='APROBADOR',
-                titulo=f"Avance de Formulación: {memoria.codigo}",
-                mensaje=f"La memoria {memoria.codigo} pasó a revisión de Planificación.",
+                titulo=f"Revisión Finanzas Pendiente: {memoria.codigo}",
+                mensaje=f"La memoria {memoria.codigo} fue aprobada por la Gerencia de {memoria.seccion.area.nombre} y está disponible para Aprobación Final de Finanzas.",
                 enlace=f"/memorias?id={memoria.id}",
                 usuario_origen=request.user
             )
@@ -203,19 +239,21 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
             print("Error enviando notificacion:", e)
 
         return Response({
-            'message': 'Memoria aprobada por Gerencia. Pasó a revisión de Planificación.',
+            'message': 'Memoria aprobada por Gerencia. Pasó a Revisión de Finanzas.',
             'memoria': MemoriaCalculoSerializer(memoria, context={'request': request}).data
         })
 
     @action(detail=True, methods=['post'], url_path='aprobar-planificacion')
     def aprobar_planificacion(self, request, pk=None):
         if not self.check_role_permission(['APROBADOR', 'GERENTE']):
-            # Permitir si el usuario tiene rol Planificación o Aprobador
             rol_user = request.user.rol.nombre.upper() if request.user and request.user.rol else ''
             if rol_user not in ['PLANIFICACION', 'APROBADOR', 'ADMINISTRADOR'] and not request.user.is_superuser:
                 return Response({'error': 'Solo personal de Planificación o Aprobadores pueden verificar alineación.'}, status=status.HTTP_403_FORBIDDEN)
 
         memoria = self.get_object()
+        nota = request.data.get('motivo') or request.data.get('nota') or ''
+        if nota:
+            memoria.motivo_rechazo = nota
         memoria.estado = MemoriaCalculo.EstadoMemoria.APROBADO_PLANIFICACION
         memoria.save()
 
@@ -224,7 +262,7 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
             notificar_rol(
                 rol_nombre='APROBADOR',
                 titulo=f"Alineación Confirmada: {memoria.codigo}",
-                mensaje=f"La memoria {memoria.codigo} fue alineada por Planificación y está lista para aprobación financiera final.",
+                mensaje=f"La memoria {memoria.codigo} fue alineada estratégicamente por Planificación y está lista para aprobación financiera final." + (f" Nota: {nota}" if nota else ""),
                 enlace=f"/memorias?id={memoria.id}",
                 usuario_origen=request.user
             )
@@ -241,6 +279,8 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         if not self.check_role_permission(['APROBADOR']):
             return Response({'error': 'Solo Aprobadores pueden realizar esta acción.'}, status=status.HTTP_403_FORBIDDEN)
         memoria = self.get_object()
+        nota = request.data.get('motivo') or request.data.get('nota') or 'Aprobación Presupuestaria Otorgada'
+        memoria.motivo_rechazo = nota
         memoria.estado = MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS
         memoria.fecha_aprobacion = timezone.now()
         memoria.save()
@@ -253,18 +293,33 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            from apps.notificaciones.services import notificar_rol
-            notificar_rol(
-                rol_nombre='ELABORADOR',
-                titulo=f"¡Memoria Aprobada!: {memoria.codigo}",
-                mensaje=f"La memoria {memoria.codigo} ha obtenido Aprobación Presupuestaria Final por Finanzas.",
-                enlace=f"/memorias?id={memoria.id}",
-                usuario_origen=request.user
-            )
+            from apps.notificaciones.services import notificar_rol, crear_notificacion
+            user_name = request.user.get_full_name() or request.user.username
+
+            # Notificar directamente al Elaborador si existe
+            elaborador_reg = memoria.participaciones.filter(tipo_participacion='ELABORADOR').first()
+            if elaborador_reg:
+                crear_notificacion(
+                    usuario_destino=elaborador_reg.usuario,
+                    usuario_origen=request.user,
+                    titulo=f"¡Memoria Aceptada y Aprobada!: {memoria.codigo}",
+                    mensaje=f"Tu memoria {memoria.codigo} ha sido ACEPTADA y APROBADA formalmente por Finanzas / {user_name}. Nota de Aprobación: \"{nota}\"",
+                    enlace=f"/memorias?id={memoria.id}"
+                )
+            else:
+                notificar_rol(
+                    rol_nombre='ELABORADOR',
+                    titulo=f"¡Memoria Aceptada y Aprobada!: {memoria.codigo}",
+                    mensaje=f"La memoria {memoria.codigo} ha sido ACEPTADA y APROBADA por Finanzas. Nota: \"{nota}\"",
+                    enlace=f"/memorias?id={memoria.id}",
+                    usuario_origen=request.user
+                )
+
+            # Notificar al Gerente
             notificar_rol(
                 rol_nombre='GERENTE',
-                titulo=f"¡Memoria Aprobada!: {memoria.codigo}",
-                mensaje=f"La memoria {memoria.codigo} de {memoria.seccion.nombre} fue aprobada por Finanzas.",
+                titulo=f"¡Memoria Aceptada y Aprobada!: {memoria.codigo}",
+                mensaje=f"La memoria {memoria.codigo} de {memoria.seccion.nombre} fue ACEPTADA y APROBADA por Finanzas. Nota: \"{nota}\"",
                 enlace=f"/memorias?id={memoria.id}",
                 usuario_origen=request.user
             )
@@ -284,19 +339,44 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         if not self.check_area_permission(memoria):
              return Response({'error': 'No puedes rechazar memorias de otra área.'}, status=status.HTTP_403_FORBIDDEN)
              
-        motivo = request.data.get('motivo', '')
+        motivo = request.data.get('motivo') or request.data.get('nota') or 'Sin motivo especificado'
+        memoria.motivo_rechazo = motivo
         memoria.estado = MemoriaCalculo.EstadoMemoria.RECHAZADO
         memoria.save()
 
         try:
-            from apps.notificaciones.services import notificar_rol
-            notificar_rol(
-                rol_nombre='ELABORADOR',
-                titulo=f"Memoria Rechazada: {memoria.codigo}",
-                mensaje=f"La memoria {memoria.codigo} ha sido rechazada. Motivo: {motivo or 'No especificado'}",
-                enlace=f"/memorias?id={memoria.id}",
-                usuario_origen=request.user
-            )
+            from apps.notificaciones.services import notificar_rol, crear_notificacion
+            user_name = request.user.get_full_name() or request.user.username
+            user_rol = request.user.rol.nombre if request.user.rol else 'Revisor'
+
+            # Notificar al Elaborador directo
+            elaborador_reg = memoria.participaciones.filter(tipo_participacion='ELABORADOR').first()
+            if elaborador_reg:
+                crear_notificacion(
+                    usuario_destino=elaborador_reg.usuario,
+                    usuario_origen=request.user,
+                    titulo=f"Memoria Rechazada: {memoria.codigo}",
+                    mensaje=f"Tu memoria {memoria.codigo} fue RECHAZADA por {user_name} ({user_rol}). Motivo del Rechazo: \"{motivo}\"",
+                    enlace=f"/memorias?id={memoria.id}"
+                )
+            else:
+                notificar_rol(
+                    rol_nombre='ELABORADOR',
+                    titulo=f"Memoria Rechazada: {memoria.codigo}",
+                    mensaje=f"La memoria {memoria.codigo} fue RECHAZADA por {user_name} ({user_rol}). Motivo del Rechazo: \"{motivo}\"",
+                    enlace=f"/memorias?id={memoria.id}",
+                    usuario_origen=request.user
+                )
+
+            # Si lo rechazó el Aprobador, notificar también al Gerente
+            if user_rol.upper() in ['APROBADOR', 'ADMINISTRADOR']:
+                notificar_rol(
+                    rol_nombre='GERENTE',
+                    titulo=f"Memoria Rechazada por Aprobador: {memoria.codigo}",
+                    mensaje=f"La memoria {memoria.codigo} de {memoria.seccion.nombre} fue RECHAZADA por el Aprobador ({user_name}). Motivo: \"{motivo}\"",
+                    enlace=f"/memorias?id={memoria.id}",
+                    usuario_origen=request.user
+                )
         except Exception as e:
             print("Error enviando notificacion:", e)
 
@@ -312,8 +392,27 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         memoria = self.get_object()
         if not self.check_area_permission(memoria):
              return Response({'error': 'No tienes permisos sobre esta área.'}, status=status.HTTP_403_FORBIDDEN)
+             
+        motivo = request.data.get('motivo') or request.data.get('nota') or 'Observaciones pendientes'
+        memoria.motivo_rechazo = motivo
         memoria.estado = MemoriaCalculo.EstadoMemoria.BORRADOR
         memoria.save()
+
+        try:
+            from apps.notificaciones.services import notificar_rol, crear_notificacion
+            user_name = request.user.get_full_name() or request.user.username
+            elaborador_reg = memoria.participaciones.filter(tipo_participacion='ELABORADOR').first()
+            if elaborador_reg and elaborador_reg.usuario.id != request.user.id:
+                crear_notificacion(
+                    usuario_destino=elaborador_reg.usuario,
+                    usuario_origen=request.user,
+                    titulo=f"Memoria Devuelta a Borrador: {memoria.codigo}",
+                    mensaje=f"La memoria {memoria.codigo} fue devuelta a Borrador por {user_name} para correcciones. Motivo/Observación: \"{motivo}\"",
+                    enlace=f"/memorias?id={memoria.id}"
+                )
+        except Exception as e:
+            print("Error enviando notificacion:", e)
+
         return Response({
             'message': 'Memoria devuelta a estado Borrador para correcciones.',
             'memoria': MemoriaCalculoSerializer(memoria, context={'request': request}).data

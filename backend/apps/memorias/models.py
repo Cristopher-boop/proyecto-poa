@@ -27,6 +27,7 @@ class MemoriaCalculo(TimeStampedModel):
         verbose_name="Operación POA"
     )
     justificacion = models.TextField(verbose_name="Justificación")
+    motivo_rechazo = models.TextField(null=True, blank=True, verbose_name="Motivo de Aceptación / Rechazo / Observación")
     estado = models.CharField(max_length=30, choices=EstadoMemoria.choices, default=EstadoMemoria.BORRADOR, verbose_name="Estado")
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Aprobación")
 
