@@ -77,6 +77,8 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     area_id = serializers.IntegerField(source='seccion.area.id', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
     area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
+    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True)
+    operacion_descripcion = serializers.CharField(source='operacion.descripcion', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
     partida_codigo = serializers.SerializerMethodField()
@@ -102,6 +104,9 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'area_id',
             'area_nombre',
             'area_codigo',
+            'operacion',
+            'operacion_codigo',
+            'operacion_descripcion',
             'justificacion',
             'estado',
             'estado_display',
@@ -134,6 +139,8 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     area_id = serializers.IntegerField(source='seccion.area.id', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
     area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
+    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True)
+    operacion_descripcion = serializers.CharField(source='operacion.descripcion', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
     # Partida principal asociada
@@ -164,6 +171,9 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
             'area_id',
             'area_nombre',
             'area_codigo',
+            'operacion',
+            'operacion_codigo',
+            'operacion_descripcion',
             'justificacion',
             'estado',
             'estado_display',

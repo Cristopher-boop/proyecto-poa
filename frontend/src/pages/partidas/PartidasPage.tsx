@@ -9,7 +9,7 @@ import {
   SlidersHorizontal,
   Layers,
 } from 'lucide-react';
-import { Partida, PartidaFormData } from '../../types/partida';
+import { Partida, PartidaFormData, ClasePartida } from '../../types/partida';
 import { partidaService } from '../../services/partidaService';
 import alertService from '../../utils/alerts';
 
@@ -281,12 +281,12 @@ export default function PartidasPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            partida.clase === 'GASTO_CORRIENTE'
+                            partida.clase === 'EGRESO'
                               ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50'
                               : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50'
                           }`}
                         >
-                          {partida.clase_display || (partida.clase === 'GASTO_CORRIENTE' ? 'Gasto Corriente' : 'Gasto Capital')}
+                          {partida.clase_display || (partida.clase === 'EGRESO' ? 'Egreso' : 'Ingreso')}
                         </span>
                       </td>
 
@@ -371,7 +371,7 @@ const PartidaModal: React.FC<{
   const [formData, setFormData] = useState<PartidaFormData>({
     codigo: partida?.codigo || '',
     nombre: partida?.nombre || '',
-    clase: partida?.clase || 'GASTO_CORRIENTE',
+    clase: partida?.clase || 'EGRESO',
     descripcion: partida?.descripcion || '',
     estado: partida?.estado ?? true,
   });
@@ -469,8 +469,8 @@ const PartidaModal: React.FC<{
                 required
                 className="input-theme text-xs"
               >
-                <option value="GASTO_CORRIENTE">Gasto Corriente</option>
-                <option value="GASTO_CAPITAL">Gasto de Capital / Inversión</option>
+                <option value="EGRESO">Egreso</option>
+                <option value="INGRESO">Ingreso</option>
               </select>
             </div>
           </div>
