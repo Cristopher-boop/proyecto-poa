@@ -64,6 +64,11 @@ export default function EjecucionPage() {
   const [filtroArea, setFiltroArea] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Paginación
+  const PAGE_SIZE = 10;
+  const [currentPageGastos, setCurrentPageGastos] = useState<number>(1);
+  const [currentPageItems, setCurrentPageItems] = useState<number>(1);
+
   // Filtros Pestaña 3 (Control de Ítems)
   const [searchItem, setSearchItem] = useState<string>('');
   const [filtroAreaItem, setFiltroAreaItem] = useState<string>('todas');
@@ -261,6 +266,22 @@ export default function EjecucionPage() {
     }
   }
 
+  // Reset de páginas al cambiar filtros o gestión
+  useEffect(() => {
+    setCurrentPageItems(1);
+  }, [searchItem, filtroAreaItem, filtroEstadoItem, selectedGestionId]);
+
+  useEffect(() => {
+    setCurrentPageGastos(1);
+  }, [searchTerm, filtroArea, selectedGestionId]);
+
+  const totalPagesItems = Math.ceil(renglonesFiltrados.length / PAGE_SIZE);
+
+  const renglonesPaginados = useMemo(() => {
+    const start = (currentPageItems - 1) * PAGE_SIZE;
+    return renglonesFiltrados.slice(start, start + PAGE_SIZE);
+  }, [renglonesFiltrados, currentPageItems]);
+
   // Gastos filtrados
   const gastosFiltrados = useMemo(() => {
     return (Array.isArray(gastos) ? gastos : []).filter((g) => {
@@ -276,6 +297,13 @@ export default function EjecucionPage() {
       return matchArea && matchSearch;
     });
   }, [gastos, filtroArea, searchTerm]);
+
+  const totalPagesGastos = Math.ceil(gastosFiltrados.length / PAGE_SIZE);
+
+  const gastosPaginados = useMemo(() => {
+    const start = (currentPageGastos - 1) * PAGE_SIZE;
+    return gastosFiltrados.slice(start, start + PAGE_SIZE);
+  }, [gastosFiltrados, currentPageGastos]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -484,7 +512,7 @@ export default function EjecucionPage() {
                     </td>
                   </tr>
                 ) : (
-                  gastosFiltrados.map((g) => (
+                  gastosPaginados.map((g) => (
                     <tr key={g.id} className="hover:bg-theme-border/20 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-xs text-theme-muted whitespace-nowrap">{g.fecha_gasto}</td>
                       <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main whitespace-nowrap">
@@ -525,6 +553,54 @@ export default function EjecucionPage() {
                 )}
               </tbody>
             </table>
+
+            {/* Paginación de Gastos */}
+            {totalPagesGastos > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-theme-border">
+                <p className="text-xs text-theme-muted">
+                  Mostrando {(currentPageGastos - 1) * PAGE_SIZE + 1}–{Math.min(currentPageGastos * PAGE_SIZE, gastosFiltrados.length)} de {gastosFiltrados.length} gastos
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPageGastos((p) => Math.max(1, p - 1))}
+                    disabled={currentPageGastos === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ← Anterior
+                  </button>
+                  {Array.from({ length: totalPagesGastos }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPagesGastos || Math.abs(p - currentPageGastos) <= 1)
+                    .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, idx) =>
+                      p === '...' ? (
+                        <span key={`ellipsis-gastos-${idx}`} className="px-2 text-xs text-theme-muted">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setCurrentPageGastos(p as number)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${currentPageGastos === p
+                            ? 'border-theme-primary bg-theme-primary text-white'
+                            : 'border-theme-border text-theme-muted hover:text-theme-main'
+                            }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    )}
+                  <button
+                    onClick={() => setCurrentPageGastos((p) => Math.min(totalPagesGastos, p + 1))}
+                    disabled={currentPageGastos === totalPagesGastos}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -657,7 +733,7 @@ export default function EjecucionPage() {
                     </td>
                   </tr>
                 ) : (
-                  renglonesFiltrados.map((r) => (
+                  renglonesPaginados.map((r) => (
                     <tr key={r.detalleId} className="hover:bg-theme-border/20 transition-colors">
                       <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.memoriaCodigo}</td>
                       <td className="py-3.5 px-4 text-xs font-medium text-theme-main">{r.areaNombre}</td>
@@ -687,6 +763,54 @@ export default function EjecucionPage() {
                 )}
               </tbody>
             </table>
+
+            {/* Paginación de Ítems */}
+            {totalPagesItems > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-theme-border">
+                <p className="text-xs text-theme-muted">
+                  Mostrando {(currentPageItems - 1) * PAGE_SIZE + 1}–{Math.min(currentPageItems * PAGE_SIZE, renglonesFiltrados.length)} de {renglonesFiltrados.length} ítems
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPageItems((p) => Math.max(1, p - 1))}
+                    disabled={currentPageItems === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ← Anterior
+                  </button>
+                  {Array.from({ length: totalPagesItems }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPagesItems || Math.abs(p - currentPageItems) <= 1)
+                    .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, idx) =>
+                      p === '...' ? (
+                        <span key={`ellipsis-items-${idx}`} className="px-2 text-xs text-theme-muted">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setCurrentPageItems(p as number)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${currentPageItems === p
+                            ? 'border-theme-primary bg-theme-primary text-white'
+                            : 'border-theme-border text-theme-muted hover:text-theme-main'
+                            }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    )}
+                  <button
+                    onClick={() => setCurrentPageItems((p) => Math.min(totalPagesItems, p + 1))}
+                    disabled={currentPageItems === totalPagesItems}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
