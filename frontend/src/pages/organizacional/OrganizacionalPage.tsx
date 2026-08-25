@@ -180,9 +180,9 @@ export default function OrganizacionalPage() {
                   <option value="TODOS">Todos los Programas</option>
 
                   {programas.map((programa) => (
-                  <option key={programa.id} value={String(programa.id)}>
-                    {programa.nombre}
-                  </option>
+                    <option key={programa.id} value={String(programa.id)}>
+                      {programa.nombre}
+                    </option>
                   ))}
                 </select>
               </div>
