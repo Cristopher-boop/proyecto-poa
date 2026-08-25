@@ -74,8 +74,11 @@ export default function EjecucionPage() {
   const [filtroAreaItem, setFiltroAreaItem] = useState<string>('todas');
   const [filtroEstadoItem, setFiltroEstadoItem] = useState<string>('todos');
 
-  // Modal Registro de Gasto
+  // Modal Registro de Gasto - Filtros divididos
   const [showModalGasto, setShowModalGasto] = useState<boolean>(false);
+  const [searchModalGeneral, setSearchModalGeneral] = useState<string>('');
+  const [searchModalCodigo, setSearchModalCodigo] = useState<string>('');
+  const [searchModalDinero, setSearchModalDinero] = useState<string>('');
   const [formGasto, setFormGasto] = useState<{
     detalleMemoriaId: number | '';
     monto: number | '';
@@ -213,6 +216,37 @@ export default function EjecucionPage() {
       return matchArea && matchEstado && matchSearch;
     });
   }, [renglonesDisponibles, filtroAreaItem, filtroEstadoItem, searchItem]);
+
+  // Ítems filtrados dentro del Modal de Registro de Gasto (Filtros divididos)
+  const modalRenglonesFiltrados = useMemo(() => {
+    return renglonesDisponibles.filter((r) => {
+      // 1. Buscador General: SOLO descripción o área (NO busca código ni dinero)
+      const termGen = searchModalGeneral.toLowerCase().trim();
+      const matchGeneral =
+        !termGen ||
+        r.descripcion.toLowerCase().includes(termGen) ||
+        r.areaNombre.toLowerCase().includes(termGen);
+
+      // 2. Filtro por Código: SOLO código de memoria o código de partida
+      const termCod = searchModalCodigo.toLowerCase().trim();
+      const matchCodigo =
+        !termCod ||
+        r.memoriaCodigo.toLowerCase().includes(termCod) ||
+        r.partidaCodigo.toLowerCase().includes(termCod);
+
+      // 3. Filtro por Dinero: busca saldo disponible numérico o valor
+      const termDin = searchModalDinero.trim();
+      let matchDinero = true;
+      if (termDin) {
+        const valDin = parseFloat(termDin);
+        if (!isNaN(valDin)) {
+          matchDinero = r.saldoDisponible >= valDin || String(r.saldoDisponible).includes(termDin);
+        }
+      }
+
+      return matchGeneral && matchCodigo && matchDinero;
+    });
+  }, [renglonesDisponibles, searchModalGeneral, searchModalCodigo, searchModalDinero]);
 
   const selectedItemForGasto = useMemo(() => {
     if (!formGasto.detalleMemoriaId) return null;
@@ -357,7 +391,12 @@ export default function EjecucionPage() {
 
             {canExecuteGasto && (
               <button
-                onClick={() => setShowModalGasto(true)}
+                onClick={() => {
+                          setSearchModalGeneral('');
+                          setSearchModalCodigo('');
+                          setSearchModalDinero('');
+                  setShowModalGasto(true);
+                }}
                 className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
               >
                 <Plus size={15} /> Registrar Gasto
@@ -516,7 +555,12 @@ export default function EjecucionPage() {
                       <Receipt size={36} className="mx-auto mb-2 opacity-40" />
                       <p className="font-medium">No hay registros de gasto en esta gestión.</p>
                       <button
-                        onClick={() => setShowModalGasto(true)}
+                        onClick={() => {
+                                  setSearchModalGeneral('');
+                          setSearchModalCodigo('');
+                          setSearchModalDinero('');
+                          setShowModalGasto(true);
+                        }}
                         className="btn-primary mt-3 text-xs bg-rose-600 hover:bg-rose-700 text-white"
                       >
                         Registrar Primer Gasto
@@ -843,22 +887,113 @@ export default function EjecucionPage() {
 
             <form onSubmit={handleGuardarGasto} className="p-6 space-y-4 text-xs">
               <div>
-                <label className="block font-semibold uppercase text-theme-muted mb-1">
-                  Ítem / Renglón de Memoria Aprobada *
+                <label className="block font-semibold uppercase text-theme-muted mb-1.5">
+                  Seleccionar Ítem / Renglón de Memoria Aprobada *
                 </label>
-                <select
-                  required
-                  value={formGasto.detalleMemoriaId}
-                  onChange={(e) => setFormGasto({ ...formGasto, detalleMemoriaId: Number(e.target.value) })}
-                  className="input-theme text-xs"
-                >
-                  <option value="">Seleccione ítem a imputar...</option>
-                  {renglonesDisponibles.map((r) => (
-                    <option key={r.detalleId} value={r.detalleId}>
-                      [{r.memoriaCodigo}] {r.descripcion} • Saldo: {formatMoney(r.saldoDisponible)}
-                    </option>
-                  ))}
-                </select>
+
+                {/* 3 Filtros Divididos */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                  {/* 1. Buscador General: Descripción / Área */}
+                  <div className="relative">
+                    <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                    <input
+                      type="text"
+                      placeholder="General (descripción)..."
+                      value={searchModalGeneral}
+                      onChange={(e) => setSearchModalGeneral(e.target.value)}
+                      className="input-theme pl-8 py-1.5 text-[11px]"
+                      title="Busca por descripción del ítem o nombre de área"
+                    />
+                  </div>
+
+                  {/* 2. Filtro por Código */}
+                  <div className="relative">
+                    <FileText size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                    <input
+                      type="text"
+                      placeholder="Código (Mem./Part.)..."
+                      value={searchModalCodigo}
+                      onChange={(e) => setSearchModalCodigo(e.target.value)}
+                      className="input-theme pl-8 py-1.5 text-[11px] font-mono"
+                      title="Busca por código de memoria o partida"
+                    />
+                  </div>
+
+                  {/* 3. Filtro por Dinero (Saldo) */}
+                  <div className="relative">
+                    <DollarSign size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400" />
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="Saldo mín. (Bs.)..."
+                      value={searchModalDinero}
+                      onChange={(e) => setSearchModalDinero(e.target.value)}
+                      className="input-theme pl-8 py-1.5 text-[11px] font-mono"
+                      title="Filtra ítems con saldo disponible mínimo"
+                    />
+                  </div>
+                </div>
+
+                {(searchModalGeneral || searchModalCodigo || searchModalDinero) && (
+                  <div className="flex justify-end mb-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchModalGeneral('');
+                        setSearchModalCodigo('');
+                        setSearchModalDinero('');
+                      }}
+                      className="text-[10px] text-theme-primary font-bold hover:underline"
+                    >
+                      Limpiar Filtros del Modal
+                    </button>
+                  </div>
+                )}
+
+                {/* Selector visual de opciones filtradas */}
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-theme-border bg-theme-base divide-y divide-theme-border/60">
+                  {modalRenglonesFiltrados.length === 0 ? (
+                    <div className="p-3 text-center text-theme-muted text-xs">
+                      No hay ítems que coincidan con la búsqueda.
+                    </div>
+                  ) : (
+                    modalRenglonesFiltrados.map((r) => {
+                      const isSelected = formGasto.detalleMemoriaId === r.detalleId;
+                      const descCorta = r.descripcion.length > 38 ? `${r.descripcion.slice(0, 38)}...` : r.descripcion;
+                      return (
+                        <div
+                          key={r.detalleId}
+                          onClick={() => setFormGasto({ ...formGasto, detalleMemoriaId: r.detalleId })}
+                          className={`p-2.5 cursor-pointer flex items-center justify-between text-xs transition-colors ${
+                            isSelected
+                              ? 'bg-rose-500/10 border-l-4 border-rose-500 text-theme-main font-semibold'
+                              : 'hover:bg-theme-border/30 text-theme-main'
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1 pr-3">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-mono font-bold text-[11px] text-theme-primary px-1.5 py-0.5 rounded bg-theme-primary/10">
+                                {r.memoriaCodigo}
+                              </span>
+                              <span className="font-mono text-[10px] text-theme-muted">
+                                P.{r.partidaCodigo}
+                              </span>
+                            </div>
+                            <p className="text-xs text-theme-main font-medium mt-1 truncate" title={r.descripcion}>
+                              {descCorta}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-[10px] text-theme-muted uppercase block">Saldo</span>
+                            <span className="font-bold text-xs text-emerald-600 dark:text-emerald-400">
+                              {formatMoney(r.saldoDisponible)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               {selectedItemForGasto && (
