@@ -479,6 +479,20 @@ export async function getResumenEjecucion(params?: { gestion?: number; anio?: nu
   return data;
 }
 
+export async function updateGasto(
+  id: number,
+  payload: {
+    detalle_memoria?: number;
+    monto_ejecutado?: number | string;
+    fecha_gasto?: string;
+    comprobante_num?: string;
+    observacion?: string;
+  }
+): Promise<Gasto> {
+  const { data } = await api.patch<Gasto>(`/api/v1/ejecucion/gastos/${id}/`, payload);
+  return data;
+}
+
 export async function deleteGasto(id: number): Promise<void> {
   await api.delete(`/api/v1/ejecucion/gastos/${id}/`);
 }

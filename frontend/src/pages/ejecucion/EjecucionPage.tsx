@@ -9,6 +9,7 @@ import {
   Building2,
   Calendar,
   Layers,
+  Edit3,
   Trash2,
   WalletCards,
   FileText,
@@ -30,6 +31,7 @@ import {
   getGestiones,
   getGastos,
   createGasto,
+  updateGasto,
   deleteGasto,
   getPresupuestosArea,
   getDetallesPresupuesto,
@@ -72,10 +74,9 @@ export default function EjecucionPage() {
   // Filtros Pestaña 3 (Control de Ítems)
   const [searchItem, setSearchItem] = useState<string>('');
   const [filtroAreaItem, setFiltroAreaItem] = useState<string>('todas');
-  const [filtroEstadoItem, setFiltroEstadoItem] = useState<string>('todos');
-
-  // Modal Registro de Gasto - Filtros divididos
+  const [filtroEstadoItem, setFiltroEstadoItem] = useState<string>('todos');  // Modal Registro / Edición de Gasto
   const [showModalGasto, setShowModalGasto] = useState<boolean>(false);
+  const [editingGastoId, setEditingGastoId] = useState<number | null>(null);
   const [searchModalGeneral, setSearchModalGeneral] = useState<string>('');
   const [searchModalCodigo, setSearchModalCodigo] = useState<string>('');
   const [searchModalDinero, setSearchModalDinero] = useState<string>('');
@@ -92,6 +93,36 @@ export default function EjecucionPage() {
     comprobante: '',
     observacion: '',
   });
+
+  function handleOpenCrearGasto() {
+    setEditingGastoId(null);
+    setSearchModalGeneral('');
+    setSearchModalCodigo('');
+    setSearchModalDinero('');
+    setFormGasto({
+      detalleMemoriaId: '',
+      monto: '',
+      fecha: new Date().toISOString().split('T')[0],
+      comprobante: '',
+      observacion: '',
+    });
+    setShowModalGasto(true);
+  }
+
+  function handleOpenEditarGasto(gasto: Gasto) {
+    setEditingGastoId(gasto.id);
+    setSearchModalGeneral('');
+    setSearchModalCodigo('');
+    setSearchModalDinero('');
+    setFormGasto({
+      detalleMemoriaId: gasto.detalle_memoria,
+      monto: typeof gasto.monto_ejecutado === 'string' ? parseFloat(gasto.monto_ejecutado) : gasto.monto_ejecutado,
+      fecha: gasto.fecha_gasto,
+      comprobante: gasto.comprobante_num || '',
+      observacion: gasto.observacion || '',
+    });
+    setShowModalGasto(true);
+  }
 
   useEffect(() => {
     cargarBase();
@@ -266,7 +297,7 @@ export default function EjecucionPage() {
     return renglonesDisponibles.find((r) => r.detalleId === Number(formGasto.detalleMemoriaId)) || null;
   }, [formGasto.detalleMemoriaId, renglonesDisponibles]);
 
-  // Guardar Gasto
+  // Guardar Gasto (Crear o Editar)
   async function handleGuardarGasto(e: React.FormEvent) {
     e.preventDefault();
     if (!formGasto.detalleMemoriaId || !formGasto.monto || Number(formGasto.monto) <= 0) {
@@ -276,16 +307,28 @@ export default function EjecucionPage() {
 
     setActionLoading(true);
     try {
-      await createGasto({
-        detalle_memoria: Number(formGasto.detalleMemoriaId),
-        monto_ejecutado: Number(formGasto.monto),
-        fecha_gasto: formGasto.fecha,
-        comprobante_num: formGasto.comprobante,
-        observacion: formGasto.observacion,
-      });
+      if (editingGastoId) {
+        await updateGasto(editingGastoId, {
+          detalle_memoria: Number(formGasto.detalleMemoriaId),
+          monto_ejecutado: Number(formGasto.monto),
+          fecha_gasto: formGasto.fecha,
+          comprobante_num: formGasto.comprobante,
+          observacion: formGasto.observacion,
+        });
+        mostrarMensaje('success', 'Gasto ejecutado actualizado correctamente.');
+      } else {
+        await createGasto({
+          detalle_memoria: Number(formGasto.detalleMemoriaId),
+          monto_ejecutado: Number(formGasto.monto),
+          fecha_gasto: formGasto.fecha,
+          comprobante_num: formGasto.comprobante,
+          observacion: formGasto.observacion,
+        });
+        mostrarMensaje('success', 'Gasto ejecutado registrado. Presupuesto disponible actualizado en tiempo real.');
+      }
 
-      mostrarMensaje('success', 'Gasto ejecutado registrado. Presupuesto disponible actualizado en tiempo real.');
       setShowModalGasto(false);
+      setEditingGastoId(null);
       setFormGasto({
         detalleMemoriaId: '',
         monto: '',
@@ -295,7 +338,7 @@ export default function EjecucionPage() {
       });
       if (selectedGestionId) await cargarDatosEjecucion(selectedGestionId);
     } catch (err: any) {
-      mostrarMensaje('error', err.response?.data?.monto_ejecutado?.[0] || 'Error al registrar el gasto.');
+      mostrarMensaje('error', err.response?.data?.monto_ejecutado?.[0] || err.response?.data?.error || 'Error al guardar el gasto.');
     } finally {
       setActionLoading(false);
     }
@@ -404,12 +447,7 @@ export default function EjecucionPage() {
 
             {canExecuteGasto && (
               <button
-                onClick={() => {
-                  setSearchModalGeneral('');
-                  setSearchModalCodigo('');
-                  setSearchModalDinero('');
-                  setShowModalGasto(true);
-                }}
+                onClick={handleOpenCrearGasto}
                 className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
               >
                 <Plus size={15} /> Registrar Gasto
@@ -568,12 +606,7 @@ export default function EjecucionPage() {
                       <Receipt size={36} className="mx-auto mb-2 opacity-40" />
                       <p className="font-medium">No hay registros de gasto en esta gestión.</p>
                       <button
-                        onClick={() => {
-                          setSearchModalGeneral('');
-                          setSearchModalCodigo('');
-                          setSearchModalDinero('');
-                          setShowModalGasto(true);
-                        }}
+                        onClick={handleOpenCrearGasto}
                         className="btn-primary mt-3 text-xs bg-rose-600 hover:bg-rose-700 text-white"
                       >
                         Registrar Primer Gasto
@@ -611,11 +644,11 @@ export default function EjecucionPage() {
                       <td className="py-3.5 px-4 text-center">
                         {canExecuteGasto && (
                           <button
-                            onClick={() => handleAnularGasto(g.id)}
-                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                            title="Anular gasto y restituir saldo"
+                            onClick={() => handleOpenEditarGasto(g)}
+                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
+                            title="Editar datos de la ejecución"
                           >
-                            <Trash2 size={15} />
+                            <Edit3 size={15} />
                           </button>
                         )}
                       </td>
@@ -894,7 +927,9 @@ export default function EjecucionPage() {
             <div className="p-5 border-b border-theme-border flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <TrendingDown className="text-rose-500" size={22} />
-                <h3 className="text-base font-bold text-theme-main">Registrar Gasto</h3>
+                <h3 className="text-base font-bold text-theme-main">
+                  {editingGastoId ? 'Editar Gasto Ejecutado' : 'Registrar Gasto'}
+                </h3>
               </div>
               <button onClick={() => setShowModalGasto(false)} className="text-theme-muted hover:text-theme-main font-bold">
                 ✕
@@ -1091,7 +1126,7 @@ export default function EjecucionPage() {
                   disabled={actionLoading}
                   className="btn-primary text-xs px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold"
                 >
-                  Registrar Gasto
+                  {editingGastoId ? 'Guardar Cambios' : 'Registrar Gasto'}
                 </button>
               </div>
             </form>
