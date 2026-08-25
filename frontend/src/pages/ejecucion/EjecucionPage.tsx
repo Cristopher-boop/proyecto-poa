@@ -64,6 +64,11 @@ export default function EjecucionPage() {
   const [filtroArea, setFiltroArea] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Filtros Pestaña 3 (Control de Ítems)
+  const [searchItem, setSearchItem] = useState<string>('');
+  const [filtroAreaItem, setFiltroAreaItem] = useState<string>('todas');
+  const [filtroEstadoItem, setFiltroEstadoItem] = useState<string>('todos');
+
   // Modal Registro de Gasto
   const [showModalGasto, setShowModalGasto] = useState<boolean>(false);
   const [formGasto, setFormGasto] = useState<{
@@ -186,6 +191,23 @@ export default function EjecucionPage() {
         };
       });
   }, [detallesPresupuesto]);
+
+  // Ítems filtrados en Pestaña 3
+  const renglonesFiltrados = useMemo(() => {
+    return renglonesDisponibles.filter((r) => {
+      const matchArea = filtroAreaItem === 'todas' || r.areaNombre.toLowerCase() === filtroAreaItem.toLowerCase();
+      const matchEstado = filtroEstadoItem === 'todos' || r.estadoGasto === filtroEstadoItem;
+      const term = searchItem.toLowerCase().trim();
+      const matchSearch =
+        !term ||
+        r.descripcion.toLowerCase().includes(term) ||
+        r.memoriaCodigo.toLowerCase().includes(term) ||
+        r.partidaCodigo.toLowerCase().includes(term) ||
+        r.partidaNombre.toLowerCase().includes(term) ||
+        r.areaNombre.toLowerCase().includes(term);
+      return matchArea && matchEstado && matchSearch;
+    });
+  }, [renglonesDisponibles, filtroAreaItem, filtroEstadoItem, searchItem]);
 
   const selectedItemForGasto = useMemo(() => {
     if (!formGasto.detalleMemoriaId) return null;
@@ -399,7 +421,7 @@ export default function EjecucionPage() {
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'items' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
         >
-          <Layers size={16} /> 3. Control de Ítems Presupuestados ({renglonesDisponibles.length})
+          <Layers size={16} /> 3. Control de Ítems Presupuestados ({renglonesFiltrados.length})
         </button>
       </div>
 
@@ -560,58 +582,112 @@ export default function EjecucionPage() {
 
       {/* PESTAÑA 3: CONTROL DE ÍTEMS DE MEMORIA */}
       {activeTab === 'items' && (
-        <div className="card overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
-                <th className="py-3.5 px-4">Memoria</th>
-                <th className="py-3.5 px-4">Área</th>
-                <th className="py-3.5 px-4">Partida</th>
-                <th className="py-3.5 px-4">Descripción del Ítem</th>
-                <th className="py-3.5 px-4 text-right">Presupuesto Ítem</th>
-                <th className="py-3.5 px-4 text-right">Gastado</th>
-                <th className="py-3.5 px-4 text-right">Saldo Restante</th>
-                <th className="py-3.5 px-4 text-center">Estado Gasto</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-theme-border">
-              {renglonesDisponibles.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-theme-muted">
-                    No hay ítems aprobados disponibles en esta gestión.
-                  </td>
+        <div className="space-y-4">
+          {/* Barra de Filtros de Ítems */}
+          <div className="card p-4 flex flex-col md:flex-row gap-3 items-center">
+            <div className="relative flex-1 w-full">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+              <input
+                type="text"
+                placeholder="Buscar por ítem, memoria, partida o área..."
+                value={searchItem}
+                onChange={(e) => setSearchItem(e.target.value)}
+                className="input-theme pl-10 text-xs"
+              />
+            </div>
+
+            <select
+              value={filtroAreaItem}
+              onChange={(e) => setFiltroAreaItem(e.target.value)}
+              className="input-theme text-xs py-2 w-full md:w-52"
+            >
+              <option value="todas">Todas las Áreas</option>
+              {areas.map((a) => (
+                <option key={a.id} value={a.nombre}>
+                  {a.nombre}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filtroEstadoItem}
+              onChange={(e) => setFiltroEstadoItem(e.target.value)}
+              className="input-theme text-xs py-2 w-full md:w-52"
+            >
+              <option value="todos">Todos los Estados</option>
+              <option value="PENDIENTE">Pendientes</option>
+              <option value="EJECUTADO_PARCIAL">Ejecutados Parciales</option>
+              <option value="COMPLETADO">Completados</option>
+            </select>
+
+            {(searchItem || filtroAreaItem !== 'todas' || filtroEstadoItem !== 'todos') && (
+              <button
+                onClick={() => {
+                  setSearchItem('');
+                  setFiltroAreaItem('todas');
+                  setFiltroEstadoItem('todos');
+                }}
+                className="text-xs text-theme-primary font-bold hover:underline whitespace-nowrap px-2"
+              >
+                Limpiar Filtros
+              </button>
+            )}
+          </div>
+
+          {/* Tabla de Ítems */}
+          <div className="card overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
+                  <th className="py-3.5 px-4">Memoria</th>
+                  <th className="py-3.5 px-4">Área</th>
+                  <th className="py-3.5 px-4">Partida</th>
+                  <th className="py-3.5 px-4">Descripción del Ítem</th>
+                  <th className="py-3.5 px-4 text-right">Presupuesto Ítem</th>
+                  <th className="py-3.5 px-4 text-right">Gastado</th>
+                  <th className="py-3.5 px-4 text-right">Saldo Restante</th>
+                  <th className="py-3.5 px-4 text-center">Estado Gasto</th>
                 </tr>
-              ) : (
-                renglonesDisponibles.map((r) => (
-                  <tr key={r.detalleId} className="hover:bg-theme-border/20 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.memoriaCodigo}</td>
-                    <td className="py-3.5 px-4 text-xs font-medium text-theme-main">{r.areaNombre}</td>
-                    <td className="py-3.5 px-4 font-mono text-xs text-theme-muted">{r.partidaCodigo}</td>
-                    <td className="py-3.5 px-4 text-xs font-semibold text-theme-main">{r.descripcion}</td>
-                    <td className="py-3.5 px-4 text-right font-medium text-xs text-theme-main">{formatMoney(r.montoTotal)}</td>
-                    <td className="py-3.5 px-4 text-right font-medium text-xs text-rose-600 dark:text-rose-400">
-                      {formatMoney(r.montoGastado)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-xs text-emerald-600 dark:text-emerald-400">
-                      {formatMoney(r.saldoDisponible)}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estadoGasto === 'COMPLETADO'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                          : r.estadoGasto === 'EJECUTADO_PARCIAL'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                          }`}
-                      >
-                        {r.estadoGasto}
-                      </span>
+              </thead>
+              <tbody className="divide-y divide-theme-border">
+                {renglonesFiltrados.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-theme-muted">
+                      No hay ítems aprobados que coincidan con los filtros aplicados.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  renglonesFiltrados.map((r) => (
+                    <tr key={r.detalleId} className="hover:bg-theme-border/20 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.memoriaCodigo}</td>
+                      <td className="py-3.5 px-4 text-xs font-medium text-theme-main">{r.areaNombre}</td>
+                      <td className="py-3.5 px-4 font-mono text-xs text-theme-muted">{r.partidaCodigo}</td>
+                      <td className="py-3.5 px-4 text-xs font-semibold text-theme-main">{r.descripcion}</td>
+                      <td className="py-3.5 px-4 text-right font-medium text-xs text-theme-main">{formatMoney(r.montoTotal)}</td>
+                      <td className="py-3.5 px-4 text-right font-medium text-xs text-rose-600 dark:text-rose-400">
+                        {formatMoney(r.montoGastado)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-bold text-xs text-emerald-600 dark:text-emerald-400">
+                        {formatMoney(r.saldoDisponible)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estadoGasto === 'COMPLETADO'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                            : r.estadoGasto === 'EJECUTADO_PARCIAL'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                              : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            }`}
+                        >
+                          {r.estadoGasto}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

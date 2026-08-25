@@ -22,8 +22,7 @@ class Command(BaseCommand):
             "2": {
                 "nombre": "Programa 2",
                 "areas": [
-                    "Gerencia de Asuntos",
-                    "Administrativos"
+                    "Gerencia de Asuntos Administrativos",
                 ]
             },
             "410": {
