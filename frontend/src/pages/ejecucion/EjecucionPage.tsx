@@ -9,6 +9,7 @@ import {
   Building2,
   Calendar,
   Layers,
+  Edit3,
   Trash2,
   WalletCards,
   FileText,
@@ -30,6 +31,7 @@ import {
   getGestiones,
   getGastos,
   createGasto,
+  updateGasto,
   deleteGasto,
   getPresupuestosArea,
   getDetallesPresupuesto,
@@ -64,8 +66,20 @@ export default function EjecucionPage() {
   const [filtroArea, setFiltroArea] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Modal Registro de Gasto
+  // Paginación
+  const PAGE_SIZE = 10;
+  const [currentPageGastos, setCurrentPageGastos] = useState<number>(1);
+  const [currentPageItems, setCurrentPageItems] = useState<number>(1);
+
+  // Filtros Pestaña 3 (Control de Ítems)
+  const [searchItem, setSearchItem] = useState<string>('');
+  const [filtroAreaItem, setFiltroAreaItem] = useState<string>('todas');
+  const [filtroEstadoItem, setFiltroEstadoItem] = useState<string>('todos');  // Modal Registro / Edición de Gasto
   const [showModalGasto, setShowModalGasto] = useState<boolean>(false);
+  const [editingGastoId, setEditingGastoId] = useState<number | null>(null);
+  const [searchModalGeneral, setSearchModalGeneral] = useState<string>('');
+  const [searchModalCodigo, setSearchModalCodigo] = useState<string>('');
+  const [searchModalDinero, setSearchModalDinero] = useState<string>('');
   const [formGasto, setFormGasto] = useState<{
     detalleMemoriaId: number | '';
     monto: number | '';
@@ -79,6 +93,36 @@ export default function EjecucionPage() {
     comprobante: '',
     observacion: '',
   });
+
+  function handleOpenCrearGasto() {
+    setEditingGastoId(null);
+    setSearchModalGeneral('');
+    setSearchModalCodigo('');
+    setSearchModalDinero('');
+    setFormGasto({
+      detalleMemoriaId: '',
+      monto: '',
+      fecha: new Date().toISOString().split('T')[0],
+      comprobante: '',
+      observacion: '',
+    });
+    setShowModalGasto(true);
+  }
+
+  function handleOpenEditarGasto(gasto: Gasto) {
+    setEditingGastoId(gasto.id);
+    setSearchModalGeneral('');
+    setSearchModalCodigo('');
+    setSearchModalDinero('');
+    setFormGasto({
+      detalleMemoriaId: gasto.detalle_memoria,
+      monto: typeof gasto.monto_ejecutado === 'string' ? parseFloat(gasto.monto_ejecutado) : gasto.monto_ejecutado,
+      fecha: gasto.fecha_gasto,
+      comprobante: gasto.comprobante_num || '',
+      observacion: gasto.observacion || '',
+    });
+    setShowModalGasto(true);
+  }
 
   useEffect(() => {
     cargarBase();
@@ -140,6 +184,19 @@ export default function EjecucionPage() {
     return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', minimumFractionDigits: 2 }).format(num || 0);
   };
 
+  const formatFechaDMY = (fechaStr?: string | null) => {
+    if (!fechaStr) return '-';
+    const clean = fechaStr.split('T')[0];
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      const [yyyy, mm, dd] = parts;
+      if (yyyy.length === 4) {
+        return `${dd}/${mm}/${yyyy}`;
+      }
+    }
+    return fechaStr;
+  };
+
   // Métricas
   const totalInicial = useMemo(() => {
     return (Array.isArray(presupuestosArea) ? presupuestosArea : []).reduce(
@@ -187,12 +244,60 @@ export default function EjecucionPage() {
       });
   }, [detallesPresupuesto]);
 
+  // Ítems filtrados en Pestaña 3
+  const renglonesFiltrados = useMemo(() => {
+    return renglonesDisponibles.filter((r) => {
+      const matchArea = filtroAreaItem === 'todas' || r.areaNombre.toLowerCase() === filtroAreaItem.toLowerCase();
+      const matchEstado = filtroEstadoItem === 'todos' || r.estadoGasto === filtroEstadoItem;
+      const term = searchItem.toLowerCase().trim();
+      const matchSearch =
+        !term ||
+        r.descripcion.toLowerCase().includes(term) ||
+        r.memoriaCodigo.toLowerCase().includes(term) ||
+        r.partidaCodigo.toLowerCase().includes(term) ||
+        r.partidaNombre.toLowerCase().includes(term) ||
+        r.areaNombre.toLowerCase().includes(term);
+      return matchArea && matchEstado && matchSearch;
+    });
+  }, [renglonesDisponibles, filtroAreaItem, filtroEstadoItem, searchItem]);
+
+  // Ítems filtrados dentro del Modal de Registro de Gasto (Filtros divididos)
+  const modalRenglonesFiltrados = useMemo(() => {
+    return renglonesDisponibles.filter((r) => {
+      // 1. Buscador General: SOLO descripción o área (NO busca código ni dinero)
+      const termGen = searchModalGeneral.toLowerCase().trim();
+      const matchGeneral =
+        !termGen ||
+        r.descripcion.toLowerCase().includes(termGen) ||
+        r.areaNombre.toLowerCase().includes(termGen);
+
+      // 2. Filtro por Código: SOLO código de memoria o código de partida
+      const termCod = searchModalCodigo.toLowerCase().trim();
+      const matchCodigo =
+        !termCod ||
+        r.memoriaCodigo.toLowerCase().includes(termCod) ||
+        r.partidaCodigo.toLowerCase().includes(termCod);
+
+      // 3. Filtro por Dinero: busca saldo disponible numérico o valor
+      const termDin = searchModalDinero.trim();
+      let matchDinero = true;
+      if (termDin) {
+        const valDin = parseFloat(termDin);
+        if (!isNaN(valDin)) {
+          matchDinero = r.saldoDisponible >= valDin || String(r.saldoDisponible).includes(termDin);
+        }
+      }
+
+      return matchGeneral && matchCodigo && matchDinero;
+    });
+  }, [renglonesDisponibles, searchModalGeneral, searchModalCodigo, searchModalDinero]);
+
   const selectedItemForGasto = useMemo(() => {
     if (!formGasto.detalleMemoriaId) return null;
     return renglonesDisponibles.find((r) => r.detalleId === Number(formGasto.detalleMemoriaId)) || null;
   }, [formGasto.detalleMemoriaId, renglonesDisponibles]);
 
-  // Guardar Gasto
+  // Guardar Gasto (Crear o Editar)
   async function handleGuardarGasto(e: React.FormEvent) {
     e.preventDefault();
     if (!formGasto.detalleMemoriaId || !formGasto.monto || Number(formGasto.monto) <= 0) {
@@ -202,16 +307,28 @@ export default function EjecucionPage() {
 
     setActionLoading(true);
     try {
-      await createGasto({
-        detalle_memoria: Number(formGasto.detalleMemoriaId),
-        monto_ejecutado: Number(formGasto.monto),
-        fecha_gasto: formGasto.fecha,
-        comprobante_num: formGasto.comprobante,
-        observacion: formGasto.observacion,
-      });
+      if (editingGastoId) {
+        await updateGasto(editingGastoId, {
+          detalle_memoria: Number(formGasto.detalleMemoriaId),
+          monto_ejecutado: Number(formGasto.monto),
+          fecha_gasto: formGasto.fecha,
+          comprobante_num: formGasto.comprobante,
+          observacion: formGasto.observacion,
+        });
+        mostrarMensaje('success', 'Gasto ejecutado actualizado correctamente.');
+      } else {
+        await createGasto({
+          detalle_memoria: Number(formGasto.detalleMemoriaId),
+          monto_ejecutado: Number(formGasto.monto),
+          fecha_gasto: formGasto.fecha,
+          comprobante_num: formGasto.comprobante,
+          observacion: formGasto.observacion,
+        });
+        mostrarMensaje('success', 'Gasto ejecutado registrado. Presupuesto disponible actualizado en tiempo real.');
+      }
 
-      mostrarMensaje('success', 'Gasto ejecutado registrado. Presupuesto disponible actualizado en tiempo real.');
       setShowModalGasto(false);
+      setEditingGastoId(null);
       setFormGasto({
         detalleMemoriaId: '',
         monto: '',
@@ -221,7 +338,7 @@ export default function EjecucionPage() {
       });
       if (selectedGestionId) await cargarDatosEjecucion(selectedGestionId);
     } catch (err: any) {
-      mostrarMensaje('error', err.response?.data?.monto_ejecutado?.[0] || 'Error al registrar el gasto.');
+      mostrarMensaje('error', err.response?.data?.monto_ejecutado?.[0] || err.response?.data?.error || 'Error al guardar el gasto.');
     } finally {
       setActionLoading(false);
     }
@@ -239,6 +356,22 @@ export default function EjecucionPage() {
     }
   }
 
+  // Reset de páginas al cambiar filtros o gestión
+  useEffect(() => {
+    setCurrentPageItems(1);
+  }, [searchItem, filtroAreaItem, filtroEstadoItem, selectedGestionId]);
+
+  useEffect(() => {
+    setCurrentPageGastos(1);
+  }, [searchTerm, filtroArea, selectedGestionId]);
+
+  const totalPagesItems = Math.ceil(renglonesFiltrados.length / PAGE_SIZE);
+
+  const renglonesPaginados = useMemo(() => {
+    const start = (currentPageItems - 1) * PAGE_SIZE;
+    return renglonesFiltrados.slice(start, start + PAGE_SIZE);
+  }, [renglonesFiltrados, currentPageItems]);
+
   // Gastos filtrados
   const gastosFiltrados = useMemo(() => {
     return (Array.isArray(gastos) ? gastos : []).filter((g) => {
@@ -254,6 +387,13 @@ export default function EjecucionPage() {
       return matchArea && matchSearch;
     });
   }, [gastos, filtroArea, searchTerm]);
+
+  const totalPagesGastos = Math.ceil(gastosFiltrados.length / PAGE_SIZE);
+
+  const gastosPaginados = useMemo(() => {
+    const start = (currentPageGastos - 1) * PAGE_SIZE;
+    return gastosFiltrados.slice(start, start + PAGE_SIZE);
+  }, [gastosFiltrados, currentPageGastos]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -283,7 +423,7 @@ export default function EjecucionPage() {
             <div>
               <h1 className="text-2xl font-bold text-theme-main tracking-tight">Módulo de Ejecución Presupuestaria</h1>
               <p className="text-sm text-theme-muted">
-                Registro de facturas, control de gastos reales y deducción automática del presupuesto.
+                Registro y control de gastos y deducción automática del presupuesto.
               </p>
             </div>
           </div>
@@ -307,10 +447,10 @@ export default function EjecucionPage() {
 
             {canExecuteGasto && (
               <button
-                onClick={() => setShowModalGasto(true)}
+                onClick={handleOpenCrearGasto}
                 className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
               >
-                <Plus size={15} /> Registrar Gasto Real
+                <Plus size={15} /> Registrar Gasto
               </button>
             )}
           </div>
@@ -332,7 +472,7 @@ export default function EjecucionPage() {
 
         <div className="card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Gastos Ejecutados Reales</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Gastos Ejecutados</span>
             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <Receipt size={18} />
             </div>
@@ -383,7 +523,7 @@ export default function EjecucionPage() {
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'gastos' ? 'border-rose-500 text-rose-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
         >
-          <Receipt size={16} /> 1. Historial de Gastos y Comprobantes ({gastos.length})
+          <Receipt size={16} /> 1. Historial de Gastos ({gastosFiltrados.length})
         </button>
 
         <button
@@ -399,7 +539,7 @@ export default function EjecucionPage() {
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'items' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
         >
-          <Layers size={16} /> 3. Control de Ítems Presupuestados ({renglonesDisponibles.length})
+          <Layers size={16} /> 3. Control de Ítems Presupuestados ({renglonesFiltrados.length})
         </button>
       </div>
 
@@ -411,7 +551,7 @@ export default function EjecucionPage() {
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
               <input
                 type="text"
-                placeholder="Buscar por comprobante, observación, área o partida..."
+                placeholder="Buscar por hoja de ruta, observación, área, partida o ítem..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="input-theme pl-10 text-xs"
@@ -430,18 +570,30 @@ export default function EjecucionPage() {
                 </option>
               ))}
             </select>
+
+            {(searchTerm || filtroArea !== 'todas') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFiltroArea('todas');
+                }}
+                className="text-xs text-theme-primary font-bold hover:underline whitespace-nowrap px-2"
+              >
+                Limpiar Filtros
+              </button>
+            )}
           </div>
 
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
-                  <th className="py-3.5 px-4">Fecha</th>
-                  <th className="py-3.5 px-4">N° Comprobante</th>
+                  <th className="py-3.5 px-4">N° Hoja de Ruta</th>
                   <th className="py-3.5 px-4">Área / Sección</th>
-                  <th className="py-3.5 px-4">Partida Presupuestaria</th>
-                  <th className="py-3.5 px-4">Ítem / Renglón Imputado</th>
+                  <th className="py-3.5 px-4">N° de Partida</th>
+                  <th className="py-3.5 px-4">Ítem Imputado</th>
                   <th className="py-3.5 px-4">Observación</th>
+                  <th className="py-3.5 px-4">Fecha</th>
                   <th className="py-3.5 px-4 text-right">Monto Ejecutado</th>
                   <th className="py-3.5 px-4">Responsable</th>
                   <th className="py-3.5 px-4 text-center">Acción</th>
@@ -454,7 +606,7 @@ export default function EjecucionPage() {
                       <Receipt size={36} className="mx-auto mb-2 opacity-40" />
                       <p className="font-medium">No hay registros de gasto en esta gestión.</p>
                       <button
-                        onClick={() => setShowModalGasto(true)}
+                        onClick={handleOpenCrearGasto}
                         className="btn-primary mt-3 text-xs bg-rose-600 hover:bg-rose-700 text-white"
                       >
                         Registrar Primer Gasto
@@ -462,9 +614,8 @@ export default function EjecucionPage() {
                     </td>
                   </tr>
                 ) : (
-                  gastosFiltrados.map((g) => (
+                  gastosPaginados.map((g) => (
                     <tr key={g.id} className="hover:bg-theme-border/20 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-xs text-theme-muted whitespace-nowrap">{g.fecha_gasto}</td>
                       <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main whitespace-nowrap">
                         {g.comprobante_num || 'S/N'}
                       </td>
@@ -483,6 +634,9 @@ export default function EjecucionPage() {
                         <p className="text-xs text-theme-main font-medium mt-1">{g.detalle_descripcion}</p>
                       </td>
                       <td className="py-3.5 px-4 max-w-xs text-xs text-theme-muted">{g.observacion || '-'}</td>
+                      <td className="py-3.5 px-4 font-mono text-xs text-theme-muted whitespace-nowrap">
+                        {formatFechaDMY(g.fecha_gasto)}
+                      </td>
                       <td className="py-3.5 px-4 text-right font-bold text-rose-600 dark:text-rose-400 text-sm whitespace-nowrap">
                         {formatMoney(g.monto_ejecutado)}
                       </td>
@@ -490,11 +644,11 @@ export default function EjecucionPage() {
                       <td className="py-3.5 px-4 text-center">
                         {canExecuteGasto && (
                           <button
-                            onClick={() => handleAnularGasto(g.id)}
-                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                            title="Anular gasto y restituir saldo"
+                            onClick={() => handleOpenEditarGasto(g)}
+                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
+                            title="Editar datos de la ejecución"
                           >
-                            <Trash2 size={15} />
+                            <Edit3 size={15} />
                           </button>
                         )}
                       </td>
@@ -503,6 +657,54 @@ export default function EjecucionPage() {
                 )}
               </tbody>
             </table>
+
+            {/* Paginación de Gastos */}
+            {totalPagesGastos > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-theme-border">
+                <p className="text-xs text-theme-muted">
+                  Mostrando {(currentPageGastos - 1) * PAGE_SIZE + 1}–{Math.min(currentPageGastos * PAGE_SIZE, gastosFiltrados.length)} de {gastosFiltrados.length} gastos
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPageGastos((p) => Math.max(1, p - 1))}
+                    disabled={currentPageGastos === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ← Anterior
+                  </button>
+                  {Array.from({ length: totalPagesGastos }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPagesGastos || Math.abs(p - currentPageGastos) <= 1)
+                    .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, idx) =>
+                      p === '...' ? (
+                        <span key={`ellipsis-gastos-${idx}`} className="px-2 text-xs text-theme-muted">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setCurrentPageGastos(p as number)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${currentPageGastos === p
+                            ? 'border-theme-primary bg-theme-primary text-white'
+                            : 'border-theme-border text-theme-muted hover:text-theme-main'
+                            }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    )}
+                  <button
+                    onClick={() => setCurrentPageGastos((p) => Math.min(totalPagesGastos, p + 1))}
+                    disabled={currentPageGastos === totalPagesGastos}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -560,157 +762,358 @@ export default function EjecucionPage() {
 
       {/* PESTAÑA 3: CONTROL DE ÍTEMS DE MEMORIA */}
       {activeTab === 'items' && (
-        <div className="card overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
-                <th className="py-3.5 px-4">Memoria</th>
-                <th className="py-3.5 px-4">Área</th>
-                <th className="py-3.5 px-4">Partida</th>
-                <th className="py-3.5 px-4">Descripción del Ítem</th>
-                <th className="py-3.5 px-4 text-right">Presupuesto Ítem</th>
-                <th className="py-3.5 px-4 text-right">Gastado</th>
-                <th className="py-3.5 px-4 text-right">Saldo Restante</th>
-                <th className="py-3.5 px-4 text-center">Estado Gasto</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-theme-border">
-              {renglonesDisponibles.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-theme-muted">
-                    No hay ítems aprobados disponibles en esta gestión.
-                  </td>
+        <div className="space-y-4">
+          {/* Barra de Filtros de Ítems */}
+          <div className="card p-4 flex flex-col md:flex-row gap-3 items-center">
+            <div className="relative flex-1 w-full">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+              <input
+                type="text"
+                placeholder="Buscar por ítem, memoria, partida o área..."
+                value={searchItem}
+                onChange={(e) => setSearchItem(e.target.value)}
+                className="input-theme pl-10 text-xs"
+              />
+            </div>
+
+            <select
+              value={filtroAreaItem}
+              onChange={(e) => setFiltroAreaItem(e.target.value)}
+              className="input-theme text-xs py-2 w-full md:w-52"
+            >
+              <option value="todas">Todas las Áreas</option>
+              {areas.map((a) => (
+                <option key={a.id} value={a.nombre}>
+                  {a.nombre}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filtroEstadoItem}
+              onChange={(e) => setFiltroEstadoItem(e.target.value)}
+              className="input-theme text-xs py-2 w-full md:w-52"
+            >
+              <option value="todos">Todos los Estados</option>
+              <option value="PENDIENTE">Pendientes</option>
+              <option value="EJECUTADO_PARCIAL">Ejecutados Parciales</option>
+              <option value="COMPLETADO">Completados</option>
+            </select>
+
+            {(searchItem || filtroAreaItem !== 'todas' || filtroEstadoItem !== 'todos') && (
+              <button
+                onClick={() => {
+                  setSearchItem('');
+                  setFiltroAreaItem('todas');
+                  setFiltroEstadoItem('todos');
+                }}
+                className="text-xs text-theme-primary font-bold hover:underline whitespace-nowrap px-2"
+              >
+                Limpiar Filtros
+              </button>
+            )}
+          </div>
+
+          {/* Tabla de Ítems */}
+          <div className="card overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
+                  <th className="py-3.5 px-4">Memoria</th>
+                  <th className="py-3.5 px-4">Área</th>
+                  <th className="py-3.5 px-4">Partida</th>
+                  <th className="py-3.5 px-4">Descripción del Ítem</th>
+                  <th className="py-3.5 px-4 text-right">Presupuesto Ítem</th>
+                  <th className="py-3.5 px-4 text-right">Gastado</th>
+                  <th className="py-3.5 px-4 text-right">Saldo Restante</th>
+                  <th className="py-3.5 px-4 text-center">Estado Gasto</th>
                 </tr>
-              ) : (
-                renglonesDisponibles.map((r) => (
-                  <tr key={r.detalleId} className="hover:bg-theme-border/20 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.memoriaCodigo}</td>
-                    <td className="py-3.5 px-4 text-xs font-medium text-theme-main">{r.areaNombre}</td>
-                    <td className="py-3.5 px-4 font-mono text-xs text-theme-muted">{r.partidaCodigo}</td>
-                    <td className="py-3.5 px-4 text-xs font-semibold text-theme-main">{r.descripcion}</td>
-                    <td className="py-3.5 px-4 text-right font-medium text-xs text-theme-main">{formatMoney(r.montoTotal)}</td>
-                    <td className="py-3.5 px-4 text-right font-medium text-xs text-rose-600 dark:text-rose-400">
-                      {formatMoney(r.montoGastado)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-xs text-emerald-600 dark:text-emerald-400">
-                      {formatMoney(r.saldoDisponible)}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estadoGasto === 'COMPLETADO'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                          : r.estadoGasto === 'EJECUTADO_PARCIAL'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                          }`}
-                      >
-                        {r.estadoGasto}
-                      </span>
+              </thead>
+              <tbody className="divide-y divide-theme-border">
+                {renglonesFiltrados.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-theme-muted">
+                      No hay ítems aprobados que coincidan con los filtros aplicados.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  renglonesPaginados.map((r) => (
+                    <tr key={r.detalleId} className="hover:bg-theme-border/20 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.memoriaCodigo}</td>
+                      <td className="py-3.5 px-4 text-xs font-medium text-theme-main">{r.areaNombre}</td>
+                      <td className="py-3.5 px-4 font-mono text-xs text-theme-muted">{r.partidaCodigo}</td>
+                      <td className="py-3.5 px-4 text-xs font-semibold text-theme-main">{r.descripcion}</td>
+                      <td className="py-3.5 px-4 text-right font-medium text-xs text-theme-main">{formatMoney(r.montoTotal)}</td>
+                      <td className="py-3.5 px-4 text-right font-medium text-xs text-rose-600 dark:text-rose-400">
+                        {formatMoney(r.montoGastado)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-bold text-xs text-emerald-600 dark:text-emerald-400">
+                        {formatMoney(r.saldoDisponible)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estadoGasto === 'COMPLETADO'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                            : r.estadoGasto === 'EJECUTADO_PARCIAL'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                              : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            }`}
+                        >
+                          {r.estadoGasto}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* Paginación de Ítems */}
+            {totalPagesItems > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-theme-border">
+                <p className="text-xs text-theme-muted">
+                  Mostrando {(currentPageItems - 1) * PAGE_SIZE + 1}–{Math.min(currentPageItems * PAGE_SIZE, renglonesFiltrados.length)} de {renglonesFiltrados.length} ítems
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPageItems((p) => Math.max(1, p - 1))}
+                    disabled={currentPageItems === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ← Anterior
+                  </button>
+                  {Array.from({ length: totalPagesItems }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPagesItems || Math.abs(p - currentPageItems) <= 1)
+                    .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, idx) =>
+                      p === '...' ? (
+                        <span key={`ellipsis-items-${idx}`} className="px-2 text-xs text-theme-muted">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setCurrentPageItems(p as number)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${currentPageItems === p
+                            ? 'border-theme-primary bg-theme-primary text-white'
+                            : 'border-theme-border text-theme-muted hover:text-theme-main'
+                            }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    )}
+                  <button
+                    onClick={() => setCurrentPageItems((p) => Math.min(totalPagesItems, p + 1))}
+                    disabled={currentPageItems === totalPagesItems}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-theme-border text-theme-muted hover:text-theme-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Modal Registrar Gasto */}
       {showModalGasto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="card w-full max-w-lg shadow-2xl bg-theme-surface">
-            <div className="p-5 border-b border-theme-border flex items-center justify-between">
+          <div className="card w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl bg-theme-surface overflow-hidden">
+            {/* Header Fijo */}
+            <div className="p-5 border-b border-theme-border flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <TrendingDown className="text-rose-500" size={22} />
-                <h3 className="text-base font-bold text-theme-main">Registrar Gasto Real</h3>
+                <h3 className="text-base font-bold text-theme-main">
+                  {editingGastoId ? 'Editar Gasto Ejecutado' : 'Registrar Gasto'}
+                </h3>
               </div>
               <button onClick={() => setShowModalGasto(false)} className="text-theme-muted hover:text-theme-main font-bold">
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleGuardarGasto} className="p-6 space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold uppercase text-theme-muted mb-1">
-                  Ítem / Renglón de Memoria Aprobada *
-                </label>
-                <select
-                  required
-                  value={formGasto.detalleMemoriaId}
-                  onChange={(e) => setFormGasto({ ...formGasto, detalleMemoriaId: Number(e.target.value) })}
-                  className="input-theme text-xs"
-                >
-                  <option value="">Seleccione ítem a imputar...</option>
-                  {renglonesDisponibles.map((r) => (
-                    <option key={r.detalleId} value={r.detalleId}>
-                      [{r.memoriaCodigo}] {r.descripcion} • Saldo: {formatMoney(r.saldoDisponible)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Formulario con cuerpo con Scroll y Footer Fijo */}
+            <form onSubmit={handleGuardarGasto} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              {/* Cuerpo scrolleable del formulario */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+                <div>
+                  <label className="block font-semibold uppercase text-theme-muted mb-1.5">
+                    Seleccionar Ítem / Renglón de Memoria Aprobada *
+                  </label>
 
-              {selectedItemForGasto && (
-                <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-1">
-                  <p className="font-semibold text-blue-900 dark:text-blue-200">
-                    Área: {selectedItemForGasto.areaNombre} • Partida: {selectedItemForGasto.partidaCodigo}
-                  </p>
-                  <div className="flex justify-between text-[11px] text-blue-800 dark:text-blue-300">
-                    <span>Total Presupuestado: {formatMoney(selectedItemForGasto.montoTotal)}</span>
-                    <span className="font-bold">Saldo Disponible: {formatMoney(selectedItemForGasto.saldoDisponible)}</span>
+                  {/* 3 Filtros Divididos */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                    {/* 1. Buscador General: Descripción / Área */}
+                    <div className="relative">
+                      <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                      <input
+                        type="text"
+                        placeholder="General (descripción)..."
+                        value={searchModalGeneral}
+                        onChange={(e) => setSearchModalGeneral(e.target.value)}
+                        className="input-theme pl-8 py-1.5 text-[11px]"
+                        title="Busca por descripción del ítem o nombre de área"
+                      />
+                    </div>
+
+                    {/* 2. Filtro por Código */}
+                    <div className="relative">
+                      <FileText size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                      <input
+                        type="text"
+                        placeholder="Código (Mem./Part.)..."
+                        value={searchModalCodigo}
+                        onChange={(e) => setSearchModalCodigo(e.target.value)}
+                        className="input-theme pl-8 py-1.5 text-[11px] font-mono"
+                        title="Busca por código de memoria o partida"
+                      />
+                    </div>
+
+                    {/* 3. Filtro por Dinero (Saldo) */}
+                    <div className="relative">
+                      <DollarSign size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400" />
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Saldo mín. (Bs.)..."
+                        value={searchModalDinero}
+                        onChange={(e) => setSearchModalDinero(e.target.value)}
+                        className="input-theme pl-8 py-1.5 text-[11px] font-mono"
+                        title="Filtra ítems con saldo disponible mínimo"
+                      />
+                    </div>
+                  </div>
+
+                  {(searchModalGeneral || searchModalCodigo || searchModalDinero) && (
+                    <div className="flex justify-end mb-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchModalGeneral('');
+                          setSearchModalCodigo('');
+                          setSearchModalDinero('');
+                        }}
+                        className="text-[10px] text-theme-primary font-bold hover:underline"
+                      >
+                        Limpiar Filtros del Modal
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Selector visual de opciones filtradas */}
+                  <div className="max-h-40 overflow-y-auto rounded-xl border border-theme-border bg-theme-base divide-y divide-theme-border/60">
+                    {modalRenglonesFiltrados.length === 0 ? (
+                      <div className="p-3 text-center text-theme-muted text-xs">
+                        No hay ítems que coincidan con los filtros aplicados.
+                      </div>
+                    ) : (
+                      modalRenglonesFiltrados.map((r) => {
+                        const isSelected = formGasto.detalleMemoriaId === r.detalleId;
+                        const descCorta = r.descripcion.length > 38 ? `${r.descripcion.slice(0, 38)}...` : r.descripcion;
+                        return (
+                          <div
+                            key={r.detalleId}
+                            onClick={() => setFormGasto({ ...formGasto, detalleMemoriaId: r.detalleId })}
+                            className={`p-2.5 cursor-pointer flex items-center justify-between text-xs transition-colors ${
+                              isSelected
+                                ? 'bg-rose-500/10 border-l-4 border-rose-500 text-theme-main font-semibold'
+                                : 'hover:bg-theme-border/30 text-theme-main'
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1 pr-3">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-mono font-bold text-[11px] text-theme-primary px-1.5 py-0.5 rounded bg-theme-primary/10">
+                                  {r.memoriaCodigo}
+                                </span>
+                                <span className="font-mono text-[10px] text-theme-muted">
+                                  P.{r.partidaCodigo}
+                                </span>
+                              </div>
+                              <p className="text-xs text-theme-main font-medium mt-1 truncate" title={r.descripcion}>
+                                {descCorta}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-[10px] text-theme-muted uppercase block">Saldo</span>
+                              <span className="font-bold text-xs text-emerald-600 dark:text-emerald-400">
+                                {formatMoney(r.saldoDisponible)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
-              )}
 
-              <div className="grid grid-cols-2 gap-3">
+                {selectedItemForGasto && (
+                  <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-1">
+                    <p className="font-semibold text-blue-900 dark:text-blue-200">
+                      Área: {selectedItemForGasto.areaNombre} • Partida: {selectedItemForGasto.partidaCodigo}
+                    </p>
+                    <div className="flex justify-between text-[11px] text-blue-800 dark:text-blue-300">
+                      <span>Total Presupuestado: {formatMoney(selectedItemForGasto.montoTotal)}</span>
+                      <span className="font-bold">Saldo Disponible: {formatMoney(selectedItemForGasto.saldoDisponible)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold uppercase text-theme-muted mb-1">Monto del Gasto (Bs.) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="0.01"
+                      step="any"
+                      placeholder="0.00"
+                      value={formGasto.monto}
+                      onChange={(e) => setFormGasto({ ...formGasto, monto: parseFloat(e.target.value) || '' })}
+                      className="input-theme text-xs font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold uppercase text-theme-muted mb-1">Fecha del Gasto *</label>
+                    <input
+                      type="date"
+                      required
+                      value={formGasto.fecha}
+                      onChange={(e) => setFormGasto({ ...formGasto, fecha: e.target.value })}
+                      className="input-theme text-xs"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block font-semibold uppercase text-theme-muted mb-1">Monto del Gasto (Bs.) *</label>
+                  <label className="block font-semibold uppercase text-theme-muted mb-1">N° Hoja de ruta</label>
                   <input
-                    type="number"
-                    required
-                    min="0.01"
-                    step="any"
-                    placeholder="0.00"
-                    value={formGasto.monto}
-                    onChange={(e) => setFormGasto({ ...formGasto, monto: parseFloat(e.target.value) || '' })}
-                    className="input-theme text-xs font-bold"
+                    type="text"
+                    placeholder="Ej.TAMP-GEROP-XXXXX-2026"
+                    value={formGasto.comprobante}
+                    onChange={(e) => setFormGasto({ ...formGasto, comprobante: e.target.value })}
+                    className="input-theme text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold uppercase text-theme-muted mb-1">Fecha del Gasto *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formGasto.fecha}
-                    onChange={(e) => setFormGasto({ ...formGasto, fecha: e.target.value })}
+                  <label className="block font-semibold uppercase text-theme-muted mb-1">Observación / Justificación</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Detalle operativo del gasto incurrido..."
+                    value={formGasto.observacion}
+                    onChange={(e) => setFormGasto({ ...formGasto, observacion: e.target.value })}
                     className="input-theme text-xs"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold uppercase text-theme-muted mb-1">N° Hoja de ruta</label>
-                <input
-                  type="text"
-                  placeholder="Ej.TAMP-GEROP-XXXXX-2026"
-                  value={formGasto.comprobante}
-                  onChange={(e) => setFormGasto({ ...formGasto, comprobante: e.target.value })}
-                  className="input-theme text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold uppercase text-theme-muted mb-1">Observación / Justificación</label>
-                <textarea
-                  rows={2}
-                  placeholder="Detalle operativo del gasto incurrido..."
-                  value={formGasto.observacion}
-                  onChange={(e) => setFormGasto({ ...formGasto, observacion: e.target.value })}
-                  className="input-theme text-xs"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-theme-border">
+              {/* Footer Fijo con Botón de Guardar y Cancelar siempre visibles */}
+              <div className="p-4 border-t border-theme-border flex justify-end gap-3 shrink-0 bg-theme-surface">
                 <button
                   type="button"
                   onClick={() => setShowModalGasto(false)}
@@ -723,7 +1126,7 @@ export default function EjecucionPage() {
                   disabled={actionLoading}
                   className="btn-primary text-xs px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold"
                 >
-                  Registrar Gasto
+                  {editingGastoId ? 'Guardar Cambios' : 'Registrar Gasto'}
                 </button>
               </div>
             </form>
