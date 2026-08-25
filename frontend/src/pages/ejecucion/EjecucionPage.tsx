@@ -153,6 +153,19 @@ export default function EjecucionPage() {
     return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', minimumFractionDigits: 2 }).format(num || 0);
   };
 
+  const formatFechaDMY = (fechaStr?: string | null) => {
+    if (!fechaStr) return '-';
+    const clean = fechaStr.split('T')[0];
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      const [yyyy, mm, dd] = parts;
+      if (yyyy.length === 4) {
+        return `${dd}/${mm}/${yyyy}`;
+      }
+    }
+    return fechaStr;
+  };
+
   // Métricas
   const totalInicial = useMemo(() => {
     return (Array.isArray(presupuestosArea) ? presupuestosArea : []).reduce(
@@ -367,7 +380,7 @@ export default function EjecucionPage() {
             <div>
               <h1 className="text-2xl font-bold text-theme-main tracking-tight">Módulo de Ejecución Presupuestaria</h1>
               <p className="text-sm text-theme-muted">
-                Registro de facturas, control de gastos y deducción automática del presupuesto.
+                Registro y control de gastos y deducción automática del presupuesto.
               </p>
             </div>
           </div>
@@ -392,9 +405,9 @@ export default function EjecucionPage() {
             {canExecuteGasto && (
               <button
                 onClick={() => {
-                          setSearchModalGeneral('');
-                          setSearchModalCodigo('');
-                          setSearchModalDinero('');
+                  setSearchModalGeneral('');
+                  setSearchModalCodigo('');
+                  setSearchModalDinero('');
                   setShowModalGasto(true);
                 }}
                 className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
@@ -472,7 +485,7 @@ export default function EjecucionPage() {
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'gastos' ? 'border-rose-500 text-rose-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
         >
-          <Receipt size={16} /> 1. Historial de Gastos y Comprobantes ({gastosFiltrados.length})
+          <Receipt size={16} /> 1. Historial de Gastos ({gastosFiltrados.length})
         </button>
 
         <button
@@ -500,7 +513,7 @@ export default function EjecucionPage() {
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
               <input
                 type="text"
-                placeholder="Buscar por comprobante, observación, área, partida o ítem..."
+                placeholder="Buscar por hoja de ruta, observación, área, partida o ítem..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="input-theme pl-10 text-xs"
@@ -537,12 +550,12 @@ export default function EjecucionPage() {
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
-                  <th className="py-3.5 px-4">Fecha</th>
-                  <th className="py-3.5 px-4">N° Comprobante</th>
+                  <th className="py-3.5 px-4">N° Hoja de Ruta</th>
                   <th className="py-3.5 px-4">Área / Sección</th>
-                  <th className="py-3.5 px-4">Partida Presupuestaria</th>
-                  <th className="py-3.5 px-4">Ítem / Renglón Imputado</th>
+                  <th className="py-3.5 px-4">N° de Partida</th>
+                  <th className="py-3.5 px-4">Ítem Imputado</th>
                   <th className="py-3.5 px-4">Observación</th>
+                  <th className="py-3.5 px-4">Fecha</th>
                   <th className="py-3.5 px-4 text-right">Monto Ejecutado</th>
                   <th className="py-3.5 px-4">Responsable</th>
                   <th className="py-3.5 px-4 text-center">Acción</th>
@@ -556,7 +569,7 @@ export default function EjecucionPage() {
                       <p className="font-medium">No hay registros de gasto en esta gestión.</p>
                       <button
                         onClick={() => {
-                                  setSearchModalGeneral('');
+                          setSearchModalGeneral('');
                           setSearchModalCodigo('');
                           setSearchModalDinero('');
                           setShowModalGasto(true);
@@ -570,7 +583,6 @@ export default function EjecucionPage() {
                 ) : (
                   gastosPaginados.map((g) => (
                     <tr key={g.id} className="hover:bg-theme-border/20 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-xs text-theme-muted whitespace-nowrap">{g.fecha_gasto}</td>
                       <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main whitespace-nowrap">
                         {g.comprobante_num || 'S/N'}
                       </td>
@@ -589,6 +601,9 @@ export default function EjecucionPage() {
                         <p className="text-xs text-theme-main font-medium mt-1">{g.detalle_descripcion}</p>
                       </td>
                       <td className="py-3.5 px-4 max-w-xs text-xs text-theme-muted">{g.observacion || '-'}</td>
+                      <td className="py-3.5 px-4 font-mono text-xs text-theme-muted whitespace-nowrap">
+                        {formatFechaDMY(g.fecha_gasto)}
+                      </td>
                       <td className="py-3.5 px-4 text-right font-bold text-rose-600 dark:text-rose-400 text-sm whitespace-nowrap">
                         {formatMoney(g.monto_ejecutado)}
                       </td>
@@ -874,8 +889,9 @@ export default function EjecucionPage() {
       {/* Modal Registrar Gasto */}
       {showModalGasto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="card w-full max-w-lg shadow-2xl bg-theme-surface">
-            <div className="p-5 border-b border-theme-border flex items-center justify-between">
+          <div className="card w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl bg-theme-surface overflow-hidden">
+            {/* Header Fijo */}
+            <div className="p-5 border-b border-theme-border flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <TrendingDown className="text-rose-500" size={22} />
                 <h3 className="text-base font-bold text-theme-main">Registrar Gasto</h3>
@@ -885,179 +901,184 @@ export default function EjecucionPage() {
               </button>
             </div>
 
-            <form onSubmit={handleGuardarGasto} className="p-6 space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold uppercase text-theme-muted mb-1.5">
-                  Seleccionar Ítem / Renglón de Memoria Aprobada *
-                </label>
+            {/* Formulario con cuerpo con Scroll y Footer Fijo */}
+            <form onSubmit={handleGuardarGasto} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              {/* Cuerpo scrolleable del formulario */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+                <div>
+                  <label className="block font-semibold uppercase text-theme-muted mb-1.5">
+                    Seleccionar Ítem / Renglón de Memoria Aprobada *
+                  </label>
 
-                {/* 3 Filtros Divididos */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-                  {/* 1. Buscador General: Descripción / Área */}
-                  <div className="relative">
-                    <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
-                    <input
-                      type="text"
-                      placeholder="General (descripción)..."
-                      value={searchModalGeneral}
-                      onChange={(e) => setSearchModalGeneral(e.target.value)}
-                      className="input-theme pl-8 py-1.5 text-[11px]"
-                      title="Busca por descripción del ítem o nombre de área"
-                    />
+                  {/* 3 Filtros Divididos */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                    {/* 1. Buscador General: Descripción / Área */}
+                    <div className="relative">
+                      <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                      <input
+                        type="text"
+                        placeholder="General (descripción)..."
+                        value={searchModalGeneral}
+                        onChange={(e) => setSearchModalGeneral(e.target.value)}
+                        className="input-theme pl-8 py-1.5 text-[11px]"
+                        title="Busca por descripción del ítem o nombre de área"
+                      />
+                    </div>
+
+                    {/* 2. Filtro por Código */}
+                    <div className="relative">
+                      <FileText size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                      <input
+                        type="text"
+                        placeholder="Código (Mem./Part.)..."
+                        value={searchModalCodigo}
+                        onChange={(e) => setSearchModalCodigo(e.target.value)}
+                        className="input-theme pl-8 py-1.5 text-[11px] font-mono"
+                        title="Busca por código de memoria o partida"
+                      />
+                    </div>
+
+                    {/* 3. Filtro por Dinero (Saldo) */}
+                    <div className="relative">
+                      <DollarSign size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400" />
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Saldo mín. (Bs.)..."
+                        value={searchModalDinero}
+                        onChange={(e) => setSearchModalDinero(e.target.value)}
+                        className="input-theme pl-8 py-1.5 text-[11px] font-mono"
+                        title="Filtra ítems con saldo disponible mínimo"
+                      />
+                    </div>
                   </div>
 
-                  {/* 2. Filtro por Código */}
-                  <div className="relative">
-                    <FileText size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
-                    <input
-                      type="text"
-                      placeholder="Código (Mem./Part.)..."
-                      value={searchModalCodigo}
-                      onChange={(e) => setSearchModalCodigo(e.target.value)}
-                      className="input-theme pl-8 py-1.5 text-[11px] font-mono"
-                      title="Busca por código de memoria o partida"
-                    />
-                  </div>
+                  {(searchModalGeneral || searchModalCodigo || searchModalDinero) && (
+                    <div className="flex justify-end mb-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchModalGeneral('');
+                          setSearchModalCodigo('');
+                          setSearchModalDinero('');
+                        }}
+                        className="text-[10px] text-theme-primary font-bold hover:underline"
+                      >
+                        Limpiar Filtros del Modal
+                      </button>
+                    </div>
+                  )}
 
-                  {/* 3. Filtro por Dinero (Saldo) */}
-                  <div className="relative">
-                    <DollarSign size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400" />
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="Saldo mín. (Bs.)..."
-                      value={searchModalDinero}
-                      onChange={(e) => setSearchModalDinero(e.target.value)}
-                      className="input-theme pl-8 py-1.5 text-[11px] font-mono"
-                      title="Filtra ítems con saldo disponible mínimo"
-                    />
+                  {/* Selector visual de opciones filtradas */}
+                  <div className="max-h-40 overflow-y-auto rounded-xl border border-theme-border bg-theme-base divide-y divide-theme-border/60">
+                    {modalRenglonesFiltrados.length === 0 ? (
+                      <div className="p-3 text-center text-theme-muted text-xs">
+                        No hay ítems que coincidan con los filtros aplicados.
+                      </div>
+                    ) : (
+                      modalRenglonesFiltrados.map((r) => {
+                        const isSelected = formGasto.detalleMemoriaId === r.detalleId;
+                        const descCorta = r.descripcion.length > 38 ? `${r.descripcion.slice(0, 38)}...` : r.descripcion;
+                        return (
+                          <div
+                            key={r.detalleId}
+                            onClick={() => setFormGasto({ ...formGasto, detalleMemoriaId: r.detalleId })}
+                            className={`p-2.5 cursor-pointer flex items-center justify-between text-xs transition-colors ${
+                              isSelected
+                                ? 'bg-rose-500/10 border-l-4 border-rose-500 text-theme-main font-semibold'
+                                : 'hover:bg-theme-border/30 text-theme-main'
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1 pr-3">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-mono font-bold text-[11px] text-theme-primary px-1.5 py-0.5 rounded bg-theme-primary/10">
+                                  {r.memoriaCodigo}
+                                </span>
+                                <span className="font-mono text-[10px] text-theme-muted">
+                                  P.{r.partidaCodigo}
+                                </span>
+                              </div>
+                              <p className="text-xs text-theme-main font-medium mt-1 truncate" title={r.descripcion}>
+                                {descCorta}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-[10px] text-theme-muted uppercase block">Saldo</span>
+                              <span className="font-bold text-xs text-emerald-600 dark:text-emerald-400">
+                                {formatMoney(r.saldoDisponible)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
-                {(searchModalGeneral || searchModalCodigo || searchModalDinero) && (
-                  <div className="flex justify-end mb-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchModalGeneral('');
-                        setSearchModalCodigo('');
-                        setSearchModalDinero('');
-                      }}
-                      className="text-[10px] text-theme-primary font-bold hover:underline"
-                    >
-                      Limpiar Filtros del Modal
-                    </button>
+                {selectedItemForGasto && (
+                  <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-1">
+                    <p className="font-semibold text-blue-900 dark:text-blue-200">
+                      Área: {selectedItemForGasto.areaNombre} • Partida: {selectedItemForGasto.partidaCodigo}
+                    </p>
+                    <div className="flex justify-between text-[11px] text-blue-800 dark:text-blue-300">
+                      <span>Total Presupuestado: {formatMoney(selectedItemForGasto.montoTotal)}</span>
+                      <span className="font-bold">Saldo Disponible: {formatMoney(selectedItemForGasto.saldoDisponible)}</span>
+                    </div>
                   </div>
                 )}
 
-                {/* Selector visual de opciones filtradas */}
-                <div className="max-h-48 overflow-y-auto rounded-xl border border-theme-border bg-theme-base divide-y divide-theme-border/60">
-                  {modalRenglonesFiltrados.length === 0 ? (
-                    <div className="p-3 text-center text-theme-muted text-xs">
-                      No hay ítems que coincidan con la búsqueda.
-                    </div>
-                  ) : (
-                    modalRenglonesFiltrados.map((r) => {
-                      const isSelected = formGasto.detalleMemoriaId === r.detalleId;
-                      const descCorta = r.descripcion.length > 38 ? `${r.descripcion.slice(0, 38)}...` : r.descripcion;
-                      return (
-                        <div
-                          key={r.detalleId}
-                          onClick={() => setFormGasto({ ...formGasto, detalleMemoriaId: r.detalleId })}
-                          className={`p-2.5 cursor-pointer flex items-center justify-between text-xs transition-colors ${
-                            isSelected
-                              ? 'bg-rose-500/10 border-l-4 border-rose-500 text-theme-main font-semibold'
-                              : 'hover:bg-theme-border/30 text-theme-main'
-                          }`}
-                        >
-                          <div className="min-w-0 flex-1 pr-3">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-mono font-bold text-[11px] text-theme-primary px-1.5 py-0.5 rounded bg-theme-primary/10">
-                                {r.memoriaCodigo}
-                              </span>
-                              <span className="font-mono text-[10px] text-theme-muted">
-                                P.{r.partidaCodigo}
-                              </span>
-                            </div>
-                            <p className="text-xs text-theme-main font-medium mt-1 truncate" title={r.descripcion}>
-                              {descCorta}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="text-[10px] text-theme-muted uppercase block">Saldo</span>
-                            <span className="font-bold text-xs text-emerald-600 dark:text-emerald-400">
-                              {formatMoney(r.saldoDisponible)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold uppercase text-theme-muted mb-1">Monto del Gasto (Bs.) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="0.01"
+                      step="any"
+                      placeholder="0.00"
+                      value={formGasto.monto}
+                      onChange={(e) => setFormGasto({ ...formGasto, monto: parseFloat(e.target.value) || '' })}
+                      className="input-theme text-xs font-bold"
+                    />
+                  </div>
 
-              {selectedItemForGasto && (
-                <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-1">
-                  <p className="font-semibold text-blue-900 dark:text-blue-200">
-                    Área: {selectedItemForGasto.areaNombre} • Partida: {selectedItemForGasto.partidaCodigo}
-                  </p>
-                  <div className="flex justify-between text-[11px] text-blue-800 dark:text-blue-300">
-                    <span>Total Presupuestado: {formatMoney(selectedItemForGasto.montoTotal)}</span>
-                    <span className="font-bold">Saldo Disponible: {formatMoney(selectedItemForGasto.saldoDisponible)}</span>
+                  <div>
+                    <label className="block font-semibold uppercase text-theme-muted mb-1">Fecha del Gasto *</label>
+                    <input
+                      type="date"
+                      required
+                      value={formGasto.fecha}
+                      onChange={(e) => setFormGasto({ ...formGasto, fecha: e.target.value })}
+                      className="input-theme text-xs"
+                    />
                   </div>
                 </div>
-              )}
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold uppercase text-theme-muted mb-1">Monto del Gasto (Bs.) *</label>
+                  <label className="block font-semibold uppercase text-theme-muted mb-1">N° Hoja de ruta</label>
                   <input
-                    type="number"
-                    required
-                    min="0.01"
-                    step="any"
-                    placeholder="0.00"
-                    value={formGasto.monto}
-                    onChange={(e) => setFormGasto({ ...formGasto, monto: parseFloat(e.target.value) || '' })}
-                    className="input-theme text-xs font-bold"
+                    type="text"
+                    placeholder="Ej.TAMP-GEROP-XXXXX-2026"
+                    value={formGasto.comprobante}
+                    onChange={(e) => setFormGasto({ ...formGasto, comprobante: e.target.value })}
+                    className="input-theme text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold uppercase text-theme-muted mb-1">Fecha del Gasto *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formGasto.fecha}
-                    onChange={(e) => setFormGasto({ ...formGasto, fecha: e.target.value })}
+                  <label className="block font-semibold uppercase text-theme-muted mb-1">Observación / Justificación</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Detalle operativo del gasto incurrido..."
+                    value={formGasto.observacion}
+                    onChange={(e) => setFormGasto({ ...formGasto, observacion: e.target.value })}
                     className="input-theme text-xs"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold uppercase text-theme-muted mb-1">N° Hoja de ruta</label>
-                <input
-                  type="text"
-                  placeholder="Ej.TAMP-GEROP-XXXXX-2026"
-                  value={formGasto.comprobante}
-                  onChange={(e) => setFormGasto({ ...formGasto, comprobante: e.target.value })}
-                  className="input-theme text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold uppercase text-theme-muted mb-1">Observación / Justificación</label>
-                <textarea
-                  rows={2}
-                  placeholder="Detalle operativo del gasto incurrido..."
-                  value={formGasto.observacion}
-                  onChange={(e) => setFormGasto({ ...formGasto, observacion: e.target.value })}
-                  className="input-theme text-xs"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-theme-border">
+              {/* Footer Fijo con Botón de Guardar y Cancelar siempre visibles */}
+              <div className="p-4 border-t border-theme-border flex justify-end gap-3 shrink-0 bg-theme-surface">
                 <button
                   type="button"
                   onClick={() => setShowModalGasto(false)}
