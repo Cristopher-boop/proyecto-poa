@@ -333,7 +333,7 @@ export default function EjecucionPage() {
             <div>
               <h1 className="text-2xl font-bold text-theme-main tracking-tight">Módulo de Ejecución Presupuestaria</h1>
               <p className="text-sm text-theme-muted">
-                Registro de facturas, control de gastos reales y deducción automática del presupuesto.
+                Registro de facturas, control de gastos y deducción automática del presupuesto.
               </p>
             </div>
           </div>
@@ -360,7 +360,7 @@ export default function EjecucionPage() {
                 onClick={() => setShowModalGasto(true)}
                 className="btn-primary text-xs font-semibold px-4 py-2 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
               >
-                <Plus size={15} /> Registrar Gasto Real
+                <Plus size={15} /> Registrar Gasto
               </button>
             )}
           </div>
@@ -382,7 +382,7 @@ export default function EjecucionPage() {
 
         <div className="card p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Gastos Ejecutados Reales</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted">Gastos Ejecutados</span>
             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <Receipt size={18} />
             </div>
@@ -433,7 +433,7 @@ export default function EjecucionPage() {
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'gastos' ? 'border-rose-500 text-rose-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
         >
-          <Receipt size={16} /> 1. Historial de Gastos y Comprobantes ({gastos.length})
+          <Receipt size={16} /> 1. Historial de Gastos y Comprobantes ({gastosFiltrados.length})
         </button>
 
         <button
@@ -461,7 +461,7 @@ export default function EjecucionPage() {
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
               <input
                 type="text"
-                placeholder="Buscar por comprobante, observación, área o partida..."
+                placeholder="Buscar por comprobante, observación, área, partida o ítem..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="input-theme pl-10 text-xs"
@@ -480,6 +480,18 @@ export default function EjecucionPage() {
                 </option>
               ))}
             </select>
+
+            {(searchTerm || filtroArea !== 'todas') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFiltroArea('todas');
+                }}
+                className="text-xs text-theme-primary font-bold hover:underline whitespace-nowrap px-2"
+              >
+                Limpiar Filtros
+              </button>
+            )}
           </div>
 
           <div className="card overflow-x-auto">
@@ -822,7 +834,7 @@ export default function EjecucionPage() {
             <div className="p-5 border-b border-theme-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingDown className="text-rose-500" size={22} />
-                <h3 className="text-base font-bold text-theme-main">Registrar Gasto Real</h3>
+                <h3 className="text-base font-bold text-theme-main">Registrar Gasto</h3>
               </div>
               <button onClick={() => setShowModalGasto(false)} className="text-theme-muted hover:text-theme-main font-bold">
                 ✕
