@@ -12,7 +12,8 @@ def sembrar_usuarios_prueba():
 
     # 1. Asegurar la existencia de los roles
     roles_def = [
-        ('Aprobador', 'Acceso general y aprobacion institucional'),
+        ('Aprobador', 'Acceso general y aprobacion institucional presupuestaria'),
+        ('Planificación', 'Aprobador de Planificacion, SPO y verificacion de Operaciones/POA'),
         ('Gerente', 'Gestion y aprobacion a nivel de Area/Gerencia'),
         ('Elaborador', 'Formulacion de memorias de calculo de su Area'),
         ('Trabajador', 'Solo lectura de presupuestos y memorias de su Area'),
@@ -27,8 +28,9 @@ def sembrar_usuarios_prueba():
         )
         roles_map[r_nombre] = rol_obj
 
-    # 2. Buscar Secciones de Informatica y Administrativos
+    # 2. Buscar Secciones de Informatica, Planificacion y Administrativos
     sec_inf = Seccion.objects.filter(nombre__icontains='Informatica').first()
+    sec_pla = Seccion.objects.filter(nombre__icontains='Planificac').first() or sec_inf
     sec_adm = Seccion.objects.filter(nombre__icontains='Administrativ').first() or Seccion.objects.first()
 
     # 3. Definir usuarios de prueba solicitados
@@ -64,14 +66,24 @@ def sembrar_usuarios_prueba():
             'cargo': 'Gerente de Informatica',
         },
         {
+            'username': 'SoyPlanificador',
+            'password': '12345678',
+            'first_name': 'Planificador',
+            'last_name': 'Institucional',
+            'email': 'planificador@poa.local',
+            'rol': roles_map.get('Planificación'),
+            'seccion': sec_pla,
+            'cargo': 'Aprobador de Planificación SPO',
+        },
+        {
             'username': 'SoyAprobador',
             'password': '12345678',
             'first_name': 'Aprobador',
-            'last_name': 'General',
+            'last_name': 'Presupuestos',
             'email': 'aprobador@poa.local',
             'rol': roles_map.get('Aprobador'),
             'seccion': sec_adm,
-            'cargo': 'Aprobador Institucional',
+            'cargo': 'Aprobador Presupuestario Final',
         },
     ]
 

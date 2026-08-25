@@ -110,6 +110,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'operacion_descripcion',
             'justificacion',
             'motivo_rechazo',
+            'es_contratacion',
             'estado',
             'estado_display',
             'fecha_aprobacion',
@@ -198,6 +199,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
             'operacion_descripcion',
             'justificacion',
             'motivo_rechazo',
+            'es_contratacion',
             'estado',
             'estado_display',
             'fecha_aprobacion',
@@ -262,6 +264,13 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
                             raise serializers.ValidationError({'non_field_errors': [f'La partida padre "{anc.codigo} - {anc.nombre}" está inactiva (estado 0).']})
             except Partida.DoesNotExist:
                 pass
+
+        operacion = data.get('operacion')
+        if not operacion:
+            if not self.instance:
+                raise serializers.ValidationError({'operacion': ['Debe asignar una Operación POA obligatoria para alinear la Memoria de Cálculo.']})
+            elif 'operacion' in data and data.get('operacion') is None:
+                raise serializers.ValidationError({'operacion': ['Debe asignar una Operación POA obligatoria para alinear la Memoria de Cálculo.']})
 
         return data
 

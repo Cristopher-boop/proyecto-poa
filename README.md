@@ -86,13 +86,13 @@ Este script automatizado ejecuta en secuencia:
 5. Ejecuta `import_partidas` (Importa las partidas presupuestarias oficiales INGRESO/EGRESO).
 6. Ejecuta `seed_memorias` y `recalcular_saldos` (Carga las memorias de cálculo y saldos reales).
 7. Ejecuta `seed_planificacion` (Carga la Alineación Estratégica oficial PEI/POA por Programa: P-1, P-2, P-410, P-210, Operaciones por Área y Tareas TAMEP).
-8. Ejecuta `seed_test_users` (Carga los usuarios de prueba por rol: `SoyAprobador`, `SoyGerenteI`, `SoyElaboradorI`, `SoyTrabajadorI`).
+8. Ejecuta `seed_test_users` (Carga los usuarios de prueba por rol: `SoyAprobador`, `SoyPlanificador`, `SoyGerenteI`, `SoyElaboradorI`, `SoyTrabajadorI`).
 
 ---
 
 ## 5. Usuarios de Prueba por Rol (Semilla de Pruebas)
 
-Se dispone del script `seed_test_users.py` en la carpeta `/backend` para poblar o actualizar automáticamente los 4 usuarios de prueba para la verificación de roles y permisos:
+Se dispone del script `seed_test_users.py` en la carpeta `/backend` para poblar o actualizar automáticamente los 5 usuarios de prueba para la verificación de roles y permisos:
 
 ```powershell
 cd backend
@@ -103,18 +103,22 @@ python seed_test_users.py
 
 | Usuario | Contraseña | Rol | Área / Sección | Descripción de Permisos |
 | :--- | :--- | :--- | :--- | :--- |
-| **`SoyAprobador`** | `12345678` | **Aprobador** | General / Administrativos | Aprobación final de memorias, ejecuciones de gasto, consolidación, apertura/cierre de gestión y control total de Planificación. |
-| **`SoyGerenteI`** | `12345678` | **Gerente** | Gerencia de Informática | Visualiza todas las áreas. Aprueba, edita o rechaza memorias en Borrador / Pendiente de su área. En Planificación: Crea, edita y da de baja Operaciones/Tareas de su área. |
-| **`SoyElaboradorI`** | `12345678` | **Elaborador** | Gerencia de Informática | Formula y edita memorias en Borrador de su área. Envía a revisión a Gerencia. En Planificación: Crea y visualiza Operaciones/Tareas de su área. |
-| **`SoyTrabajadorI`** | `12345678` | **Trabajador** | Gerencia de Informática | Solo lectura de memorias, presupuestos y planificación de su área. No formula ni ejecuta gastos ni modifica operaciones. |
+| **`SoyAprobador`** | `12345678` | **Aprobador** | General / Administrativos | Aprobación presupuestaria final de memorias, ejecuciones de gasto, consolidación y apertura/cierre de gestión. |
+| **`SoyPlanificador`** | `12345678` | **Planificación** | Unidad de Planificación | Validación y aprobación de alineación estratégica POA / PAC (Contrataciones ≥ 2.000 Bs) y control del módulo de Planificación SPO. |
+| **`SoyGerenteI`** | `12345678` | **Gerente** | Gerencia de Informática | Visualiza todas las áreas. Aprueba técnicamente memorias de su área derivándolas según tipo de gasto. En Planificación: Crea, edita y da de baja Operaciones/Tareas de su área. |
+| **`SoyElaboradorI`** | `12345678` | **Elaborador** | Gerencia de Informática | Formula memorias, crea operaciones al vuelo y marca si corresponde a Contratación (PAC). Envía a revisión a Gerencia. |
+| **`SoyTrabajadorI`** | `12345678` | **Trabajador** | Gerencia de Informática | Solo lectura de memorias, presupuestos y planificación de su área. |
 
 ---
 
 ## Notas Importantes de Arquitectura
 
 - **Autenticación:** Utiliza JWT (SimpleJWT). Las llamadas al backend deben enviar el encabezado `Authorization: Bearer <token>`.
-- **Axios Interceptors:** El frontend renueva el token automáticamente por detrás si este expira y el `refresh_token` aún es válido.
-- **Bajas Lógicas:** Los endpoints de `toggle-estado` y `destroy` aplican bajas lógicas (`estado = False`) en lugar de eliminaciones físicas.
-- **Notificaciones en Tiempo Real:** Módulo de alertas en tiempo real con campana 🔔 interactiva en la barra superior que notifica a Elaboradores, Gerentes y Aprobadores sobre solicitudes, aprobaciones con nota y motivos de rechazo.
-- **Auditoría & Control de Accesos:** Panel exclusivo para Superadministradores y Administradores que registra el último inicio de sesión (`last_login`) de cada usuario y el historial de sesiones.
-- **Modo Oscuro / Claro:** La paleta del sistema se adapta automáticamente a colores de alto contraste visual (Dark & Light Mode) respetando la identidad institucional de EPTAM.
+- **Flujo Condicional de Formulación POA:**
+  - **Contrataciones (PAC) ≥ 2.000 Bs:** Elaborador ➔ Gerente de Área ➔ Planificación SPO ➔ Aprobación Presupuestos.
+  - **Gasto Menor (< 2.000 Bs) o No Contratación:** Elaborador ➔ Gerente de Área ➔ Aprobación Presupuestos (omite Planificación).
+- **Creación de Operaciones "On-the-Fly":** El modal de formulación permite crear y vincular una nueva Operación al vuelo sin salir de la memoria.
+- **Bajas Lógicas:** Los endpoints aplican bajas lógicas (`estado = False`) preservando la trazabilidad.
+- **Notificaciones en Tiempo Real:** Alertas con campana interactiva 🔔 notificando avances, notas de aprobación y motivos de rechazo en cada nivel.
+- **Auditoría & Control de Accesos:** Panel exclusivo para Administradores con registro de logins (`last_login`) y sesiones.
+- **Modo Oscuro / Claro:** Paleta institucional de alto contraste para máxima legibilidad.

@@ -40,7 +40,9 @@ import {
   updateMemoria,
   deleteMemoria,
   enviarMemoriaGerencia,
+  enviarTodasMemoriasGerencia,
   aprobarMemoriaGerencia,
+  aprobarMemoriaPlanificacion,
   aprobarMemoriaFinanzas,
   rechazarMemoria,
   volverMemoriaBorrador,
@@ -48,6 +50,8 @@ import {
   getAreas,
   getSecciones,
 } from '../../services/presupuestoService';
+import { planificacionService } from '../../services/planificacionService';
+import { Operacion, AccionCortoPlazo } from '../../types/planificacion';
 
 export default function MemoriasPage() {
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
@@ -58,18 +62,23 @@ export default function MemoriasPage() {
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [secciones, setSecciones] = useState<Seccion[]>([]);
+  const [operaciones, setOperaciones] = useState<Operacion[]>([]);
+  const [accionesCortoPlazo, setAccionesCortoPlazo] = useState<AccionCortoPlazo[]>([]);
 
   const { user } = useAuth();
-  const rolName = user?.rol_nombre?.toUpperCase() || '';
-  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'ADMINISTRADOR';
-  const isGerente = rolName === 'GERENTE';
-  const isElaborador = rolName === 'ELABORADOR';
-  const isTrabajador = rolName === 'TRABAJADOR';
+  const rolName = (user?.rol_nombre || (user as any)?.rol?.nombre || '').toUpperCase().trim();
+  const rolClean = rolName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const isSuperuser = !!user?.is_superuser;
+  const isAprobador = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'ADMINISTRADOR';
+  const isPlanificador = isSuperuser || rolClean.includes('PLANIFIC') || isAprobador;
+  const isGerente = isSuperuser || rolClean === 'GERENTE';
+  const isElaborador = isSuperuser || rolClean === 'ELABORADOR';
+  const isTrabajador = isSuperuser || rolClean === 'TRABAJADOR';
 
   const canCreate = isAprobador || isElaborador;
-  const canGlobalView = isAprobador || isGerente;
+  const canGlobalView = isAprobador || isGerente || isPlanificador;
 
-  const [activeTab, setActiveTab] = useState<'todas' | 'borrador' | 'pendiente' | 'finanzas' | 'aprobadas' | 'rechazadas'>('todas');
+  const [activeTab, setActiveTab] = useState<'todas' | 'borrador' | 'pendiente' | 'planificacion' | 'finanzas' | 'aprobadas' | 'rechazadas'>('todas');
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -82,10 +91,26 @@ export default function MemoriasPage() {
   const [editingMemoria, setEditingMemoria] = useState<MemoriaCalculo | null>(null);
   const [fichaMemoria, setFichaMemoria] = useState<MemoriaCalculo | null>(null);
 
+  // Quick Operación inline creation
+  const [showQuickOperacion, setShowQuickOperacion] = useState<boolean>(false);
+  const [quickOpForm, setQuickOpForm] = useState<{
+    codigo: string;
+    descripcion: string;
+    acp_id: number | '';
+    es_contratacion: boolean;
+  }>({
+    codigo: '',
+    descripcion: '',
+    acp_id: '',
+    es_contratacion: true,
+  });
+
   // Formulario
   const [formMemoria, setFormMemoria] = useState<{
     codigo: string;
     seccionId: number | '';
+    operacionId: number | '';
+    es_contratacion: boolean;
     justificacion: string;
     partidaId: number | '';
     renglones: Array<{
@@ -97,6 +122,8 @@ export default function MemoriasPage() {
   }>({
     codigo: '',
     seccionId: '',
+    operacionId: '',
+    es_contratacion: false,
     justificacion: '',
     partidaId: '',
     renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: 0 }],
@@ -117,16 +144,20 @@ export default function MemoriasPage() {
   async function cargarBase() {
     setLoading(true);
     try {
-      const [gList, pList, aList, sList] = await Promise.all([
+      const [gList, pList, aList, sList, opList, acpList] = await Promise.all([
         getGestiones(),
         getPartidas(),
         getAreas(),
         getSecciones(),
+        planificacionService.getOperaciones(),
+        planificacionService.getAccionesCortoPlazo(),
       ]);
       setGestiones(gList);
       setPartidas(pList);
       setAreas(aList);
       setSecciones(sList);
+      setOperaciones(opList);
+      setAccionesCortoPlazo(acpList);
 
       if (gList.length > 0) {
         const formulacionG = gList.find((g) => g.estado === 'FORMULACION');
@@ -286,7 +317,8 @@ export default function MemoriasPage() {
       todas: arr.length,
       borrador: arr.filter((m) => m.estado === 'BORRADOR').length,
       pendiente: arr.filter((m) => m.estado === 'PENDIENTE_GERENCIA').length,
-      finanzas: arr.filter((m) => m.estado === 'APROBADO_GERENCIA' || m.estado === 'PENDIENTE_PLANIFICACION' || m.estado === 'APROBADO_PLANIFICACION').length,
+      planificacion: arr.filter((m) => m.estado === 'PENDIENTE_PLANIFICACION').length,
+      finanzas: arr.filter((m) => m.estado === 'APROBADO_GERENCIA' || m.estado === 'APROBADO_PLANIFICACION').length,
       aprobadas: arr.filter((m) => m.estado === 'APROBADO_FINANZAS').length,
       rechazadas: arr.filter((m) => m.estado === 'RECHAZADO').length,
       montoTotal: arr.reduce((acc, m) => acc + parseFloat(m.total_presupuesto || '0'), 0),
@@ -299,7 +331,8 @@ export default function MemoriasPage() {
       let matchTab = true;
       if (activeTab === 'borrador') matchTab = m.estado === 'BORRADOR';
       else if (activeTab === 'pendiente') matchTab = m.estado === 'PENDIENTE_GERENCIA';
-      else if (activeTab === 'finanzas') matchTab = m.estado === 'APROBADO_GERENCIA' || m.estado === 'PENDIENTE_PLANIFICACION' || m.estado === 'APROBADO_PLANIFICACION';
+      else if (activeTab === 'planificacion') matchTab = m.estado === 'PENDIENTE_PLANIFICACION';
+      else if (activeTab === 'finanzas') matchTab = m.estado === 'APROBADO_GERENCIA' || m.estado === 'APROBADO_PLANIFICACION';
       else if (activeTab === 'aprobadas') matchTab = m.estado === 'APROBADO_FINANZAS';
       else if (activeTab === 'rechazadas') matchTab = m.estado === 'RECHAZADO';
 
@@ -309,6 +342,7 @@ export default function MemoriasPage() {
         m.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.area_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.justificacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.operacion_codigo && m.operacion_codigo.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (m.partida_codigo && m.partida_codigo.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (m.partida_nombre && m.partida_nombre.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -339,12 +373,15 @@ export default function MemoriasPage() {
     setFormMemoria({
       codigo: `MEM-${anio}-${correlativo}`,
       seccionId: defaultSeccion,
+      operacionId: '',
+      es_contratacion: false,
       justificacion: '',
       partidaId: '',
       renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: 0 }],
     });
     setSearchPartidaQuery('');
     setPartidaSelectorOpen(false);
+    setShowQuickOperacion(false);
     setShowModalMemoria(true);
   }
 
@@ -360,6 +397,8 @@ export default function MemoriasPage() {
       setFormMemoria({
         codigo: memoriaCompleta.codigo,
         seccionId: memoriaCompleta.seccion,
+        operacionId: memoriaCompleta.operacion || '',
+        es_contratacion: memoriaCompleta.es_contratacion || false,
         justificacion: memoriaCompleta.justificacion,
         partidaId: partidaEsValida ? Number(pIdMemoria) : '',
         renglones: (memoriaCompleta.detalles || []).map((d) => ({
@@ -371,10 +410,51 @@ export default function MemoriasPage() {
       });
       setSearchPartidaQuery('');
       setPartidaSelectorOpen(false);
+      setShowQuickOperacion(false);
       setShowModalMemoria(true);
     } catch (err) {
       console.error('Error al cargar memoria para edición:', err);
       mostrarMensaje('error', 'No se pudo cargar los detalles de la memoria.');
+    }
+  }
+
+  async function handleSaveQuickOperacion() {
+    if (!quickOpForm.codigo.trim() || !quickOpForm.descripcion.trim() || !quickOpForm.acp_id) {
+      alertService.error('Campos Incompletos', 'Complete el código, descripción y ACP para la nueva Operación.');
+      return;
+    }
+    const secObj = secciones.find((s) => s.id === Number(formMemoria.seccionId));
+    const currentAreaId = secObj
+      ? (secObj.area || secObj.area_id)
+      : user?.area_id;
+
+    if (!currentAreaId) {
+      alertService.error('Área no detectada', 'Seleccione una sección/área antes de crear la Operación.');
+      return;
+    }
+
+    try {
+      const nuevaOp = await planificacionService.createOperacion({
+        codigo: quickOpForm.codigo.trim(),
+        descripcion: quickOpForm.descripcion.trim(),
+        accion_corto_plazo: Number(quickOpForm.acp_id),
+        area: Number(currentAreaId),
+        es_contratacion: quickOpForm.es_contratacion,
+      });
+      alertService.success('Operación Creada', `Operación ${nuevaOp.codigo} creada y vinculada.`);
+      // Recargar operaciones
+      const ops = await planificacionService.getOperaciones();
+      setOperaciones(ops);
+      // Auto-seleccionar en la memoria
+      setFormMemoria((prev) => ({
+        ...prev,
+        operacionId: nuevaOp.id,
+        es_contratacion: nuevaOp.es_contratacion ?? prev.es_contratacion,
+      }));
+      setShowQuickOperacion(false);
+      setQuickOpForm({ codigo: '', descripcion: '', acp_id: '', es_contratacion: true });
+    } catch (err: any) {
+      alertService.error('Error al Crear Operación', err.response?.data?.error || 'No se pudo crear la operación.');
     }
   }
 
@@ -411,11 +491,19 @@ export default function MemoriasPage() {
     e.preventDefault();
     if (!selectedGestionId || !formMemoria.seccionId || !formMemoria.partidaId) {
       mostrarMensaje('error', 'Complete la sección y la partida presupuestaria obligatorias.');
+      alertService.error('Campos Incompletos', 'Complete la sección y la partida presupuestaria obligatorias.');
+      return;
+    }
+
+    if (!formMemoria.operacionId) {
+      mostrarMensaje('error', 'Debe seleccionar o registrar una Operación POA obligatoria para alinear la Memoria de Cálculo.');
+      alertService.error('Operación POA Obligatoria', 'Debe seleccionar o registrar una Operación POA obligatoria para vincular y formular la Memoria de Cálculo.');
       return;
     }
 
     if (formMemoria.renglones.some((r) => !r.descripcion.trim() || r.cantidad <= 0 || r.precio_unitario < 0)) {
       mostrarMensaje('error', 'Verifique que todos los renglones tengan descripción, cantidad > 0 y precio unitario.');
+      alertService.error('Ítems Incompletos', 'Verifique que todos los renglones tengan descripción, cantidad > 0 y precio unitario.');
       return;
     }
 
@@ -425,6 +513,8 @@ export default function MemoriasPage() {
         codigo: formMemoria.codigo,
         gestion: selectedGestionId,
         seccion: Number(formMemoria.seccionId),
+        operacion: Number(formMemoria.operacionId),
+        es_contratacion: formMemoria.es_contratacion,
         justificacion: formMemoria.justificacion,
         partida_id: Number(formMemoria.partidaId),
         detalles: formMemoria.renglones.map((r) => ({
@@ -448,24 +538,24 @@ export default function MemoriasPage() {
       setShowModalMemoria(false);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
     } catch (err: any) {
-      console.error(err);
-      const errMsg =
-        err.response?.data?.non_field_errors?.[0] ||
-        err.response?.data?.codigo?.[0] ||
-        err.response?.data?.justificacion?.[0] ||
-        err.response?.data?.detail ||
-        'Error al guardar la memoria.';
-      mostrarMensaje('error', errMsg);
+      mostrarMensaje('error', err.response?.data?.error || 'Error al guardar memoria.');
     } finally {
       setActionLoading(false);
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm('¿Desea eliminar esta memoria de cálculo?')) return;
+    const confirm = await alertService.confirm({
+      title: '¿Eliminar Memoria de Cálculo?',
+      text: 'Esta acción dará de baja la memoria de cálculo en estado Borrador.',
+      confirmButtonText: 'Sí, eliminar',
+      isDanger: true,
+    });
+    if (!confirm) return;
+
     try {
       await deleteMemoria(id);
-      mostrarMensaje('success', 'Memoria eliminada.');
+      alertService.success('Memoria Eliminada', 'La memoria fue removida exitosamente.');
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
     } catch (err) {
       mostrarMensaje('error', 'No se pudo eliminar la memoria.');
@@ -491,6 +581,36 @@ export default function MemoriasPage() {
     }
   }
 
+  async function handleEnviarTodas() {
+    const borradoresCount = conteos.borrador;
+    if (borradoresCount === 0) {
+      alertService.info('Sin memorias', 'No existen memorias en estado Borrador para enviar.');
+      return;
+    }
+
+    const confirm = await alertService.confirm({
+      title: '¿Enviar todas a Gerencia?',
+      text: `Se enviarán ${borradoresCount} memoria(s) en borrador para revisión y aprobación de Gerencia.`,
+      confirmButtonText: `Sí, enviar todas (${borradoresCount})`,
+    });
+    if (!confirm) return;
+
+    setActionLoading(true);
+    try {
+      const res = await enviarTodasMemoriasGerencia({
+        gestion: selectedGestionId || undefined,
+        seccion: !isAprobador ? (user?.seccion ? Number(user.seccion) : undefined) : undefined
+      });
+      alertService.success('Memorias Enviadas', res.message);
+      if (selectedGestionId) await cargarMemorias(selectedGestionId);
+      setActiveTab('pendiente');
+    } catch (err: any) {
+      alertService.error('Error', err.response?.data?.error || 'No se pudieron enviar las memorias.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function handleAprobarGerente(mem: MemoriaCalculo) {
     const nota = await alertService.prompt({
       title: 'Aprobar Memoria por Gerencia',
@@ -506,6 +626,24 @@ export default function MemoriasPage() {
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
     } catch (err) {
       alertService.error('Error', 'Error al aprobar por gerencia.');
+    }
+  }
+
+  async function handleAprobarPlanificacion(mem: MemoriaCalculo) {
+    const nota = await alertService.prompt({
+      title: 'Validar Alineación por Planificación (SPO)',
+      text: `¿Desea validar la memoria ${mem.codigo} con su Operación POA correspondiente? Puede adjuntar una nota u observación técnica.`,
+      confirmButtonText: 'Validar y Derivar a Presupuestos',
+      inputPlaceholder: 'Nota u observación técnica de Planificación (opcional)...',
+    });
+    if (nota === null) return;
+
+    try {
+      const res = await aprobarMemoriaPlanificacion(mem.id, nota);
+      alertService.success('Alineación Validada', res.message);
+      if (selectedGestionId) await cargarMemorias(selectedGestionId);
+    } catch (err) {
+      alertService.error('Error', 'Error al validar por planificación.');
     }
   }
 
@@ -686,11 +824,19 @@ export default function MemoriasPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('planificacion')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'planificacion' ? 'border-indigo-500 text-indigo-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
+        >
+          <Building2 size={16} /> Revisión Planificación SPO ({conteos.planificacion})
+        </button>
+
+        <button
           onClick={() => setActiveTab('finanzas')}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'finanzas' ? 'border-blue-500 text-blue-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
         >
-          <CheckCircle2 size={16} /> Revisión Finanzas / Economía ({conteos.finanzas})
+          <CheckCircle2 size={16} /> Revisión Presupuestos ({conteos.finanzas})
         </button>
 
         <button
@@ -711,30 +857,44 @@ export default function MemoriasPage() {
       </div>
 
       {/* Barra de Búsqueda y Filtros */}
-      <div className="card p-4 flex flex-col md:flex-row gap-3 items-center">
-        <div className="relative flex-1 w-full">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
-          <input
-            type="text"
-            placeholder="Buscar por código, partida, justificación o gerencia..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-theme pl-10 text-xs"
-          />
+      <div className="card p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="flex flex-1 flex-col md:flex-row gap-3 items-center w-full">
+          <div className="relative flex-1 w-full">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+            <input
+              type="text"
+              placeholder="Buscar por código, partida, operación, justificación o gerencia..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-theme pl-10 text-xs"
+            />
+          </div>
+
+          <select
+            value={filtroArea}
+            onChange={(e) => setFiltroArea(e.target.value)}
+            className="input-theme text-xs py-2 w-full md:w-56"
+          >
+            <option value="todas">Todas las Áreas</option>
+            {areas.map((a) => (
+              <option key={a.id} value={String(a.id)}>
+                {a.nombre}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <select
-          value={filtroArea}
-          onChange={(e) => setFiltroArea(e.target.value)}
-          className="input-theme text-xs py-2 w-full md:w-56"
-        >
-          <option value="todas">Todas las Áreas</option>
-          {areas.map((a) => (
-            <option key={a.id} value={String(a.id)}>
-              {a.nombre}
-            </option>
-          ))}
-        </select>
+        {/* Botón Enviar Todas en bandeja de Borrador */}
+        {activeTab === 'borrador' && conteos.borrador > 0 && !isGestionBloqueada && (isElaborador || isAprobador) && (
+          <button
+            onClick={handleEnviarTodas}
+            disabled={actionLoading}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all whitespace-nowrap shrink-0"
+            title="Enviar todas las memorias en borrador a revisión de gerencia"
+          >
+            <Send size={14} /> Enviar todas ({conteos.borrador}) a Gerencia
+          </button>
+        )}
       </div>
 
       {/* Tabla de Memorias */}
@@ -745,7 +905,7 @@ export default function MemoriasPage() {
               <th className="py-3.5 px-4">Código</th>
               <th className="py-3.5 px-4">Área / Sección</th>
               <th className="py-3.5 px-4">Partida Presupuestaria</th>
-              <th className="py-3.5 px-4">Justificación / Requerimiento</th>
+              <th className="py-3.5 px-4">Operación POA & Justificación</th>
               <th className="py-3.5 px-4 text-center">Ítems</th>
               <th className="py-3.5 px-4 text-right">Total Presupuestado</th>
               <th className="py-3.5 px-4 text-center">Estado</th>
@@ -780,6 +940,18 @@ export default function MemoriasPage() {
                       <p className="text-[11px] text-theme-muted line-clamp-1">{mem.partida_nombre || 'Sin partida'}</p>
                     </td>
                     <td className="py-3.5 px-4 max-w-xs">
+                      <div className="flex flex-wrap items-center gap-1 mb-1">
+                        {mem.operacion_codigo && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                            POA: {mem.operacion_codigo}
+                          </span>
+                        )}
+                        {mem.es_contratacion && (
+                          <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                            Contratación
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-theme-main line-clamp-2">{mem.justificacion}</p>
                       {mem.motivo_rechazo && (
                         <p className={`text-[11px] font-medium mt-1 p-1.5 rounded-lg border ${mem.estado === 'RECHAZADO'
@@ -843,7 +1015,7 @@ export default function MemoriasPage() {
                               <>
                                 <button
                                   onClick={() => handleAprobarGerente(mem)}
-                                  className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1"
+                                  className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1 shadow-sm"
                                   title="Aprobar como Gerente de Área"
                                 >
                                   <CheckCircle2 size={13} /> Aprobar Gerencia
@@ -873,7 +1045,7 @@ export default function MemoriasPage() {
                           <>
                             <button
                               onClick={() => handleAprobarGerente(mem)}
-                              className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1"
+                              className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1 shadow-sm"
                               title="Aprobar como Gerente de Área"
                             >
                               <CheckCircle2 size={13} /> Aprobar Gerencia
@@ -888,14 +1060,33 @@ export default function MemoriasPage() {
                           </>
                         )}
 
-                        {(mem.estado === 'APROBADO_GERENCIA' || mem.estado === 'PENDIENTE_PLANIFICACION' || mem.estado === 'APROBADO_PLANIFICACION') && isAprobador && (
+                        {mem.estado === 'PENDIENTE_PLANIFICACION' && (isAprobador || isPlanificador) && (
+                          <>
+                            <button
+                              onClick={() => handleAprobarPlanificacion(mem)}
+                              className="px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-[11px] font-semibold flex items-center gap-1 shadow-sm"
+                              title="Validar y Aprobar por Planificación (SPO)"
+                            >
+                              <CheckCircle2 size={13} /> Aprobar Planificación
+                            </button>
+                            <button
+                              onClick={() => handleRechazar(mem)}
+                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
+                              title="Rechazar"
+                            >
+                              <XCircle size={15} />
+                            </button>
+                          </>
+                        )}
+
+                        {(mem.estado === 'APROBADO_GERENCIA' || mem.estado === 'APROBADO_PLANIFICACION') && isAprobador && (
                           <>
                             <button
                               onClick={() => handleAprobarFinanciero(mem)}
-                              className="px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-semibold flex items-center gap-1"
-                              title="Aprobación Final"
+                              className="px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-semibold flex items-center gap-1 shadow-sm"
+                              title="Aprobación Presupuestaria Final"
                             >
-                              <CheckCircle2 size={13} /> Aprobar Finanzas
+                              <CheckCircle2 size={13} /> Aprobar Presupuestos
                             </button>
                             <button
                               onClick={() => handleRechazar(mem)}
@@ -1200,6 +1391,194 @@ export default function MemoriasPage() {
                     />
                   </div>
                 </div>
+
+                {/* Alineación Estratégica con Operación POA */}
+                <div className="sm:col-span-2 space-y-3 p-4 rounded-xl bg-theme-base/60 border border-theme-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-theme-main">
+                        Operación POA (Alineación Estratégica SPO)
+                      </label>
+                      <p className="text-[11px] text-theme-muted">
+                        Vincule el gasto a una Operación formal de su Área/Gerencia para trazabilidad del POA.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickOperacion(!showQuickOperacion)}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600/20 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={13} /> {showQuickOperacion ? 'Ocultar Creación' : '+ Nueva Operación'}
+                    </button>
+                  </div>
+
+                  {/* Subformulario inline para crear Operación al vuelo */}
+                  {showQuickOperacion && (
+                    <div className="p-3.5 rounded-xl bg-theme-surface border border-indigo-200 dark:border-indigo-800 space-y-3 shadow-sm animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                          <Building2 size={14} /> Registrar Nueva Operación para su Área
+                        </span>
+                        <span className="text-[10px] text-theme-muted">Se guardará e indexará al instante</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                        <div>
+                          <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
+                            Código de Operación *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ej. OP-INF-08"
+                            value={quickOpForm.codigo}
+                            onChange={(e) => setQuickOpForm({ ...quickOpForm, codigo: e.target.value })}
+                            className="input-theme text-xs py-1.5 font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
+                            Acción a Corto Plazo (ACP Padre) *
+                          </label>
+                          <select
+                            value={quickOpForm.acp_id}
+                            onChange={(e) => setQuickOpForm({ ...quickOpForm, acp_id: Number(e.target.value) })}
+                            className="input-theme text-xs py-1.5"
+                          >
+                            <option value="">Seleccione ACP...</option>
+                            {accionesCortoPlazo.map((acp) => (
+                              <option key={acp.id} value={acp.id}>
+                                {acp.codigo} - {acp.descripcion.slice(0, 45)}...
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
+                            Descripción de la Operación *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ej. Fortalecimiento de la Infraestructura de Servidores..."
+                            value={quickOpForm.descripcion}
+                            onChange={(e) => setQuickOpForm({ ...quickOpForm, descripcion: e.target.value })}
+                            className="input-theme text-xs py-1.5"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2 flex items-center justify-between pt-1">
+                          <label className="flex items-center gap-2 text-xs font-medium text-theme-main cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={quickOpForm.es_contratacion}
+                              onChange={(e) => setQuickOpForm({ ...quickOpForm, es_contratacion: e.target.checked })}
+                              className="rounded text-indigo-600 focus:ring-indigo-500"
+                            />
+                            Aplica para Contrataciones / Compras
+                          </label>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowQuickOperacion(false)}
+                              className="px-2.5 py-1 text-xs text-theme-muted hover:text-theme-main"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSaveQuickOperacion}
+                              className="btn-primary text-xs px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white"
+                            >
+                              Guardar y Vincular
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selector de Operación existente */}
+                  <div>
+                    <select
+                      required
+                      value={formMemoria.operacionId}
+                      onChange={(e) => {
+                        const opId = Number(e.target.value) || '';
+                        const opObj = operaciones.find((o) => o.id === opId);
+                        setFormMemoria({
+                          ...formMemoria,
+                          operacionId: opId,
+                          es_contratacion: opObj ? (opObj.es_contratacion ?? formMemoria.es_contratacion) : formMemoria.es_contratacion,
+                        });
+                      }}
+                      className={`input-theme text-xs ${!formMemoria.operacionId ? 'border-amber-500/80 bg-amber-500/5' : ''}`}
+                    >
+                      <option value="">(Obligatorio) Seleccione Operación POA institucional *...</option>
+                      {(() => {
+                        const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
+                        const areaId = sec ? (sec.area || sec.area_id) : null;
+                        const opsFiltradas = areaId
+                          ? operaciones.filter((o) => o.area === areaId)
+                          : operaciones;
+
+                        return opsFiltradas.map((op) => (
+                          <option key={op.id} value={op.id}>
+                            [{op.codigo}] {op.descripcion.slice(0, 60)} {op.es_contratacion ? '(Contratación)' : ''}
+                          </option>
+                        ));
+                      })()}
+                    </select>
+                    {!formMemoria.operacionId && (
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1 flex items-center gap-1">
+                        <AlertCircle size={13} /> Seleccione una operación o cree una nueva con el botón de arriba.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Checkbox Contrataciones */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="checkbox"
+                      id="chk-es-contratacion"
+                      checked={formMemoria.es_contratacion}
+                      onChange={(e) => setFormMemoria({ ...formMemoria, es_contratacion: e.target.checked })}
+                      className="w-4 h-4 rounded text-theme-primary focus:ring-theme-primary cursor-pointer"
+                    />
+                    <label htmlFor="chk-es-contratacion" className="text-xs font-semibold text-theme-main cursor-pointer select-none">
+                      ¿Corresponde a Contrataciones / Compras Públicas (PAC)?
+                    </label>
+                  </div>
+
+                  {/* Banner dinámico de ruta de aprobación */}
+                  {(() => {
+                    const esContratacion = formMemoria.es_contratacion;
+                    const esMayor2000 = totalCalculadoMemoria >= 2000;
+                    const rutaCompleta = esContratacion && esMayor2000;
+                    return (
+                      <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs ${
+                        rutaCompleta
+                          ? 'bg-indigo-50/80 border-indigo-200 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-200'
+                          : 'bg-emerald-50/80 border-emerald-200 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200'
+                      }`}>
+                        <AlertCircle size={16} className={`shrink-0 mt-0.5 ${rutaCompleta ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                        <div>
+                          <p className="font-bold">
+                            {rutaCompleta
+                              ? '📌 Ruta Institucional Completa (PAC ≥ 2.000 Bs):'
+                              : '📌 Ruta Directa (Gasto Menor o No Contratación):'}
+                          </p>
+                          <p className="text-[11px] mt-0.5 opacity-90">
+                            {rutaCompleta
+                              ? 'Elaborador ➔ Gerencia de Área ➔ Planificación (Validación SPO/PAC) ➔ Aprobación Presupuestaria Final'
+                              : 'Elaborador ➔ Gerencia de Área ➔ Aprobación Presupuestaria Final (Omite Planificación)'}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
 
               <div>
@@ -1368,16 +1747,28 @@ export default function MemoriasPage() {
                 </div>
                 <div>
                   <span className="text-theme-muted uppercase font-semibold">Partida Presupuestaria:</span>
-                  <p className="font-mono font-bold text-theme-main mt-0.5">{fichaMemoria.partida_codigo}</p>
-                  <p className="text-[11px] text-theme-muted">{fichaMemoria.partida_nombre}</p>
+                  <p className="font-mono font-bold text-theme-main mt-0.5">{fichaMemoria.partida_codigo || 'N/A'}</p>
+                  <p className="text-[11px] text-theme-muted line-clamp-1">{fichaMemoria.partida_nombre || 'Sin partida'}</p>
                 </div>
                 <div>
-                  <span className="text-theme-muted uppercase font-semibold">Estado Actual:</span>
-                  <div className="mt-0.5">{getBadgeEstado(fichaMemoria.estado)}</div>
+                  <span className="text-theme-muted uppercase font-semibold">Operación POA:</span>
+                  <p className="font-mono font-bold text-theme-main mt-0.5">
+                    {fichaMemoria.operacion_codigo ? fichaMemoria.operacion_codigo : 'Sin asignar'}
+                  </p>
+                  <p className="text-[11px] text-theme-muted line-clamp-1">
+                    {fichaMemoria.operacion_descripcion || (fichaMemoria.es_contratacion ? 'Contratación' : 'Gasto General')}
+                  </p>
                 </div>
                 <div>
                   <span className="text-theme-muted uppercase font-semibold">Monto Total:</span>
                   <p className="font-bold text-theme-primary text-base mt-0.5">{formatMoney(fichaMemoria.total_presupuesto)}</p>
+                  <span className={`inline-block text-[10px] font-bold px-1.5 py-0.2 rounded mt-0.5 border ${
+                    fichaMemoria.es_contratacion
+                      ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-200'
+                      : 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-200'
+                  }`}>
+                    {fichaMemoria.es_contratacion ? 'PAC (Contrataciones)' : 'Gasto Corriente'}
+                  </span>
                 </div>
               </div>
 
@@ -1429,29 +1820,43 @@ export default function MemoriasPage() {
 
               {/* Registro de Participantes / Firmas */}
               <div className="border-t border-theme-border pt-4">
-                <span className="text-theme-muted uppercase font-semibold text-xs">Registro de Control y Firmas:</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
-                  <div className="p-3 rounded-xl bg-theme-base border border-theme-border text-center">
-                    <span className="text-[10px] uppercase font-bold text-theme-muted block">Elaborador</span>
-                    <p className="font-semibold text-xs text-theme-main mt-1">Usuario Solicitante</p>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Registrado</span>
+                <span className="text-theme-muted uppercase font-semibold text-xs">Registro de Control y Firmas Institucionales:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 mt-2">
+                  <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
+                    <span className="text-[10px] uppercase font-bold text-theme-muted block">1. Elaborador</span>
+                    <p className="font-semibold text-xs text-theme-main mt-0.5">Usuario Solicitante</p>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Formulado</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-theme-base border border-theme-border text-center">
-                    <span className="text-[10px] uppercase font-bold text-theme-muted block">Revisión Gerencial</span>
-                    <p className="font-semibold text-xs text-theme-main mt-1">Gerencia de Área</p>
-                    {['APROBADO_GERENCIA', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) ? (
+                  <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
+                    <span className="text-[10px] uppercase font-bold text-theme-muted block">2. Gerencia de Área</span>
+                    <p className="font-semibold text-xs text-theme-main mt-0.5">Visto Bueno Área</p>
+                    {['APROBADO_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_PLANIFICACION', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) ? (
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Aprobado</span>
                     ) : (
                       <span className="text-[10px] text-amber-600 font-medium">⏳ Pendiente</span>
                     )}
                   </div>
 
-                  <div className="p-3 rounded-xl bg-theme-base border border-theme-border text-center">
-                    <span className="text-[10px] uppercase font-bold text-theme-muted block">Finanzas / Economía</span>
-                    <p className="font-semibold text-xs text-theme-main mt-1">Aprobación Final POA</p>
+                  <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
+                    <span className="text-[10px] uppercase font-bold text-theme-muted block">3. Planificación (SPO)</span>
+                    <p className="font-semibold text-xs text-theme-main mt-0.5">Alineación PAC</p>
+                    {fichaMemoria.es_contratacion && parseFloat(fichaMemoria.total_presupuesto || '0') >= 2000 ? (
+                      ['APROBADO_GERENCIA', 'APROBADO_PLANIFICACION', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) && fichaMemoria.estado !== 'PENDIENTE_PLANIFICACION' ? (
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Alineado</span>
+                      ) : (
+                        <span className="text-[10px] text-amber-600 font-medium">⏳ Por Validar</span>
+                      )
+                    ) : (
+                      <span className="text-[10px] text-theme-muted font-medium italic">— Omitido (&lt; 2.000 Bs)</span>
+                    )}
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
+                    <span className="text-[10px] uppercase font-bold text-theme-muted block">4. Presupuestos</span>
+                    <p className="font-semibold text-xs text-theme-main mt-0.5">Aprobación POA Final</p>
                     {fichaMemoria.estado === 'APROBADO_FINANZAS' ? (
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Aprobado (Septiembre)</span>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Aprobado POA</span>
                     ) : (
                       <span className="text-[10px] text-amber-600 font-medium">⏳ Pendiente</span>
                     )}

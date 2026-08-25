@@ -79,8 +79,12 @@ export interface MemoriaCalculo {
   area_id: number;
   area_nombre: string;
   area_codigo: string;
+  operacion?: number | null;
+  operacion_codigo?: string | null;
+  operacion_descripcion?: string | null;
   justificacion: string;
   motivo_rechazo?: string | null;
+  es_contratacion?: boolean;
   estado: 'BORRADOR' | 'PENDIENTE_GERENCIA' | 'APROBADO_GERENCIA' | 'PENDIENTE_PLANIFICACION' | 'APROBADO_PLANIFICACION' | 'APROBADO_FINANZAS' | 'RECHAZADO';
   estado_display: string;
   fecha_aprobacion: string | null;
@@ -181,6 +185,7 @@ export interface Seccion {
   id: number;
   nombre: string;
   area: number;
+  area_id?: number;
   area_nombre?: string;
 }
 
@@ -360,6 +365,8 @@ export async function createMemoria(payload: {
   gestion: number;
   seccion: number;
   justificacion: string;
+  operacion?: number | null;
+  es_contratacion?: boolean;
   partida_id?: number;
   detalles: Array<{
     partida?: number;
@@ -380,6 +387,8 @@ export async function updateMemoria(
     codigo: string;
     seccion: number;
     justificacion: string;
+    operacion?: number | null;
+    es_contratacion?: boolean;
     partida_id?: number;
     detalles: Array<{
       partida?: number;
@@ -404,8 +413,18 @@ export async function enviarMemoriaGerencia(id: number, nota?: string): Promise<
   return data;
 }
 
+export async function enviarTodasMemoriasGerencia(payload?: { gestion?: number; seccion?: number }): Promise<{ message: string; total_enviadas: number }> {
+  const { data } = await api.post<{ message: string; total_enviadas: number }>(`/api/v1/memorias/memorias-calculo/enviar-todas-gerencia/`, payload || {});
+  return data;
+}
+
 export async function aprobarMemoriaGerencia(id: number, nota?: string): Promise<{ message: string; memoria: MemoriaCalculo }> {
   const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/aprobar-gerencia/`, { motivo: nota, nota });
+  return data;
+}
+
+export async function aprobarMemoriaPlanificacion(id: number, nota?: string): Promise<{ message: string; memoria: MemoriaCalculo }> {
+  const { data } = await api.post<{ message: string; memoria: MemoriaCalculo }>(`/api/v1/memorias/memorias-calculo/${id}/aprobar-planificacion/`, { motivo: nota, nota });
   return data;
 }
 
