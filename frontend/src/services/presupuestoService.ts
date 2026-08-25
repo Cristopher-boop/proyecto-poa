@@ -252,6 +252,38 @@ export interface GastoDetalle {
   item_descripcion: string;
 }
 
+export interface GastoItemDetalle {
+  gasto_id: number;
+  fecha_gasto: string;
+  monto: string;
+  comprobante: string;
+  observacion: string;
+}
+
+export interface ItemDetalleArea {
+  detalle_id: number;
+  descripcion: string;
+  unidad_medida: string;
+  cantidad: string;
+  precio_unitario: string;
+  precio_total: string;
+  total_ejecutado: string;
+  saldo_sobrante: string;
+  estado_ejecucion: string;
+  partida_codigo: string;
+  partida_nombre: string;
+  gastos: GastoItemDetalle[];
+}
+
+export interface TraspasoDetalleArea {
+  traspaso_id: number;
+  tipo: 'ENTRADA' | 'SALIDA';
+  memoria_contraparte_codigo: string;
+  monto: string;
+  motivo: string;
+  fecha: string;
+}
+
 export interface PartidaDetalleArea {
   partida_codigo: string;
   partida_nombre: string;
@@ -275,6 +307,8 @@ export interface MemoriaDetalleArea {
   monto_entrante?: string;
   monto_saliente?: string;
   partidas: PartidaDetalleArea[];
+  items: ItemDetalleArea[];
+  traspasos: TraspasoDetalleArea[];
 }
 
 export interface SeccionDetalleArea {

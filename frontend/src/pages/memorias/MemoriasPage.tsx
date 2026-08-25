@@ -731,8 +731,8 @@ export default function MemoriasPage() {
       {feedbackMsg && (
         <div
           className={`p-4 rounded-xl flex items-center justify-between shadow-md ${feedbackMsg.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-100 dark:border-emerald-800'
-              : 'bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/80 dark:text-rose-100 dark:border-rose-800'
+            ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-100 dark:border-emerald-800'
+            : 'bg-rose-50 text-rose-900 border border-rose-200 dark:bg-rose-950/80 dark:text-rose-100 dark:border-rose-800'
             }`}
         >
           <div className="flex items-center gap-2">
@@ -954,11 +954,10 @@ export default function MemoriasPage() {
                       </div>
                       <p className="text-xs text-theme-main line-clamp-2">{mem.justificacion}</p>
                       {mem.motivo_rechazo && (
-                        <p className={`text-[11px] font-medium mt-1 p-1.5 rounded-lg border ${
-                          mem.estado === 'RECHAZADO'
-                            ? 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300'
-                            : 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300'
-                        }`}>
+                        <p className={`text-[11px] font-medium mt-1 p-1.5 rounded-lg border ${mem.estado === 'RECHAZADO'
+                          ? 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300'
+                          : 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300'
+                          }`}>
                           💬 <strong>{mem.estado === 'RECHAZADO' ? 'Motivo Rechazo:' : 'Nota / Obs:'}</strong> "{mem.motivo_rechazo}"
                         </p>
                       )}
@@ -1147,8 +1146,8 @@ export default function MemoriasPage() {
                     key={p}
                     onClick={() => setCurrentPage(p as number)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${currentPage === p
-                        ? 'border-theme-primary bg-theme-primary text-white'
-                        : 'border-theme-border text-theme-muted hover:text-theme-main'
+                      ? 'border-theme-primary bg-theme-primary text-white'
+                      : 'border-theme-border text-theme-muted hover:text-theme-main'
                       }`}
                   >
                     {p}
@@ -1252,11 +1251,10 @@ export default function MemoriasPage() {
                         <button
                           type="button"
                           onClick={() => setPartidaSelectorOpen(!partidaSelectorOpen)}
-                          className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left ${
-                            selected
-                              ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
-                              : 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
-                          }`}
+                          className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left ${selected
+                            ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
+                            : 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
+                            }`}
                         >
                           {selected ? (
                             <span className="flex-1 min-w-0">
@@ -1337,8 +1335,8 @@ export default function MemoriasPage() {
                                         setSearchPartidaQuery('');
                                       }}
                                       className={`w-full flex items-start gap-3 pl-5 pr-3 py-2.5 text-left transition-colors border-b border-theme-border/30 last:border-0 ${isActive
-                                          ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
-                                          : 'hover:bg-theme-border/30'
+                                        ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
+                                        : 'hover:bg-theme-border/30'
                                         }`}
                                     >
                                       {/* Línea de indentación visual */}
@@ -1348,8 +1346,8 @@ export default function MemoriasPage() {
 
                                       <span
                                         className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${isActive
-                                            ? 'bg-theme-primary text-white'
-                                            : 'bg-theme-base text-theme-primary border border-theme-border'
+                                          ? 'bg-theme-primary text-white'
+                                          : 'bg-theme-base text-theme-primary border border-theme-border'
                                           }`}
                                       >
                                         {p.codigo}
@@ -1780,11 +1778,10 @@ export default function MemoriasPage() {
                   {fichaMemoria.justificacion}
                 </p>
                 {fichaMemoria.motivo_rechazo && (
-                  <div className={`mt-2.5 p-3 rounded-xl border text-xs ${
-                    fichaMemoria.estado === 'RECHAZADO'
-                      ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-200'
-                      : 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-200'
-                  }`}>
+                  <div className={`mt-2.5 p-3 rounded-xl border text-xs ${fichaMemoria.estado === 'RECHAZADO'
+                    ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-200'
+                    : 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-200'
+                    }`}>
                     <strong>💬 {fichaMemoria.estado === 'RECHAZADO' ? 'Motivo del Rechazo:' : 'Nota de Revisión / Aprobación:'}</strong>
                     <p className="mt-1 font-medium italic">"{fichaMemoria.motivo_rechazo}"</p>
                   </div>
@@ -1952,7 +1949,9 @@ export default function MemoriasPage() {
               </thead>
               <tbody>
                 {(fichaMemoria.detalles || []).map((det, idx) => {
-                  const subtotal = Number(det.precio_total || (Number(det.cantidad || 0) * Number(det.precio_unitario || 0)));
+                  const cant = Number(det.cantidad) || 0;
+                  const pu = Number(det.precio_unitario) || 0;
+                  const subtotal = det.precio_total ? Number(det.precio_total) : cant * pu;
                   return (
                     <tr key={det.id || idx} className="text-[11px]">
                       <td className="border border-black p-2 text-center align-middle">{idx + 1}</td>
