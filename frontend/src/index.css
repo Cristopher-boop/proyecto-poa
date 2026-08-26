@@ -73,6 +73,21 @@
   input[type="password"] {
     text-transform: none !important;
   }
+
+  select {
+    color-scheme: light dark;
+  }
+
+  select option {
+    background-color: #FFFFFF;
+    color: #0F172A;
+  }
+
+  .dark select option,
+  html.dark select option {
+    background-color: #272B33 !important;
+    color: #FFFFFF !important;
+  }
 }
 
 @media print {

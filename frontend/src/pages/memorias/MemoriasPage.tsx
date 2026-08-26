@@ -1357,12 +1357,12 @@ export default function MemoriasPage() {
                       required
                       value={formMemoria.seccionId}
                       onChange={(e) => setFormMemoria({ ...formMemoria, seccionId: Number(e.target.value) })}
-                      className="input-theme text-xs"
+                      className="input-theme text-xs bg-theme-surface text-theme-main"
                     >
-                      <option value="">Seleccione Sección...</option>
+                      <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione Sección...</option>
                       {secciones.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.nombre} ({s.area_nombre || 'Área'})
+                        <option key={s.id} value={s.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
+                          {s.nombre} ({s.area_nombre || 'ÁREA'})
                         </option>
                       ))}
                     </select>
@@ -1586,11 +1586,11 @@ export default function MemoriasPage() {
                           <select
                             value={quickOpForm.acp_id}
                             onChange={(e) => setQuickOpForm({ ...quickOpForm, acp_id: Number(e.target.value) })}
-                            className="input-theme text-xs py-1.5"
+                            className="input-theme text-xs py-1.5 bg-theme-surface text-theme-main"
                           >
-                            <option value="">Seleccione ACP...</option>
+                            <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione ACP...</option>
                             {accionesCortoPlazo.map((acp) => (
-                              <option key={acp.id} value={acp.id}>
+                              <option key={acp.id} value={acp.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
                                 {acp.codigo} - {acp.descripcion.slice(0, 45)}...
                               </option>
                             ))}
@@ -1656,18 +1656,26 @@ export default function MemoriasPage() {
                           es_contratacion: opObj ? (opObj.es_contratacion ?? formMemoria.es_contratacion) : formMemoria.es_contratacion,
                         });
                       }}
-                      className={`input-theme text-xs ${!formMemoria.operacionId ? 'border-amber-500/80 bg-amber-500/5' : ''}`}
+                      className={`input-theme text-xs bg-theme-surface text-theme-main ${!formMemoria.operacionId ? 'border-amber-500/80 bg-amber-500/5' : ''}`}
                     >
-                      <option value="">(Obligatorio) Seleccione Operación POA institucional *...</option>
+                      <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">(Obligatorio) Seleccione Operación POA institucional *...</option>
                       {(() => {
                         const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
-                        const areaId = sec ? (sec.area || sec.area_id) : null;
+                        const areaId = sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null);
                         const opsFiltradas = areaId
-                          ? operaciones.filter((o) => o.area === areaId)
+                          ? operaciones.filter((o) => Number(o.area || (o as any).area_id) === Number(areaId))
                           : operaciones;
 
+                        if (opsFiltradas.length === 0 && operaciones.length > 0) {
+                          return operaciones.map((op) => (
+                            <option key={op.id} value={op.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
+                              [{op.codigo}] {op.descripcion.slice(0, 60)} {op.es_contratacion ? '(Contratación)' : ''}
+                            </option>
+                          ));
+                        }
+
                         return opsFiltradas.map((op) => (
-                          <option key={op.id} value={op.id}>
+                          <option key={op.id} value={op.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
                             [{op.codigo}] {op.descripcion.slice(0, 60)} {op.es_contratacion ? '(Contratación)' : ''}
                           </option>
                         ));
