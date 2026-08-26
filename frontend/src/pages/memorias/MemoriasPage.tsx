@@ -83,6 +83,8 @@ export default function MemoriasPage() {
   const canGlobalView = isAprobador || isPlanificador;
 
   const [activeTab, setActiveTab] = useState<'todas' | 'borrador' | 'espera' | 'pendiente' | 'planificacion' | 'finanzas' | 'aprobadas' | 'rechazadas'>('todas');
+  const [highlightedMemoriaId, setHighlightedMemoriaId] = useState<number | null>(null);
+  const [soloPendientesGerente, setSoloPendientesGerente] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -137,6 +139,17 @@ export default function MemoriasPage() {
 
   const targetMemoriaId = searchParams.get('id') || searchParams.get('memoria');
 
+  // Pestaña inicial según el rol del usuario (cuando no entra por notificación)
+  useEffect(() => {
+    if (!targetMemoriaId && user) {
+      if (isAprobador) setActiveTab('finanzas');
+      else if (isPlanificador) setActiveTab('planificacion');
+      else if (isGerente) setActiveTab('espera');
+      else if (isElaborador) setActiveTab('borrador');
+      else if (isTrabajador) setActiveTab('todas');
+    }
+  }, [user?.rol_nombre, isAprobador, isPlanificador, isGerente, isElaborador, isTrabajador, targetMemoriaId]);
+
   useEffect(() => {
     cargarBase();
   }, []);
@@ -147,7 +160,7 @@ export default function MemoriasPage() {
     }
   }, [selectedGestionId]);
 
-  // Deep linking: Abrir modal de ficha técnica al hacer clic en notificación
+  // Deep linking: Abrir modal de ficha técnica, situar pestaña correspondiente y parpadear fila al hacer clic en notificación
   useEffect(() => {
     if (targetMemoriaId) {
       const idNum = Number(targetMemoriaId);
@@ -156,9 +169,34 @@ export default function MemoriasPage() {
           .then((mem) => {
             if (mem && mem.id) {
               setFichaMemoria(mem);
+              setHighlightedMemoriaId(mem.id);
               if (mem.gestion && (!selectedGestionId || mem.gestion !== selectedGestionId)) {
                 setSelectedGestionId(mem.gestion);
               }
+
+              // Posicionar en la pestaña de interés adecuada según el estado de la memoria y el rol
+              if (mem.estado === 'RECHAZADO') {
+                setActiveTab('rechazadas');
+              } else if (mem.estado === 'APROBADO_FINANZAS') {
+                setActiveTab('aprobadas');
+              } else if (mem.estado === 'BORRADOR') {
+                setActiveTab('borrador');
+              } else if (mem.estado === 'PENDIENTE_PLANIFICACION') {
+                if (isPlanificador) setActiveTab('planificacion');
+                else if (isAprobador) setActiveTab('todas');
+                else setActiveTab('espera');
+              } else if (mem.estado === 'APROBADO_GERENCIA' || mem.estado === 'APROBADO_PLANIFICACION') {
+                if (isAprobador) setActiveTab('finanzas');
+                else setActiveTab('espera');
+              } else if (mem.estado === 'PENDIENTE_GERENCIA') {
+                if (isAprobador) setActiveTab('todas');
+                else setActiveTab('espera');
+              }
+
+              // Auto-limpiar el resaltado después de 6 segundos
+              setTimeout(() => {
+                setHighlightedMemoriaId(null);
+              }, 6000);
             }
           })
           .catch((err) => {
@@ -166,7 +204,7 @@ export default function MemoriasPage() {
           });
       }
     }
-  }, [targetMemoriaId]);
+  }, [targetMemoriaId, isAprobador, isPlanificador, isGerente, isElaborador]);
 
   async function cargarBase() {
     setLoading(true);
@@ -359,7 +397,13 @@ export default function MemoriasPage() {
     return (Array.isArray(memorias) ? memorias : []).filter((m) => {
       let matchTab = true;
       if (activeTab === 'borrador') matchTab = m.estado === 'BORRADOR';
-      else if (activeTab === 'espera') matchTab = ['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(m.estado);
+      else if (activeTab === 'espera') {
+        if (isGerente && soloPendientesGerente) {
+          matchTab = m.estado === 'PENDIENTE_GERENCIA';
+        } else {
+          matchTab = ['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(m.estado);
+        }
+      }
       else if (activeTab === 'pendiente') matchTab = m.estado === 'PENDIENTE_GERENCIA';
       else if (activeTab === 'planificacion') matchTab = m.estado === 'PENDIENTE_PLANIFICACION';
       else if (activeTab === 'finanzas') matchTab = m.estado === 'APROBADO_GERENCIA' || m.estado === 'APROBADO_PLANIFICACION';
@@ -933,6 +977,24 @@ export default function MemoriasPage() {
           )}
         </div>
 
+        {/* Toggle para Gerente en bandeja En Espera: Ver solo por Aprobar */}
+        {isGerente && activeTab === 'espera' && (
+          <button
+            onClick={() => setSoloPendientesGerente(!soloPendientesGerente)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
+              soloPendientesGerente
+                ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/50'
+                : 'border border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
+            }`}
+            title="Filtrar únicamente las memorias pendientes de visto bueno gerencial"
+          >
+            <AlertCircle size={14} />
+            {soloPendientesGerente
+              ? `Mostrando solo por Aprobar (${conteos.pendiente})`
+              : `Ver solo por Aprobar Gerencia (${conteos.pendiente})`}
+          </button>
+        )}
+
         {/* Botón Enviar Todas en bandeja de Borrador */}
         {activeTab === 'borrador' && conteos.borrador > 0 && !isGestionBloqueada && (isElaborador || isAprobador) && (
           <button
@@ -967,7 +1029,7 @@ export default function MemoriasPage() {
                 <td colSpan={8} className="py-12 text-center text-theme-muted">
                   <FileText size={36} className="mx-auto mb-2 opacity-40" />
                   <p className="font-medium">No se encontraron memorias en esta bandeja.</p>
-                  {!isGestionBloqueada && (
+                  {!isGestionBloqueada && canCreate && (
                     <button onClick={handleOpenCrear} className="btn-primary mt-3 text-xs">
                       Crear Memoria de Cálculo
                     </button>
@@ -977,8 +1039,17 @@ export default function MemoriasPage() {
             ) : (
               memoriasPaginadas.map((mem) => {
                 const total = parseFloat(mem.total_presupuesto || '0');
+                const isHighlighted = highlightedMemoriaId === mem.id;
                 return (
-                  <tr key={mem.id} className="hover:bg-theme-border/20 transition-colors">
+                  <tr
+                    key={mem.id}
+                    id={`memoria-row-${mem.id}`}
+                    className={`transition-all duration-500 ${
+                      isHighlighted
+                        ? 'bg-amber-500/20 dark:bg-amber-500/30 ring-2 ring-amber-500 ring-inset animate-pulse font-semibold'
+                        : 'hover:bg-theme-border/20'
+                    }`}
+                  >
                     <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{mem.codigo}</td>
                     <td className="py-3.5 px-4">
                       <p className="font-semibold text-theme-main text-xs">{mem.area_nombre}</p>
