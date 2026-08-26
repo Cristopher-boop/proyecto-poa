@@ -1,40 +1,35 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* MODO DÍA: Blancos, grises y AMARILLO TAM predominante */
-    --bg-base: #F8FAFC;       /* Fondo de la app (slate-50) */
-    --bg-surface: #FFFFFF;    /* Fondo de tarjetas (blanco) */
-    --bg-sidebar: #FFFFFF;    /* Sidebar blanco */
-    --border: #E2E8F0;        /* Bordes grises (slate-200) */
-    --text-main: #0F172A;     /* Texto negro (slate-900) */
-    --text-muted: #64748B;    /* Texto gris (slate-500) */
-    
-    --theme-primary: #FFCD05;       /* Amarillo TAM */
-    --theme-primary-hover: #CCAC2D; /* Amarillo oscuro TAM */
-    --theme-primary-text: #33312A;  /* Texto oscuro sobre botón amarillo */
+    --bg-base: #F8FAFC;
+    --bg-surface: #FFFFFF;
+    --bg-sidebar: #FFFFFF;
+    --border: #E2E8F0;
+    --text-main: #0F172A;
+    --text-muted: #64748B;
+    --theme-primary: #FFCD05;
+    --theme-primary-hover: #CCAC2D;
+    --theme-primary-text: #33312A;
   }
 
   .dark {
-    /* MODO NOCHE: Azules TAM puros */
-    --bg-base: #1E2736;       /* Fondo de la app (brand-700) */
-    --bg-surface: #272B33;    /* Fondo de tarjetas (brand-800) */
-    --bg-sidebar: #2B2E33;    /* Sidebar el más oscuro (brand-900) */
-    --border: #263E69;        /* Bordes azul medio (brand-600) */
-    --text-main: #FFFFFF;     /* Texto blanco puro */
-    --text-muted: #AECAEF;    /* Texto gris-azulado claro (brand-200) */
-    
-    --theme-primary: #19499C;       /* Azul Base TAM para botones */
-    --theme-primary-hover: #4A7FCC; /* Azul claro para hover */
-    --theme-primary-text: #FFFFFF;  /* Texto blanco sobre botón azul */
+    --bg-base: #1E2736;
+    --bg-surface: #272B33;
+    --bg-sidebar: #2B2E33;
+    --border: #263E69;
+    --text-main: #FFFFFF;
+    --text-muted: #AECAEF;
+    --theme-primary: #19499C;
+    --theme-primary-hover: #4A7FCC;
+    --theme-primary-text: #FFFFFF;
   }
 
   html { @apply antialiased; }
-
-    html.dark { color-scheme: dark; }
-    html.light { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+  html.light { color-scheme: light; }
 
   body {
     @apply bg-theme-base text-theme-main font-sans m-0 transition-colors duration-200;
@@ -51,15 +46,11 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-theme-primary px-4 py-2.5 
-           text-sm font-semibold text-theme-primaryText shadow-sm transition-all duration-200
-           hover:bg-theme-primaryHover active:scale-[.98] disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-theme-primary px-4 py-2.5 text-sm font-semibold text-theme-primaryText shadow-sm transition-all duration-200 hover:bg-theme-primaryHover active:scale-[.98] disabled:opacity-50;
   }
 
   .input-theme {
-    @apply w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 
-           text-sm text-theme-main placeholder:text-theme-muted transition-colors duration-200
-           focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none;
+    @apply w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 text-sm text-theme-main placeholder:text-theme-muted transition-colors duration-200 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none;
   }
 }
 
@@ -75,19 +66,21 @@
     color-adjust: exact !important;
   }
 
+  html,
   body {
     background: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
   }
 
-  /* Ocultar ABSOLUTAMENTE TODO el árbol DOM durante la impresión */
   body * {
     visibility: hidden !important;
   }
 
-  /* Revelar ÚNICAMENTE el contenedor #printable-memoria y sus descendientes */
   #printable-memoria,
   #printable-memoria * {
     visibility: visible !important;
@@ -99,15 +92,17 @@
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 5mm !important;
     background: #ffffff !important;
     color: #000000 !important;
     font-family: Arial, Helvetica, sans-serif !important;
     box-sizing: border-box !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
-  /* Revelar ÚNICAMENTE el reporte de sección */
   #reporte-seccion-printable,
   #reporte-seccion-printable * {
     visibility: visible !important;
@@ -119,6 +114,7 @@
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 5mm !important;
     background: #ffffff !important;
@@ -126,5 +122,7 @@
     font-family: Arial, Helvetica, sans-serif !important;
     box-sizing: border-box !important;
     border-radius: 0 !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 }

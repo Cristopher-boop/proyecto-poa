@@ -1727,7 +1727,54 @@ export default function MemoriasPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    const el = document.getElementById('printable-memoria');
+                    if (!el) return;
+                    const html = el.innerHTML;
+
+                    // Crear un iframe invisible, escribir solo el contenido del reporte
+                    // y lanzar el diálogo de impresión desde él — sin abrir ventana extra.
+                    const iframe = document.createElement('iframe');
+                    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+                    document.body.appendChild(iframe);
+
+                    const doc = iframe.contentWindow?.document;
+                    if (!doc) { document.body.removeChild(iframe); return; }
+
+                    doc.open();
+                    doc.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Memoria de Cálculo — ${fichaMemoria.codigo}</title>
+  <style>
+    @page { size: letter portrait; margin: 12mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; background: #fff; margin: 0; padding: 8px; }
+    h1 { font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; text-align: center; margin-bottom: 4px; }
+    p { margin: 2px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th, td { border: 1px solid #000; padding: 5px 6px; }
+    .navy { background-color: #002060 !important; color: #fff !important; font-weight: bold; text-transform: uppercase; text-align: center; font-size: 10px; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .font-mono { font-family: 'Courier New', Courier, monospace; }
+    .font-bold { font-weight: bold; }
+    .uppercase { text-transform: uppercase; }
+    .mt-8 { margin-top: 32px; }
+    .h-16 { height: 64px; }
+    .bg-white { background: #fff; }
+  </style>
+</head>
+<body>${html}</body>
+</html>`);
+                    doc.close();
+
+                    setTimeout(() => {
+                      iframe.contentWindow?.print();
+                      setTimeout(() => document.body.removeChild(iframe), 500);
+                    }, 400);
+                  }}
                   className="p-1.5 rounded-lg border border-theme-border text-theme-muted hover:text-theme-main text-xs flex items-center gap-1"
                 >
                   <Printer size={14} /> Imprimir
