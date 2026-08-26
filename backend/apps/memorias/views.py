@@ -42,9 +42,9 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         is_gerente = rol_clean == 'GERENTE'
         is_planificador = 'PLANIFIC' in rol_clean
         
-        # Superadmin, Aprobador, Gerente y Planificación ven todas las áreas
-        if not (is_admin_aprobador or is_gerente or is_planificador):
-            # Elaboradores y Trabajadores solo ven de su área
+        # Superadmin, Aprobador y Planificación ven todas las áreas a nivel institucional
+        if not (is_admin_aprobador or is_planificador):
+            # Gerentes, Elaboradores y Trabajadores solo ven de su área correspondiente
             if user.seccion and user.seccion.area_id:
                 qs = qs.filter(seccion__area_id=user.seccion.area_id)
             else:
@@ -94,7 +94,7 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
 
     def check_area_permission(self, memoria):
         user = self.request.user
-        if user.is_superuser or (user.rol and user.rol.nombre.upper() in ['ADMINISTRADOR', 'APROBADOR']): 
+        if user.is_superuser or self.check_role_permission(['ADMINISTRADOR', 'APROBADOR', 'PLANIFICACION']): 
             return True
         if user.seccion and user.seccion.area_id == memoria.seccion.area_id:
             return True
@@ -125,7 +125,7 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         instance = serializer.instance
-        if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
+        if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR', 'PLANIFICACION']):
             raise serializers.ValidationError({'non_field_errors': ['Tu rol no tiene permiso para editar memorias.']})
         
         if not self.check_area_permission(instance):
@@ -338,8 +338,8 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         if nota:
             memoria.motivo_rechazo = nota
         
-        # Pasa a Pendiente de Presupuestos (APROBADO_GERENCIA)
-        memoria.estado = MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA
+        # Pasa a Pendiente de Presupuestos (con sello APROBADO_PLANIFICACION)
+        memoria.estado = MemoriaCalculo.EstadoMemoria.APROBADO_PLANIFICACION
         memoria.save()
 
         if request.user and request.user.is_authenticated:
