@@ -527,8 +527,8 @@ export default function MemoriasPage() {
 
     try {
       const nuevaOp = await planificacionService.createOperacion({
-        codigo: quickOpForm.codigo.trim(),
-        descripcion: quickOpForm.descripcion.trim(),
+        codigo: quickOpForm.codigo.trim().toUpperCase(),
+        descripcion: quickOpForm.descripcion.trim().toUpperCase(),
         accion_corto_plazo: Number(quickOpForm.acp_id),
         area: Number(currentAreaId),
         es_contratacion: quickOpForm.es_contratacion,
@@ -593,7 +593,7 @@ export default function MemoriasPage() {
       return;
     }
 
-    if (formMemoria.renglones.some((r) => !r.descripcion.trim() || r.cantidad <= 0 || r.precio_unitario < 0)) {
+    if (formMemoria.renglones.some((r) => !r.descripcion.trim() || Number(r.cantidad) <= 0 || Number(r.precio_unitario) < 0)) {
       mostrarMensaje('error', 'Verifique que todos los renglones tengan descripción, cantidad > 0 y precio unitario.');
       alertService.error('Ítems Incompletos', 'Verifique que todos los renglones tengan descripción, cantidad > 0 y precio unitario.');
       return;
@@ -602,18 +602,18 @@ export default function MemoriasPage() {
     setActionLoading(true);
     try {
       const payload = {
-        codigo: formMemoria.codigo,
+        codigo: formMemoria.codigo.trim().toUpperCase(),
         gestion: selectedGestionId,
         seccion: Number(formMemoria.seccionId),
         operacion: Number(formMemoria.operacionId),
         es_contratacion: formMemoria.es_contratacion,
-        justificacion: formMemoria.justificacion,
+        justificacion: formMemoria.justificacion.trim().toUpperCase(),
         partida_id: Number(formMemoria.partidaId),
         detalles: formMemoria.renglones.map((r) => ({
           partida: Number(formMemoria.partidaId),
           partida_id: Number(formMemoria.partidaId),
-          descripcion: r.descripcion,
-          unidad_medida: r.unidad_medida,
+          descripcion: r.descripcion.trim().toUpperCase(),
+          unidad_medida: r.unidad_medida.trim().toUpperCase(),
           cantidad: Number(r.cantidad),
           precio_unitario: Number(r.precio_unitario),
         })),

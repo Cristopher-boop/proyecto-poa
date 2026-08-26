@@ -1,4 +1,4 @@
-﻿from django.db import models
+from django.db import models
 from django.contrib.auth.models import AbstractUser
 from apps.organizacional.models import Seccion
 
@@ -9,6 +9,13 @@ class Rol(models.Model):
     class Meta:
         verbose_name = "Rol"
         verbose_name_plural = "Roles"
+
+    def save(self, *args, **kwargs):
+        if self.nombre:
+            self.nombre = self.nombre.upper()
+        if self.descripcion:
+            self.descripcion = self.descripcion.upper()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.nombre
@@ -22,6 +29,19 @@ class Usuario(AbstractUser):
     class Meta:
         verbose_name = "Usuario"
         verbose_name_plural = "Usuarios"
+
+    def save(self, *args, **kwargs):
+        if self.first_name:
+            self.first_name = self.first_name.upper()
+        if self.last_name:
+            self.last_name = self.last_name.upper()
+        if self.cargo:
+            self.cargo = self.cargo.upper()
+        if self.email:
+            self.email = self.email.lower()
+        if self.username:
+            self.username = self.username.lower()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.get_full_name() or self.username} ({self.cargo or 'Sin cargo'})"

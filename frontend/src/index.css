@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -50,7 +50,28 @@
   }
 
   .input-theme {
-    @apply w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 text-sm text-theme-main placeholder:text-theme-muted transition-colors duration-200 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none;
+    @apply w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 text-sm text-theme-main placeholder:text-theme-muted transition-colors duration-200 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none uppercase placeholder:normal-case;
+  }
+
+  input[type="text"]:not([name="username"]):not([name="email"]):not(.lowercase-input),
+  textarea:not(.lowercase-input) {
+    text-transform: uppercase;
+  }
+
+  input[type="text"]::placeholder,
+  textarea::placeholder {
+    text-transform: none;
+  }
+
+  input[type="email"],
+  input[name="username"],
+  input[name="email"],
+  .lowercase-input {
+    text-transform: lowercase !important;
+  }
+
+  input[type="password"] {
+    text-transform: none !important;
   }
 }
 
