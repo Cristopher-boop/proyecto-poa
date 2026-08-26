@@ -205,6 +205,7 @@ class Command(BaseCommand):
             labels = [key(value) for value in row]
             if not any('DESCRIPCI' in label for label in labels):
                 continue
+            price_column_found = False
             for index, label in enumerate(labels):
                 if label in {'N', 'NO', 'NRO', 'NUMERO'}:
                     columns['numero'] = index
@@ -215,7 +216,14 @@ class Command(BaseCommand):
                 elif 'UNIDAD' in label:
                     columns['unidad'] = index
                 elif 'PRECIO' in label or 'UNITARIO' in label:
-                    columns['precio'] = index
+                    # Algunas plantillas (TDD) nombran por error tanto el
+                    # precio como el total como “PRECIO UNITARIO”. El segundo
+                    # encabezado representa el total de la fila.
+                    if price_column_found:
+                        columns['total'] = index
+                    else:
+                        columns['precio'] = index
+                        price_column_found = True
                 elif label == 'TOTAL':
                     columns['total'] = index
                 elif 'JUSTIFICACI' in label:
@@ -284,7 +292,7 @@ class Command(BaseCommand):
             justification = next((item['justificacion'] for item in memory_data['items'] if item['justificacion']), f"Importado de la hoja {memory_data['hoja']}.")
             memory = MemoriaCalculo.objects.create(codigo=code, gestion=gestion, seccion=section, operacion=operation, justificacion=justification, es_contratacion=True, estado=MemoriaCalculo.EstadoMemoria.BORRADOR)
             for item in memory_data['items']:
-                DetallePresupuestoMemoria.objects.create(memoria=memory, partida=partida, descripcion=item['descripcion'], unidad_medida=item['unidad_medida'][:50], mes_requerido=requirement['mes_requerido'][:120], fuente_excel=memory_data['hoja'][:120], factor_calculo=item['factor_calculo'], cantidad=item['cantidad'], precio_unitario=item['precio_unitario'])
+                DetallePresupuestoMemoria.objects.create(memoria=memory, partida=partida, descripcion=item['descripcion'], unidad_medida=item['unidad_medida'][:50], mes_requerido=requirement['mes_requerido'][:120], fuente_excel=memory_data['hoja'][:120], factor_calculo=item['factor_calculo'], total_programado=item['total_origen'], cantidad=item['cantidad'], precio_unitario=item['precio_unitario'])
             recalcular_saldos_memoria(memory)
             total_area += memory_data['total_calculado']
         budget, _ = PresupuestoArea.objects.get_or_create(gestion=gestion, area=area, defaults={'monto_inicial': Decimal('0'), 'monto_actual': Decimal('0')})

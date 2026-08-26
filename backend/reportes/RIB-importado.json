@@ -1,0 +1,120 @@
+{
+  "area": "RIB",
+  "memorias": 12,
+  "items": 19,
+  "total": "535881.00",
+  "rows": [
+    {
+      "hoja": "22110RIB",
+      "partida": "22110",
+      "items": 1,
+      "total": "3000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22210RIB",
+      "partida": "22210",
+      "items": 1,
+      "total": "2226.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "23100RIB",
+      "partida": "23100",
+      "items": 2,
+      "total": "216000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "23400RIB",
+      "partida": "23400",
+      "items": 1,
+      "total": "120000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24110RIB",
+      "partida": "24110",
+      "items": 4,
+      "total": "19425.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24120RIB",
+      "partida": "24120",
+      "items": 2,
+      "total": "14000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24300RIB",
+      "partida": "24300",
+      "items": 1,
+      "total": "600.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "25700RIB",
+      "partida": "25700",
+      "items": 1,
+      "total": "600.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "26990RIB",
+      "partida": "26990",
+      "items": 3,
+      "total": "130500.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "31120RIB",
+      "partida": "31120",
+      "items": 1,
+      "total": "3500.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "31140RIB",
+      "partida": "31140",
+      "items": 1,
+      "total": "2030.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "86100RIB",
+      "partida": "86100",
+      "items": 1,
+      "total": "24000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "22110RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22210RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "23100RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "23400RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24110RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24120RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24300RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "25700RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "26990RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "31120RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "31140RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "86100RIB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO."
+  ],
+  "applied": true
+}

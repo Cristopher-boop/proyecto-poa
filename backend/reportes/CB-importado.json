@@ -1,0 +1,102 @@
+{
+  "area": "CB",
+  "memorias": 10,
+  "items": 12,
+  "total": "1277956.00",
+  "rows": [
+    {
+      "hoja": "22600CB",
+      "partida": "22600",
+      "items": 1,
+      "total": "38000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "23100CB",
+      "partida": "23100",
+      "items": 1,
+      "total": "108000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "23400CB",
+      "partida": "23400",
+      "items": 1,
+      "total": "480000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24120CB",
+      "partida": "24120",
+      "items": 1,
+      "total": "500.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "25700CB",
+      "partida": "25700",
+      "items": 1,
+      "total": "1440.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "26990CB",
+      "partida": "26990",
+      "items": 3,
+      "total": "611000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "31120CB",
+      "partida": "31120",
+      "items": 1,
+      "total": "2016.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "31140CB",
+      "partida": "31140",
+      "items": 1,
+      "total": "9000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "34300CB",
+      "partida": "34300",
+      "items": 1,
+      "total": "4000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "86100 CB",
+      "partida": "86100",
+      "items": 1,
+      "total": "24000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "22600CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "23100CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "23400CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24120CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "25700CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "26990CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "31120CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "31140CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "34300CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "86100 CB: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO."
+  ],
+  "applied": true
+}

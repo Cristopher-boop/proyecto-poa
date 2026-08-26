@@ -1,0 +1,18 @@
+{
+  "area": "LP",
+  "memorias": 6,
+  "items": 14,
+  "total": "343820.00",
+  "rows": [],
+  "errors": [
+    "No se hallaron requerimientos para el área LP en OPERACION-PRESUPUESTO 2027.",
+    "25220 LP: se esperó 1 requerimiento con partida 25220 y Bs 237600.00; se encontraron 0.",
+    "21200LP: se esperó 1 requerimiento con partida 21200 y Bs 87600.00; se encontraron 0.",
+    "21400LP: se esperó 1 requerimiento con partida 21400 y Bs 4320.00; se encontraron 0.",
+    "25500 LP : se esperó 1 requerimiento con partida 25500 y Bs 8500.00; se encontraron 0.",
+    "39800 LP: se esperó 1 requerimiento con partida 39800 y Bs 2800.00; se encontraron 0.",
+    "86100 LP: se esperó 1 requerimiento con partida 86100 y Bs 3000.00; se encontraron 0."
+  ],
+  "warnings": [],
+  "applied": false
+}

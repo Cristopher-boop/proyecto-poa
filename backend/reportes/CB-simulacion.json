@@ -1,0 +1,22 @@
+{
+  "area": "CB",
+  "memorias": 10,
+  "items": 12,
+  "total": "1277956.00",
+  "rows": [],
+  "errors": [
+    "No se hallaron requerimientos para el área CB en OPERACION-PRESUPUESTO 2027.",
+    "22600CB: se esperó 1 requerimiento con partida 22600 y Bs 38000.00; se encontraron 0.",
+    "23100CB: se esperó 1 requerimiento con partida 23100 y Bs 108000.00; se encontraron 0.",
+    "23400CB: se esperó 1 requerimiento con partida 23400 y Bs 480000.00; se encontraron 0.",
+    "24120CB: se esperó 1 requerimiento con partida 24120 y Bs 500.00; se encontraron 0.",
+    "25700CB: se esperó 1 requerimiento con partida 25700 y Bs 1440.00; se encontraron 0.",
+    "26990CB: se esperó 1 requerimiento con partida 26990 y Bs 611000.00; se encontraron 0.",
+    "31120CB: se esperó 1 requerimiento con partida 31120 y Bs 2016.00; se encontraron 0.",
+    "31140CB: se esperó 1 requerimiento con partida 31140 y Bs 9000.00; se encontraron 0.",
+    "34300CB: se esperó 1 requerimiento con partida 34300 y Bs 4000.00; se encontraron 0.",
+    "86100 CB: se esperó 1 requerimiento con partida 86100 y Bs 24000.00; se encontraron 0."
+  ],
+  "warnings": [],
+  "applied": false
+}

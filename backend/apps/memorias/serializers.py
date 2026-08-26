@@ -37,6 +37,7 @@ class DetallePresupuestoMemoriaSerializer(serializers.ModelSerializer):
             'mes_requerido',
             'fuente_excel',
             'factor_calculo',
+            'total_programado',
             'cantidad',
             'precio_unitario',
             'precio_total',

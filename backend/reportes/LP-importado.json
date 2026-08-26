@@ -1,0 +1,66 @@
+{
+  "area": "LP",
+  "memorias": 6,
+  "items": 14,
+  "total": "343820.00",
+  "rows": [
+    {
+      "hoja": "25220 LP",
+      "partida": "25220",
+      "items": 1,
+      "total": "237600.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "21200LP",
+      "partida": "21200",
+      "items": 7,
+      "total": "87600.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "21400LP",
+      "partida": "21400",
+      "items": 2,
+      "total": "4320.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "25500 LP ",
+      "partida": "25500",
+      "items": 2,
+      "total": "8500.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "39800 LP",
+      "partida": "39800",
+      "items": 1,
+      "total": "2800.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "86100 LP",
+      "partida": "86100",
+      "items": 1,
+      "total": "3000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "25220 LP: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "21200LP: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "21400LP: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "25500 LP : se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "39800 LP: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "86100 LP: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO."
+  ],
+  "applied": true
+}
