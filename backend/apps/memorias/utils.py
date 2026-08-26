@@ -16,7 +16,11 @@ def recalcular_saldos_memoria(memoria):
     total_ejecutado_memoria = Decimal('0.0000')
 
     for d in detalles:
-        total_item = (d.cantidad or Decimal('0.00')) * (d.precio_unitario or Decimal('0.00'))
+        total_item = (
+            (d.cantidad or Decimal('0.00'))
+            * (d.precio_unitario or Decimal('0.00'))
+            * (d.factor_calculo or Decimal('1.0000'))
+        )
         total_gastado_item = d.gastos.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
         saldo_item = max(Decimal('0.00'), total_item - total_gastado_item)
 
