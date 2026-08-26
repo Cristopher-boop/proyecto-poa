@@ -54,4 +54,21 @@ class GastoSerializer(serializers.ModelSerializer):
         monto = data.get('monto_ejecutado')
         if monto is not None and monto <= Decimal('0.00'):
             raise serializers.ValidationError({'monto_ejecutado': 'El monto ejecutado debe ser mayor a 0.'})
+
+        detalle = data.get('detalle_memoria') or (self.instance.detalle_memoria if self.instance else None)
+        if detalle and monto is not None:
+            cant = detalle.cantidad or Decimal('0.00')
+            precio = detalle.precio_unitario or Decimal('0.00')
+            precio_total = cant * precio
+            gastos_qs = detalle.gastos.all()
+            if self.instance:
+                gastos_qs = gastos_qs.exclude(id=self.instance.id)
+            total_otros_gastos = gastos_qs.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
+            saldo_maximo = max(Decimal('0.00'), precio_total - total_otros_gastos)
+
+            if Decimal(str(monto)) > saldo_maximo:
+                raise serializers.ValidationError({
+                    'monto_ejecutado': f'El monto asignado (Bs. {monto}) supera el saldo disponible restante para este ítem (Bs. {saldo_maximo:.2f}).'
+                })
+
         return data

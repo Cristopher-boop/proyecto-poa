@@ -39,6 +39,15 @@ export interface PresupuestoArea {
   estado: 'ABIERTO' | 'CERRADO';
 }
 
+export interface GastoItemDetalleResumen {
+  id: number;
+  monto_ejecutado: string;
+  fecha_gasto: string;
+  comprobante_num: string | null;
+  observacion: string | null;
+  usuario_nombre: string;
+}
+
 export interface DetallePresupuestoMemoria {
   id?: number;
   memoria?: number;
@@ -57,6 +66,8 @@ export interface DetallePresupuestoMemoria {
   estado_ejecucion?: 'PENDIENTE' | 'EJECUTADO_PARCIAL' | 'COMPLETADO';
   monto_ejecutado?: string;
   monto_disponible?: string;
+  gastos_count?: number;
+  gastos?: GastoItemDetalleResumen[];
 }
 
 export interface RegistroParticipacion {

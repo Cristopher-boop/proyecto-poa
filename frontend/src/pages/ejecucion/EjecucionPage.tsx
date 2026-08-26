@@ -20,6 +20,8 @@ import {
   Receipt,
   Check,
   Clock,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   Gestion,
@@ -71,10 +73,17 @@ export default function EjecucionPage() {
   const [currentPageGastos, setCurrentPageGastos] = useState<number>(1);
   const [currentPageItems, setCurrentPageItems] = useState<number>(1);
 
-  // Filtros Pestaña 3 (Control de Ítems)
+  // Filtros y Expansión Pestaña 3 (Control de Ítems)
   const [searchItem, setSearchItem] = useState<string>('');
   const [filtroAreaItem, setFiltroAreaItem] = useState<string>('todas');
-  const [filtroEstadoItem, setFiltroEstadoItem] = useState<string>('todos');  // Modal Registro / Edición de Gasto
+  const [filtroEstadoItem, setFiltroEstadoItem] = useState<string>('todos');
+  const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
+
+  const toggleExpandItem = (detalleId: number) => {
+    setExpandedItems((prev) => ({ ...prev, [detalleId]: !prev[detalleId] }));
+  };
+
+  // Modal Registro / Edición de Gasto
   const [showModalGasto, setShowModalGasto] = useState<boolean>(false);
   const [editingGastoId, setEditingGastoId] = useState<number | null>(null);
   const [searchModalGeneral, setSearchModalGeneral] = useState<string>('');
@@ -95,12 +104,16 @@ export default function EjecucionPage() {
   });
 
   function handleOpenCrearGasto() {
+    handleOpenCrearGastoConItem();
+  }
+
+  function handleOpenCrearGastoConItem(detalleId?: number) {
     setEditingGastoId(null);
     setSearchModalGeneral('');
     setSearchModalCodigo('');
     setSearchModalDinero('');
     setFormGasto({
-      detalleMemoriaId: '',
+      detalleMemoriaId: detalleId || '',
       monto: '',
       fecha: new Date().toISOString().split('T')[0],
       comprobante: '',
@@ -240,6 +253,8 @@ export default function EjecucionPage() {
           montoGastado: gastado,
           saldoDisponible: saldo,
           estadoGasto: d.estado_ejecucion || 'PENDIENTE',
+          gastosCount: d.gastos_count || 0,
+          gastosList: d.gastos || [],
         };
       });
   }, [detallesPresupuesto]);
@@ -315,7 +330,7 @@ export default function EjecucionPage() {
           comprobante_num: formGasto.comprobante,
           observacion: formGasto.observacion,
         });
-        mostrarMensaje('success', 'Gasto ejecutado actualizado correctamente.');
+        mostrarMensaje('success', `Gasto ejecutado actualizado a ${formatMoney(formGasto.monto)} correctamente.`);
       } else {
         await createGasto({
           detalle_memoria: Number(formGasto.detalleMemoriaId),
@@ -324,7 +339,7 @@ export default function EjecucionPage() {
           comprobante_num: formGasto.comprobante,
           observacion: formGasto.observacion,
         });
-        mostrarMensaje('success', 'Gasto ejecutado registrado. Presupuesto disponible actualizado en tiempo real.');
+        mostrarMensaje('success', `Gasto por ${formatMoney(formGasto.monto)} registrado correctamente. Presupuesto disponible actualizado.`);
       }
 
       setShowModalGasto(false);
@@ -827,43 +842,172 @@ export default function EjecucionPage() {
                   <th className="py-3.5 px-4 text-right">Gastado</th>
                   <th className="py-3.5 px-4 text-right">Saldo Restante</th>
                   <th className="py-3.5 px-4 text-center">Estado Gasto</th>
+                  <th className="py-3.5 px-4 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-theme-border">
                 {renglonesFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-theme-muted">
+                    <td colSpan={9} className="py-12 text-center text-theme-muted">
                       No hay ítems aprobados que coincidan con los filtros aplicados.
                     </td>
                   </tr>
                 ) : (
-                  renglonesPaginados.map((r) => (
-                    <tr key={r.detalleId} className="hover:bg-theme-border/20 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.memoriaCodigo}</td>
-                      <td className="py-3.5 px-4 text-xs font-medium text-theme-main">{r.areaNombre}</td>
-                      <td className="py-3.5 px-4 font-mono text-xs text-theme-muted">{r.partidaCodigo}</td>
-                      <td className="py-3.5 px-4 text-xs font-semibold text-theme-main">{r.descripcion}</td>
-                      <td className="py-3.5 px-4 text-right font-medium text-xs text-theme-main">{formatMoney(r.montoTotal)}</td>
-                      <td className="py-3.5 px-4 text-right font-medium text-xs text-rose-600 dark:text-rose-400">
-                        {formatMoney(r.montoGastado)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-xs text-emerald-600 dark:text-emerald-400">
-                        {formatMoney(r.saldoDisponible)}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.estadoGasto === 'COMPLETADO'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                            : r.estadoGasto === 'EJECUTADO_PARCIAL'
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                              : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                            }`}
-                        >
-                          {r.estadoGasto}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  renglonesPaginados.map((r) => {
+                    const isExpanded = !!expandedItems[r.detalleId];
+                    return (
+                      <React.Fragment key={r.detalleId}>
+                        <tr className="hover:bg-theme-border/20 transition-colors">
+                          <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.memoriaCodigo}</td>
+                          <td className="py-3.5 px-4 text-xs font-medium text-theme-main">{r.areaNombre}</td>
+                          <td className="py-3.5 px-4 font-mono text-xs text-theme-muted">{r.partidaCodigo}</td>
+                          <td className="py-3.5 px-4 text-xs font-semibold text-theme-main">{r.descripcion}</td>
+                          <td className="py-3.5 px-4 text-right font-medium text-xs text-theme-main">{formatMoney(r.montoTotal)}</td>
+                          <td className="py-3.5 px-4 text-right font-medium text-xs text-rose-600 dark:text-rose-400">
+                            {formatMoney(r.montoGastado)}
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-bold text-xs text-emerald-600 dark:text-emerald-400">
+                            {formatMoney(r.saldoDisponible)}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                r.estadoGasto === 'COMPLETADO'
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                  : r.estadoGasto === 'EJECUTADO_PARCIAL'
+                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                              }`}
+                            >
+                              {r.estadoGasto}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Botón Acordeón Ver Gastos */}
+                              <button
+                                onClick={() => toggleExpandItem(r.detalleId)}
+                                className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                  isExpanded
+                                    ? 'bg-theme-primary/15 text-theme-primary'
+                                    : 'bg-theme-base border border-theme-border text-theme-muted hover:text-theme-main'
+                                }`}
+                                title="Ver historial de ejecuciones/gastos parciales de este ítem"
+                              >
+                                {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                                <span>{r.gastosCount} gasto(s)</span>
+                              </button>
+
+                              {/* Botón Directo + Registrar Gasto */}
+                              {canExecuteGasto && (
+                                <button
+                                  onClick={() => handleOpenCrearGastoConItem(r.detalleId)}
+                                  disabled={r.saldoDisponible <= 0}
+                                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                                  title={r.saldoDisponible <= 0 ? 'Sin saldo disponible en este ítem' : 'Registrar nuevo gasto en este ítem'}
+                                >
+                                  <Plus size={13} />
+                                  <span>Gasto</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Fila desplegable con el historial de gastos parciales */}
+                        {isExpanded && (
+                          <tr className="bg-theme-base/40 border-b border-theme-border">
+                            <td colSpan={9} className="p-4">
+                              <div className="p-4 rounded-xl border border-theme-border bg-theme-surface space-y-3 shadow-inner">
+                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-theme-border pb-2.5">
+                                  <h4 className="text-xs font-bold text-theme-main flex items-center gap-2">
+                                    <Receipt size={16} className="text-rose-500" />
+                                    Ejecuciones Parciales del Ítem: <span className="font-mono text-theme-primary">{r.descripcion}</span>
+                                  </h4>
+                                  <div className="flex items-center gap-3 text-xs">
+                                    <span className="text-theme-muted">
+                                      Gastos Registrados: <strong className="text-theme-main">{r.gastosCount}</strong>
+                                    </span>
+                                    <span className="text-theme-muted">
+                                      Saldo Restante: <strong className="text-emerald-600 dark:text-emerald-400">{formatMoney(r.saldoDisponible)}</strong>
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {r.gastosList.length === 0 ? (
+                                  <p className="text-xs text-theme-muted italic py-3 text-center">
+                                    No hay ejecuciones ni gastos registrados para este ítem todavía.
+                                  </p>
+                                ) : (
+                                  <div className="overflow-x-auto rounded-lg border border-theme-border">
+                                    <table className="w-full text-left text-xs">
+                                      <thead>
+                                        <tr className="bg-theme-base border-b border-theme-border text-[11px] font-semibold text-theme-muted uppercase">
+                                          <th className="py-2.5 px-3">Fecha Gasto</th>
+                                          <th className="py-2.5 px-3">N° Hoja de Ruta</th>
+                                          <th className="py-2.5 px-3">Observación / Justificación</th>
+                                          <th className="py-2.5 px-3">Registrado Por</th>
+                                          <th className="py-2.5 px-3 text-right">Monto Ejecutado</th>
+                                          <th className="py-2.5 px-3 text-center">Acción</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-theme-border/60">
+                                        {r.gastosList.map((g) => (
+                                          <tr key={g.id} className="hover:bg-theme-base/60 transition-colors">
+                                            <td className="py-2.5 px-3 font-mono text-theme-muted">{formatFechaDMY(g.fecha_gasto)}</td>
+                                            <td className="py-2.5 px-3 font-mono font-bold text-theme-main">{g.comprobante_num || 'S/N'}</td>
+                                            <td className="py-2.5 px-3 text-theme-muted max-w-xs truncate">{g.observacion || '-'}</td>
+                                            <td className="py-2.5 px-3 text-theme-muted">{g.usuario_nombre || 'Admin'}</td>
+                                            <td className="py-2.5 px-3 text-right font-bold text-rose-600 dark:text-rose-400">
+                                              {formatMoney(g.monto_ejecutado)}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                              {canExecuteGasto && (
+                                                <button
+                                                  onClick={() =>
+                                                    handleOpenEditarGasto({
+                                                      id: g.id,
+                                                      monto_ejecutado: g.monto_ejecutado,
+                                                      fecha_gasto: g.fecha_gasto,
+                                                      comprobante_num: g.comprobante_num,
+                                                      observacion: g.observacion,
+                                                      detalle_memoria: r.detalleId,
+                                                      detalle_descripcion: r.descripcion,
+                                                      partida_id: 0,
+                                                      partida_codigo: r.partidaCodigo,
+                                                      partida_nombre: r.partidaNombre,
+                                                      memoria_id: 0,
+                                                      memoria_codigo: r.memoriaCodigo,
+                                                      area_id: 0,
+                                                      area_nombre: r.areaNombre,
+                                                      seccion_nombre: '',
+                                                      gestion_id: 0,
+                                                      gestion_anio: 0,
+                                                      usuario_registro: 0,
+                                                      usuario_nombre: g.usuario_nombre,
+                                                      created_at: '',
+                                                    })
+                                                  }
+                                                  className="p-1 rounded text-blue-600 hover:bg-blue-500/10 transition-colors"
+                                                  title="Editar este gasto parcial"
+                                                >
+                                                  <Edit3 size={14} />
+                                                </button>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1014,14 +1158,22 @@ export default function EjecucionPage() {
                       modalRenglonesFiltrados.map((r) => {
                         const isSelected = formGasto.detalleMemoriaId === r.detalleId;
                         const descCorta = r.descripcion.length > 38 ? `${r.descripcion.slice(0, 38)}...` : r.descripcion;
+                        const isDisabled = r.saldoDisponible <= 0 && !editingGastoId && !isSelected;
+
                         return (
                           <div
                             key={r.detalleId}
-                            onClick={() => setFormGasto({ ...formGasto, detalleMemoriaId: r.detalleId })}
-                            className={`p-2.5 cursor-pointer flex items-center justify-between text-xs transition-colors ${
-                              isSelected
-                                ? 'bg-rose-500/10 border-l-4 border-rose-500 text-theme-main font-semibold'
-                                : 'hover:bg-theme-border/30 text-theme-main'
+                            onClick={() => {
+                              if (!isDisabled) {
+                                setFormGasto({ ...formGasto, detalleMemoriaId: r.detalleId });
+                              }
+                            }}
+                            className={`p-2.5 flex items-center justify-between text-xs transition-colors ${
+                              isDisabled
+                                ? 'opacity-40 bg-theme-base/50 cursor-not-allowed select-none'
+                                : isSelected
+                                  ? 'bg-rose-500/10 border-l-4 border-rose-500 text-theme-main font-semibold cursor-pointer'
+                                  : 'hover:bg-theme-border/30 text-theme-main cursor-pointer'
                             }`}
                           >
                             <div className="min-w-0 flex-1 pr-3">
@@ -1032,6 +1184,11 @@ export default function EjecucionPage() {
                                 <span className="font-mono text-[10px] text-theme-muted">
                                   P.{r.partidaCodigo}
                                 </span>
+                                {isDisabled && (
+                                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+                                    Sin saldo disponible
+                                  </span>
+                                )}
                               </div>
                               <p className="text-xs text-theme-main font-medium mt-1 truncate" title={r.descripcion}>
                                 {descCorta}
@@ -1039,7 +1196,7 @@ export default function EjecucionPage() {
                             </div>
                             <div className="text-right shrink-0">
                               <span className="text-[10px] text-theme-muted uppercase block">Saldo</span>
-                              <span className="font-bold text-xs text-emerald-600 dark:text-emerald-400">
+                              <span className={`font-bold text-xs ${r.saldoDisponible <= 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                 {formatMoney(r.saldoDisponible)}
                               </span>
                             </div>
