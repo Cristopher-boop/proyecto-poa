@@ -116,8 +116,8 @@ export default function MemoriasPage() {
     renglones: Array<{
       descripcion: string;
       unidad_medida: string;
-      cantidad: number;
-      precio_unitario: number;
+      cantidad: number | string;
+      precio_unitario: number | string;
     }>;
   }>({
     codigo: '',
@@ -126,7 +126,7 @@ export default function MemoriasPage() {
     es_contratacion: false,
     justificacion: '',
     partidaId: '',
-    renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: 0 }],
+    renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: '' }],
   });
 
   const [searchPartidaQuery, setSearchPartidaQuery] = useState<string>('');
@@ -350,6 +350,24 @@ export default function MemoriasPage() {
     });
   }, [memorias, activeTab, filtroArea, searchTerm]);
 
+  // Áreas presentes en la gestión actualmente seleccionada
+  const areasEnGestion = useMemo(() => {
+    const seen = new Map<number, { id: number; nombre: string }>();
+    (Array.isArray(memorias) ? memorias : []).forEach((m) => {
+      if (m.area_id && !seen.has(m.area_id)) {
+        seen.set(m.area_id, { id: m.area_id, nombre: m.area_nombre });
+      }
+    });
+    return Array.from(seen.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [memorias]);
+
+  // Resetear filtroArea si el área ya no existe en la nueva gestión
+  useEffect(() => {
+    if (filtroArea !== 'todas' && !areasEnGestion.some((a) => String(a.id) === filtroArea)) {
+      setFiltroArea('todas');
+    }
+  }, [areasEnGestion]);
+
   // Resetear página cuando cambia el filtro
   useEffect(() => { setCurrentPage(1); }, [memoriasFiltradas]);
 
@@ -377,7 +395,7 @@ export default function MemoriasPage() {
       es_contratacion: false,
       justificacion: '',
       partidaId: '',
-      renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: 0 }],
+      renglones: [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: '' }],
     });
     setSearchPartidaQuery('');
     setPartidaSelectorOpen(false);
@@ -461,7 +479,7 @@ export default function MemoriasPage() {
   function handleAddRenglon() {
     setFormMemoria({
       ...formMemoria,
-      renglones: [...formMemoria.renglones, { descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: 0 }],
+      renglones: [...formMemoria.renglones, { descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: '' }],
     });
   }
 
@@ -875,8 +893,8 @@ export default function MemoriasPage() {
             onChange={(e) => setFiltroArea(e.target.value)}
             className="input-theme text-xs py-2 w-full md:w-56"
           >
-            <option value="todas">Todas las Áreas</option>
-            {areas.map((a) => (
+            <option value="todas">Todas las Áreas ({areasEnGestion.length})</option>
+            {areasEnGestion.map((a) => (
               <option key={a.id} value={String(a.id)}>
                 {a.nombre}
               </option>
@@ -1654,8 +1672,9 @@ export default function MemoriasPage() {
                                 required
                                 min="0.01"
                                 step="any"
-                                value={renglon.cantidad}
-                                onChange={(e) => handleUpdateRenglon(idx, 'cantidad', parseFloat(e.target.value) || 0)}
+                                placeholder="1"
+                                value={renglon.cantidad === 0 || renglon.cantidad === '0' ? '' : renglon.cantidad}
+                                onChange={(e) => handleUpdateRenglon(idx, 'cantidad', e.target.value)}
                                 className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-1 text-right focus:outline-none text-theme-main font-semibold"
                               />
                             </td>
@@ -1664,9 +1683,10 @@ export default function MemoriasPage() {
                                 type="number"
                                 required
                                 min="0"
-                                step="any"
-                                value={renglon.precio_unitario}
-                                onChange={(e) => handleUpdateRenglon(idx, 'precio_unitario', parseFloat(e.target.value) || 0)}
+                                step="0.01"
+                                placeholder="0.00"
+                                value={renglon.precio_unitario === 0 || renglon.precio_unitario === '0' ? '' : renglon.precio_unitario}
+                                onChange={(e) => handleUpdateRenglon(idx, 'precio_unitario', e.target.value)}
                                 className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-1 text-right focus:outline-none text-theme-main font-semibold"
                               />
                             </td>
