@@ -86,6 +86,7 @@ export default function EjecucionPage() {
   // Modal Registro / Edición de Gasto
   const [showModalGasto, setShowModalGasto] = useState<boolean>(false);
   const [editingGastoId, setEditingGastoId] = useState<number | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [searchModalGeneral, setSearchModalGeneral] = useState<string>('');
   const [searchModalCodigo, setSearchModalCodigo] = useState<string>('');
   const [searchModalDinero, setSearchModalDinero] = useState<string>('');
@@ -109,6 +110,7 @@ export default function EjecucionPage() {
 
   function handleOpenCrearGastoConItem(detalleId?: number) {
     setEditingGastoId(null);
+    setModalError(null);
     setSearchModalGeneral('');
     setSearchModalCodigo('');
     setSearchModalDinero('');
@@ -124,6 +126,7 @@ export default function EjecucionPage() {
 
   function handleOpenEditarGasto(gasto: Gasto) {
     setEditingGastoId(gasto.id);
+    setModalError(null);
     setSearchModalGeneral('');
     setSearchModalCodigo('');
     setSearchModalDinero('');
@@ -342,6 +345,7 @@ export default function EjecucionPage() {
         mostrarMensaje('success', `Gasto por ${formatMoney(formGasto.monto)} registrado correctamente. Presupuesto disponible actualizado.`);
       }
 
+      setModalError(null);
       setShowModalGasto(false);
       setEditingGastoId(null);
       setFormGasto({
@@ -353,7 +357,12 @@ export default function EjecucionPage() {
       });
       if (selectedGestionId) await cargarDatosEjecucion(selectedGestionId);
     } catch (err: any) {
-      mostrarMensaje('error', err.response?.data?.monto_ejecutado?.[0] || err.response?.data?.error || 'Error al guardar el gasto.');
+      const msg =
+        err.response?.data?.monto_ejecutado?.[0] ||
+        err.response?.data?.non_field_errors?.[0] ||
+        err.response?.data?.error ||
+        'Error al guardar el gasto. Verifique los datos ingresados.';
+      setModalError(msg);
     } finally {
       setActionLoading(false);
     }
@@ -1084,6 +1093,27 @@ export default function EjecucionPage() {
             <form onSubmit={handleGuardarGasto} className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Cuerpo scrolleable del formulario */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+
+                {/* ── Banner de error dentro del modal ─────────────────── */}
+                {modalError && (
+                  <div className="flex items-start gap-3 p-3.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:border-rose-700 dark:text-rose-200 shadow-sm">
+                    <AlertCircle size={18} className="mt-0.5 shrink-0 text-rose-500" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-xs mb-0.5">No se pudo guardar el gasto</p>
+                      <p className="text-xs leading-relaxed">{modalError}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setModalError(null)}
+                      className="shrink-0 text-rose-400 hover:text-rose-700 transition-colors text-base leading-none"
+                      title="Cerrar alerta"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {/* ──────────────────────────────────────────────────────── */}
+
                 <div>
                   <label className="block font-semibold uppercase text-theme-muted mb-1.5">
                     Seleccionar Ítem / Renglón de Memoria Aprobada *
