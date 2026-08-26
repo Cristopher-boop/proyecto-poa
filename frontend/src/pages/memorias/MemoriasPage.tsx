@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import alertService from '../../utils/alerts';
 import {
@@ -54,6 +55,7 @@ import { planificacionService } from '../../services/planificacionService';
 import { Operacion, AccionCortoPlazo } from '../../types/planificacion';
 
 export default function MemoriasPage() {
+  const [searchParams] = useSearchParams();
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
   const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
   const [memorias, setMemorias] = useState<MemoriaCalculo[]>([]);
@@ -70,15 +72,17 @@ export default function MemoriasPage() {
   const rolClean = rolName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const isSuperuser = !!user?.is_superuser;
   const isAprobador = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'ADMINISTRADOR';
-  const isPlanificador = isSuperuser || rolClean.includes('PLANIFIC') || isAprobador;
-  const isGerente = isSuperuser || rolClean === 'GERENTE';
-  const isElaborador = isSuperuser || rolClean === 'ELABORADOR';
-  const isTrabajador = isSuperuser || rolClean === 'TRABAJADOR';
+  const isPlanificador = !isAprobador && rolClean.includes('PLANIFIC');
+  const isGerente = !isSuperuser && !isAprobador && !isPlanificador && rolClean === 'GERENTE';
+  const isElaborador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && rolClean === 'ELABORADOR';
+  const isTrabajador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && !isElaborador;
 
+  // Solo Elaborador y Aprobador/Superadmin pueden crear/formular nuevas memorias (Planificador NO formula)
   const canCreate = isAprobador || isElaborador;
-  const canGlobalView = isAprobador || isGerente || isPlanificador;
+  // Solo Superadmin, Aprobador y Planificador pueden ver todas las áreas institucionales
+  const canGlobalView = isAprobador || isPlanificador;
 
-  const [activeTab, setActiveTab] = useState<'todas' | 'borrador' | 'pendiente' | 'planificacion' | 'finanzas' | 'aprobadas' | 'rechazadas'>('todas');
+  const [activeTab, setActiveTab] = useState<'todas' | 'borrador' | 'espera' | 'pendiente' | 'planificacion' | 'finanzas' | 'aprobadas' | 'rechazadas'>('todas');
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -131,6 +135,8 @@ export default function MemoriasPage() {
 
   const [searchPartidaQuery, setSearchPartidaQuery] = useState<string>('');
 
+  const targetMemoriaId = searchParams.get('id') || searchParams.get('memoria');
+
   useEffect(() => {
     cargarBase();
   }, []);
@@ -140,6 +146,27 @@ export default function MemoriasPage() {
       cargarMemorias(selectedGestionId);
     }
   }, [selectedGestionId]);
+
+  // Deep linking: Abrir modal de ficha técnica al hacer clic en notificación
+  useEffect(() => {
+    if (targetMemoriaId) {
+      const idNum = Number(targetMemoriaId);
+      if (!isNaN(idNum) && idNum > 0) {
+        getMemoria(idNum)
+          .then((mem) => {
+            if (mem && mem.id) {
+              setFichaMemoria(mem);
+              if (mem.gestion && (!selectedGestionId || mem.gestion !== selectedGestionId)) {
+                setSelectedGestionId(mem.gestion);
+              }
+            }
+          })
+          .catch((err) => {
+            console.error('No se pudo abrir la memoria vinculada a la notificación:', err);
+          });
+      }
+    }
+  }, [targetMemoriaId]);
 
   async function cargarBase() {
     setLoading(true);
@@ -313,9 +340,11 @@ export default function MemoriasPage() {
   // Contadores por estado
   const conteos = useMemo(() => {
     const arr = Array.isArray(memorias) ? memorias : [];
+    const estadosEspera = ['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'];
     return {
       todas: arr.length,
       borrador: arr.filter((m) => m.estado === 'BORRADOR').length,
+      espera: arr.filter((m) => estadosEspera.includes(m.estado)).length,
       pendiente: arr.filter((m) => m.estado === 'PENDIENTE_GERENCIA').length,
       planificacion: arr.filter((m) => m.estado === 'PENDIENTE_PLANIFICACION').length,
       finanzas: arr.filter((m) => m.estado === 'APROBADO_GERENCIA' || m.estado === 'APROBADO_PLANIFICACION').length,
@@ -330,6 +359,7 @@ export default function MemoriasPage() {
     return (Array.isArray(memorias) ? memorias : []).filter((m) => {
       let matchTab = true;
       if (activeTab === 'borrador') matchTab = m.estado === 'BORRADOR';
+      else if (activeTab === 'espera') matchTab = ['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(m.estado);
       else if (activeTab === 'pendiente') matchTab = m.estado === 'PENDIENTE_GERENCIA';
       else if (activeTab === 'planificacion') matchTab = m.estado === 'PENDIENTE_PLANIFICACION';
       else if (activeTab === 'finanzas') matchTab = m.estado === 'APROBADO_GERENCIA' || m.estado === 'APROBADO_PLANIFICACION';
@@ -710,14 +740,13 @@ export default function MemoriasPage() {
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 shadow-sm"><Clock size={12} /> Borrador</span>;
       case 'PENDIENTE_GERENCIA':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700 shadow-sm"><AlertCircle size={12} /> Pendiente Gerencia</span>;
-      case 'APROBADO_GERENCIA':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700 shadow-sm"><CheckCircle2 size={12} /> Aprobado Gerencia</span>;
       case 'PENDIENTE_PLANIFICACION':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-950/90 dark:text-indigo-200 dark:border-indigo-700 shadow-sm"><AlertCircle size={12} /> Pendiente Planificación</span>;
+      case 'APROBADO_GERENCIA':
       case 'APROBADO_PLANIFICACION':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-900 border border-teal-300 dark:bg-teal-950/90 dark:text-teal-200 dark:border-teal-700 shadow-sm"><CheckCircle2 size={12} /> Alineado Planificación</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700 shadow-sm"><CheckCircle2 size={12} /> Pendiente Presupuestos</span>;
       case 'APROBADO_FINANZAS':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700 shadow-sm"><CheckCircle2 size={12} /> Aprobado Finanzas</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700 shadow-sm"><CheckCircle2 size={12} /> Aprobado Presupuestos (POA)</span>;
       case 'RECHAZADO':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-900 border border-rose-300 dark:bg-rose-950/90 dark:text-rose-200 dark:border-rose-700 shadow-sm"><XCircle size={12} /> Rechazado</span>;
       default:
@@ -807,37 +836,50 @@ export default function MemoriasPage() {
           <Layers size={16} /> Todas ({conteos.todas})
         </button>
 
-        <button
-          onClick={() => setActiveTab('borrador')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'borrador' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-            }`}
-        >
-          <Clock size={16} /> En Borrador ({conteos.borrador})
-        </button>
+        {/* En Borrador: visible para Elaborador, Trabajador y Gerente */}
+        {(isElaborador || isTrabajador || isGerente) && (
+          <button
+            onClick={() => setActiveTab('borrador')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'borrador' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+              }`}
+          >
+            <Clock size={16} /> En Borrador ({conteos.borrador})
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('pendiente')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'pendiente' ? 'border-amber-500 text-amber-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-            }`}
-        >
-          <AlertCircle size={16} /> Pendientes de Gerencia ({conteos.pendiente})
-        </button>
+        {/* En Espera: visible para Elaborador, Trabajador y Gerente */}
+        {(isTrabajador || isElaborador || isGerente) && (
+          <button
+            onClick={() => setActiveTab('espera')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'espera' ? 'border-amber-500 text-amber-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+              }`}
+            title="Memorias en trámite de revisión (Gerencia, Planificación o Presupuestos)"
+          >
+            <Clock size={16} /> En Espera ({conteos.espera})
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('planificacion')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'planificacion' ? 'border-indigo-500 text-indigo-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-            }`}
-        >
-          <Building2 size={16} /> Revisión Planificación SPO ({conteos.planificacion})
-        </button>
+        {/* Revisión Planificación SPO: Solo Planificador */}
+        {isPlanificador && (
+          <button
+            onClick={() => setActiveTab('planificacion')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'planificacion' ? 'border-indigo-500 text-indigo-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+              }`}
+          >
+            <Building2 size={16} /> Revisión Planificación SPO ({conteos.planificacion})
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('finanzas')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'finanzas' ? 'border-blue-500 text-blue-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
-            }`}
-        >
-          <CheckCircle2 size={16} /> Revisión Presupuestos ({conteos.finanzas})
-        </button>
+        {/* Revisión Presupuestos: Solo Aprobador */}
+        {isAprobador && (
+          <button
+            onClick={() => setActiveTab('finanzas')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'finanzas' ? 'border-blue-500 text-blue-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+              }`}
+          >
+            <CheckCircle2 size={16} /> Revisión Presupuestos ({conteos.finanzas})
+          </button>
+        )}
 
         <button
           onClick={() => setActiveTab('aprobadas')}
@@ -870,18 +912,25 @@ export default function MemoriasPage() {
             />
           </div>
 
-          <select
-            value={filtroArea}
-            onChange={(e) => setFiltroArea(e.target.value)}
-            className="input-theme text-xs py-2 w-full md:w-56"
-          >
-            <option value="todas">Todas las Áreas</option>
-            {areas.map((a) => (
-              <option key={a.id} value={String(a.id)}>
-                {a.nombre}
-              </option>
-            ))}
-          </select>
+          {canGlobalView ? (
+            <select
+              value={filtroArea}
+              onChange={(e) => setFiltroArea(e.target.value)}
+              className="input-theme text-xs py-2 w-full md:w-56"
+            >
+              <option value="todas">Todas las Áreas</option>
+              {areas.map((a) => (
+                <option key={a.id} value={String(a.id)}>
+                  {a.nombre}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="px-3 py-2 bg-theme-base/60 border border-theme-border rounded-xl text-xs text-theme-main font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0">
+              <Building2 size={14} className="text-theme-muted" />
+              <span>{user?.area_nombre || 'Mi Área'}</span>
+            </div>
+          )}
         </div>
 
         {/* Botón Enviar Todas en bandeja de Borrador */}
@@ -968,7 +1017,19 @@ export default function MemoriasPage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right font-bold text-theme-main text-xs">{formatMoney(total)}</td>
-                    <td className="py-3.5 px-4 text-center">{getBadgeEstado(mem.estado)}</td>
+                    <td className="py-3.5 px-4 text-center">
+                      {getBadgeEstado(mem.estado)}
+                      {['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(mem.estado) && (
+                        <div className="mt-1">
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-theme-base border border-theme-border text-theme-muted inline-flex items-center gap-1">
+                            {mem.estado === 'PENDIENTE_GERENCIA' && '⏳ En revisión Gerencia'}
+                            {mem.estado === 'PENDIENTE_PLANIFICACION' && '🔍 En validación Planificación'}
+                            {mem.estado === 'APROBADO_GERENCIA' && '💼 Vo.Bo. Gerencia • En Presupuestos'}
+                            {mem.estado === 'APROBADO_PLANIFICACION' && '💼 Validado SPO • En Presupuestos'}
+                          </span>
+                        </div>
+                      )}
+                    </td>
                     <td className="py-3.5 px-4 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         {/* Ver Ficha Oficial / Detalle */}
@@ -989,7 +1050,7 @@ export default function MemoriasPage() {
                         </button>
 
                         {/* Botón Editar para cualquier estado si el usuario tiene permisos */}
-                        {!isGestionBloqueada && (isElaborador || isGerente || isAprobador) && (
+                        {!isGestionBloqueada && (isElaborador || isGerente || isPlanificador || isAprobador) && (
                           <button
                             onClick={() => handleOpenEditar(mem)}
                             className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
@@ -1866,7 +1927,7 @@ export default function MemoriasPage() {
             </div>
 
             <div className="p-4 border-t border-theme-border flex items-center justify-between">
-              {!isGestionBloqueada && (isElaborador || isGerente || isAprobador) && (
+              {!isGestionBloqueada && (isElaborador || isGerente || isPlanificador || isAprobador) && (
                 <button
                   onClick={() => {
                     const targetMem = fichaMemoria;
