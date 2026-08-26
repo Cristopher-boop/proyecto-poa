@@ -1,0 +1,394 @@
+{
+  "areas": [
+    "GO",
+    "AE",
+    "SMS"
+  ],
+  "actualizadas": 31,
+  "propuestas": 31,
+  "omitidas": 33,
+  "cambios": [
+    {
+      "area": "GO",
+      "hoja": "22110GO",
+      "codigo": "MEM-2027-22110GO",
+      "justificaciones": 2,
+      "anterior": "PARA EL PERSONAL DE TRIPULANTES DE VUELO DE EPTAM, QUE DEBEN DESPLAZARSE PARA RETORNO A BASE ORIGEN O DESPLAZARSE PARA INICIAR ITINERARIO, PUESTO QUE LA AERONAVE RECIBE MANTENIMIENTO EN LA CIUDAD DE COCHABAMBA.",
+      "nueva": "1- PARA EL PERSONAL DE TRIPULANTES DE VUELO DE EPTAM, QUE DEBEN DESPLAZARSE PARA RETORNO A BASE ORIGEN O DESPLAZARSE PARA INICIAR ITINERARIO, PUESTO QUE LA AERONAVE RECIBE MANTENIMIENTO EN LA CIUDAD DE COCHABAMBA.\n\n2- PARA LOS INSPECTORES DE LA DGAC, QUE DEBEN DESPLAZARSE  EN LA RUTA LPZ-CBBA-LPZ (PASAJES DE IDA Y VUELTA), PARA REALIZAR INSPECCIONES AL PERSONAL DE TRIPULANTES DE VUELO O PERSONAL DE ESTACIONES DE BASE, EN CUMPLIMIENTO A LA REGLAMENTACIÓN AERONAÚTICA BOLIVIANA."
+    },
+    {
+      "area": "GO",
+      "hoja": "22210GO",
+      "codigo": "MEM-2027-22210GO",
+      "justificaciones": 2,
+      "anterior": "VIÁTICOS AL INTERIOR DEL PAÍS PARA EL PERSONAL DE EPTAM E INSPECTORES DE LA DGAC, DESIGNADOS EN COMISIÓN DEL SERVICIO. SE INCLUYE AL PERSONAL QUE POR ESTAR EN EL INTERIOR DEL PAIS, DEBA REALIZAR GASTOS DE ALOJAMIENTO, TRANSPORTE, ALIMENTACION Y OTROS.",
+      "nueva": "1- VIÁTICOS AL INTERIOR DEL PAÍS PARA EL PERSONAL DE EPTAM E INSPECTORES DE LA DGAC, DESIGNADOS EN COMISIÓN DEL SERVICIO. SE INCLUYE AL PERSONAL QUE POR ESTAR EN EL INTERIOR DEL PAIS, DEBA REALIZAR GASTOS DE ALOJAMIENTO, TRANSPORTE, ALIMENTACION Y OTROS.\n\n2- VIÁTICOS AL INTERIOR DEL PAÍS PARA EL PERSONAL DE EPTAM E INSPECTORES DE LA DGAC, DESIGNADOS EN COMISIÓN DEL SERVICIO. SE INCLUYE AL PERSONAL QUE POR ESTAR EN EL INTERIOR DEL PAIS, DEBA REALIZAR GASTOS DE ALOJAMIENTO, TRANSPORTE, ALIMENTACION Y OTROS."
+    },
+    {
+      "area": "GO",
+      "hoja": "22220GO",
+      "codigo": "MEM-2027-22220GO",
+      "justificaciones": 2,
+      "anterior": "VIATICOS AL EXTERIOR DEL PAÍS PARA EL PERSONAL DE TRIPULANTES DE COMANDO DE EPTAM E INSPECTORES DE LA DGAC, DESIGNADOS EN COMISIÓN DEL SERVICIO, QUE REALIZARAN EL ENTRENAMIENTO INICIAL Y RECURRENTE EN SIMULADOR DE VUELO EN AERONAVES AVRO RJ,  EXIGIDO POR LA AUTORIDAD AÉRONAUTICA CIVIL.",
+      "nueva": "1- VIATICOS AL EXTERIOR DEL PAÍS PARA EL PERSONAL DE TRIPULANTES DE COMANDO DE EPTAM E INSPECTORES DE LA DGAC, DESIGNADOS EN COMISIÓN DEL SERVICIO, QUE REALIZARAN EL ENTRENAMIENTO INICIAL Y RECURRENTE EN SIMULADOR DE VUELO EN AERONAVES AVRO RJ,  EXIGIDO POR LA AUTORIDAD AÉRONAUTICA CIVIL.\n\n2- DE ACUERDO A LA ESTADISTICA DE LA PASADA GESTIÓN, SE REALIZO DOS VUELOS CHARTER, CON EQUIPOS NACIONALES DE FUTBOL QUE DEBEN DE CUMPLIR COMPROMISOS DEPORTIVOS EN EL EXTERIOR DEL PAIS, EN ESE SENTIDO SE ESTIMA REALIZAR MINIMAMENTE UN VUELO CHARTER EN EL AÑO"
+    },
+    {
+      "area": "GO",
+      "hoja": "25220GO",
+      "codigo": "MEM-2027-25220GO",
+      "justificaciones": 8,
+      "anterior": "CONSULTOR INDIVIDUAL DE LÍNEA PARA LA ADMINISTRACIÓN DE LA BIBLIOTECA TÉCNICA DE LA GERENCIA DE OPERACIONES, RESPONSABLE DE LA ACTUALIZACIÓN, CONTROL, CUSTODIA, REGISTRO Y DISTRIBUCIÓN DE LOS MANUALES OPERACIONALES CON LAS REVISIONES APROBADAS POR LA AUTORIDAD AERONÁUTICA CIVIL (AAC), ASÍ COMO DE LA COORDINACIÓN CON AUTORIDADES AERONÁUTICAS NACIONALES Y EXTRANJERAS EN MATERIA DE GESTIÓN DOCUMENTAL, GARANTIZANDO LA DISPONIBILIDAD DE LA DOCUMENTACIÓN TÉCNICA VIGENTE Y EL CUMPLIMIENTO DE LOS REQUISITOS OPERACIONALES Y NORMATIVOS.",
+      "nueva": "1- CONSULTOR INDIVIDUAL DE LÍNEA PARA LA ADMINISTRACIÓN DE LA BIBLIOTECA TÉCNICA DE LA GERENCIA DE OPERACIONES, RESPONSABLE DE LA ACTUALIZACIÓN, CONTROL, CUSTODIA, REGISTRO Y DISTRIBUCIÓN DE LOS MANUALES OPERACIONALES CON LAS REVISIONES APROBADAS POR LA AUTORIDAD AERONÁUTICA CIVIL (AAC), ASÍ COMO DE LA COORDINACIÓN CON AUTORIDADES AERONÁUTICAS NACIONALES Y EXTRANJERAS EN MATERIA DE GESTIÓN DOCUMENTAL, GARANTIZANDO LA DISPONIBILIDAD DE LA DOCUMENTACIÓN TÉCNICA VIGENTE Y EL CUMPLIMIENTO DE LOS REQUISITOS OPERACIONALES Y NORMATIVOS.\n\n2- PERSONAL RESPONSABLE DE VERIFICAR EL CUMPLIMIENTO DE LOS PROCEDIMIENTOS DE PREPARACIÓN DE CABINA, LA OPERATIVIDAD DEL EQUIPO DE EMERGENCIA, EL ASEGURAMIENTO DE LAS PUERTAS DE ACCESO, LA CORRECTA UBICACIÓN DE LOS PASAJEROS CONFORME A LA NORMATIVA VIGENTE Y LA COMUNICACIÓN OPORTUNA CON EL PILOTO AL MANDO (PIC) Y LA JEFE DE TRIPULANTES DE CABINA (JTC) SOBRE CUALQUIER CONDICIÓN QUE AFECTE LA SEGURIDAD DE LA AERONAVE Y EL ESTADO DE PREPARACIÓN DE LA CABINA.\n\n3- PERSONAL RESPONSABLE DE CONTROLAR Y REVISAR LOS REGISTROS DE DESPACHO OPERATIVO, PREPARAR Y PROPORCIONAR LA INFORMACIÓN DE VUELO A LA TRIPULACIÓN DE COMANDO, REALIZAR ANÁLISIS OPERACIONALES, COORDINAR LA PLANIFICACIÓN DE VUELOS Y LAS MODIFICACIONES OPERATIVAS, CAPACITAR Y HABILITAR A LOS DESPACHADORES DE VUELO, INSTRUIR AL PERSONAL EN EL USO DE LOS PROCEDIMIENTOS DE PLANIFICACIÓN DE VUELO OPERACIONAL COMPUTARIZADO Y BRINDAR APOYO TÉCNICO Y OPERATIVO EN LAS ACTIVIDADES DE DESPACHO DE VUELOS.\n\n4- PERSONAL DE LAS REGIONALES DE EL ALTO, COCHABAMBA, SANTA CRUZ, COBIJA, TRINIDAD, RIBERALTA Y GUAYARAMERIN, RESPONSABLE DE BRINDAR ATENCIÓN AL PASAJERO, REALIZAR EL PROCESO DE CHECK-IN, VERIFICAR LA DOCUMENTACIÓN Y LA VALIDEZ DEL BOLETO, REGISTRAR Y DESPACHAR EQUIPAJES CONFORME A LA NORMATIVA VIGENTE, EMITIR PASES DE ABORDAJE, INFORMAR A LOS PASAJEROS SOBRE LOS REQUISITOS DE VIAJE Y LAS MEDIDAS DE SEGURIDAD, GESTIONAR EL PROCESO DE EMBARQUE PRIORIZANDO A PASAJEROS CON NECESIDADES ESPECIALES Y EFECTUAR EL CIERRE DEL VUELO, VERIFICANDO LA EXACTITUD DE LA INFORMACIÓN OPERATIVA ANTES DE SU COMUNICACIÓN AL CONTROL DE VUELO.\n\n5- PERSONAL DE LAS REGIONALES DE EL ALTO, COCHABAMBA, SANTA CRUZ, COBIJA, TRINIDAD, RIBERALTA Y GUAYARAMERIN, RESPONSABLE DE EFECTUAR LA RECEPCIÓN Y EL DESPACHO DE AERONAVES EN RAMPA, REALIZAR LA MANIPULACIÓN, CLASIFICACIÓN, ESTIBA Y TRASLADO DE EQUIPAJES, CARGA, ENCOMIENDAS Y CORREO, OPERAR LOS EQUIPOS DE APOYO EN TIERRA CUANDO CORRESPONDA, MANTENER LA PLATAFORMA LIBRE DE OBJETOS EXTRAÑOS (FOD), EFECTUAR EL MANEJO DE MERCANCÍAS PELIGROSAS CONFORME A LA NORMATIVA VIGENTE Y GARANTIZAR LA SEGURIDAD, EFICIENCIA Y CUMPLIMIENTO DE LOS PROCEDIMIENTOS OPERACIONALES DURANTE LAS OPERACIONES AEROPORTUARIAS.\n\n6- LA CONTRATACIÓN DE ESTE PERSONAL SE JUSTIFICA POR LA NECESIDAD DE GARANTIZAR LA RECEPCIÓN Y EL DESPACHO SEGURO, EFICIENTE Y OPORTUNO DE LAS AERONAVES EN RAMPA, ASÍ COMO LA COORDINACIÓN Y SUPERVISIÓN DE LAS ACTIVIDADES OPERATIVAS EN PLATAFORMA RELACIONADAS CON LA CARGA Y DESCARGA DE EQUIPAJES, CARGA Y CORREO. ESTAS FUNCIONES SON ESENCIALES PARA ASEGURAR EL CUMPLIMIENTO DE LOS PROCEDIMIENTOS ESTABLECIDOS EN EL MANUAL OPERATIVO DE RAMPA, MANTENER LOS ESTÁNDARES DE SEGURIDAD OPERACIONAL, PUNTUALIDAD Y CONTINUIDAD DE LAS OPERACIONES AEROPORTUARIAS, CONTRIBUYENDO AL DESARROLLO EFICIENTE DE LAS OPERACIONES DE LA EMPRESA.\n\n7- PERSONAL RESPONSABLE DE LA ATENCIÓN DE RECLAMOS DE EQUIPAJES, REALIZANDO EL CONTROL, REGISTRO, BÚSQUEDA, SEGUIMIENTO Y GESTIÓN DE EQUIPAJES EXTRAVIADOS, DAÑADOS O CON IRREGULARIDADES, ASÍ COMO LA ELABORACIÓN DEL PARTE DE IRREGULARIDAD DE EQUIPAJE (PIR) Y LA PREPARACIÓN DE PROCESOS DE INDEMNIZACIÓN CONFORME A NORMATIVA INTERNA DE LA EMPRESA. ASIMISMO, COORDINA PERMANENTEMENTE CON EL ESPECIALISTA EN SERVICIO DE EQUIPAJES Y REPORTA A LA JEFATURA DE AEROPUERTO REGIONAL, ASEGURANDO UNA ATENCIÓN EFICIENTE AL PASAJERO Y LA MEJORA CONTINUA DEL SERVICIO DE EQUIPAJES.\n\n8- LA ASIGNACIÓN DE PERSONAL SE JUSTIFICA POR LA NECESIDAD DE ASEGURAR EL CONTROL DEL ABASTECIMIENTO DE AERONAVES, LA CALIDAD DEL SERVICIO DE CATERING Y LA LIMPIEZA INTERIOR DE CABINA, GARANTIZANDO EL CUMPLIMIENTO DE LOS PROCEDIMIENTOS ESTABLECIDOS. ASIMISMO, PERMITE SUPERVISAR INVENTARIOS, CONSUMOS Y MATERIALES, COORDINAR LA REPOSICIÓN OPORTUNA Y OPTIMIZAR RECURSOS, CONTRIBUYENDO A LA EFICIENCIA OPERATIVA Y AL MANTENIMIENTO DE LOS ESTÁNDARES DE CALIDAD DEL SERVICIO."
+    },
+    {
+      "area": "GO",
+      "hoja": "25600GO",
+      "codigo": "MEM-2027-25600GO",
+      "justificaciones": 11,
+      "anterior": "PARA ELABORACION DE  FORMULARIOS DE DESPACHO, ORDEN DE CARGUIO Y CONTROL DE COMBUSTIBLE, LIBERACIÓN DE AERONAVE, INSTRUCCIONES DE REPORTE.",
+      "nueva": "1- PARA ELABORACION DE  FORMULARIOS DE DESPACHO, ORDEN DE CARGUIO Y CONTROL DE COMBUSTIBLE, LIBERACIÓN DE AERONAVE, INSTRUCCIONES DE REPORTE.\n\n2- PARA LAS JEFATURAS REGIONALES DE AEROPUERTO LPB, CBB, VVI Y CIJ. EN VUELOS REGULARES\n\n3- PARA LA REALIZACIÓN DE VUELOS CHARTER A DIFRENTES DESTINOS ALOS CERTIFICADOS POR LA DGAC.\n\n4- PARA QUE EL PERSONAL DE ABORDAJE RECONOZCA EL EQUIPAJE DE MANO AUTORIZADO A CADA PASAJERO EN EL MOSTRADOR.\n\n5- ETIQUETAS IDENTIFICADORES DE EQUIPAJES PARA EL TRANSPORTE PERTINENTE DE LOS MISMOS.\n\n6- PARA BRINDAR UNA ATENCION PERSONALIZADA Y PERTINENTE AL PASAJERO(A) DENTRO LA AERONAVE Y CON EL FIN DE DESLINDE DE RESPONSABILIDADES DE LA LÍNEA AÉREA\n\n7- DESTINADO A IMPRESIÓN DE PASES A BORDO Y  BOLETOS EMITIDOS EN LOS AEROPUERTOS DONDE OPERA EPTAM\n\n8- LA JEFATURA NACIONAL DE AEROPUERTOS EPTAM, TIENE LA NECESIDAD DE CONTAR CON COPIAS DE TODA LA DOCUMENTACIÓN QUE SE GENERA PARA EL DESARROLLO DE LAS ACTIVIDADES OPERATIVAS Y ADMINISTRATIVAS EN LOS AEROPUERTOS DONDE SE OPERA.\n\n9- PAR LA CORERCA CUSTODIA DE DOCUMENTACIÓN  PARA SU RESPECTIVO ARCHIVO.\n\n10- CARTILLAS HAZMAT, TABLA 23A, OBJETOS PUNZOCORTANTES Y OBJETOS DE VALOR PARA MOSTRADORES EN LOS AEROPUERTOS\n\n11- TARJETA DE INSTRUCCIÓN PARA PASAJEROS A BORDO EN SITUACIONES DE EMERGENCIA Y EVACUACIÓN"
+    },
+    {
+      "area": "GO",
+      "hoja": "33300GO",
+      "codigo": "MEM-2027-33300GO",
+      "justificaciones": 8,
+      "anterior": "PARA LA COMPRA DE UNIFORMES PARA EL PERSONAL DE TRIPULANTES DE CABINA, ORIENTADO A LA IMAGEN CORPORATIVA DE LA EMPRESA.",
+      "nueva": "1- PARA LA COMPRA DE UNIFORMES PARA EL PERSONAL DE TRIPULANTES DE CABINA, ORIENTADO A LA IMAGEN CORPORATIVA DE LA EMPRESA.\n\n2- PARA LA COMPRA DE UNIFORMES PARA EL PERSONAL DE TRIPULANTES DE COMANDO, ORIENTADO A LA IMAGEN CORPORATIVA DE LA EMPRESA.\n\n3- DE ACUERDO A LA MODIFICACION DE LA RAB 138 INFORMADO MEDIANTE BOLETIN REGLAMENTARIO  N°DGAC-027/2025 A SER APLICADOS EN LA REGIONALES LPB, CBB, VVI Y CIJ  SE DEBE DOTAR DE CHALECOS AL PERSONAL CON LAS NUEVAS  MEDIDAS DE SEGURIDAD\n\n4- PARA ÉPOCAS DE LLUVIA QUE EL PERSONAL OPERATIVO EN RAMPA REQUIERE PARA CUMPLIR CON SUS FUNCIONES DE FORMA PERTINENTE Y ADECUADA.\n\n5- PARA PERSONAL AGENTES DE RAMPA/ESTIBADORES Y AUXILIAR SERVICIO A BORDO QUE DESARROLLA ACTIVIDADES OPERATIVAS EN RAMPA\n\n6- PARA PERSONAL OPERATIVO DE TRAFICO EN ATENCION A PASAJEROS\n\n7- PARA PERSONAL OPERATIVO DE TRAFICO EN ATENCION A PASAJEROS\n\n8- PARA PERSONAL OPERATIVO DE RAMPA EN ATENCION A PASAJEROS EL ALTO"
+    },
+    {
+      "area": "GO",
+      "hoja": "33400GO",
+      "codigo": "MEM-2027-33400GO",
+      "justificaciones": 2,
+      "anterior": "PARA ÉPOCAS DE LLUVIA QUE EL PERSONAL OPERATIVO EN RAMPA REQUIERE PARA CUMPLIR CON SUS FUNCIONES DE FORMA PERTINENTE Y ADECUADA.",
+      "nueva": "1- PARA ÉPOCAS DE LLUVIA QUE EL PERSONAL OPERATIVO EN RAMPA REQUIERE PARA CUMPLIR CON SUS FUNCIONES DE FORMA PERTINENTE Y ADECUADA.\n\n2- PARA DESARROLLAR ACTIVIDADES OPERATIVAS EN RAMPA VELANDO LA SEGURIDAD DEL PERSONAL DE RAMPA"
+    },
+    {
+      "area": "GO",
+      "hoja": "34110GO",
+      "codigo": "MEM-2027-34110GO",
+      "justificaciones": 2,
+      "anterior": "DE ACUERDO A LA ESTADISTICA DE LA PASADA GESTIÓN, SE REALIZO DOS VUELOS CHARTER, CON EQUIPOS NACIONALES DE FUTBOL QUE DEBEN DE CUMPLIR COMPROMISOS DEPORTIVOS EN EL EXTERIOR DEL PAIS, EN ESE SENTIDO SE ESTIMA REALIZAR MINIMAMENTE UN VUELO CHARTER EN EL AÑO",
+      "nueva": "1- DE ACUERDO A LA ESTADISTICA DE LA PASADA GESTIÓN, SE REALIZO DOS VUELOS CHARTER, CON EQUIPOS NACIONALES DE FUTBOL QUE DEBEN DE CUMPLIR COMPROMISOS DEPORTIVOS EN EL EXTERIOR DEL PAIS, EN ESE SENTIDO SE ESTIMA REALIZAR MINIMAMENTE UN VUELO CHARTER EN EL AÑO\n\n2- PARA VUELOS REGULARES  DE ACUERDO A ITINERARIO, QUE COMPRENDEN RUTAS NACIONALES ENTRE LAS ESTACIONES CERTIFICADAS, QUE SE REALIZAN DIARIAMENTE, CON VARIOS TRAMOS, GENERANDO INGRESOS DIARIAMENTE, LA AERONAVE TIENE INSTALADO 4 MOTORES QUE CONSUMEN COMBUSTIBLE DE AVIACIÓN JET A-1, EN UNA CANTIDAD DE 2700 LTS POR HORA."
+    },
+    {
+      "area": "GO",
+      "hoja": "34500GO",
+      "codigo": "MEM-2027-34500GO",
+      "justificaciones": 5,
+      "anterior": "BOLSAS DE MAREO CON LOGOTIPO EMPRESARIAL PARA PASAJEROS QUE SE INDISPONEN DENTRO LA AERONAVE EN VUELO.",
+      "nueva": "1- BOLSAS DE MAREO CON LOGOTIPO EMPRESARIAL PARA PASAJEROS QUE SE INDISPONEN DENTRO LA AERONAVE EN VUELO.\n\n2- PARA LA DISTRIBUCION DE AGUA A LOS PASAJEROS DENTRO Y FUERA DE LA AERONAVE EN CASOS NECESARIOS\n\n3- PARA EL CUMPLIMIENTO DE FUNCIONES DE LIMPIEZA DE LA AERONAVE POR PARTE DEL PERSONAL DE SERVICIO A BORDO Y ASÍ BRINDAR UN SERVICIO DE CALIDAD EN VUELO.\n\n4- PARA TRAANSPORTE DE MATERIAL DE LIMPIEZA A LA AERONAVE\n\n5- PARA EL AEREA DE SEGURIDAD DE LA AERONAVE"
+    },
+    {
+      "area": "GO",
+      "hoja": "39990GO",
+      "codigo": "MEM-2027-39990GO",
+      "justificaciones": 2,
+      "anterior": "PARA PASAJEROS EN ÉPOCA DE LLUVIAS CUANDO LA AERONAVE SE ENCUENTRE EN POSICIÓN REMOTA",
+      "nueva": "1- PARA PASAJEROS EN ÉPOCA DE LLUVIAS CUANDO LA AERONAVE SE ENCUENTRE EN POSICIÓN REMOTA\n\n2- RESGUARDO ORDENADO Y ADECUADO DE PARAGUAS"
+    },
+    {
+      "area": "AE",
+      "hoja": "21100AE",
+      "codigo": "MEM-2027-21100AE",
+      "justificaciones": 2,
+      "anterior": "Necesario para el envío de documentación técnica, administrativa y financiera relacionada con las actividades de mantenimiento aeronáutico, garantizando el cumplimiento de los procesos institucionales y los requerimientos de la Gerencia General de TAMEP.",
+      "nueva": "1- Necesario para el envío de documentación técnica, administrativa y financiera relacionada con las actividades de mantenimiento aeronáutico, garantizando el cumplimiento de los procesos institucionales y los requerimientos de la Gerencia General de TAMEP.\n\n2- Pago por la emisión y remisión de documentación HAZMAT para el transporte internacional de materiales peligrosos y componentes aeronáuticos."
+    },
+    {
+      "area": "AE",
+      "hoja": "22300AE",
+      "codigo": "MEM-2027-22300AE",
+      "justificaciones": 2,
+      "anterior": "PAGO POR EL SERVICIO DE FLETES POR EL ENVIO Y RECEPCION DE MATERIAL AERONAUTICO DE DIFERENTES PROVEEDORES NACIONALES E INTERNACIONALES",
+      "nueva": "1- PAGO POR EL SERVICIO DE FLETES POR EL ENVIO Y RECEPCION DE MATERIAL AERONAUTICO DE DIFERENTES PROVEEDORES NACIONALES E INTERNACIONALES\n\n2- PAGO POR EL SERVICIO DEE ALMACENAMIENTO NACIONAL E INTERNACIONAL DE LOS MATERIALES AERONAUTICOS Y COMPONENTES."
+    },
+    {
+      "area": "AE",
+      "hoja": "22500AE",
+      "codigo": "MEM-2027-22500AE",
+      "justificaciones": 4,
+      "anterior": "El monto programado para la gestión 2027 se estimó tomando como referencia el último proceso de contratación adjudicado del seguro de casco de la aeronave, considerando una previsión por posibles variaciones en las primas del mercado asegurador y en el tipo de cambio, debido a que la cobertura se cotiza en dólares estadounidenses.",
+      "nueva": "1- El monto programado para la gestión 2027 se estimó tomando como referencia el último proceso de contratación adjudicado del seguro de casco de la aeronave, considerando una previsión por posibles variaciones en las primas del mercado asegurador y en el tipo de cambio, debido a que la cobertura se cotiza en dólares estadounidenses.\n\n2- La contratación del seguro del Depósito Aeronáutico El Alto es necesaria para cumplir con los requisitos establecidos por la Aduana Nacional y mantener habilitado el recinto, garantizando la cobertura de los bienes almacenados bajo control aduanero, como repuestos y componentes aeronáuticos, frente a posibles daños o pérdidas.\n\n3- La contratación del seguro del Depósito Aeronáutico Viru Viru es necesaria para cumplir con los requisitos establecidos por la Aduana Nacional y mantener habilitado el recinto, garantizando la cobertura de los bienes almacenados bajo control aduanero, como repuestos y componentes aeronáuticos, frente a posibles daños o pérdidas.\n\n4- La contratación del SOAT para los vehículos con placas FAB-1087 (Gerencia de Mantenimiento – Cochabamba) y FAB-1072 (El Alto) es obligatoria conforme a la normativa vigente, permitiendo su circulación legal y garantizando la cobertura por daños personales ocasionados en accidentes de tránsito."
+    },
+    {
+      "area": "AE",
+      "hoja": "23200AE",
+      "codigo": "MEM-2027-23200AE",
+      "justificaciones": 2,
+      "anterior": "ALQUILER DE UN MOTOR PARA ASEGURAR QUE LA AERONAVE  AVRO RJ70 MATRÍCULA CP-3106 ESTÉ EN EFICEINCIA Y OPERATIVO. ESTO ES CRUCIAL PARA LA EPTAM QUE DEPENDEN DE HORARIOS E ITINERARIOS AJUSTADOS.",
+      "nueva": "1- ALQUILER DE UN MOTOR PARA ASEGURAR QUE LA AERONAVE  AVRO RJ70 MATRÍCULA CP-3106 ESTÉ EN EFICEINCIA Y OPERATIVO. ESTO ES CRUCIAL PARA LA EPTAM QUE DEPENDEN DE HORARIOS E ITINERARIOS AJUSTADOS.\n\n2- ALQUILAR EQUIPOS Y COMPONENTES   PARA MANTENER LA OPERATIVIDAD DE LA AERONAVE AVRO RJ70 MATRÍCULA CP-3106."
+    },
+    {
+      "area": "AE",
+      "hoja": "24300AE",
+      "codigo": "MEM-2027-24300AE",
+      "justificaciones": 6,
+      "anterior": "Para garantizar la aeronavegabilidad y la seguridad operacional de la aeronave mediante la inspección y reparación del conjunto de frenos, conforme al Programa de Mantenimiento aprobado por la DGAC y la RAB 121. La cantidad requerida responde al incremento de operaciones y a las cotizaciones actualizadas emitidas por el taller reparador autorizado.",
+      "nueva": "1- Para garantizar la aeronavegabilidad y la seguridad operacional de la aeronave mediante la inspección y reparación del conjunto de frenos, conforme al Programa de Mantenimiento aprobado por la DGAC y la RAB 121. La cantidad requerida responde al incremento de operaciones y a las cotizaciones actualizadas emitidas por el taller reparador autorizado.\n\n2- Para verificar y actualizar el peso y centro de gravedad de la aeronave, garantizando el cumplimiento de las especificaciones del fabricante, la seguridad operacional y los requisitos de aeronavegabilidad establecidos por la DGAC y la RAB 121.\n\n3- Para realizar la inspección de la sección caliente de los motores, permitiendo evaluar el estado de los componentes críticos y garantizar su aeronavegabilidad, conforme al Programa de Mantenimiento aprobado por la DGAC y la RAB 121. Se contempla la ejecución de cuatro servicios debido a que los motores N.° 3 y N.° 4 alcanzarán los límites de horas y ciclos establecidos por el fabricante durante la gestión.\n\n4- Para efectuar la remoción e instalación del módulo T1 de los motores N.° 3 y N.° 4, en cumplimiento de los límites de vida establecidos por el fabricante y del Programa de Mantenimiento aprobado por la DGAC, garantizando la aeronavegabilidad y la continuidad operativa de la aeronave.\n\n5- Para restablecer las condiciones de funcionamiento de la Hydromechanical Unit (HMU), componente crítico del sistema de control de combustible del motor, mediante su reparación en un Organismo de Mantenimiento Aprobado (OMA) autorizado por la DGAC, garantizando la aeronavegabilidad y la operación segura de la aeronave.\n\n6- Para realizar la inspección y reparación de la Unidad de Potencia Auxiliar (APU), conforme a los límites de horas de operación establecidos en el Programa de Mantenimiento aprobado por la DGAC, garantizando su aeronavegabilidad, confiabilidad y disponibilidad operativa."
+    },
+    {
+      "area": "AE",
+      "hoja": "25220AE",
+      "codigo": "MEM-2027-25220AE",
+      "justificaciones": 3,
+      "anterior": "Responsable de planificar, coordinar y supervisar el mantenimiento de aeronaves, controlando programas, componentes con vida limitada y el cumplimiento de los procedimientos de seguridad operacional.",
+      "nueva": "1- Responsable de planificar, coordinar y supervisar el mantenimiento de aeronaves, controlando programas, componentes con vida limitada y el cumplimiento de los procedimientos de seguridad operacional.\n\n2- Responsable de actualizar las directrices de aeronavegabilidad, brindar soporte de ingeniería, controlar el peso y balance de las aeronaves y elaborar especificaciones técnicas para el mantenimiento de la flota.\n\n3- Responsable de ejecutar y supervisar el mantenimiento en línea de las aeronaves, asegurando el cumplimiento de los procedimientos de mantenimiento y la aeronavegabilidad de la flota."
+    },
+    {
+      "area": "AE",
+      "hoja": "25600AE",
+      "codigo": "MEM-2027-25600AE",
+      "justificaciones": 2,
+      "anterior": "Necesarios para el registro oficial de datos de vuelo de la aeronave AVRO RJ-70 Matrícula CP-3106, según Manual de Control de Mantenimiento",
+      "nueva": "1- Necesarios para el registro oficial de datos de vuelo de la aeronave AVRO RJ-70 Matrícula CP-3106, según Manual de Control de Mantenimiento\n\n2- Necesarios para el registro técnico y control de mantenimiento de la aeronave AVRO RJ-70 Matrícula CP-3106, en cumplimiento al Programa de Mantenimiento aprobado por la DGAC y RAB 121."
+    },
+    {
+      "area": "AE",
+      "hoja": "26990AE",
+      "codigo": "MEM-2027-26990AE",
+      "justificaciones": 3,
+      "anterior": "Para garantizar la confiabilidad, precisión y trazabilidad de las mediciones realizadas con las herramientas, equipos e instrumentos del Taller de Ensayos No Destructivos (NDT), en cumplimiento de la Circular de Asesoramiento DGAC CA-AIR-145-001, LAR 145 y MEI 145.320, así como de las instrucciones del fabricante, asegurando la aptitud de los equipos para las actividades de mantenimiento aeronáutico.",
+      "nueva": "1- Para garantizar la confiabilidad, precisión y trazabilidad de las mediciones realizadas con las herramientas, equipos e instrumentos del Taller de Ensayos No Destructivos (NDT), en cumplimiento de la Circular de Asesoramiento DGAC CA-AIR-145-001, LAR 145 y MEI 145.320, así como de las instrucciones del fabricante, asegurando la aptitud de los equipos para las actividades de mantenimiento aeronáutico.\n\n2- Para dar cumplimiento a los Boletines de Servicio (SB) y Directivas de Aeronavegabilidad (AD) emitidos por el fabricante y la Autoridad Aeronáutica, cuya incorporación es obligatoria para mantener la aeronavegabilidad de la aeronave AVRO RJ-70. Su ejecución está prevista conforme al Programa de Mantenimiento, posterior a la inspección Check C.\n\n3- Para verificar el correcto funcionamiento del Flight Data Recorder (FDR) mediante la descarga y análisis anual de la información registrada, en cumplimiento de la RAB 121.343(h), garantizando la disponibilidad de datos para el monitoreo de la seguridad operacional, investigaciones técnicas y el mantenimiento de la aeronavegabilidad continua."
+    },
+    {
+      "area": "AE",
+      "hoja": "31120AE",
+      "codigo": "MEM-2027-31120AE",
+      "justificaciones": 2,
+      "anterior": "Necesario para prever el suministro de refrigerios durante reuniones técnicas, inspecciones y actividades de coordinación con la Dirección General de Aeronáutica Civil (DGAC), el Servicio de Mantenimiento Aéreo \"2\"  todas son reuniones institucionales.",
+      "nueva": "1- Necesario para prever el suministro de refrigerios durante reuniones técnicas, inspecciones y actividades de coordinación con la Dirección General de Aeronáutica Civil (DGAC), el Servicio de Mantenimiento Aéreo \"2\"  todas son reuniones institucionales.\n\n2- Necesario para el abastecimiento de agua requerida en las inspecciones y pruebas del sistema de agua potable de la aeronave AVRO RJ70, conforme a los procedimientos de mantenimiento aplicables."
+    },
+    {
+      "area": "AE",
+      "hoja": "34110AE",
+      "codigo": "MEM-2027-34110AE",
+      "justificaciones": 3,
+      "anterior": "Para garantizar la disponibilidad de lubricantes, fluidos hidráulicos, grasas y demás materiales consumibles requeridos para la ejecución del mantenimiento programado y no programado de la aeronave AVRO RJ-70, conforme al Programa de Mantenimiento aprobado por la DGAC y la RAB 121. La adquisición se realizará de forma trimestral y/o semestral, de acuerdo con el consumo y la planificación de mantenimiento.",
+      "nueva": "1- Para garantizar la disponibilidad de lubricantes, fluidos hidráulicos, grasas y demás materiales consumibles requeridos para la ejecución del mantenimiento programado y no programado de la aeronave AVRO RJ-70, conforme al Programa de Mantenimiento aprobado por la DGAC y la RAB 121. La adquisición se realizará de forma trimestral y/o semestral, de acuerdo con el consumo y la planificación de mantenimiento.\n\n2- Para abastecer de combustible a los vehículos operativos destinados al apoyo de las actividades de mantenimiento aeronáutico y administrativas de las Regionales El Alto, Cochabamba y Santa Cruz, bajo la modalidad de contrato postpago.\n\n3- Para abastecer de combustible a los equipos de apoyo en tierra, principalmente la Unidad de Potencia Terrestre (GPU), y a los vehículos operativos que respaldan las actividades de mantenimiento aeronáutico en las Regionales El Alto, Cochabamba y Santa Cruz, bajo la modalidad de contrato postpago."
+    },
+    {
+      "area": "AE",
+      "hoja": "34300AE",
+      "codigo": "MEM-2027-34300AE",
+      "justificaciones": 4,
+      "anterior": "Para garantizar la aeronavegabilidad y seguridad operacional de la aeronave AVRO RJ-70 mediante el reemplazo oportuno de las llantas del tren de aterrizaje principal (MLG), conforme al Programa de Mantenimiento aprobado por la DGAC y la RAB 121. Se prevé la adquisición de 8 llantas por mes (dos adquisiciones mensuales), debido al incremento del desgaste ocasionado por la incorporación de las rutas nacionales a Trinidad, Riberalta y Guayaramerín, cuyos aeropuertos presentan pistas de menor longitud que requieren un mayor uso del sistema de frenos durante el aterrizaje, acelerando el desgaste de las llantas.",
+      "nueva": "1- Para garantizar la aeronavegabilidad y seguridad operacional de la aeronave AVRO RJ-70 mediante el reemplazo oportuno de las llantas del tren de aterrizaje principal (MLG), conforme al Programa de Mantenimiento aprobado por la DGAC y la RAB 121. Se prevé la adquisición de 8 llantas por mes (dos adquisiciones mensuales), debido al incremento del desgaste ocasionado por la incorporación de las rutas nacionales a Trinidad, Riberalta y Guayaramerín, cuyos aeropuertos presentan pistas de menor longitud que requieren un mayor uso del sistema de frenos durante el aterrizaje, acelerando el desgaste de las llantas.\n\n2- Para garantizar la disponibilidad de llantas del tren de aterrizaje de nariz (NLG) y efectuar su reemplazo conforme al Programa de Mantenimiento aprobado por la DGAC y la RAB 121. Se considera la adquisición de 4 llantas por mes (dos adquisiciones mensuales), debido al incremento de operaciones en las rutas a Trinidad, Riberalta y Guayaramerín, donde las características operacionales de las pistas generan un mayor desgaste de los componentes del tren de aterrizaje.\n\n3- Para garantizar la operatividad y seguridad del vehículo asignado a la Gerencia de Aeronavegabilidad, utilizado en el apoyo a las actividades de mantenimiento aeronáutico y transporte de personal y materiales.\n\n4- Para mantener la operatividad del tractor Lovol utilizado en las actividades de apoyo en tierra y mantenimiento aeronáutico, garantizando condiciones seguras para su funcionamiento."
+    },
+    {
+      "area": "AE",
+      "hoja": "34400AE",
+      "codigo": "MEM-2027-34400AE",
+      "justificaciones": 3,
+      "anterior": "Para realizar la instalación y reposición de alfombras de cabina durante las tareas de mantenimiento programado de la aeronave AVRO RJ-70, utilizando materiales certificados con propiedades retardantes de llama, conforme a las especificaciones técnicas del fabricante y la normativa de aeronavegabilidad.",
+      "nueva": "1- Para realizar la instalación y reposición de alfombras de cabina durante las tareas de mantenimiento programado de la aeronave AVRO RJ-70, utilizando materiales certificados con propiedades retardantes de llama, conforme a las especificaciones técnicas del fabricante y la normativa de aeronavegabilidad.\n\n2- Para realizar el reemplazo de un juego completo de llantas del vehículo Gran Vía, garantizando su operatividad y seguridad en el apoyo a las actividades de mantenimiento aeronáutico, transporte de personal técnico y materiales.\n\n3- Para efectuar el reemplazo de las llantas delanteras del tractor Lovol, debido al desgaste por el uso continuo en las operaciones de apoyo en tierra, garantizando su operatividad y seguridad durante las actividades de mantenimiento aeronáutico."
+    },
+    {
+      "area": "AE",
+      "hoja": "39800AE",
+      "codigo": "MEM-2027-39800AE",
+      "justificaciones": 14,
+      "anterior": "Para garantizar la operatividad del sistema de extinción de incendios del lavatorio de la aeronave, conforme al Programa de Mantenimiento aprobado por la DGAC y los requisitos de aeronavegabilidad vigentes.",
+      "nueva": "1- Para garantizar la operatividad del sistema de extinción de incendios del lavatorio de la aeronave, conforme al Programa de Mantenimiento aprobado por la DGAC y los requisitos de aeronavegabilidad vigentes.\n\n2- Para efectuar el reemplazo del filtro de aire de cabina, garantizando el correcto funcionamiento del sistema de acondicionamiento de aire y el cumplimiento del Programa de Mantenimiento aprobado por la DGAC.\n\n3- Para realizar el reemplazo del filtro de aire de la cabina de vuelo, asegurando el correcto funcionamiento del sistema de ventilación y el cumplimiento del Programa de Mantenimiento aprobado por la DGAC.\n\n4- Para disponer de los componentes requeridos durante la ejecución de la Hot Section Inspection (HSI) de los motores, conforme al Programa de Mantenimiento y a las especificaciones técnicas del fabricante.\n\n5- Para efectuar el reemplazo del módulo T1 de los motores N.° 2 y N.° 4 al alcanzar los límites de vida establecidos por el fabricante, garantizando la aeronavegabilidad y continuidad operativa de la aeronave.\n\n6- Para reemplazar el generador de la aeronave en caso de falla o vencimiento de su vida útil, garantizando el suministro continuo de energía eléctrica a los sistemas de la aeronave.\n\n7- Para efectuar el reemplazo de los conjuntos de freno conforme a los límites de desgaste establecidos por el fabricante, garantizando la seguridad operacional durante las maniobras de aterrizaje y rodaje.\n\n8- Para reemplazar la Unidad de Control del Generador (GCU), garantizando el correcto control y protección del sistema de generación eléctrica de la aeronave.\n\n9- Para reemplazar la Unidad Hidromecánica (HMU), componente crítico del sistema de control de combustible del motor, garantizando su correcto funcionamiento y la aeronavegabilidad de la aeronave.\n\n10- Para reemplazar el motor de arranque de los motores de la aeronave, garantizando un arranque seguro y confiable conforme a las especificaciones del fabricante.\n\n11- Para garantizar el correcto funcionamiento del sistema de enfriamiento de frenos y del sistema antiskid, contribuyendo a la seguridad operacional durante el aterrizaje y rodaje.\n\n12- Para efectuar el reemplazo de los generadores de oxígeno de pasajeros conforme a los límites de vida útil establecidos por el fabricante, garantizando la disponibilidad del sistema de oxígeno de emergencia.\n\n13- Para reemplazar los cartuchos del sistema de extinción de incendios de la aeronave conforme al Programa de Mantenimiento y a los límites de vida útil establecidos por el fabricante.\n\n14- Para reemplazar los brazos de direccion del tren de aterrizaje de nariz debido a desgaste o cumplimiento de los límites establecidos por el fabricante, garantizando la correcta dirección y maniobrabilidad de la aeronave durante las operaciones en tierra."
+    },
+    {
+      "area": "SMS",
+      "hoja": "22110SMS",
+      "codigo": "MEM-2027-22110SMS",
+      "justificaciones": 4,
+      "anterior": "PASAJES PARA EL CUMPLIMIENTO DE ACTIVIDADES DEL SMS:\n\nREALIZACIÓN DE INSPECCIONES/AUDITORÍAS INTERNAS PROGRAMADAS A LAS ESTACIONES\n\nAPOYO A LAS INSPECCIONES/AUDITORÍAS DE LA DGAC A LAS ESTACIONES\n\nASISTENCIA A REUNIONES PRESENCIALES DEL GRUPO DE COORDINACION DE SEGURIDAD OPERACIONAL CON LA INDUSTRIA DEL SSP (DGAC)\n\nAPOYO EN LA ADECUACIÓN Y CERTIFICACIÓN ANTE LA DGAC PARA SU INICIO/REANUDACIONES DE OPERACIONES",
+      "nueva": "1- PASAJES PARA EL CUMPLIMIENTO DE ACTIVIDADES DEL SMS:\n\nREALIZACIÓN DE INSPECCIONES/AUDITORÍAS INTERNAS PROGRAMADAS A LAS ESTACIONES\n\nAPOYO A LAS INSPECCIONES/AUDITORÍAS DE LA DGAC A LAS ESTACIONES\n\nASISTENCIA A REUNIONES PRESENCIALES DEL GRUPO DE COORDINACION DE SEGURIDAD OPERACIONAL CON LA INDUSTRIA DEL SSP (DGAC)\n\nAPOYO EN LA ADECUACIÓN Y CERTIFICACIÓN ANTE LA DGAC PARA SU INICIO/REANUDACIONES DE OPERACIONES\n\n2- PASAJES PARA EL CUMPLIMIENTO DE ACTIVIDADES DEL SMS:\n\nREALIZACIÓN DE INSPECCIONES/AUDITORÍAS INTERNAS PROGRAMADAS A LAS ESTACIONES\n\nAPOYO A LAS INSPECCIONES/AUDITORÍAS DE LA DGAC A LAS ESTACIONES\n\nASISTENCIA A REUNIONES PRESENCIALES DEL GRUPO DE COORDINACION DE SEGURIDAD OPERACIONAL CON LA INDUSTRIA DEL SSP (DGAC)\n\nAPOYO EN LA ADECUACIÓN Y CERTIFICACIÓN ANTE LA DGAC PARA SU INICIO/REANUDACIONES DE OPERACIONES\n\n3- PASAJES PARA EL PERSONAL RESPONSABLE DEL AEREA DE AVSEC, PARA REALIZAR EL ACOMPAÑAMIENTO DURANTES LAS INSPECCIONES CON LA DGAC.\nPARA LA FISCALIZACION EN EL CONTROL DE CALIDAD EN LOS PROCEDIMIENTOS INTERNOS.\n\n4- PASAJES PARA EL PERSONAL RESPONSABLE DEL AEREA DE AVSEC, PARA REALIZAR EL ACOMPAÑAMIENTO DURANTES LAS INSPECCIONES CON LA DGAC.\nPARA LA FISCALIZACION EN EL CONTROL DE CALIDAD EN LOS PROCEDIMIENTOS INTERNOS."
+    },
+    {
+      "area": "SMS",
+      "hoja": "22120SMS",
+      "codigo": "MEM-2027-22120SMS",
+      "justificaciones": 2,
+      "anterior": "PASAJE PARA ASISTIR A LA CAPACITACIÓN DE CURSOS DE ESPECIALIZACION  EN SEGURIDAD OPERACIONAL IMPARTIDOS POR LA OFICINA REGIONAL DE LA OACI EN LIMA PERU EN CUMPLIMIENTO A LA NORMATIVA VIGENTE, RAB 121",
+      "nueva": "1- PASAJE PARA ASISTIR A LA CAPACITACIÓN DE CURSOS DE ESPECIALIZACION  EN SEGURIDAD OPERACIONAL IMPARTIDOS POR LA OFICINA REGIONAL DE LA OACI EN LIMA PERU EN CUMPLIMIENTO A LA NORMATIVA VIGENTE, RAB 121\n\n2- PASAJE PARA ASISTIR A LA REUNÓN DEL EQUIPO REGIONAL DE SEGURIDAD OPERACIONAL DE LA AVIACIÓN POR LA OFICINA REGIONAL DE LA OACI"
+    },
+    {
+      "area": "SMS",
+      "hoja": "22210SMS",
+      "codigo": "MEM-2027-22210SMS",
+      "justificaciones": 2,
+      "anterior": "PARA VERIFICACION DEL CUMPLIMIENTO CON LA NORMATIVA, FICALIZACIÓN EN LAS ESTACIONES COCHABAMBA, SANTA CRUZ Y COBIJA Y APOYO A LAS INSPECCIONES DE LA DGAC. (GER.SMS)",
+      "nueva": "1- PARA VERIFICACION DEL CUMPLIMIENTO CON LA NORMATIVA, FICALIZACIÓN EN LAS ESTACIONES COCHABAMBA, SANTA CRUZ Y COBIJA Y APOYO A LAS INSPECCIONES DE LA DGAC. (GER.SMS)\n\n2- PASAJES PARA EL PERSONAL DESIGNADO PARA REALIZAR VIAJES A LAS ESTACIONES DE TARIJA, TRINIDAD Y SUCRE, PARA ADECUAR Y CERTIFICAR LAS MISMAS ANTE LA DGAC ARA SU POSTERIOR APERTURA (GER.SMS)"
+    },
+    {
+      "area": "SMS",
+      "hoja": "25220SMS",
+      "codigo": "MEM-2027-25220SMS",
+      "justificaciones": 5,
+      "anterior": "PERSONAL ENCARGADO DE:\nPROPORCIONAR SUPERVISIÓN A LA SEGURIDAD OPERACIONAL DE TODAS LAS OPERACIONES.\nDETERMINAR EL PLAN DE IMPLEMENTACIÓN DE INDICADORES DE GESTIÓN. CONSIDERAR LOS HALLAZGOS DE AUDITORÍAS, INVESTIGACIONES DE SUCESOS O DE LAS INVESTIGACIONES RELACIONADAS CON LA COMPAÑÍA EFECTUADAS POR LA DGAC.\nREVISAR LAS TENDENCIAS DE LAS CAUSAS DE LOS SUCESOS RELACIONADOS CON LA\nSEGURIDAD. CUANDO CORRESPONDA ESTUDIARÁ TODOS LOS CASOS EN QUE SE DETECTEN PROBLEMAS CON SEGURIDAD OPERACIONAL, PARA EVALUAR SUS CAUSAS Y PROPONER CURSOS DE ACCIÓN APROPIADOS.",
+      "nueva": "1- PERSONAL ENCARGADO DE:\nPROPORCIONAR SUPERVISIÓN A LA SEGURIDAD OPERACIONAL DE TODAS LAS OPERACIONES.\nDETERMINAR EL PLAN DE IMPLEMENTACIÓN DE INDICADORES DE GESTIÓN. CONSIDERAR LOS HALLAZGOS DE AUDITORÍAS, INVESTIGACIONES DE SUCESOS O DE LAS INVESTIGACIONES RELACIONADAS CON LA COMPAÑÍA EFECTUADAS POR LA DGAC.\nREVISAR LAS TENDENCIAS DE LAS CAUSAS DE LOS SUCESOS RELACIONADOS CON LA\nSEGURIDAD. CUANDO CORRESPONDA ESTUDIARÁ TODOS LOS CASOS EN QUE SE DETECTEN PROBLEMAS CON SEGURIDAD OPERACIONAL, PARA EVALUAR SUS CAUSAS Y PROPONER CURSOS DE ACCIÓN APROPIADOS.\n\n2- De conformidad con la RAB 108, Capítulo G, el Coordinador de Seguridad es el responsable de implementar, supervisar y garantizar el cumplimiento del Programa de Seguridad del Explotador (PSE), aprobado por la Dirección General de Aeronáutica Civil (DGAC), asegurando la aplicación de las medidas de seguridad para prevenir actos de interferencia ilícita.\n\nEn ese contexto, considerando que EPTAM incorporará las nuevas estaciones de Trinidad y Riberalta, es necesario contar con personal certificado en Seguridad de la Aviación (AVSEC), bajo la coordinación de un Coordinador de Seguridad, a fin de garantizar el cumplimiento de la RAB 108, la correcta ejecución del PSE y la continuidad de las operaciones con los niveles de seguridad exigidos por la normativa aeronáutica vigente.\n\n3- De conformidad con la RAB 108, Capítulo G, específicamente con lo establecido en las Secciones 108.605 y 108.611, el explotador aéreo debe contar con Oficiales de Seguridad en línea Aerea AVSEC debidamente capacitados, certificados y competentes para aplicar las medidas de seguridad contempladas en el Programa de Seguridad del Explotador (PSE), aprobado por la Dirección General de Aeronáutica Civil (DGAC), con el fin de prevenir actos de interferencia ilícita.\nEn ese contexto, considerando que EPTAM incorporará las nuevas estaciones de Trinidad y Riberalta, es necesario disponer de personal de Oficiales de Seguridad AVSEC certificado para garantizar la implementación y el cumplimiento de los procedimientos de seguridad exigidos por la RAB 108, asegurando la continuidad de las operaciones y el cumplimiento de la normativa aeronáutica vigente.\n\n4- BAJO LA FISCALIZACION DE LA DGAC REQUIERE UN JEFE DE ANALISIS DE DATOS PRINCIPALMENTE POR LA SEGURIDAD OPERACIONAL (SAFETY) Y PLANIFICACION ESTRATEGICA DE LAS OPERACIÓNES DIARIA DE VUELO Y OPERACIONES DE MANTENIMIENT,  PARA LAS ACCIONES CORRECTIVAS Y PREVENTIVAS, CON LA FINALIDAD DE DISMINUIR EL RIESGO DE SEGURIDAD OPERACIONAL.\n\n5- FOMENTAR LA CULTURA DE SEGURIDAD, AUMENTANDO LA CONCIENTIZACIÓN SOBRE LA SEGURIDAD ENTRE LOS PILOTOS Y PERSONAL INVOLUCRADO EN LAS OPERACIONES DE VUELO. IDENTIFICAR Y CORREGIR DESVIACIONES, IDENTIFICANDO CUALQUIER PROBLEMA O DESVIACIÓN EN LOS PROCEDIMIENTOS DE MANTENIMIENTO Y TOMAR ACCIONES CORRECTIVAS PARA PREVENIR FALLOS FUTUROS"
+    },
+    {
+      "area": "SMS",
+      "hoja": "25600SMS",
+      "codigo": "MEM-2027-25600SMS",
+      "justificaciones": 7,
+      "anterior": "PARA USO EN AERONAVE\nPROCESADOS EN PAPEL BOND CON IMPRESIÓN UN COLOR ANVERSO Y REVERSO DE 21.6 X 16,5 MEDIO OFICIO\nTODO FORMULARIO ESTA SUJETO A MODIFICACIONES Y EMNIENDAS DE LA DGAC",
+      "nueva": "1- PARA USO EN AERONAVE\nPROCESADOS EN PAPEL BOND CON IMPRESIÓN UN COLOR ANVERSO Y REVERSO DE 21.6 X 16,5 MEDIO OFICIO\nTODO FORMULARIO ESTA SUJETO A MODIFICACIONES Y EMNIENDAS DE LA DGAC\n\n2- PARA USO EN AERONAVE\nPROCESADOS EN PAPEL BOND CON IMPRESIÓN UN COLOR ANVERSO Y REVERSO DE 21.6 X 16,5 MEDIO OFICIO\nTODO FORMULARIO ESTA SUJETO A MODIFICACIONES Y EMNIENDAS DE LA DGAC\n\n3- PARA USO EN AEROPUERTO \nPROCESADOS EN PAPEL QUIMICO CON IMPRESIÓN UN COLOR O DE 21.6 X 16,5 MEDIO UN ORIGINAL Y 4 COPIAS SOLO ANVERSO\nTODO FORMULARIO ESTA SUJETO A MODIFICACIONES Y EMNIENDAS DE LA DGAC\n\n4- PARA USO EN PLATAFORMA\nPROCESADOS EN PAPEL BOND CON IMPRESIÓN UN COLOR ANVERSO Y RECERSO DE 21.6 X 16,5 MEDIO OFICIO\nTODO FORMULARIO ESTA SUJETO A MODIFICACIONES Y EMNIENDAS DE LA DGAC\n\n5- PARA USO EN PLATAFORMA\nPROCESADOS EN PAPEL BOND CON IMPRESIÓN UN COLOR ANVERSO Y RECERSO DE 21.6 X 16,5 MEDIO OFICIO\nTODO FORMULARIO ESTA SUJETO A MODIFICACIONES Y EMNIENDAS DE LA DGAC\n\n6- PARA CUBRIR COSTO INDISPENSABLE PARA EL FUNCIONAMIENTO ADMINISTRATIVO Y OPERATIVO.\nIMPRESOS Y FORMULARIOS: COMPRA O IMPRESIÓN DE FORMULARIOS OFICIALES,  FOLLETOS INFORMATIVOS,  INTERNOS Y PAPELERÍA MEMBRETADA, TRIPTICOS BANERS ,PARA LAS DISTINTAS ESTACIONES DE EPTAM INCLUYENDO LAS NUEVAS ESTACIONES TRINIDAD, GUAYARAMERIN Y RIBERALTA\n\n7- IMPRESIÓN DE FOLLETOS O INFOGRAFIAS NECESARIAS PARA LAS ACTIVIDADES DE PROMOCIÓN DE SEGURIDAD OPERACIONAL EN CUMPLIMIENTO AL DOCUMENTO SSP DE LA DGAC"
+    },
+    {
+      "area": "SMS",
+      "hoja": "25700SMS",
+      "codigo": "MEM-2027-25700SMS",
+      "justificaciones": 2,
+      "anterior": "EN CUMPLIMIENTO A NORMATIVA VIGENTE SE DEBE REALIZAR LOS CURSOS DE LA RAB 108 Y 175 (MERCANCIAS PELIGROSAS  Y SEGURIDAD AEROPUETUARIA)",
+      "nueva": "1- EN CUMPLIMIENTO A NORMATIVA VIGENTE SE DEBE REALIZAR LOS CURSOS DE LA RAB 108 Y 175 (MERCANCIAS PELIGROSAS  Y SEGURIDAD AEROPUETUARIA)\n\n2- EN CUMPLIMIENTO A NORMATIVA VIGENTE SE DEBE REALIZAR LA CAPACITACIÓN EN TEMAS DE SEGURIDAD OPERACIONAL, CURSOS DE LA RAB 121, PROGRAMAS DE VIGILANCIA OPERACIONAL Y GESTIÓN DE RIESGOS"
+    },
+    {
+      "area": "SMS",
+      "hoja": "31120 SMS",
+      "codigo": "MEM-2027-31120SMS",
+      "justificaciones": 3,
+      "anterior": "SERA UTILIZADOS PARA GASTOS DE ALIMENTACIÓN Y REFRIGERIOS AL PERSONAL DE EPTAM Y DGAC DURANTE INSPECCION, AUDITORIAS DE LA DIRECCION GENERAL DE AERONAUTICA DE BOLIVIA (DGAC) AL SISTEMA DE GESTION DE SEGURIDAD OPERACIONAL DE EPTAM EN LAS DIFERENTES ESTACIONES",
+      "nueva": "1- SERA UTILIZADOS PARA GASTOS DE ALIMENTACIÓN Y REFRIGERIOS AL PERSONAL DE EPTAM Y DGAC DURANTE INSPECCION, AUDITORIAS DE LA DIRECCION GENERAL DE AERONAUTICA DE BOLIVIA (DGAC) AL SISTEMA DE GESTION DE SEGURIDAD OPERACIONAL DE EPTAM EN LAS DIFERENTES ESTACIONES\n\n2- SERA UTILIZADOS PARA GASTOS DE INSPECCION, AUDITORIAS DE LA DIRECCION GENERAL DE AERONAUTICA DE BOLIVIA (DGAC), TEM,AS DE AVSEC Y DE MERCANCIAS PELIGROSAS\n\n3- SERAN UTILIZADOS EN LAS ACTIVIDADES DEL SMS DE DÍA DE LA SEGURIDAD OPERACIONAL, CAPACITACIONES,  TALLERES PRESENCIALES CON PERSONAL OPERATIVO"
+    },
+    {
+      "area": "SMS",
+      "hoja": "34200SMS",
+      "codigo": "MEM-2027-34200SMS",
+      "justificaciones": 2,
+      "anterior": "MEDICAMENTOS Y FÁRMACOS: PASTILLAS, JARABES, AMPOLLAS, VACUNAS, SUEROS PARA BOTIQUINES INSTITUCIONALES.\n INSUMOS QUÍMICOS Y REACTIVOS DE LABORATORIO: ALCOHOL MÉDICO, AGUA DESTILADA, SUSTANCIAS QUÍMICAS CONTROLADAS O DE LIMPIEZA TÉCNICA.\n MATERIAL MÉDICO MENOR: ALGODÓN, GASAS, JERINGAS, GUANTES DE LÁTEX, BARBIJOS Y DESINFECTANTES HOSPITALARIOS.",
+      "nueva": "1- MEDICAMENTOS Y FÁRMACOS: PASTILLAS, JARABES, AMPOLLAS, VACUNAS, SUEROS PARA BOTIQUINES INSTITUCIONALES.\n INSUMOS QUÍMICOS Y REACTIVOS DE LABORATORIO: ALCOHOL MÉDICO, AGUA DESTILADA, SUSTANCIAS QUÍMICAS CONTROLADAS O DE LIMPIEZA TÉCNICA.\n MATERIAL MÉDICO MENOR: ALGODÓN, GASAS, JERINGAS, GUANTES DE LÁTEX, BARBIJOS Y DESINFECTANTES HOSPITALARIOS.\n\n2- PARA EL RECARGUE DE TODOS LOS EXTINTORES DE LA EPTAM Y TODAS LAS REGIONALES, PARA EL CUMPLIMIENTO DE LA NORMATIVA VIGENTE RAB 108, CAPACITACIONES, SIMULACROS."
+    }
+  ],
+  "omitidas_detalle": [
+    {
+      "hoja": "22120GO",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "22500GO",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "22600GO",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "24120GO",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "25700GO",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "26300GO",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "26990GO",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "31120GO",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "33200GO",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "39100GO",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "22110AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "22120AE",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "22210AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "22220AE",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "22600AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "24120AE",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "25700AE",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "26300AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "33300AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "33400AE",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "34200AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "34500AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "34600AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "34800AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "39100AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "39700AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "39990AE",
+      "motivo": "Menos de dos justificaciones en el Excel"
+    },
+    {
+      "hoja": "22220SMS",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "22600 SMS",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "26990SMS",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "33300SMS",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "39400SMS",
+      "motivo": "Un solo renglón"
+    },
+    {
+      "hoja": "39990SMS",
+      "motivo": "Un solo renglón"
+    }
+  ]
+}

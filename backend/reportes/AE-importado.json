@@ -1,0 +1,282 @@
+{
+  "area": "AE",
+  "memorias": 30,
+  "items": 170,
+  "total": "15236454.00",
+  "rows": [
+    {
+      "hoja": "21100AE",
+      "partida": "21100",
+      "items": 2,
+      "total": "6000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22110AE",
+      "partida": "22110",
+      "items": 6,
+      "total": "22938.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22120AE",
+      "partida": "22120",
+      "items": 1,
+      "total": "80000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22210AE",
+      "partida": "22210",
+      "items": 3,
+      "total": "23744.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22220AE",
+      "partida": "22220",
+      "items": 1,
+      "total": "22080.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22300AE",
+      "partida": "22300",
+      "items": 2,
+      "total": "300000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22500AE",
+      "partida": "22500",
+      "items": 4,
+      "total": "2042354.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22600AE",
+      "partida": "22600",
+      "items": 2,
+      "total": "304800.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "23200AE",
+      "partida": "23200",
+      "items": 2,
+      "total": "371000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24120AE",
+      "partida": "24120",
+      "items": 1,
+      "total": "32000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24300AE",
+      "partida": "24300",
+      "items": 6,
+      "total": "2997861.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "25220AE",
+      "partida": "25220",
+      "items": 3,
+      "total": "243264.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "25600AE",
+      "partida": "25600",
+      "items": 2,
+      "total": "1500.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "25700AE",
+      "partida": "25700",
+      "items": 1,
+      "total": "210000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "26300AE",
+      "partida": "26300",
+      "items": 3,
+      "total": "375140.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "26990AE",
+      "partida": "26990",
+      "items": 3,
+      "total": "103100.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "31120AE",
+      "partida": "31120",
+      "items": 2,
+      "total": "1680.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "33300AE",
+      "partida": "33300",
+      "items": 4,
+      "total": "18150.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "33400AE",
+      "partida": "33400",
+      "items": 1,
+      "total": "15000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "34110AE",
+      "partida": "34110",
+      "items": 13,
+      "total": "609890.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "34200AE",
+      "partida": "34200",
+      "items": 36,
+      "total": "460121.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "34300AE",
+      "partida": "34300",
+      "items": 4,
+      "total": "2991900.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "34400AE",
+      "partida": "34400",
+      "items": 3,
+      "total": "42720.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "34500AE",
+      "partida": "34500",
+      "items": 2,
+      "total": "2880.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "34600AE",
+      "partida": "34600",
+      "items": 15,
+      "total": "26627.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "34800AE",
+      "partida": "34800",
+      "items": 4,
+      "total": "2160.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "39100AE",
+      "partida": "39100",
+      "items": 14,
+      "total": "32426.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "39700AE",
+      "partida": "39700",
+      "items": 14,
+      "total": "19411.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "39800AE",
+      "partida": "39800",
+      "items": 14,
+      "total": "3821148.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "39990AE",
+      "partida": "39990",
+      "items": 2,
+      "total": "56560.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "21100AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22110AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22120AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22210AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22220AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22300AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22500AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22600AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "23200AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24120AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24300AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "25220AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "25600AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "25700AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "26300AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "26990AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "31120AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "33300AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "33400AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "34110AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "34200AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "34300AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "34400AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "34500AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "34600AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "34800AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "39100AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "39700AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "39800AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "39990AE: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO."
+  ],
+  "applied": true
+}

@@ -1,0 +1,120 @@
+{
+  "area": "TDD",
+  "memorias": 12,
+  "items": 14,
+  "total": "553612.00",
+  "rows": [
+    {
+      "hoja": "22110TDD",
+      "partida": "22110",
+      "items": 1,
+      "total": "1000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "22210TDD",
+      "partida": "22210",
+      "items": 1,
+      "total": "1855.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "23100TDD",
+      "partida": "23100",
+      "items": 1,
+      "total": "96000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "23400TDD",
+      "partida": "23400",
+      "items": 1,
+      "total": "144000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24110TDD",
+      "partida": "24110",
+      "items": 1,
+      "total": "25000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24120TDD",
+      "partida": "24120",
+      "items": 1,
+      "total": "2800.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "24130TDD",
+      "partida": "24130",
+      "items": 1,
+      "total": "2400.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "25600TDD",
+      "partida": "25600",
+      "items": 1,
+      "total": "2001.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "26990TDD",
+      "partida": "26990",
+      "items": 3,
+      "total": "251000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "31120TDD",
+      "partida": "31120",
+      "items": 1,
+      "total": "2016.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "31140TDD",
+      "partida": "31140",
+      "items": 1,
+      "total": "1540.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "86100TDD",
+      "partida": "86100",
+      "items": 1,
+      "total": "24000.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "22110TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "22210TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "23100TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "23400TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24110TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24120TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "24130TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "25600TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "26990TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "31120TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "31140TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "86100TDD: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO."
+  ],
+  "applied": true
+}

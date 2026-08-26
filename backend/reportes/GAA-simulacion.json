@@ -1,0 +1,337 @@
+{
+  "area": "GAA",
+  "memorias": 40,
+  "items": 295,
+  "total": "15479785.00",
+  "rows": [
+    {
+      "hoja": "21100GAA",
+      "partida": "21100",
+      "items": 1,
+      "total": "4000.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "21200GAA",
+      "partida": "21200",
+      "items": 11,
+      "total": "90120.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "21300GAA",
+      "partida": "21300",
+      "items": 8,
+      "total": "43560.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "21400GAA",
+      "partida": "21400",
+      "items": 2,
+      "total": "66000.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "21600GAA",
+      "partida": "21600",
+      "items": 12,
+      "total": "78720.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22110GAA",
+      "partida": "22110",
+      "items": 3,
+      "total": "11400.00",
+      "operacion": "Gestionar las diferentes actividades de la Jefatura Administrativa a traves de sus diferentes Secciones en el marco de las normas vigentes.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22210GAA",
+      "partida": "22210",
+      "items": 3,
+      "total": "20034.00",
+      "operacion": "Gestionar las diferentes actividades de la Jefatura Administrativa a traves de sus diferentes Secciones en el marco de las normas vigentes.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22600GAA",
+      "partida": "22600",
+      "items": 3,
+      "total": "145200.00",
+      "operacion": "Gestionar las diferentes actividades de la Jefatura Administrativa a traves de sus diferentes Secciones en el marco de las normas vigentes.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25210GAA",
+      "partida": "25210",
+      "items": 1,
+      "total": "200000.00",
+      "operacion": "Gestionar las diferentes actividades de la Jefatura Administrativa a traves de sus diferentes Secciones en el marco de las normas vigentes.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25220GAA",
+      "partida": "25220",
+      "items": 23,
+      "total": "1269228.00",
+      "operacion": "Gestionar las diferentes actividades de la Jefatura Administrativa a traves de sus diferentes Secciones en el marco de las normas vigentes.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25230GAA",
+      "partida": "25230",
+      "items": 1,
+      "total": "100000.00",
+      "operacion": "Gestionar las diferentes actividades de la Jefatura Administrativa a traves de sus diferentes Secciones en el marco de las normas vigentes.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25300GAA",
+      "partida": "25300",
+      "items": 2,
+      "total": "25200.00",
+      "operacion": "Gestionar las diferentes actividades de la Jefatura Administrativa a traves de sus diferentes Secciones en el marco de las normas vigentes.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25600GAA",
+      "partida": "25600",
+      "items": 5,
+      "total": "36250.00",
+      "operacion": "Gestionar las diferentes actividades de la Jefatura Administrativa a traves de sus diferentes Secciones en el marco de las normas vigentes.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25700GAA",
+      "partida": "25700",
+      "items": 2,
+      "total": "8750.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25900GAA",
+      "partida": "25900",
+      "items": 4,
+      "total": "14400.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "26930GAA",
+      "partida": "26930",
+      "items": 1,
+      "total": "22500.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "31120GAA",
+      "partida": "31120",
+      "items": 1,
+      "total": "11250.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "32100GAA",
+      "partida": "32100",
+      "items": 3,
+      "total": "120200.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "32200GAA",
+      "partida": "32200",
+      "items": 6,
+      "total": "59200.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "34200GAA",
+      "partida": "34200",
+      "items": 3,
+      "total": "10250.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "34500GAA",
+      "partida": "34500",
+      "items": 5,
+      "total": "4805.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "34800GAA",
+      "partida": "34800",
+      "items": 1,
+      "total": "1800.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "39100GAA",
+      "partida": "39100",
+      "items": 23,
+      "total": "79480.00",
+      "operacion": "Gestionar el manejo de los recursos percobidos a traves de las diferentes secciones dependientes de la Jefatura Financiera",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "39500GAA",
+      "partida": "39500",
+      "items": 53,
+      "total": "226300.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "39700GAA",
+      "partida": "39700",
+      "items": 9,
+      "total": "20300.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "43110GAA ",
+      "partida": "43110",
+      "items": 27,
+      "total": "45600.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "43120GAA",
+      "partida": "43120",
+      "items": 47,
+      "total": "323600.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "43500GAA",
+      "partida": "43500",
+      "items": 9,
+      "total": "34480.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "43600GAA",
+      "partida": "43600",
+      "items": 3,
+      "total": "11900.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "43700GAA",
+      "partida": "43700",
+      "items": 11,
+      "total": "128290.00",
+      "operacion": "SIN CORRELACIÓN EN OPERACIÓN-PRESUPUESTO",
+      "mes_requerido": ""
+    },
+    {
+      "hoja": "63900GAA",
+      "partida": "63900",
+      "items": 1,
+      "total": "60000.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "73700GAA",
+      "partida": "73700",
+      "items": 1,
+      "total": "120000.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "81200GAA",
+      "partida": "81200",
+      "items": 1,
+      "total": "3239772.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "81300GAA",
+      "partida": "81300",
+      "items": 1,
+      "total": "6069672.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "85100GAA",
+      "partida": "85100",
+      "items": 1,
+      "total": "350000.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "85400GAA",
+      "partida": "85400",
+      "items": 2,
+      "total": "270000.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "85500GAA",
+      "partida": "85500",
+      "items": 1,
+      "total": "42324.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "95100GAA",
+      "partida": "95100",
+      "items": 2,
+      "total": "1019200.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "96100GAA",
+      "partida": "96100",
+      "items": 1,
+      "total": "696000.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "96200GAA",
+      "partida": "96200",
+      "items": 1,
+      "total": "400000.00",
+      "operacion": "Hacer cumplir lo establecido  en el Reglamento Especifico del Sistema de Administracion de Personal (RESAP) y Reglamento Interno de Personal (RIP)",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "43110GAA : se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "43120GAA: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "43500GAA: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "43600GAA: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO.",
+    "43700GAA: se usará el consolidado como fuente autoritativa; no existe correlación de operación/mes en OPERACION-PRESUPUESTO."
+  ],
+  "applied": false
+}

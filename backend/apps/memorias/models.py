@@ -130,6 +130,34 @@ class DetallePresupuestoMemoria(TimeStampedModel):
     partida = models.ForeignKey(Partida, on_delete=models.CASCADE, related_name='detalles_memoria', verbose_name="Partida")
     descripcion = models.TextField(verbose_name="Descripción")
     unidad_medida = models.CharField(max_length=50, verbose_name="Unidad de Medida")
+    mes_requerido = models.CharField(
+        max_length=120,
+        blank=True,
+        default='',
+        verbose_name="Mes requerido",
+        help_text="Periodo de requerimiento registrado en la determinación de requerimientos POA."
+    )
+    fuente_excel = models.CharField(
+        max_length=120,
+        blank=True,
+        default='',
+        verbose_name="Hoja fuente Excel",
+        help_text="Hoja del consolidado desde la cual se importó el detalle."
+    )
+    factor_calculo = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        default=Decimal('1.0000'),
+        verbose_name="Factor de cálculo",
+        help_text="Multiplicador necesario para reflejar el total de la fila de origen (por ejemplo, 12 meses)."
+    )
+    total_programado = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        default=Decimal('0.0000'),
+        verbose_name="Total programado",
+        help_text="Importe exacto de la fila del Excel fuente."
+    )
     cantidad = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cantidad")
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Precio Unitario")
     estado_ejecucion = models.CharField(max_length=20, choices=EstadoGasto.choices, default=EstadoGasto.PENDIENTE, verbose_name="Estado Gasto")
@@ -150,7 +178,9 @@ class DetallePresupuestoMemoria(TimeStampedModel):
 
     @property
     def precio_total(self):
-        return (self.cantidad or Decimal('0.00')) * (self.precio_unitario or Decimal('0.00'))
+        if self.total_programado:
+            return self.total_programado
+        return (self.cantidad or Decimal('0.00')) * (self.precio_unitario or Decimal('0.00')) * (self.factor_calculo or Decimal('1.0000'))
 
     def __str__(self):
         return f"{self.descripcion} ({self.cantidad} {self.unidad_medida})"

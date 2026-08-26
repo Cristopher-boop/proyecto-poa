@@ -1,0 +1,20 @@
+{
+  "area": "EA",
+  "memorias": 8,
+  "items": 12,
+  "total": "2855440.00",
+  "rows": [],
+  "errors": [
+    "No se hallaron requerimientos para el área EA en OPERACION-PRESUPUESTO 2027.",
+    "22600EA: se esperó 1 requerimiento con partida 22600 y Bs 119640.00; se encontraron 0.",
+    "23100EA: se esperó 1 requerimiento con partida 23100 y Bs 240000.00; se encontraron 0.",
+    "23400EA: se esperó 1 requerimiento con partida 23400 y Bs 480000.00; se encontraron 0.",
+    "24130EA: se esperó 1 requerimiento con partida 24130 y Bs 2000.00; se encontraron 0.",
+    "25600EA: se esperó 1 requerimiento con partida 25600 y Bs 4600.00; se encontraron 0.",
+    "26990EA: se esperó 1 requerimiento con partida 26990 y Bs 1996000.00; se encontraron 0.",
+    "31120EA: se esperó 1 requerimiento con partida 31120 y Bs 1200.00; se encontraron 0.",
+    "31140EA: se esperó 1 requerimiento con partida 31140 y Bs 12000.00; se encontraron 0."
+  ],
+  "warnings": [],
+  "applied": false
+}

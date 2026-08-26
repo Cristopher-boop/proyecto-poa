@@ -1,0 +1,59 @@
+{
+  "area": "UT",
+  "memorias": 6,
+  "items": 11,
+  "total": "79783.00",
+  "rows": [
+    {
+      "hoja": "22110UT",
+      "partida": "22110",
+      "items": 3,
+      "total": "490.00",
+      "operacion": "PROMOVER UNA GESTIÓN EMPRESARIAL PÚBLICA ADMINISTRATIVA TRANSPARENTE RESPECTO A LOS PROCESOS Y ACTIVIDADES REALIZADAS POR LA EPTAM.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22210UT",
+      "partida": "22210",
+      "items": 3,
+      "total": "1855.00",
+      "operacion": "PROMOVER UNA GESTIÓN EMPRESARIAL PÚBLICA ADMINISTRATIVA TRANSPARENTE RESPECTO A LOS PROCESOS Y ACTIVIDADES REALIZADAS POR LA EPTAM.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25220UT",
+      "partida": "25220",
+      "items": 1,
+      "total": "74088.00",
+      "operacion": "PROMOVER UNA GESTIÓN EMPRESARIAL PÚBLICA ADMINISTRATIVA TRANSPARENTE RESPECTO A LOS PROCESOS Y ACTIVIDADES REALIZADAS POR LA EPTAM.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25600UT",
+      "partida": "25600",
+      "items": 2,
+      "total": "750.00",
+      "operacion": "PROMOVER UNA GESTIÓN EMPRESARIAL PÚBLICA ADMINISTRATIVA TRANSPARENTE RESPECTO A LOS PROCESOS Y ACTIVIDADES REALIZADAS POR LA EPTAM.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "26200UT",
+      "partida": "26200",
+      "items": 1,
+      "total": "600.00",
+      "operacion": "PROMOVER UNA GESTIÓN EMPRESARIAL PÚBLICA ADMINISTRATIVA TRANSPARENTE RESPECTO A LOS PROCESOS Y ACTIVIDADES REALIZADAS POR LA EPTAM.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "31120UT",
+      "partida": "31120",
+      "items": 1,
+      "total": "2000.00",
+      "operacion": "PROMOVER UNA GESTIÓN EMPRESARIAL PÚBLICA ADMINISTRATIVA TRANSPARENTE RESPECTO A LOS PROCESOS Y ACTIVIDADES REALIZADAS POR LA EPTAM.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "applied": false
+}

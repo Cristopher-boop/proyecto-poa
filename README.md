@@ -66,17 +66,21 @@ npm run dev
 
 ---
 
-## 4. Reiniciar la Base de Datos de Golpe (Reset Completo & Todos los Seeds en 1 Paso)
+## 4. Reiniciar la Base de Datos
 
 Si deseas limpiar la base de datos por completo, reiniciar los autoincrementales (Primary Keys de vuelta a 1) y precargar **TODAS** las semillas oficiales de golpe (Organizacional, Partidas, Memorias, Planificación PEI/POA y Usuarios de prueba):
 
 Abre la terminal en la carpeta `/backend` (con el entorno virtual activo) y ejecuta:
 
 ```powershell
+# Histórico completo: gestión 2026 original + gestión 2027 importada desde los Excel oficiales
 python reset_db.py
+
+# Solo gestión 2027 importada desde los Excel oficiales
+python reset_db2.py
 ```
 
-Este script automatizado ejecuta en secuencia:
+`reset_db.py` ejecuta en secuencia:
 1. Desactiva la verificación de claves foráneas y realiza un `DROP TABLE` limpio de todas las tablas.
 2. Recrea el esquema completo aplicando todas las migraciones (`migrate`).
 3. Crea un usuario superadministrador por defecto:
@@ -84,9 +88,11 @@ Este script automatizado ejecuta en secuencia:
    * **Contraseña:** `admin`
 4. Ejecuta `seed_organizacional` (Carga los programas, áreas y secciones reales de EPTAM).
 5. Ejecuta `import_partidas` (Importa las partidas presupuestarias oficiales INGRESO/EGRESO).
-6. Ejecuta `seed_memorias` y `recalcular_saldos` (Carga las memorias de cálculo y saldos reales).
-7. Ejecuta `seed_planificacion` (Carga la Alineación Estratégica oficial PEI/POA por Programa: P-1, P-2, P-410, P-210, Operaciones por Área y Tareas TAMEP).
+6. Ejecuta `seed_memorias`, `recalcular_saldos` y `seed_planificacion` para conservar la gestión 2026 histórica.
+7. Importa las 20 áreas, 254 memorias, detalles, presupuestos y justificaciones del POA 2027 desde los dos Excel oficiales.
 8. Ejecuta `seed_test_users` (Carga los usuarios de prueba por rol: `SoyAprobador`, `SoyPlanificador`, `SoyGerenteI`, `SoyElaboradorI`, `SoyTrabajadorI`).
+
+`reset_db2.py` omite las semillas de memorias y planificación de 2026: deja únicamente la gestión POA 2027, junto con el catálogo, usuarios y estructura creada durante esa importación.
 
 ---
 

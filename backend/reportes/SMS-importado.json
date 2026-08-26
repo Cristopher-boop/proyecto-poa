@@ -1,0 +1,123 @@
+{
+  "area": "SMS",
+  "memorias": 14,
+  "items": 45,
+  "total": "604279.00",
+  "rows": [
+    {
+      "hoja": "22110SMS",
+      "partida": "22110",
+      "items": 12,
+      "total": "1600.00",
+      "operacion": "DISMINUIR LA OCURRENCIA DE INCIDENTES Y EVENTOS MEDIANTE UNA GESTIÓN DE RIESGOS BASADA EN ENFOQUES REACTIVOS, PROACTIVOS Y PREDICTIVOS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22120SMS",
+      "partida": "22120",
+      "items": 2,
+      "total": "16000.00",
+      "operacion": "DISMINUIR LA OCURRENCIA DE INCIDENTES Y EVENTOS MEDIANTE UNA GESTIÓN DE RIESGOS BASADA EN ENFOQUES REACTIVOS, PROACTIVOS Y PREDICTIVOS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22210SMS",
+      "partida": "22210",
+      "items": 6,
+      "total": "6678.00",
+      "operacion": "DISMINUIR LA OCURRENCIA DE INCIDENTES Y EVENTOS MEDIANTE UNA GESTIÓN DE RIESGOS BASADA EN ENFOQUES REACTIVOS, PROACTIVOS Y PREDICTIVOS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22220SMS",
+      "partida": "22220",
+      "items": 1,
+      "total": "20600.00",
+      "operacion": "DISMINUIR LA OCURRENCIA DE INCIDENTES Y EVENTOS MEDIANTE UNA GESTIÓN DE RIESGOS BASADA EN ENFOQUES REACTIVOS, PROACTIVOS Y PREDICTIVOS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22600 SMS",
+      "partida": "22600",
+      "items": 1,
+      "total": "96000.00",
+      "operacion": "DISMINUIR LA OCURRENCIA DE INCIDENTES Y EVENTOS MEDIANTE UNA GESTIÓN DE RIESGOS BASADA EN ENFOQUES REACTIVOS, PROACTIVOS Y PREDICTIVOS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25220SMS",
+      "partida": "25220",
+      "items": 5,
+      "total": "382998.00",
+      "operacion": "DISMINUIR LA OCURRENCIA DE INCIDENTES Y EVENTOS MEDIANTE UNA GESTIÓN DE RIESGOS BASADA EN ENFOQUES REACTIVOS, PROACTIVOS Y PREDICTIVOS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25600SMS",
+      "partida": "25600",
+      "items": 7,
+      "total": "14465.00",
+      "operacion": "FORTALECER EL SISTEMA DE NOTIFICACIONES DE SEGURIDAD OPERACIONAL ASEGURANDO EL PROCESAMIENTO INTEGRAL DE LA INFORMACIÓN Y LA RETROALIMENTACIÓN OPORTUNA PARA UNA IDENTIFICACIÓN TEMPRANA DE PELIGROS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25700SMS",
+      "partida": "25700",
+      "items": 2,
+      "total": "15988.00",
+      "operacion": "FORTALECER EL SISTEMA DE NOTIFICACIONES DE SEGURIDAD OPERACIONAL ASEGURANDO EL PROCESAMIENTO INTEGRAL DE LA INFORMACIÓN Y LA RETROALIMENTACIÓN OPORTUNA PARA UNA IDENTIFICACIÓN TEMPRANA DE PELIGROS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "26990SMS",
+      "partida": "26990",
+      "items": 1,
+      "total": "9000.00",
+      "operacion": "FORTALECER EL SISTEMA DE NOTIFICACIONES DE SEGURIDAD OPERACIONAL ASEGURANDO EL PROCESAMIENTO INTEGRAL DE LA INFORMACIÓN Y LA RETROALIMENTACIÓN OPORTUNA PARA UNA IDENTIFICACIÓN TEMPRANA DE PELIGROS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "31120 SMS",
+      "partida": "31120",
+      "items": 3,
+      "total": "13200.00",
+      "operacion": "FORTALECER EL SISTEMA DE NOTIFICACIONES DE SEGURIDAD OPERACIONAL ASEGURANDO EL PROCESAMIENTO INTEGRAL DE LA INFORMACIÓN Y LA RETROALIMENTACIÓN OPORTUNA PARA UNA IDENTIFICACIÓN TEMPRANA DE PELIGROS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "33300SMS",
+      "partida": "33300",
+      "items": 1,
+      "total": "7500.00",
+      "operacion": "FOMENTAR UNA CULTURA DE SEGURIDAD Y COMPETENCIA TÉCNICA MEDIANTE PROGRAMAS DE CAPACITACIÓN CONTINUA, DIFUSIÓN DE LA POLÍTICA Y FORTALECIMIENTO DE UNA CULTURA JUSTA.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "34200SMS",
+      "partida": "34200",
+      "items": 2,
+      "total": "15500.00",
+      "operacion": "FOMENTAR UNA CULTURA DE SEGURIDAD Y COMPETENCIA TÉCNICA MEDIANTE PROGRAMAS DE CAPACITACIÓN CONTINUA, DIFUSIÓN DE LA POLÍTICA Y FORTALECIMIENTO DE UNA CULTURA JUSTA.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "39400SMS",
+      "partida": "39400",
+      "items": 1,
+      "total": "1000.00",
+      "operacion": "FOMENTAR UNA CULTURA DE SEGURIDAD Y COMPETENCIA TÉCNICA MEDIANTE PROGRAMAS DE CAPACITACIÓN CONTINUA, DIFUSIÓN DE LA POLÍTICA Y FORTALECIMIENTO DE UNA CULTURA JUSTA.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "39990SMS",
+      "partida": "39990",
+      "items": 1,
+      "total": "3750.00",
+      "operacion": "FOMENTAR UNA CULTURA DE SEGURIDAD Y COMPETENCIA TÉCNICA MEDIANTE PROGRAMAS DE CAPACITACIÓN CONTINUA, DIFUSIÓN DE LA POLÍTICA Y FORTALECIMIENTO DE UNA CULTURA JUSTA.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "applied": true
+}

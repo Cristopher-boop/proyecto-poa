@@ -1,0 +1,170 @@
+{
+  "areas": [
+    {
+      "area": "PL",
+      "source_memories": 3,
+      "db_memories": 3,
+      "source_total": "18400.00",
+      "db_total": "18400.0000",
+      "match": true
+    },
+    {
+      "area": "UT",
+      "source_memories": 6,
+      "db_memories": 6,
+      "source_total": "79783.00",
+      "db_total": "79783.0000",
+      "match": true
+    },
+    {
+      "area": "AI",
+      "source_memories": 6,
+      "db_memories": 6,
+      "source_total": "111554.00",
+      "db_total": "111554.0000",
+      "match": true
+    },
+    {
+      "area": "AJ",
+      "source_memories": 7,
+      "db_memories": 7,
+      "source_total": "41530.00",
+      "db_total": "41530.0000",
+      "match": true
+    },
+    {
+      "area": "CIAC",
+      "source_memories": 7,
+      "db_memories": 7,
+      "source_total": "276401.00",
+      "db_total": "276401.0000",
+      "match": true
+    },
+    {
+      "area": "OD",
+      "source_memories": 8,
+      "db_memories": 8,
+      "source_total": "72374.00",
+      "db_total": "72374.0000",
+      "match": true
+    },
+    {
+      "area": "IF",
+      "source_memories": 13,
+      "db_memories": 13,
+      "source_total": "282281.00",
+      "db_total": "282281.0000",
+      "match": true
+    },
+    {
+      "area": "GAA",
+      "source_memories": 40,
+      "db_memories": 40,
+      "source_total": "15479785.00",
+      "db_total": "15479785.0010",
+      "match": false
+    },
+    {
+      "area": "GC",
+      "source_memories": 18,
+      "db_memories": 18,
+      "source_total": "8645035.00",
+      "db_total": "8645034.9000",
+      "match": false
+    },
+    {
+      "area": "GO",
+      "source_memories": 20,
+      "db_memories": 20,
+      "source_total": "75790753.00",
+      "db_total": "75790753.0200",
+      "match": false
+    },
+    {
+      "area": "AE",
+      "source_memories": 30,
+      "db_memories": 30,
+      "source_total": "15236454.00",
+      "db_total": "15236443.6480",
+      "match": false
+    },
+    {
+      "area": "SMS",
+      "source_memories": 14,
+      "db_memories": 14,
+      "source_total": "604279.00",
+      "db_total": "604279.0000",
+      "match": true
+    },
+    {
+      "area": "EA",
+      "source_memories": 8,
+      "db_memories": 8,
+      "source_total": "2855440.00",
+      "db_total": "2855440.0000",
+      "match": true
+    },
+    {
+      "area": "LP",
+      "source_memories": 6,
+      "db_memories": 6,
+      "source_total": "343820.00",
+      "db_total": "343820.1500",
+      "match": false
+    },
+    {
+      "area": "CB",
+      "source_memories": 10,
+      "db_memories": 10,
+      "source_total": "1277956.00",
+      "db_total": "1277956.0000",
+      "match": true
+    },
+    {
+      "area": "SC",
+      "source_memories": 9,
+      "db_memories": 9,
+      "source_total": "2277076.00",
+      "db_total": "2277076.0000",
+      "match": true
+    },
+    {
+      "area": "CIJ",
+      "source_memories": 14,
+      "db_memories": 14,
+      "source_total": "399996.00",
+      "db_total": "399996.4022",
+      "match": false
+    },
+    {
+      "area": "GYA",
+      "source_memories": 11,
+      "db_memories": 11,
+      "source_total": "495935.00",
+      "db_total": "495935.0000",
+      "match": true
+    },
+    {
+      "area": "RIB",
+      "source_memories": 12,
+      "db_memories": 12,
+      "source_total": "535881.00",
+      "db_total": "535881.0000",
+      "match": true
+    },
+    {
+      "area": "TDD",
+      "source_memories": 12,
+      "db_memories": 12,
+      "source_total": "553612.00",
+      "db_total": "553612.0000",
+      "match": true
+    }
+  ],
+  "source_memories": 254,
+  "db_memories": 254,
+  "source_total": "125378345.00",
+  "db_total": "125378335.1212",
+  "all_match": false,
+  "db_details": 953
+}

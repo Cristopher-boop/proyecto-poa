@@ -1,0 +1,35 @@
+{
+  "area": "PL",
+  "memorias": 3,
+  "items": 4,
+  "total": "18400.00",
+  "rows": [
+    {
+      "hoja": "25220PL",
+      "partida": "25220",
+      "items": 1,
+      "total": "16500.00",
+      "operacion": "GESTIONAR Y COORDINAR LA PLANIFICACION Y  EL DESARROLLO ORGANIZACIONAL DE LA EPTAM, EN EL MARCO DEL SOA Y EL SPO",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25600 PL",
+      "partida": "25600",
+      "items": 1,
+      "total": "1200.00",
+      "operacion": "GESTIONAR Y COORDINAR LA PLANIFICACION Y  EL DESARROLLO ORGANIZACIONAL DE LA EPTAM, EN EL MARCO DEL SOA Y EL SPO",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25700PL",
+      "partida": "25700",
+      "items": 2,
+      "total": "700.00",
+      "operacion": "GESTIONAR Y COORDINAR LA PLANIFICACION Y  EL DESARROLLO ORGANIZACIONAL DE LA EPTAM, EN EL MARCO DEL SOA Y EL SPO",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "applied": true
+}

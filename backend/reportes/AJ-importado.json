@@ -1,0 +1,67 @@
+{
+  "area": "AJ",
+  "memorias": 7,
+  "items": 11,
+  "total": "41530.00",
+  "rows": [
+    {
+      "hoja": "22110AJ",
+      "partida": "22110",
+      "items": 5,
+      "total": "9495.00",
+      "operacion": "INTERPONER DEMANDAS, DEFENSA, REALIZAR EL SEGUIMIENTO A PROCESOS LABORALES, COACTIVOS, PENALES, CIVILES Y CONTENCIOSOS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22210AJ",
+      "partida": "22210",
+      "items": 1,
+      "total": "3339.00",
+      "operacion": "RESPONDER A TRÁMITES ADMINISTRATIVOS INTERNOS O EXTERNOS, DIRECTORIO, ASÍ COMO DE LA FAB Y MINISTERIOS DEL ÁREA",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25220AJ",
+      "partida": "25220",
+      "items": 1,
+      "total": "22296.00",
+      "operacion": "INTERPONER DEMANDAS, DEFENSA, REALIZAR EL SEGUIMIENTO A PROCESOS LABORALES, COACTIVOS, PENALES, CIVILES Y CONTENCIOSOS.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25600AJ",
+      "partida": "25600",
+      "items": 1,
+      "total": "2400.00",
+      "operacion": "RESPONDER A TRÁMITES ADMINISTRATIVOS INTERNOS O EXTERNOS, DIRECTORIO, ASÍ COMO DE LA FAB Y MINISTERIOS DEL ÁREA",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25700AJ",
+      "partida": "25700",
+      "items": 1,
+      "total": "1800.00",
+      "operacion": "SEGUIMIENTO Y DEFENSA DE PROCESOS DE EJECUCION COACTIVA INICIADOS POR LA ATT, COORDINACIÓN DE PAGOS DE PROCESOSOS EJECUTORIADOS Y ACCIONES DE REPETICION.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "26200AJ",
+      "partida": "26200",
+      "items": 1,
+      "total": "1200.00",
+      "operacion": "SEGUIMIENTO Y DEFENSA DE PROCESOS DE EJECUCION COACTIVA INICIADOS POR LA ATT, COORDINACIÓN DE PAGOS DE PROCESOSOS EJECUTORIADOS Y ACCIONES DE REPETICION.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "32500AJ",
+      "partida": "32500",
+      "items": 1,
+      "total": "1000.00",
+      "operacion": "SEGUIMIENTO Y DEFENSA DE PROCESOS DE EJECUCION COACTIVA INICIADOS POR LA ATT, COORDINACIÓN DE PAGOS DE PROCESOSOS EJECUTORIADOS Y ACCIONES DE REPETICION.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "applied": true
+}

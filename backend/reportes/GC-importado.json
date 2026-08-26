@@ -1,0 +1,155 @@
+{
+  "area": "GC",
+  "memorias": 18,
+  "items": 74,
+  "total": "8645035.00",
+  "rows": [
+    {
+      "hoja": "22110 GC",
+      "partida": "22110",
+      "items": 8,
+      "total": "12880.00",
+      "operacion": "Planificar estrategias para captar usuarios que requieran vuelos no regulares (charter).",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22120GC",
+      "partida": "22120",
+      "items": 1,
+      "total": "10000.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22210 GC",
+      "partida": "22210",
+      "items": 8,
+      "total": "10388.00",
+      "operacion": "Planificar estrategias para captar usuarios que requieran vuelos no regulares (charter).",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22220GC",
+      "partida": "22220",
+      "items": 1,
+      "total": "13800.00",
+      "operacion": "Planificar estrategias para captar usuarios que requieran vuelos no regulares (charter).",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22300 GC",
+      "partida": "22300",
+      "items": 1,
+      "total": "12000.00",
+      "operacion": "Planificar estrategias para captar usuarios que requieran vuelos no regulares (charter).",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22500 GC",
+      "partida": "22500",
+      "items": 2,
+      "total": "1994332.00",
+      "operacion": "Planificar estrategias para captar usuarios que requieran vuelos no regulares (charter).",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22600 GC",
+      "partida": "22600",
+      "items": 1,
+      "total": "3000.00",
+      "operacion": "Planificar estrategias para captar usuarios que requieran vuelos no regulares (charter).",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "24130 GC",
+      "partida": "24130",
+      "items": 2,
+      "total": "6800.00",
+      "operacion": "Planificar estrategias para captar usuarios que requieran vuelos no regulares (charter).",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25220 GC",
+      "partida": "25220",
+      "items": 17,
+      "total": "1371180.00",
+      "operacion": "Planificar y desarrollar estrategias para la venta de boletos aereos mediante el sitema GDS",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25500 GC",
+      "partida": "25500",
+      "items": 7,
+      "total": "72480.00",
+      "operacion": "Planificar estrategias para captar usuarios que requieran vuelos no regulares (charter).",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25600 GC",
+      "partida": "25600",
+      "items": 11,
+      "total": "98885.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "26200GC",
+      "partida": "26200",
+      "items": 1,
+      "total": "2000.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "26300 GC",
+      "partida": "26300",
+      "items": 1,
+      "total": "2450000.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "31120 GC",
+      "partida": "31120",
+      "items": 1,
+      "total": "2500.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "32300 GC",
+      "partida": "32300",
+      "items": 1,
+      "total": "16250.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "33300 GC",
+      "partida": "33300",
+      "items": 8,
+      "total": "12300.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "33400 GC",
+      "partida": "33400",
+      "items": 2,
+      "total": "6240.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "97100 GC",
+      "partida": "97100",
+      "items": 1,
+      "total": "2550000.00",
+      "operacion": "Fortalecer la comercializacion de transporte de carga, encomienda  y correo",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "applied": true
+}

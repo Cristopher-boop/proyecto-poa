@@ -1,0 +1,115 @@
+{
+  "area": "IF",
+  "memorias": 13,
+  "items": 63,
+  "total": "282281.00",
+  "rows": [
+    {
+      "hoja": "22110IF",
+      "partida": "22110",
+      "items": 6,
+      "total": "1680.00",
+      "operacion": "RENOVACIÓN DEL SERVICIO DE HOSTING",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22210IF",
+      "partida": "22210",
+      "items": 6,
+      "total": "8900.00",
+      "operacion": "RENOVACIÓN DEL SERVICIO DE HOSTING",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "22600IF",
+      "partida": "22600",
+      "items": 2,
+      "total": "1200.00",
+      "operacion": "DESARROLLAR EL SISTEMA DE ACTIVOS FIJOS",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25220IF",
+      "partida": "25220",
+      "items": 2,
+      "total": "87108.00",
+      "operacion": "BRINDAR SOPORTE TÉCNICO (MANTENIMIENTO, PREVENTIVO YCORRECTIVO AL PARQUE INFORMATICO) DE EPTAM",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25600IF",
+      "partida": "25600",
+      "items": 1,
+      "total": "800.00",
+      "operacion": "DESARROLLAR EL SISTEMA DE ACTIVOS FIJOS",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "25700IF",
+      "partida": "25700",
+      "items": 1,
+      "total": "4000.00",
+      "operacion": "RENOVACIÓN DEL SERVICIO DE DOMINIO DE EPTAM.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "26300IF",
+      "partida": "26300",
+      "items": 4,
+      "total": "11480.00",
+      "operacion": "RENOVACIÓN DEL SERVICIO DE DOMINIO DE EPTAM.",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "34200IF",
+      "partida": "34200",
+      "items": 4,
+      "total": "3875.00",
+      "operacion": "DESARROLLAR EL SISTEMA DE CONTROL DE ASISTENCIA",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "34500IF",
+      "partida": "34500",
+      "items": 2,
+      "total": "1275.00",
+      "operacion": "DESARROLLAR EL SISTEMA DE CONTROL DE ASISTENCIA",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "34800IF",
+      "partida": "34800",
+      "items": 4,
+      "total": "3635.00",
+      "operacion": "DESARROLLAR EL SISTEMA DE CONTROL DE ASISTENCIA",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "39400IF",
+      "partida": "39400",
+      "items": 1,
+      "total": "204.00",
+      "operacion": "DESARROLLAR EL SISTEMA DE CONTROL DE ASISTENCIA",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "39700IF",
+      "partida": "39700",
+      "items": 7,
+      "total": "10230.00",
+      "operacion": "DESARROLLAR EL SISTEMA DE SMS",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    },
+    {
+      "hoja": "39800IF",
+      "partida": "39800",
+      "items": 23,
+      "total": "147894.00",
+      "operacion": "DESARROLLAR EL SISTEMA DE SMS",
+      "mes_requerido": "ENERO A DICIEMBRE"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "applied": true
+}
