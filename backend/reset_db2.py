@@ -36,7 +36,7 @@ AREAS_PRIORIDAD_CONSOLIDADO = {
 
 def reset():
     print("=" * 60)
-    print(" REINICIO COMPLETO DE BASE DE DATOS - PROYECTO POA")
+    print(" REINICIO BASE DE DATOS - POA GESTIÓN 2027")
     print("=" * 60)
 
     # ────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ def reset():
         print(f"  [!] Error al crear superusuario: {e}")
 
     # ────────────────────────────────────────────────────────────
-    # PASO 4: Datos oficiales POA 2027
+    # PASO 4: Datos oficiales POA 2027 únicamente
     # ────────────────────────────────────────────────────────────
     print("\n[4/5] Cargando datos semilla oficiales...")
 
@@ -93,34 +93,6 @@ def reset():
         print("  [OK] Partidas importadas.")
     except Exception as e:
         print(f"  [!] Error en import_partidas: {e}")
-
-    # La gestión 2026 forma parte del reinicio histórico original del sistema.
-    # Se conserva antes de cargar la nueva gestión 2027.
-    print("  [*] Estructura organizacional histórica (programas, áreas, secciones)...")
-    try:
-        call_command('seed_organizacional')
-        print("  [OK] Estructura organizacional histórica cargada.")
-    except Exception as e:
-        print(f"  [!] Error en seed_organizacional: {e}")
-        return
-
-    print("  [*] Memorias de cálculo oficiales de la gestión 2026...")
-    try:
-        call_command('seed_memorias')
-        call_command('recalcular_saldos')
-        print("  [OK] Memorias y saldos 2026 cargados.")
-    except Exception as e:
-        print(f"  [!] Error al cargar memorias 2026: {e}")
-        return
-
-    print("  [*] Planificación estratégica histórica de la gestión 2026...")
-    try:
-        from seed_planificacion import sembrar_planificacion
-        sembrar_planificacion()
-        print("  [OK] Planificación 2026 cargada.")
-    except Exception as e:
-        print(f"  [!] Error en seed_planificacion: {e}")
-        return
 
     if not CONSOLIDADO_2027.is_file() or not OPERACIONES_2027.is_file():
         print("  [!] No se encontraron los Excel oficiales POA 2027.")

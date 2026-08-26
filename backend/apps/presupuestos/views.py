@@ -31,7 +31,7 @@ class GestionViewSet(viewsets.ModelViewSet):
         """
         Cierra la fase de formulación para la gestión indicada.
         Bloquea nuevas memorias y consolida automáticamente el Presupuesto Inicial de cada Área
-        a partir de la sumatoria de sus memorias aprobadas (APROBADO_FINANZAS o APROBADO_GERENCIA).
+        a partir de la sumatoria de sus memorias vigentes (se excluyen las rechazadas).
         """
         gestion = self.get_object()
 
@@ -45,19 +45,17 @@ class GestionViewSet(viewsets.ModelViewSet):
             consolidados_count = 0
 
             for area in areas:
-                # Sumar montos de detalles de memorias aprobadas para esta área y gestión
-                detalles_aprobados = DetallePresupuestoMemoria.objects.filter(
-                    memoria__gestion=gestion,
-                    memoria__seccion__area=area,
-                    memoria__estado__in=[
-                        MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
-                        MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA,
-                    ]
-                )
+                # Durante la formulación también se muestran las memorias
+                # importadas/en borrador. De otro modo, consolidar una gestión
+                # recién importada deja todos los presupuestos en Bs 0,00.
+                memorias_vigentes = MemoriaCalculo.objects.filter(
+                    gestion=gestion,
+                    seccion__area=area,
+                ).exclude(estado=MemoriaCalculo.EstadoMemoria.RECHAZADO)
 
-                total_monto = Decimal('0.00')
-                for d in detalles_aprobados:
-                    total_monto += (d.cantidad or Decimal('0.00')) * (d.precio_unitario or Decimal('0.00'))
+                total_monto = memorias_vigentes.aggregate(
+                    total=Sum('total_presupuestado')
+                )['total'] or Decimal('0.00')
 
                 # Obtener gastos ya ejecutados si los hubiera
                 gastos_area = Gasto.objects.filter(
@@ -117,18 +115,16 @@ class GestionViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             areas = Area.objects.filter(estado=True)
             for area in areas:
-                detalles_aprobados = DetallePresupuestoMemoria.objects.filter(
-                    memoria__gestion=gestion,
-                    memoria__seccion__area=area,
-                    memoria__estado__in=[
-                        MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
-                        MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA,
-                    ]
+                memorias_vigentes = MemoriaCalculo.objects.filter(
+                    gestion=gestion,
+                    seccion__area=area,
+                ).exclude(
+                    estado=MemoriaCalculo.EstadoMemoria.RECHAZADO
                 )
 
-                total_monto = Decimal('0.00')
-                for d in detalles_aprobados:
-                    total_monto += (d.cantidad or Decimal('0.00')) * (d.precio_unitario or Decimal('0.00'))
+                total_monto = memorias_vigentes.aggregate(
+                    total=Sum('total_presupuestado')
+                )['total'] or Decimal('0.00')
 
                 gastos_area = Gasto.objects.filter(
                     detalle_memoria__memoria__gestion=gestion,
