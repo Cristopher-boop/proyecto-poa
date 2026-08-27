@@ -131,6 +131,10 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         if not self.check_area_permission(instance):
              raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para editar memorias de esta área.']})
 
+        # No permitir editar memorias que ya están aprobadas definitivamente en presupuestos (salvo cambio de estado)
+        if instance.estado == MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS and 'estado' not in serializer.validated_data:
+            raise serializers.ValidationError({'non_field_errors': ['No se puede modificar una memoria que ya cuenta con aprobación final POA.']})
+
         if instance.gestion.estado not in [Gestion.EstadoGestion.FORMULACION, Gestion.EstadoGestion.EN_EJECUCION] and 'estado' not in serializer.validated_data:
             raise serializers.ValidationError({
                 'non_field_errors': [f'No se puede editar la memoria de la Gestión {instance.gestion.anio} porque la gestión está {instance.gestion.get_estado_display().lower()}.']
@@ -454,21 +458,33 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='rechazar')
     def rechazar(self, request, pk=None):
-        if not self.check_role_permission(['APROBADOR', 'GERENTE']):
+        if not self.check_role_permission(['APROBADOR', 'GERENTE', 'PLANIFICACION']):
             return Response({'error': 'No tienes permisos.'}, status=status.HTTP_403_FORBIDDEN)
         memoria = self.get_object()
         if not self.check_area_permission(memoria):
              return Response({'error': 'No puedes rechazar memorias de otra área.'}, status=status.HTTP_403_FORBIDDEN)
              
-        motivo = request.data.get('motivo') or request.data.get('nota') or 'Sin motivo especificado'
-        memoria.motivo_rechazo = motivo
+        motivo_texto = request.data.get('motivo') or request.data.get('nota') or 'Sin motivo especificado'
+        user_name = request.user.get_full_name() or request.user.username
+        user_rol = request.user.rol.nombre.upper() if (request.user and request.user.rol) else ''
+        estado_previo = memoria.estado
+
+        # Determinar el nivel de rechazo de forma explícita
+        if 'PLANIFIC' in user_rol or estado_previo == MemoriaCalculo.EstadoMemoria.PENDIENTE_PLANIFICACION:
+            nivel_rechazo = 'PLANIFICACIÓN'
+        elif 'GEREN' in user_rol or estado_previo == MemoriaCalculo.EstadoMemoria.PENDIENTE_GERENCIA:
+            nivel_rechazo = 'GERENCIA DE ÁREA'
+        elif 'APROBADOR' in user_rol or 'ADMIN' in user_rol or request.user.is_superuser or estado_previo in [MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA, MemoriaCalculo.EstadoMemoria.APROBADO_PLANIFICACION]:
+            nivel_rechazo = 'PRESUPUESTOS'
+        else:
+            nivel_rechazo = 'REVISIÓN'
+
+        memoria.motivo_rechazo = f"[{nivel_rechazo}] Rechazado por {user_name}: {motivo_texto}"
         memoria.estado = MemoriaCalculo.EstadoMemoria.RECHAZADO
         memoria.save()
 
         try:
             from apps.notificaciones.services import notificar_rol, crear_notificacion
-            user_name = request.user.get_full_name() or request.user.username
-            user_rol = request.user.rol.nombre if request.user.rol else 'Revisor'
 
             # Notificar al Elaborador directo
             elaborador_reg = memoria.participaciones.filter(tipo_participacion='ELABORADOR').first()
@@ -476,25 +492,25 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
                 crear_notificacion(
                     usuario_destino=elaborador_reg.usuario,
                     usuario_origen=request.user,
-                    titulo=f"Memoria Rechazada: {memoria.codigo}",
-                    mensaje=f"Tu memoria {memoria.codigo} fue RECHAZADA por {user_name} ({user_rol}). Motivo del Rechazo: \"{motivo}\"",
+                    titulo=f"Memoria Rechazada en {nivel_rechazo}: {memoria.codigo}",
+                    mensaje=f"Tu memoria {memoria.codigo} fue RECHAZADA en {nivel_rechazo} por {user_name}. Motivo: \"{motivo_texto}\"",
                     enlace=f"/memorias?id={memoria.id}"
                 )
             else:
                 notificar_rol(
                     rol_nombre='ELABORADOR',
-                    titulo=f"Memoria Rechazada: {memoria.codigo}",
-                    mensaje=f"La memoria {memoria.codigo} fue RECHAZADA por {user_name} ({user_rol}). Motivo del Rechazo: \"{motivo}\"",
+                    titulo=f"Memoria Rechazada en {nivel_rechazo}: {memoria.codigo}",
+                    mensaje=f"La memoria {memoria.codigo} fue RECHAZADA en {nivel_rechazo} por {user_name}. Motivo: \"{motivo_texto}\"",
                     enlace=f"/memorias?id={memoria.id}",
                     usuario_origen=request.user
                 )
 
-            # Si lo rechazó el Aprobador, notificar también al Gerente
-            if user_rol.upper() in ['APROBADOR', 'ADMINISTRADOR']:
+            # Si lo rechazó el Aprobador o Planificación, notificar también al Gerente
+            if nivel_rechazo in ['PRESUPUESTOS', 'PLANIFICACIÓN']:
                 notificar_rol(
                     rol_nombre='GERENTE',
-                    titulo=f"Memoria Rechazada por Aprobador: {memoria.codigo}",
-                    mensaje=f"La memoria {memoria.codigo} de {memoria.seccion.nombre} fue RECHAZADA por el Aprobador ({user_name}). Motivo: \"{motivo}\"",
+                    titulo=f"Memoria Rechazada en {nivel_rechazo}: {memoria.codigo}",
+                    mensaje=f"La memoria {memoria.codigo} de {memoria.seccion.nombre} fue RECHAZADA en {nivel_rechazo} por {user_name}. Motivo: \"{motivo_texto}\"",
                     enlace=f"/memorias?id={memoria.id}",
                     usuario_origen=request.user
                 )
@@ -502,20 +518,24 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
             print("Error enviando notificacion:", e)
 
         return Response({
-            'message': 'Memoria rechazada.',
+            'message': f'Memoria rechazada formalmente en {nivel_rechazo}.',
             'memoria': MemoriaCalculoSerializer(memoria, context={'request': request}).data
         })
 
     @action(detail=True, methods=['post'], url_path='volver-borrador')
     def volver_borrador(self, request, pk=None):
-        if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
+        if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR', 'PLANIFICACION']):
             return Response({'error': 'No tienes permisos.'}, status=status.HTTP_403_FORBIDDEN)
         memoria = self.get_object()
         if not self.check_area_permission(memoria):
              return Response({'error': 'No tienes permisos sobre esta área.'}, status=status.HTTP_403_FORBIDDEN)
              
-        motivo = request.data.get('motivo') or request.data.get('nota') or 'Observaciones pendientes'
-        memoria.motivo_rechazo = motivo
+        motivo = request.data.get('motivo') or request.data.get('nota') or ''
+        user_name = request.user.get_full_name() or request.user.username
+        if motivo:
+            memoria.motivo_rechazo = f"[REINICIADO A BORRADOR por {user_name}]: {motivo}"
+        else:
+            memoria.motivo_rechazo = ''
         memoria.estado = MemoriaCalculo.EstadoMemoria.BORRADOR
         memoria.save()
 

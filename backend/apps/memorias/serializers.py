@@ -105,6 +105,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     operacion_descripcion = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
+    partida_id = serializers.SerializerMethodField()
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
     total_items = serializers.SerializerMethodField()
@@ -138,6 +139,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'estado',
             'estado_display',
             'fecha_aprobacion',
+            'partida_id',
             'partida_codigo',
             'partida_nombre',
             'total_items',
@@ -162,6 +164,13 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             return obj.detalles.count()
         except Exception:
             return 0
+
+    def get_partida_id(self, obj):
+        try:
+            primer_detalle = obj.detalles.first()
+            return primer_detalle.partida.id if primer_detalle and primer_detalle.partida else None
+        except Exception:
+            return None
 
     def get_partida_codigo(self, obj):
         try:
@@ -190,7 +199,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
     # Partida principal asociada
-    partida_id = serializers.IntegerField(write_only=True, required=False)
+    partida_id = serializers.SerializerMethodField()
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
     total_items = serializers.SerializerMethodField()

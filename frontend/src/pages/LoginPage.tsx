@@ -141,12 +141,34 @@ export default function LoginPage() {
             <form onSubmit={handleLoginSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-theme-main mb-1.5" htmlFor="username">Usuario</label>
-                <input id="username" type="text" className="input-theme" placeholder="ej. juan.perez" value={username} onChange={(e) => setUsername(e.target.value)} disabled={isLoading} />
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  className="input-theme lowercase-input"
+                  placeholder="ej. juan.perez o admin"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isLoading}
+                />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-theme-main mb-1.5" htmlFor="password">Contraseña</label>
                 <div className="relative">
-                  <input id="password" type={showPassword ? "text" : "password"} className="input-theme pr-10" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    className="input-theme lowercase-input pr-10"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                  />
                   <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main transition-colors" onClick={() => setShowPassword(!showPassword)} disabled={isLoading}>
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
