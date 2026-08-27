@@ -67,6 +67,7 @@ class Command(BaseCommand):
 
             count_memorias = 0
             count_detalles = 0
+            area_counters = {}
 
             for sname in sheets:
                 ws = wb[sname]
@@ -198,7 +199,9 @@ class Command(BaseCommand):
                     continue
 
                 # 3. Crear Memoria de Cálculo con su Justificación
-                memoria_code = f"MEM-2026-{sname_clean.replace(' ', '')}"
+                correlativo = area_counters.get(sigla, 0) + 1
+                area_counters[sigla] = correlativo
+                memoria_code = f"MEM-{sigla}-2026-{correlativo:03d}"
                 justificacion_final = justificacion_memoria if justificacion_memoria else f"Memoria de Cálculo de la partida {partida_code or sname_clean} para {area.nombre}."
 
                 memoria = MemoriaCalculo.objects.create(
