@@ -186,7 +186,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
     # Partida principal asociada
-    partida_id = serializers.IntegerField(write_only=True, required=False)
+    partida_id = serializers.SerializerMethodField()
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
     total_items = serializers.SerializerMethodField()

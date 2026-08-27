@@ -72,8 +72,8 @@ export default function MemoriasPage() {
   const rolClean = rolName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const isSuperuser = !!user?.is_superuser;
   const isAprobador = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'ADMINISTRADOR';
-  const isPlanificador = !isAprobador && rolClean.includes('PLANIFIC');
-  const isGerente = !isSuperuser && !isAprobador && !isPlanificador && rolClean === 'GERENTE';
+  const isPlanificador = !isSuperuser && rolClean.includes('PLANIFIC');
+  const isGerente = !isSuperuser && !isPlanificador && rolClean === 'GERENTE';
   const isElaborador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && rolClean === 'ELABORADOR';
   const isTrabajador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && !isElaborador;
 
@@ -142,13 +142,14 @@ export default function MemoriasPage() {
   // Pestaña inicial según el rol del usuario (cuando no entra por notificación)
   useEffect(() => {
     if (!targetMemoriaId && user) {
-      if (isAprobador) setActiveTab('finanzas');
+      if (isSuperuser) setActiveTab('todas');
+      else if (isAprobador) setActiveTab('finanzas');
       else if (isPlanificador) setActiveTab('planificacion');
       else if (isGerente) setActiveTab('espera');
       else if (isElaborador) setActiveTab('borrador');
       else if (isTrabajador) setActiveTab('todas');
     }
-  }, [user?.rol_nombre, isAprobador, isPlanificador, isGerente, isElaborador, isTrabajador, targetMemoriaId]);
+  }, [user?.rol_nombre, isSuperuser, isAprobador, isPlanificador, isGerente, isElaborador, isTrabajador, targetMemoriaId]);
 
   useEffect(() => {
     cargarBase();
@@ -394,7 +395,14 @@ export default function MemoriasPage() {
 
   // Memorias filtradas
   const memoriasFiltradas = useMemo(() => {
-    return (Array.isArray(memorias) ? memorias : []).filter((m) => {
+    const ordenEspera: Record<string, number> = {
+      'PENDIENTE_GERENCIA': 1,
+      'PENDIENTE_PLANIFICACION': 2,
+      'APROBADO_GERENCIA': 3,
+      'APROBADO_PLANIFICACION': 3,
+    };
+
+    const res = (Array.isArray(memorias) ? memorias : []).filter((m) => {
       let matchTab = true;
       if (activeTab === 'borrador') matchTab = m.estado === 'BORRADOR';
       else if (activeTab === 'espera') {
@@ -422,6 +430,12 @@ export default function MemoriasPage() {
 
       return matchTab && matchArea && matchSearch;
     });
+
+    if (activeTab === 'espera') {
+      return [...res].sort((a, b) => (ordenEspera[a.estado] || 99) - (ordenEspera[b.estado] || 99) || b.id - a.id);
+    }
+
+    return res;
   }, [memorias, activeTab, filtroArea, searchTerm, soloPendientesGerente, isGerente]);
 
   // Áreas presentes en la gestión actualmente seleccionada
@@ -482,23 +496,37 @@ export default function MemoriasPage() {
       // Cargamos la memoria completa (con detalles) antes de abrir el modal
       const memoriaCompleta = await getMemoria(mem.id);
       setEditingMemoria(memoriaCompleta);
-      // Verificar si la partida asignada es una hoja activa válida con padres activos
-      const pIdMemoria = memoriaCompleta.partida_id || (memoriaCompleta.detalles && memoriaCompleta.detalles[0]?.partida);
-      const partidaEsValida = egresoLeafs.some((p) => p.id === Number(pIdMemoria));
+
+      // Partida ID segura recuperada de la memoria
+      const rawPartidaId =
+        memoriaCompleta.partida_id ||
+        (memoriaCompleta.detalles && (memoriaCompleta.detalles[0]?.partida || (memoriaCompleta.detalles[0] as any)?.partida_id)) ||
+        (partidas.find((p) => p.codigo === memoriaCompleta.partida_codigo)?.id) ||
+        (partidas.find((p) => p.codigo === (memoriaCompleta.detalles && memoriaCompleta.detalles[0]?.partida_codigo))?.id);
+
+      const opId = typeof memoriaCompleta.operacion === 'object'
+        ? (memoriaCompleta.operacion as any)?.id
+        : (memoriaCompleta.operacion || (operaciones.find((o) => o.codigo === memoriaCompleta.operacion_codigo)?.id || ''));
+
+      const secId = typeof memoriaCompleta.seccion === 'object'
+        ? (memoriaCompleta.seccion as any)?.id
+        : (memoriaCompleta.seccion || (secciones.find((s) => s.nombre === memoriaCompleta.seccion_nombre)?.id || ''));
 
       setFormMemoria({
         codigo: memoriaCompleta.codigo,
-        seccionId: memoriaCompleta.seccion,
-        operacionId: memoriaCompleta.operacion || '',
-        es_contratacion: memoriaCompleta.es_contratacion || false,
-        justificacion: memoriaCompleta.justificacion,
-        partidaId: partidaEsValida ? Number(pIdMemoria) : '',
-        renglones: (memoriaCompleta.detalles || []).map((d) => ({
-          descripcion: d.descripcion,
-          unidad_medida: d.unidad_medida,
-          cantidad: Number(d.cantidad),
-          precio_unitario: Number(d.precio_unitario),
-        })),
+        seccionId: secId,
+        operacionId: opId,
+        es_contratacion: Boolean(memoriaCompleta.es_contratacion),
+        justificacion: memoriaCompleta.justificacion || '',
+        partidaId: rawPartidaId ? Number(rawPartidaId) : '',
+        renglones: (memoriaCompleta.detalles && memoriaCompleta.detalles.length > 0)
+          ? memoriaCompleta.detalles.map((d: any) => ({
+              descripcion: d.descripcion || '',
+              unidad_medida: d.unidad_medida || 'UNIDAD',
+              cantidad: Number(d.cantidad) || 1,
+              precio_unitario: d.precio_unitario !== undefined ? Number(d.precio_unitario) : 0,
+            }))
+          : [{ descripcion: '', unidad_medida: 'UNIDAD', cantidad: 1, precio_unitario: '' }],
       });
       setSearchPartidaQuery('');
       setPartidaSelectorOpen(false);
@@ -898,8 +926,8 @@ export default function MemoriasPage() {
           <Layers size={16} /> Todas ({conteos.todas})
         </button>
 
-        {/* En Borrador: visible para Elaborador, Trabajador y Gerente */}
-        {(isElaborador || isTrabajador || isGerente) && (
+        {/* En Borrador: visible para Elaborador, Trabajador, Gerente y Superadmin */}
+        {(isElaborador || isTrabajador || isGerente || isSuperuser) && (
           <button
             onClick={() => setActiveTab('borrador')}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'borrador' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
@@ -909,13 +937,13 @@ export default function MemoriasPage() {
           </button>
         )}
 
-        {/* En Espera: visible para Elaborador, Trabajador y Gerente */}
-        {(isTrabajador || isElaborador || isGerente) && (
+        {/* En Espera: visible para Elaborador, Trabajador, Gerente y Superadmin */}
+        {(isTrabajador || isElaborador || isGerente || isSuperuser) && (
           <button
             onClick={() => setActiveTab('espera')}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'espera' ? 'border-amber-500 text-amber-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
               }`}
-            title="Memorias en trámite de revisión (Gerencia, Planificación o Presupuestos)"
+            title="Memorias en trámite de revisión (Gerencia, Planificación y Presupuestos)"
           >
             <Clock size={16} /> En Espera ({conteos.espera})
           </button>
@@ -932,8 +960,8 @@ export default function MemoriasPage() {
           </button>
         )}
 
-        {/* Revisión Presupuestos: Solo Aprobador */}
-        {isAprobador && (
+        {/* Revisión Presupuestos: Solo Aprobador (no SuperAdmin) */}
+        {isAprobador && !isSuperuser && (
           <button
             onClick={() => setActiveTab('finanzas')}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'finanzas' ? 'border-blue-500 text-blue-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
@@ -1027,7 +1055,7 @@ export default function MemoriasPage() {
           <thead>
             <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
               <th className="py-3.5 px-4">Código</th>
-              <th className="py-3.5 px-4">Área / Sección</th>
+              <th className="py-3.5 px-4">Área</th>
               <th className="py-3.5 px-4">Partida Presupuestaria</th>
               <th className="py-3.5 px-4">Operación POA & Justificación</th>
               <th className="py-3.5 px-4 text-center">Ítems</th>
@@ -1066,7 +1094,6 @@ export default function MemoriasPage() {
                     <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{mem.codigo}</td>
                     <td className="py-3.5 px-4">
                       <p className="font-semibold text-theme-main text-xs">{mem.area_nombre}</p>
-                      <p className="text-[11px] text-theme-muted">{mem.seccion_nombre}</p>
                     </td>
                     <td className="py-3.5 px-4">
                       <p className="font-mono font-bold text-xs text-theme-main">{mem.partida_codigo || 'Partida'}</p>
@@ -1103,16 +1130,6 @@ export default function MemoriasPage() {
                     <td className="py-3.5 px-4 text-right font-bold text-theme-main text-xs">{formatMoney(total)}</td>
                     <td className="py-3.5 px-4 text-center">
                       {getBadgeEstado(mem.estado)}
-                      {['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(mem.estado) && (
-                        <div className="mt-1">
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-theme-base border border-theme-border text-theme-muted inline-flex items-center gap-1">
-                            {mem.estado === 'PENDIENTE_GERENCIA' && '⏳ En revisión Gerencia'}
-                            {mem.estado === 'PENDIENTE_PLANIFICACION' && '🔍 En validación Planificación'}
-                            {mem.estado === 'APROBADO_GERENCIA' && '💼 Vo.Bo. Gerencia • En Presupuestos'}
-                            {mem.estado === 'APROBADO_PLANIFICACION' && '💼 Validado SPO • En Presupuestos'}
-                          </span>
-                        </div>
-                      )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <div className="flex items-center justify-center gap-1.5">
@@ -1315,13 +1332,21 @@ export default function MemoriasPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="card w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl bg-theme-surface">
             <div className="p-5 border-b border-theme-border flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <FileText className="text-theme-primary" size={22} />
+              <div className="flex items-center gap-3">
+                <FileText className="text-theme-primary" size={24} />
                 <div>
-                  <h3 className="text-base font-bold text-theme-main">
-                    {editingMemoria ? 'Editar Memoria de Cálculo' : 'Formular Nueva Memoria de Cálculo'}
-                  </h3>
-                  <p className="text-xs text-theme-muted">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-bold text-theme-main">
+                      {editingMemoria ? 'Editar Memoria de Cálculo' : 'Formular Nueva Memoria de Cálculo'}
+                    </h3>
+                    <span className="font-mono font-bold text-xs bg-theme-base px-2 py-0.5 rounded border border-theme-border text-theme-main">
+                      {formMemoria.codigo || 'MEM-AUTO'}
+                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-theme-base border border-theme-border text-theme-main">
+                      {secciones.find((s) => s.id === Number(formMemoria.seccionId))?.area_nombre || user?.area_nombre || 'Área'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-theme-muted mt-0.5">
                     Gestión {activeGestion?.anio} • Planificación presupuestaria operativa
                   </p>
                 </div>
@@ -1651,35 +1676,17 @@ export default function MemoriasPage() {
                 </div>
               </div>
 
-              {/* PASO 2: Despliegue de Datos y Formulación Oficial */}
+              {/* PASO 2: Despliegue de Datos y Formulación Oficial (50% Tabla / 50% Justificación) */}
               {formMemoria.partidaId && formMemoria.operacionId ? (
                 <div className="space-y-4 animate-in fade-in duration-200">
-                  {/* Cabecera Informativa Fija (Código y Área/Sección Solicitante) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-theme-base/50 border border-theme-border">
-                    <div>
-                      <span className="text-[10px] font-semibold uppercase text-theme-muted block">Código Asignado</span>
-                      <span className="text-xs font-mono font-bold text-theme-main">{formMemoria.codigo}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-semibold uppercase text-theme-muted block">Área / Sección Solicitante</span>
-                      <span className="text-xs font-semibold text-theme-main">
-                        {secciones.find((s) => s.id === Number(formMemoria.seccionId))?.nombre || user?.seccion_nombre || 'Sección Solicitante'}
-                        {' — '}
-                        <span className="text-theme-muted text-[11px]">
-                          {secciones.find((s) => s.id === Number(formMemoria.seccionId))?.area_nombre || user?.area_nombre || 'Área'}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Formato Oficial: Desglose de Ítems a la izquierda + Justificación Amplia a la derecha */}
+                  {/* Formato Oficial: Desglose de Ítems a la izquierda (50%) + Justificación Amplia a la derecha (50%) */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-                    {/* Columna Izquierda: Tabla de Renglones / Ítems (8 cols) */}
-                    <div className="lg:col-span-8 flex flex-col justify-between space-y-2">
+                    {/* Columna Izquierda: Tabla de Renglones / Ítems (6 cols - 50%) */}
+                    <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-bold uppercase tracking-wider text-theme-main">
-                            Desglose de Ítems / Renglones de la Memoria
+                            Desglose de Ítems / Renglones
                           </span>
                           <button
                             type="button"
@@ -1694,13 +1701,13 @@ export default function MemoriasPage() {
                           <table className="w-full text-left text-xs border-collapse">
                             <thead>
                               <tr className="bg-theme-base border-b border-theme-border font-semibold text-theme-muted text-[11px]">
-                                <th className="py-2 px-2 w-7 text-center">#</th>
+                                <th className="py-2 px-1.5 w-6 text-center">#</th>
                                 <th className="py-2 px-2">Descripción</th>
-                                <th className="py-2 px-2 w-24">U. Medida</th>
-                                <th className="py-2 px-2 w-16 text-right">Cant.</th>
-                                <th className="py-2 px-2 w-24 text-right">P. Unit. (Bs.)</th>
-                                <th className="py-2 px-2.5 w-24 text-right">Subtotal</th>
-                                <th className="py-2 px-1 w-7 text-center"></th>
+                                <th className="py-2 px-1.5 w-20">U. Medida</th>
+                                <th className="py-2 px-1.5 w-14 text-right">Cant.</th>
+                                <th className="py-2 px-1.5 w-20 text-right">P. Unit.</th>
+                                <th className="py-2 px-2 w-20 text-right">Subtotal</th>
+                                <th className="py-2 px-1 w-6 text-center"></th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-theme-border">
@@ -1708,18 +1715,18 @@ export default function MemoriasPage() {
                                 const subtotal = (Number(renglon.cantidad) || 0) * (Number(renglon.precio_unitario) || 0);
                                 return (
                                   <tr key={idx} className="hover:bg-theme-border/10 transition-colors">
-                                    <td className="py-1.5 px-2 text-center font-bold text-theme-muted text-[11px]">{idx + 1}</td>
+                                    <td className="py-1.5 px-1.5 text-center font-bold text-theme-muted text-[11px]">{idx + 1}</td>
                                     <td className="py-1.5 px-2">
                                       <input
                                         type="text"
                                         required
-                                        placeholder="Descripción del ítem..."
+                                        placeholder="Descripción..."
                                         value={renglon.descripcion}
                                         onChange={(e) => handleUpdateRenglon(idx, 'descripcion', e.target.value)}
                                         className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-0.5 focus:outline-none text-theme-main text-xs uppercase"
                                       />
                                     </td>
-                                    <td className="py-1.5 px-2">
+                                    <td className="py-1.5 px-1.5">
                                       <input
                                         type="text"
                                         required
@@ -1729,7 +1736,7 @@ export default function MemoriasPage() {
                                         className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-0.5 focus:outline-none text-theme-main text-xs uppercase"
                                       />
                                     </td>
-                                    <td className="py-1.5 px-2 text-right">
+                                    <td className="py-1.5 px-1.5 text-right">
                                       <input
                                         type="number"
                                         required
@@ -1740,7 +1747,7 @@ export default function MemoriasPage() {
                                         className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-0.5 text-right focus:outline-none text-theme-main text-xs font-semibold"
                                       />
                                     </td>
-                                    <td className="py-1.5 px-2 text-right">
+                                    <td className="py-1.5 px-1.5 text-right">
                                       <input
                                         type="number"
                                         required
@@ -1751,7 +1758,7 @@ export default function MemoriasPage() {
                                         className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-0.5 text-right focus:outline-none text-theme-main text-xs font-semibold"
                                       />
                                     </td>
-                                    <td className="py-1.5 px-2.5 text-right font-bold text-theme-main font-mono text-xs">{formatMoney(subtotal)}</td>
+                                    <td className="py-1.5 px-2 text-right font-bold text-theme-main font-mono text-xs">{formatMoney(subtotal)}</td>
                                     <td className="py-1.5 px-1 text-center">
                                       {formMemoria.renglones.length > 1 && (
                                         <button
@@ -1780,21 +1787,21 @@ export default function MemoriasPage() {
                       </div>
                     </div>
 
-                    {/* Columna Derecha: Justificación amplia a la misma altura (4 cols) */}
-                    <div className="lg:col-span-4 flex flex-col justify-between">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-theme-main mb-2">
+                    {/* Columna Derecha: Justificación amplia a la misma altura (6 cols - 50%) */}
+                    <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-theme-main">
                         Justificación Técnica y Sustento *
                       </label>
-                      <div className="flex-1 flex flex-col rounded-xl border border-theme-border bg-theme-surface p-3 space-y-2">
+                      <div className="flex-1 flex flex-col rounded-xl border border-theme-border bg-theme-surface p-3.5 space-y-2">
                         <textarea
                           required
                           value={formMemoria.justificacion}
                           onChange={(e) => setFormMemoria({ ...formMemoria, justificacion: e.target.value })}
-                          placeholder="Detalle los objetivos operativos, necesidad y justificación técnica del gasto..."
-                          className="w-full flex-1 min-h-[200px] bg-transparent resize-none focus:outline-none text-xs text-theme-main uppercase leading-relaxed placeholder:normal-case placeholder:text-theme-muted"
+                          placeholder="Detalle los objetivos operativos, necesidad institucional y justificación técnica del gasto..."
+                          className="w-full flex-1 min-h-[260px] max-h-[360px] overflow-y-auto bg-transparent resize-none focus:outline-none text-xs text-theme-main uppercase leading-relaxed placeholder:normal-case placeholder:text-theme-muted"
                         />
-                        <div className="text-[10px] text-theme-muted border-t border-theme-border/60 pt-1 flex justify-between">
-                          <span>Sustento POA</span>
+                        <div className="text-[10px] text-theme-muted border-t border-theme-border/60 pt-1.5 flex justify-between">
+                          <span>Sustento Auditoría POA</span>
                           <span>{formMemoria.justificacion.length} caracteres</span>
                         </div>
                       </div>
@@ -1835,13 +1842,21 @@ export default function MemoriasPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="card w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl bg-theme-surface">
             <div className="p-5 border-b border-theme-border flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <FileText className="text-theme-primary" size={22} />
+              <div className="flex items-center gap-3">
+                <FileText className="text-theme-primary" size={24} />
                 <div>
-                  <h3 className="text-base font-bold text-theme-main font-mono">
-                    Revisión de Memoria • {fichaMemoria.codigo}
-                  </h3>
-                  <p className="text-xs text-theme-muted">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-bold text-theme-main font-mono">
+                      Revisión de Memoria
+                    </h3>
+                    <span className="font-mono font-bold text-xs bg-theme-base px-2 py-0.5 rounded border border-theme-border text-theme-main">
+                      {fichaMemoria.codigo}
+                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-theme-base border border-theme-border text-theme-main">
+                      {fichaMemoria.area_nombre}
+                    </span>
+                  </div>
+                  <p className="text-xs text-theme-muted mt-0.5">
                     Gestión {activeGestion?.anio || fichaMemoria.gestion_anio || '2027'} • Estado: {fichaMemoria.estado.replace(/_/g, ' ')}
                   </p>
                 </div>
@@ -1953,34 +1968,16 @@ export default function MemoriasPage() {
                 </div>
               </div>
 
-              {/* PASO 2: Despliegue de Datos y Formato Oficial */}
+              {/* PASO 2: Despliegue de Datos y Formato Oficial (50% Tabla / 50% Justificación) */}
               <div className="space-y-4">
-                {/* Cabecera Informativa Fija (Código y Área/Sección Solicitante) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-theme-base/50 border border-theme-border">
-                  <div>
-                    <span className="text-[10px] font-semibold uppercase text-theme-muted block">Código Asignado</span>
-                    <span className="text-xs font-mono font-bold text-theme-main">{fichaMemoria.codigo}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-semibold uppercase text-theme-muted block">Área / Sección Solicitante</span>
-                    <span className="text-xs font-semibold text-theme-main">
-                      {fichaMemoria.seccion_nombre || 'Sección Solicitante'}
-                      {' — '}
-                      <span className="text-theme-muted text-[11px]">
-                        {fichaMemoria.area_nombre || 'Área'}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Formato Oficial: Desglose de Ítems a la izquierda + Justificación a la derecha */}
+                {/* Formato Oficial: Desglose de Ítems a la izquierda (50%) + Justificación a la derecha (50%) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-                  {/* Columna Izquierda: Tabla de Renglones / Ítems (8 cols) */}
-                  <div className="lg:col-span-8 flex flex-col justify-between space-y-2">
+                  {/* Columna Izquierda: Tabla de Renglones / Ítems (6 cols - 50%) */}
+                  <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-theme-main">
-                          Desglose de Ítems / Renglones de la Memoria ({fichaMemoria.detalles?.length || 0} ítems)
+                          Desglose de Ítems / Renglones ({fichaMemoria.detalles?.length || 0} ítems)
                         </span>
                       </div>
 
@@ -1988,23 +1985,23 @@ export default function MemoriasPage() {
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
                             <tr className="bg-theme-base border-b border-theme-border font-semibold text-theme-muted text-[11px]">
-                              <th className="py-2 px-2.5 w-7 text-center">#</th>
-                              <th className="py-2 px-2.5">Descripción del Bien / Servicio</th>
-                              <th className="py-2 px-2 w-24">U. Medida</th>
-                              <th className="py-2 px-2 w-16 text-right">Cant.</th>
-                              <th className="py-2 px-2 w-24 text-right">P. Unit. (Bs.)</th>
-                              <th className="py-2 px-2.5 w-24 text-right">Subtotal</th>
+                              <th className="py-2 px-1.5 w-6 text-center">#</th>
+                              <th className="py-2 px-2">Descripción</th>
+                              <th className="py-2 px-1.5 w-20">U. Medida</th>
+                              <th className="py-2 px-1.5 w-14 text-right">Cant.</th>
+                              <th className="py-2 px-1.5 w-20 text-right">P. Unit.</th>
+                              <th className="py-2 px-2 w-20 text-right">Subtotal</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-theme-border">
                             {(fichaMemoria.detalles || []).map((d, idx) => (
                               <tr key={d.id || idx} className="hover:bg-theme-border/10 transition-colors">
-                                <td className="py-2 px-2.5 text-center font-bold text-theme-muted text-[11px]">{idx + 1}</td>
-                                <td className="py-2 px-2.5 font-medium text-theme-main">{d.descripcion}</td>
-                                <td className="py-2 px-2 text-theme-muted">{d.unidad_medida}</td>
-                                <td className="py-2 px-2 text-right font-semibold">{d.cantidad}</td>
-                                <td className="py-2 px-2 text-right font-semibold">{formatMoney(d.precio_unitario)}</td>
-                                <td className="py-2 px-2.5 text-right font-bold text-theme-main font-mono">{formatMoney(d.precio_total || (Number(d.cantidad) * Number(d.precio_unitario)))}</td>
+                                <td className="py-2 px-1.5 text-center font-bold text-theme-muted text-[11px]">{idx + 1}</td>
+                                <td className="py-2 px-2 font-medium text-theme-main">{d.descripcion}</td>
+                                <td className="py-2 px-1.5 text-theme-muted">{d.unidad_medida}</td>
+                                <td className="py-2 px-1.5 text-right font-semibold">{d.cantidad}</td>
+                                <td className="py-2 px-1.5 text-right font-semibold">{formatMoney(d.precio_unitario)}</td>
+                                <td className="py-2 px-2 text-right font-bold text-theme-main font-mono">{formatMoney(d.precio_total || (Number(d.cantidad) * Number(d.precio_unitario)))}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -2020,15 +2017,17 @@ export default function MemoriasPage() {
                     </div>
                   </div>
 
-                  {/* Columna Derecha: Justificación amplia a la misma altura (4 cols) */}
-                  <div className="lg:col-span-4 flex flex-col justify-between">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-theme-main mb-2">
+                  {/* Columna Derecha: Justificación amplia a la misma altura (6 cols - 50%) */}
+                  <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-theme-main">
                       Justificación Técnica y Sustento
                     </label>
                     <div className="flex-1 flex flex-col justify-between rounded-xl border border-theme-border bg-theme-surface p-3.5 space-y-2">
-                      <p className="text-xs text-theme-main uppercase leading-relaxed whitespace-pre-wrap flex-1">
-                        {fichaMemoria.justificacion}
-                      </p>
+                      <div className="max-h-[350px] min-h-[250px] overflow-y-auto pr-1">
+                        <p className="text-xs text-theme-main uppercase leading-relaxed whitespace-pre-wrap">
+                          {fichaMemoria.justificacion}
+                        </p>
+                      </div>
                       <div className="text-[10px] text-theme-muted border-t border-theme-border/60 pt-1.5 flex justify-between">
                         <span>Sustento Auditoría POA</span>
                         <span>{fichaMemoria.justificacion?.length || 0} caracteres</span>
