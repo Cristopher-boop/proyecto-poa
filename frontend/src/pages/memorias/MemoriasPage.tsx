@@ -654,16 +654,29 @@ export default function MemoriasPage() {
         })),
       };
 
+      let savedId: number | null = null;
       if (editingMemoria) {
         await updateMemoria(editingMemoria.id, payload);
         mostrarMensaje('success', 'Memoria de cálculo actualizada.');
+        savedId = editingMemoria.id;
       } else {
-        await createMemoria(payload);
+        const res = await createMemoria(payload);
         mostrarMensaje('success', 'Memoria de cálculo registrada en estado Borrador.');
+        if (res && res.id) savedId = res.id;
       }
 
       setShowModalMemoria(false);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
+
+      // Si estábamos editando como revisor o elaborador, recargamos y mostramos la ficha técnica actualizada
+      if (savedId) {
+        try {
+          const fresca = await getMemoria(savedId);
+          setFichaMemoria(fresca);
+        } catch (e) {
+          console.error(e);
+        }
+      }
     } catch (err: any) {
       mostrarMensaje('error', err.response?.data?.error || 'Error al guardar memoria.');
     } finally {
@@ -703,6 +716,10 @@ export default function MemoriasPage() {
       const res = await enviarMemoriaGerencia(mem.id);
       alertService.success('Enviado a Gerencia', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
+      if (fichaMemoria && fichaMemoria.id === mem.id) {
+        const fresca = await getMemoria(mem.id);
+        setFichaMemoria(fresca);
+      }
     } catch (err) {
       alertService.error('Error', 'No se pudo enviar a revisión.');
     }
@@ -751,6 +768,10 @@ export default function MemoriasPage() {
       const res = await aprobarMemoriaGerencia(mem.id, nota);
       alertService.success('Aprobado por Gerencia', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
+      if (fichaMemoria && fichaMemoria.id === mem.id) {
+        const fresca = await getMemoria(mem.id);
+        setFichaMemoria(fresca);
+      }
     } catch (err) {
       alertService.error('Error', 'Error al aprobar por gerencia.');
     }
@@ -769,6 +790,10 @@ export default function MemoriasPage() {
       const res = await aprobarMemoriaPlanificacion(mem.id, nota);
       alertService.success('Alineación Validada', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
+      if (fichaMemoria && fichaMemoria.id === mem.id) {
+        const fresca = await getMemoria(mem.id);
+        setFichaMemoria(fresca);
+      }
     } catch (err) {
       alertService.error('Error', 'Error al validar por planificación.');
     }
@@ -787,6 +812,10 @@ export default function MemoriasPage() {
       const res = await aprobarMemoriaFinanzas(mem.id, nota);
       alertService.success('¡Memoria Aprobada!', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
+      if (fichaMemoria && fichaMemoria.id === mem.id) {
+        const fresca = await getMemoria(mem.id);
+        setFichaMemoria(fresca);
+      }
     } catch (err) {
       alertService.error('Error', 'Error al aprobar por finanzas.');
     }
@@ -795,9 +824,9 @@ export default function MemoriasPage() {
   async function handleRechazar(mem: MemoriaCalculo) {
     const motivo = await alertService.prompt({
       title: 'Rechazar Memoria de Cálculo',
-      text: `Por favor indique el motivo de rechazo para la memoria ${mem.codigo}. Se notificará al elaborador.`,
+      text: `Por favor indique el motivo de rechazo para la memoria ${mem.codigo}. Se notificará al elaborador y gerencia con el nivel correspondiente.`,
       confirmButtonText: 'Sí, Rechazar Memoria',
-      inputPlaceholder: 'Indique el motivo del rechazo...',
+      inputPlaceholder: 'Indique detalladamente el motivo del rechazo...',
       required: true,
       isDanger: true,
     });
@@ -807,6 +836,10 @@ export default function MemoriasPage() {
       const res = await rechazarMemoria(mem.id, motivo);
       alertService.success('Memoria Rechazada', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
+      if (fichaMemoria && fichaMemoria.id === mem.id) {
+        const fresca = await getMemoria(mem.id);
+        setFichaMemoria(fresca);
+      }
     } catch (err) {
       alertService.error('Error', 'Error al rechazar memoria.');
     }
@@ -814,18 +847,22 @@ export default function MemoriasPage() {
 
   async function handleVolverABorrador(mem: MemoriaCalculo) {
     const motivo = await alertService.prompt({
-      title: 'Devolver Memoria a Borrador',
-      text: `Indique las observaciones para devolver la memoria ${mem.codigo} a estado Borrador para correcciones.`,
-      confirmButtonText: 'Devolver a Borrador',
-      inputPlaceholder: 'Indique observaciones o motivo de devolución...',
+      title: 'Reiniciar Memoria a Borrador',
+      text: `Indique las observaciones para reiniciar la memoria ${mem.codigo} a estado Borrador para correcciones.`,
+      confirmButtonText: 'Reiniciar a Borrador',
+      inputPlaceholder: 'Indique observaciones o motivo de reinicio...',
       required: true,
     });
     if (!motivo) return;
 
     try {
       const res = await volverMemoriaBorrador(mem.id, motivo);
-      alertService.success('Devuelto a Borrador', res.message);
+      alertService.success('Reiniciado a Borrador', res.message);
       if (selectedGestionId) await cargarMemorias(selectedGestionId);
+      if (fichaMemoria && fichaMemoria.id === mem.id) {
+        const fresca = await getMemoria(mem.id);
+        setFichaMemoria(fresca);
+      }
     } catch (err) {
       alertService.error('Error', 'Error al regresar a borrador.');
     }
@@ -1135,8 +1172,7 @@ export default function MemoriasPage() {
                       {getBadgeEstado(mem.estado)}
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* Ver Ficha Oficial / Detalle */}
+                      <div className="flex items-center justify-center">
                         <button
                           onClick={async () => {
                             try {
@@ -1147,131 +1183,11 @@ export default function MemoriasPage() {
                               mostrarMensaje('error', 'No se pudo cargar la ficha técnica.');
                             }
                           }}
-                          className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-theme-border/40 transition-colors"
-                          title="Ver Ficha Técnica Oficial"
+                          className="p-2 rounded-xl text-theme-muted hover:text-theme-primary hover:bg-theme-primary/10 transition-colors"
+                          title="Ver Ficha Técnica y Acciones de Revisión"
                         >
-                          <Eye size={15} />
+                          <Eye size={17} />
                         </button>
-
-                        {/* Botón Editar para memorias no aprobadas definitivamente */}
-                        {!isGestionBloqueada && mem.estado !== 'APROBADO_FINANZAS' && (isElaborador || isGerente || isPlanificador || isAprobador) && (
-                          <button
-                            onClick={() => handleOpenEditar(mem)}
-                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
-                            title="Editar Datos de la Memoria"
-                          >
-                            <Edit3 size={15} />
-                          </button>
-                        )}
-
-                        {/* Flujo de Estados y Aprobaciones */}
-                        {mem.estado === 'BORRADOR' && (
-                          <>
-                            {isElaborador && (
-                              <button
-                                onClick={() => handleEnviar(mem)}
-                                className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-500/10 transition-colors"
-                                title="Enviar a Revisión de Gerencia"
-                              >
-                                <Send size={15} />
-                              </button>
-                            )}
-                            {(isGerente || isAprobador) && (
-                              <>
-                                <button
-                                  onClick={() => handleAprobarGerente(mem)}
-                                  className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1 shadow-sm"
-                                  title="Aprobar como Gerente de Área"
-                                >
-                                  <CheckCircle2 size={13} /> Aprobar Gerencia
-                                </button>
-                                <button
-                                  onClick={() => handleRechazar(mem)}
-                                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                                  title="Rechazar"
-                                >
-                                  <XCircle size={15} />
-                                </button>
-                              </>
-                            )}
-                            {!isGestionBloqueada && (isElaborador || isAprobador) && (
-                              <button
-                                onClick={() => handleDelete(mem.id)}
-                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                                title="Eliminar"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            )}
-                          </>
-                        )}
-
-                        {mem.estado === 'PENDIENTE_GERENCIA' && (isAprobador || isGerente) && (
-                          <>
-                            <button
-                              onClick={() => handleAprobarGerente(mem)}
-                              className="px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-semibold flex items-center gap-1 shadow-sm"
-                              title="Aprobar como Gerente de Área"
-                            >
-                              <CheckCircle2 size={13} /> Aprobar Gerencia
-                            </button>
-                            <button
-                              onClick={() => handleRechazar(mem)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                              title="Rechazar"
-                            >
-                              <XCircle size={15} />
-                            </button>
-                          </>
-                        )}
-
-                        {mem.estado === 'PENDIENTE_PLANIFICACION' && (isAprobador || isPlanificador) && (
-                          <>
-                            <button
-                              onClick={() => handleAprobarPlanificacion(mem)}
-                              className="px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-[11px] font-semibold flex items-center gap-1 shadow-sm"
-                              title="Validar y Aprobar por Planificación (SPO)"
-                            >
-                              <CheckCircle2 size={13} /> Aprobar Planificación
-                            </button>
-                            <button
-                              onClick={() => handleRechazar(mem)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                              title="Rechazar"
-                            >
-                              <XCircle size={15} />
-                            </button>
-                          </>
-                        )}
-
-                        {(mem.estado === 'APROBADO_GERENCIA' || mem.estado === 'APROBADO_PLANIFICACION') && isAprobador && (
-                          <>
-                            <button
-                              onClick={() => handleAprobarFinanciero(mem)}
-                              className="px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-semibold flex items-center gap-1 shadow-sm"
-                              title="Aprobación Presupuestaria Final"
-                            >
-                              <CheckCircle2 size={13} /> Aprobar Presupuestos
-                            </button>
-                            <button
-                              onClick={() => handleRechazar(mem)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-                              title="Rechazar"
-                            >
-                              <XCircle size={15} />
-                            </button>
-                          </>
-                        )}
-
-                        {mem.estado === 'RECHAZADO' && (canCreate || isGerente) && (
-                          <button
-                            onClick={() => handleVolverABorrador(mem)}
-                            className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-500/10 transition-colors"
-                            title="Volver a Borrador para correcciones"
-                          >
-                            <RefreshCw size={15} />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -1355,7 +1271,11 @@ export default function MemoriasPage() {
                 </div>
               </div>
               <button
-                onClick={() => setShowModalMemoria(false)}
+                onClick={() => {
+                  const prev = editingMemoria;
+                  setShowModalMemoria(false);
+                  if (prev) setFichaMemoria(prev);
+                }}
                 className="text-theme-muted hover:text-theme-main text-lg font-bold"
               >
                 ✕
@@ -1827,7 +1747,11 @@ export default function MemoriasPage() {
               <div className="flex justify-end gap-3 pt-4 border-t border-theme-border">
                 <button
                   type="button"
-                  onClick={() => setShowModalMemoria(false)}
+                  onClick={() => {
+                    const prev = editingMemoria;
+                    setShowModalMemoria(false);
+                    if (prev) setFichaMemoria(prev);
+                  }}
                   className="px-4 py-2 rounded-xl border border-theme-border text-xs font-semibold text-theme-muted hover:text-theme-main"
                 >
                   Cancelar
@@ -2047,12 +1971,24 @@ export default function MemoriasPage() {
 
               {/* Nota de Rechazo / Observación si existe */}
               {fichaMemoria.motivo_rechazo && (
-                <div className={`p-3 rounded-xl border text-xs ${fichaMemoria.estado === 'RECHAZADO'
+                <div className={`p-3.5 rounded-xl border text-xs ${fichaMemoria.estado === 'RECHAZADO'
                   ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-200'
                   : 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-200'
                   }`}>
-                  <strong>💬 {fichaMemoria.estado === 'RECHAZADO' ? 'Motivo del Rechazo:' : 'Nota de Revisión / Aprobación:'}</strong>
-                  <p className="mt-1 font-medium italic">"{fichaMemoria.motivo_rechazo}"</p>
+                  <div className="flex items-center gap-2 font-bold uppercase text-[11px] tracking-wider">
+                    {fichaMemoria.estado === 'RECHAZADO' ? (
+                      <span className="text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                        <XCircle size={15} /> Notificación Oficial de Rechazo
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                        <AlertCircle size={15} /> Observación / Nota de Revisión
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1.5 font-semibold text-xs leading-relaxed">
+                    {fichaMemoria.motivo_rechazo}
+                  </p>
                 </div>
               )}
 
@@ -2060,43 +1996,59 @@ export default function MemoriasPage() {
               <div className="border-t border-theme-border pt-4">
                 <span className="text-theme-muted uppercase font-semibold text-xs">Registro de Control y Firmas Institucionales:</span>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 mt-2">
+                  {/* 1. Elaborador */}
                   <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
                     <span className="text-[10px] uppercase font-bold text-theme-muted block">1. Elaborador</span>
                     <p className="font-semibold text-xs text-theme-main mt-0.5">Usuario Solicitante</p>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Formulado</span>
                   </div>
 
+                  {/* 2. Gerencia de Área */}
                   <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
                     <span className="text-[10px] uppercase font-bold text-theme-muted block">2. Gerencia de Área</span>
                     <p className="font-semibold text-xs text-theme-main mt-0.5">Visto Bueno Área</p>
-                    {['APROBADO_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_PLANIFICACION', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) ? (
+                    {fichaMemoria.estado === 'RECHAZADO' && (fichaMemoria.motivo_rechazo?.includes('[GERENCIA') || (!fichaMemoria.motivo_rechazo?.includes('[PLANIFICACI') && !fichaMemoria.motivo_rechazo?.includes('[PRESUPUESTOS'))) ? (
+                      <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold">✕ Rechazado Gerencia</span>
+                    ) : ['APROBADO_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_PLANIFICACION', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) ? (
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Aprobado</span>
+                    ) : fichaMemoria.estado === 'BORRADOR' ? (
+                      <span className="text-[10px] text-theme-muted font-medium">⏳ Por Enviar</span>
                     ) : (
-                      <span className="text-[10px] text-amber-600 font-medium">⏳ Pendiente</span>
+                      <span className="text-[10px] text-amber-600 font-medium">⏳ Pendiente Revisión</span>
                     )}
                   </div>
 
+                  {/* 3. Planificación */}
                   <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
                     <span className="text-[10px] uppercase font-bold text-theme-muted block">3. Planificación (SPO)</span>
                     <p className="font-semibold text-xs text-theme-main mt-0.5">Alineación PAC</p>
                     {fichaMemoria.es_contratacion && parseFloat(fichaMemoria.total_presupuesto || '0') >= 2000 ? (
-                      ['APROBADO_GERENCIA', 'APROBADO_PLANIFICACION', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) && fichaMemoria.estado !== 'PENDIENTE_PLANIFICACION' ? (
+                      fichaMemoria.estado === 'RECHAZADO' && fichaMemoria.motivo_rechazo?.includes('[PLANIFICACI') ? (
+                        <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold">✕ Rechazado Planificación</span>
+                      ) : ['APROBADO_GERENCIA', 'APROBADO_PLANIFICACION', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) && fichaMemoria.estado !== 'PENDIENTE_PLANIFICACION' ? (
                         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Alineado</span>
+                      ) : fichaMemoria.estado === 'PENDIENTE_PLANIFICACION' ? (
+                        <span className="text-[10px] text-amber-600 font-medium">⏳ En Verificación</span>
                       ) : (
-                        <span className="text-[10px] text-amber-600 font-medium">⏳ Por Validar</span>
+                        <span className="text-[10px] text-theme-muted font-medium">⏳ Por Validar</span>
                       )
                     ) : (
                       <span className="text-[10px] text-theme-muted font-medium italic">— Omitido (&lt; 2.000 Bs)</span>
                     )}
                   </div>
 
+                  {/* 4. Presupuestos */}
                   <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
                     <span className="text-[10px] uppercase font-bold text-theme-muted block">4. Presupuestos</span>
                     <p className="font-semibold text-xs text-theme-main mt-0.5">Aprobación POA Final</p>
-                    {fichaMemoria.estado === 'APROBADO_FINANZAS' ? (
+                    {fichaMemoria.estado === 'RECHAZADO' && fichaMemoria.motivo_rechazo?.includes('[PRESUPUESTOS') ? (
+                      <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold">✕ Rechazado Presupuestos</span>
+                    ) : fichaMemoria.estado === 'APROBADO_FINANZAS' ? (
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Aprobado POA</span>
+                    ) : (fichaMemoria.estado === 'APROBADO_GERENCIA' || fichaMemoria.estado === 'APROBADO_PLANIFICACION') ? (
+                      <span className="text-[10px] text-amber-600 font-medium">⏳ En Revisión Final</span>
                     ) : (
-                      <span className="text-[10px] text-amber-600 font-medium">⏳ Pendiente</span>
+                      <span className="text-[10px] text-theme-muted font-medium">⏳ Pendiente</span>
                     )}
                   </div>
                 </div>
@@ -2121,25 +2073,43 @@ export default function MemoriasPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Acciones de aprobación directa según la etapa en la que se encuentra la memoria */}
-                {(fichaMemoria.estado === 'PENDIENTE_GERENCIA' || fichaMemoria.estado === 'BORRADOR') && (isGerente || isAprobador) && (
+                {/* 1. Acción de Borrador: Enviar a Gerencia / Eliminar */}
+                {fichaMemoria.estado === 'BORRADOR' && (
+                  <>
+                    {!isGestionBloqueada && (isElaborador || isAprobador) && (
+                      <button
+                        onClick={() => {
+                          const targetId = fichaMemoria.id;
+                          setFichaMemoria(null);
+                          handleDelete(targetId);
+                        }}
+                        className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
+                      >
+                        <Trash2 size={14} /> Eliminar
+                      </button>
+                    )}
+                    {isElaborador && (
+                      <button
+                        onClick={() => handleEnviar(fichaMemoria)}
+                        className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Send size={14} /> Enviar a Gerencia
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {/* 2. Acción de Gerencia: Aprobar / Rechazar */}
+                {(fichaMemoria.estado === 'PENDIENTE_GERENCIA' || (fichaMemoria.estado === 'BORRADOR' && isGerente)) && (isGerente || isAprobador) && (
                   <>
                     <button
-                      onClick={() => {
-                        const target = fichaMemoria;
-                        setFichaMemoria(null);
-                        handleRechazar(target);
-                      }}
+                      onClick={() => handleRechazar(fichaMemoria)}
                       className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
                     >
                       <XCircle size={14} /> Rechazar
                     </button>
                     <button
-                      onClick={() => {
-                        const target = fichaMemoria;
-                        setFichaMemoria(null);
-                        handleAprobarGerente(target);
-                      }}
+                      onClick={() => handleAprobarGerente(fichaMemoria)}
                       className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
                     >
                       <CheckCircle2 size={14} /> Aprobar Gerencia
@@ -2147,24 +2117,17 @@ export default function MemoriasPage() {
                   </>
                 )}
 
+                {/* 3. Acción de Planificación: Validar / Rechazar */}
                 {fichaMemoria.estado === 'PENDIENTE_PLANIFICACION' && (isPlanificador || isAprobador) && (
                   <>
                     <button
-                      onClick={() => {
-                        const target = fichaMemoria;
-                        setFichaMemoria(null);
-                        handleRechazar(target);
-                      }}
+                      onClick={() => handleRechazar(fichaMemoria)}
                       className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
                     >
                       <XCircle size={14} /> Rechazar
                     </button>
                     <button
-                      onClick={() => {
-                        const target = fichaMemoria;
-                        setFichaMemoria(null);
-                        handleAprobarPlanificacion(target);
-                      }}
+                      onClick={() => handleAprobarPlanificacion(fichaMemoria)}
                       className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
                     >
                       <CheckCircle2 size={14} /> Aprobar Planificación
@@ -2172,29 +2135,32 @@ export default function MemoriasPage() {
                   </>
                 )}
 
+                {/* 4. Acción de Presupuestos: Aprobar POA Final / Rechazar */}
                 {(fichaMemoria.estado === 'APROBADO_GERENCIA' || fichaMemoria.estado === 'APROBADO_PLANIFICACION') && isAprobador && (
                   <>
                     <button
-                      onClick={() => {
-                        const target = fichaMemoria;
-                        setFichaMemoria(null);
-                        handleRechazar(target);
-                      }}
+                      onClick={() => handleRechazar(fichaMemoria)}
                       className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
                     >
                       <XCircle size={14} /> Rechazar
                     </button>
                     <button
-                      onClick={() => {
-                        const target = fichaMemoria;
-                        setFichaMemoria(null);
-                        handleAprobarFinanciero(target);
-                      }}
+                      onClick={() => handleAprobarFinanciero(fichaMemoria)}
                       className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
                     >
-                      <CheckCircle2 size={14} /> Aprobar Presupuestos
+                      <CheckCircle2 size={14} /> Aprobar Presupuestos (POA)
                     </button>
                   </>
+                )}
+
+                {/* 5. Acción de Rechazado: Reiniciar a Borrador */}
+                {fichaMemoria.estado === 'RECHAZADO' && (canCreate || isGerente || isAprobador) && (
+                  <button
+                    onClick={() => handleVolverABorrador(fichaMemoria)}
+                    className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                  >
+                    <RefreshCw size={14} /> Reiniciar a Borrador
+                  </button>
                 )}
 
                 <button onClick={() => setFichaMemoria(null)} className="btn-primary text-xs px-5 py-2">
