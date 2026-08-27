@@ -265,7 +265,7 @@ class Command(BaseCommand):
         gestion, _ = Gestion.objects.get_or_create(anio=2027, defaults={'estado': Gestion.EstadoGestion.FORMULACION})
         area_requirements = self._requirements_for_area(area_code, requirements)
         total_area = Decimal('0')
-        for memory_data in memories:
+        for idx, memory_data in enumerate(memories, start=1):
             candidates = [r for r in area_requirements if r['partida'] == memory_data['partida'] and r['presupuesto'] == memory_data['total_calculado']]
             if candidates:
                 requirement = candidates[0]
@@ -285,8 +285,7 @@ class Command(BaseCommand):
                 raise CommandError(f"No existe requerimiento correlacionado para {memory_data['hoja']}.")
             operation = self._get_operation(gestion, program, area, requirement)
             partida, _ = Partida.objects.get_or_create(codigo=memory_data['partida'], clase=Partida.ClasePartida.EGRESO, defaults={'nombre': requirement['bien_servicio'] or f"Partida {memory_data['partida']}"})
-            sheet_code = re.sub(r'\s+', '', memory_data['hoja'])
-            code = f"MEM-2027-{sheet_code}"
+            code = f"MEM-{area_code}-2027-{idx:03d}"
             if MemoriaCalculo.objects.filter(codigo=code).exists():
                 raise CommandError(f'Ya existe la memoria {code}; la importación fue cancelada para evitar duplicados.')
             justification = next((item['justificacion'] for item in memory_data['items'] if item['justificacion']), f"Importado de la hoja {memory_data['hoja']}.")

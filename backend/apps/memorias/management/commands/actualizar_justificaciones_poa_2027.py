@@ -28,7 +28,7 @@ class Command(BaseCommand):
         reader = ImportCommand()
         changes, skipped = [], []
         for area in options['areas']:
-            for memory_data in reader._read_memories(source, area):
+            for idx, memory_data in enumerate(reader._read_memories(source, area), start=1):
                 # Las memorias de un solo renglón se dejan sin tocar, por
                 # indicación del usuario. Para varias filas se incluyen solo
                 # justificaciones existentes, respetando el orden del Excel.
@@ -39,8 +39,7 @@ class Command(BaseCommand):
                 if len(texts) < 2:
                     skipped.append({'hoja': memory_data['hoja'], 'motivo': 'Menos de dos justificaciones en el Excel'})
                     continue
-                sheet_code = re.sub(r'\s+', '', memory_data['hoja'])
-                code = f"MEM-2027-{sheet_code}"
+                code = f"MEM-{area}-2027-{idx:03d}"
                 try:
                     memory = MemoriaCalculo.objects.get(codigo=code, gestion__anio=2027)
                 except MemoriaCalculo.DoesNotExist as exc:
