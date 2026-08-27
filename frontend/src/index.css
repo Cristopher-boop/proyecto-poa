@@ -63,13 +63,12 @@
     text-transform: none;
   }
 
-  input[type="email"],
+  #username,
+  #password,
+  .lowercase-input,
   input[name="username"],
-  input[name="email"],
-  .lowercase-input {
-    text-transform: lowercase !important;
-  }
-
+  input[name="password"],
+  input[type="email"],
   input[type="password"] {
     text-transform: none !important;
   }

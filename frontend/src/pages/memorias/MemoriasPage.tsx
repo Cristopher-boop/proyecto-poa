@@ -422,7 +422,7 @@ export default function MemoriasPage() {
 
       return matchTab && matchArea && matchSearch;
     });
-  }, [memorias, activeTab, filtroArea, searchTerm]);
+  }, [memorias, activeTab, filtroArea, searchTerm, soloPendientesGerente, isGerente]);
 
   // Áreas presentes en la gestión actualmente seleccionada
   const areasEnGestion = useMemo(() => {
@@ -974,18 +974,20 @@ export default function MemoriasPage() {
             />
           </div>
 
-          <select
-            value={filtroArea}
-            onChange={(e) => setFiltroArea(e.target.value)}
-            className="input-theme text-xs py-2 w-full md:w-56"
-          >
-            <option value="todas">Todas las Áreas</option>
-            {areas.map((a) => (
-              <option key={a.id} value={String(a.id)}>
-                {a.nombre}
-              </option>
-            ))}
-          </select>
+          {(isPlanificador || isAprobador) && (
+            <select
+              value={filtroArea}
+              onChange={(e) => setFiltroArea(e.target.value)}
+              className="input-theme text-xs py-2 w-full md:w-56 bg-theme-surface text-theme-main"
+            >
+              <option value="todas" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Todas las Áreas</option>
+              {areas.map((a) => (
+                <option key={a.id} value={String(a.id)} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
+                  {a.nombre}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Toggle para Gerente en bandeja En Espera: Ver solo por Aprobar */}
@@ -1073,13 +1075,13 @@ export default function MemoriasPage() {
                     <td className="py-3.5 px-4 max-w-xs">
                       <div className="flex flex-wrap items-center gap-1 mb-1">
                         {mem.operacion_codigo && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-theme-base text-theme-main border border-theme-border">
                             POA: {mem.operacion_codigo}
                           </span>
                         )}
                         {mem.es_contratacion && (
-                          <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
-                            Contratación
+                          <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-theme-border/40 text-theme-muted border border-theme-border">
+                            PAC
                           </span>
                         )}
                       </div>
@@ -1311,7 +1313,7 @@ export default function MemoriasPage() {
       {/* Modal Formulación / Edición */}
       {showModalMemoria && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="card w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl bg-theme-surface">
+          <div className="card w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl bg-theme-surface">
             <div className="p-5 border-b border-theme-border flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <FileText className="text-theme-primary" size={22} />
@@ -1332,318 +1334,182 @@ export default function MemoriasPage() {
               </button>
             </div>
 
-            <form onSubmit={handleGuardarMemoria} className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
-                    Código de Memoria *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formMemoria.codigo}
-                    onChange={(e) => setFormMemoria({ ...formMemoria, codigo: e.target.value })}
-                    className="input-theme text-xs font-mono font-semibold"
-                    placeholder="Ej. MEM-2027-INF-001"
-                  />
+            <form onSubmit={handleGuardarMemoria} className="flex-1 overflow-y-auto p-6 space-y-5">
+              {/* PASO 1: Asignación de Parámetros Base */}
+              <div className="p-4 rounded-xl bg-theme-base/60 border border-theme-border space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-theme-main flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-theme-primary text-theme-primaryText flex items-center justify-center text-[10px] font-bold">1</span>
+                    Parámetros Base de la Memoria (Partida, Operación y Contratación)
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
-                    Área / Sección Solicitante *
-                  </label>
-                  {isAprobador ? (
-                    <select
-                      required
-                      value={formMemoria.seccionId}
-                      onChange={(e) => setFormMemoria({ ...formMemoria, seccionId: Number(e.target.value) })}
-                      className="input-theme text-xs bg-theme-surface text-theme-main"
-                    >
-                      <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione Sección...</option>
-                      {secciones.map((s) => (
-                        <option key={s.id} value={s.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
-                          {s.nombre} ({s.area_nombre || 'ÁREA'})
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="input-theme text-xs bg-theme-base/60 text-theme-main font-semibold py-2.5 px-3 flex items-center gap-2 cursor-not-allowed">
-                      <Building2 size={14} className="text-theme-muted" />
-                      <span>
-                        {secciones.find((s) => s.id === formMemoria.seccionId)?.nombre || user?.seccion_nombre || 'Sección Asignada'}
-                        {' '}
-                        <span className="text-[10px] text-theme-muted font-normal">
-                          ({secciones.find((s) => s.id === formMemoria.seccionId)?.area_nombre || user?.area_nombre || 'Área'})
-                        </span>
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* 1. Partida Presupuestaria */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
+                      1. Partida Presupuestaria de Egreso *
+                    </label>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
-                    Partida Presupuestaria de Egreso *
-                  </label>
-
-                  {/* Combobox selector de partida */}
-                  <div className="relative" ref={partidaSelectorRef}>
-                    {/* Partida seleccionada – actúa como trigger */}
-                    {(() => {
-                      const selected = egresoLeafs.find((p) => p.id === Number(formMemoria.partidaId));
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => setPartidaSelectorOpen(!partidaSelectorOpen)}
-                          className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left ${selected
-                            ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
-                            : 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
-                            }`}
-                        >
-                          {selected ? (
-                            <span className="flex-1 min-w-0">
-                              <span className="font-mono font-bold text-xs text-theme-primary mr-2">
-                                {selected.codigo}
-                              </span>
-                              <span className="text-xs text-theme-main line-clamp-1">{selected.nombre}</span>
-                            </span>
-                          ) : (
-                            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                              <AlertCircle size={14} className="shrink-0" />
-                              Seleccionar partida de egreso obligatoria...
-                            </span>
-                          )}
-                          <svg
-                            className={`w-4 h-4 shrink-0 text-theme-muted transition-transform ${partidaSelectorOpen ? 'rotate-180' : ''}`}
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    {/* Combobox selector de partida */}
+                    <div className="relative" ref={partidaSelectorRef}>
+                      {(() => {
+                        const selected = egresoLeafs.find((p) => p.id === Number(formMemoria.partidaId));
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => setPartidaSelectorOpen(!partidaSelectorOpen)}
+                            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left ${selected
+                              ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
+                              : 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
+                              }`}
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                      );
-                    })()}
+                            {selected ? (
+                              <span className="flex-1 min-w-0">
+                                <span className="font-mono font-bold text-xs text-theme-primary mr-2">
+                                  {selected.codigo}
+                                </span>
+                                <span className="text-xs text-theme-main line-clamp-1">{selected.nombre}</span>
+                              </span>
+                            ) : (
+                              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                                <AlertCircle size={14} className="shrink-0" />
+                                Seleccionar partida de egreso obligatoria...
+                              </span>
+                            )}
+                            <svg
+                              className={`w-4 h-4 shrink-0 text-theme-muted transition-transform ${partidaSelectorOpen ? 'rotate-180' : ''}`}
+                              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        );
+                      })()}
 
-                    {/* Dropdown con búsqueda y lista */}
-                    {partidaSelectorOpen && (
-                      <div className="absolute z-50 mt-1 w-full bg-theme-surface border border-theme-border rounded-xl shadow-xl overflow-hidden flex flex-col"
-                        style={{ maxHeight: '320px' }}>
-                        <div className="p-2 border-b border-theme-border sticky top-0 bg-theme-surface z-10">
-                          <div className="relative">
-                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
-                            <input
-                              autoFocus
-                              type="text"
-                              value={searchPartidaQuery}
-                              onChange={(e) => setSearchPartidaQuery(e.target.value)}
-                              placeholder="Buscar por código, nombre o grupo..."
-                              className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted"
-                            />
-                          </div>
-                          <p className="text-[10px] text-theme-muted mt-1 ml-1">
-                            {filteredPartidas.length} partidas seleccionables (solo hojas de egreso)
-                          </p>
-                        </div>
-
-                        {/* Lista de resultados agrupados */}
-                        <div className="overflow-y-auto" style={{ maxHeight: '300px' }}>
-                          {filteredPartidas.length === 0 ? (
-                            <div className="py-8 text-center text-theme-muted text-xs">
-                              No se encontraron partidas de egreso
+                      {/* Dropdown con búsqueda y lista */}
+                      {partidaSelectorOpen && (
+                        <div className="absolute z-50 mt-1 w-full bg-theme-surface border border-theme-border rounded-xl shadow-xl overflow-hidden flex flex-col"
+                          style={{ maxHeight: '300px' }}>
+                          <div className="p-2 border-b border-theme-border sticky top-0 bg-theme-surface z-10">
+                            <div className="relative">
+                              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                              <input
+                                autoFocus
+                                type="text"
+                                value={searchPartidaQuery}
+                                onChange={(e) => setSearchPartidaQuery(e.target.value)}
+                                placeholder="Buscar por código, nombre o grupo..."
+                                className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted"
+                              />
                             </div>
-                          ) : (
-                            groupedPartidas.map((group, gIdx) => (
-                              <div key={gIdx}>
-                                {/* Encabezado de grupo (padre – no seleccionable) */}
-                                {group.parent && (
-                                  <div className="flex items-center gap-2 px-3 py-1.5 bg-theme-base/80 border-b border-theme-border/60 sticky top-0 z-[5]">
-                                    <span className="font-mono text-[10px] font-bold text-theme-muted/70 bg-theme-border/60 px-1 rounded">
-                                      {group.parent.codigo}
-                                    </span>
-                                    <span className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide line-clamp-1">
-                                      {group.parent.nombre}
-                                    </span>
-                                  </div>
-                                )}
+                            <p className="text-[10px] text-theme-muted mt-1 ml-1">
+                              {filteredPartidas.length} partidas seleccionables (solo hojas de egreso)
+                            </p>
+                          </div>
 
-                                {/* Hojas seleccionables del grupo */}
-                                {group.leafs.map((p) => {
-                                  const isActive = p.id === Number(formMemoria.partidaId);
-                                  const parent = parentMap.get(p.codigo);
-                                  return (
-                                    <button
-                                      key={p.id}
-                                      type="button"
-                                      onClick={() => {
-                                        setFormMemoria({ ...formMemoria, partidaId: p.id });
-                                        setPartidaSelectorOpen(false);
-                                        setSearchPartidaQuery('');
-                                      }}
-                                      className={`w-full flex items-start gap-3 pl-5 pr-3 py-2.5 text-left transition-colors border-b border-theme-border/30 last:border-0 ${isActive
-                                        ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
-                                        : 'hover:bg-theme-border/30'
-                                        }`}
-                                    >
-                                      {/* Línea de indentación visual */}
-                                      <span className="shrink-0 flex items-start pt-0.5">
-                                        <span className="w-3 h-px bg-theme-border/70 mt-2 mr-1" />
+                          {/* Lista de resultados agrupados */}
+                          <div className="overflow-y-auto" style={{ maxHeight: '240px' }}>
+                            {filteredPartidas.length === 0 ? (
+                              <div className="py-8 text-center text-theme-muted text-xs">
+                                No se encontraron partidas de egreso
+                              </div>
+                            ) : (
+                              groupedPartidas.map((group, gIdx) => (
+                                <div key={gIdx}>
+                                  {group.parent && (
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-theme-base/80 border-b border-theme-border/60 sticky top-0 z-[5]">
+                                      <span className="font-mono text-[10px] font-bold text-theme-muted/70 bg-theme-border/60 px-1 rounded">
+                                        {group.parent.codigo}
                                       </span>
+                                      <span className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide line-clamp-1">
+                                        {group.parent.nombre}
+                                      </span>
+                                    </div>
+                                  )}
 
-                                      <span
-                                        className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${isActive
-                                          ? 'bg-theme-primary text-white'
-                                          : 'bg-theme-base text-theme-primary border border-theme-border'
+                                  {group.leafs.map((p) => {
+                                    const isActive = p.id === Number(formMemoria.partidaId);
+                                    const parent = parentMap.get(p.codigo);
+                                    return (
+                                      <button
+                                        key={p.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setFormMemoria({ ...formMemoria, partidaId: p.id });
+                                          setPartidaSelectorOpen(false);
+                                          setSearchPartidaQuery('');
+                                        }}
+                                        className={`w-full flex items-start gap-3 pl-5 pr-3 py-2 text-left transition-colors border-b border-theme-border/30 last:border-0 ${isActive
+                                          ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
+                                          : 'hover:bg-theme-border/30'
                                           }`}
                                       >
-                                        {p.codigo}
-                                      </span>
+                                        <span className="shrink-0 flex items-start pt-0.5">
+                                          <span className="w-3 h-px bg-theme-border/70 mt-2 mr-1" />
+                                        </span>
 
-                                      <div className="flex-1 min-w-0">
-                                        <p className={`text-xs leading-tight ${isActive ? 'font-semibold text-theme-main' : 'text-theme-main'}`}>
-                                          {p.nombre}
-                                        </p>
-                                        {/* Breadcrumb de padre en modo búsqueda */}
-                                        {searchPartidaQuery.trim() && parent && (
-                                          <p className="text-[10px] text-theme-muted mt-0.5 flex items-center gap-1">
-                                            <span className="font-mono">{parent.codigo}</span>
-                                            <span className="opacity-50">›</span>
-                                            <span className="line-clamp-1">{parent.nombre}</span>
+                                        <span
+                                          className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${isActive
+                                            ? 'bg-theme-primary text-theme-primaryText'
+                                            : 'bg-theme-base text-theme-primary border border-theme-border'
+                                            }`}
+                                        >
+                                          {p.codigo}
+                                        </span>
+
+                                        <div className="flex-1 min-w-0">
+                                          <p className={`text-xs leading-tight ${isActive ? 'font-semibold text-theme-main' : 'text-theme-main'}`}>
+                                            {p.nombre}
                                           </p>
+                                          {searchPartidaQuery.trim() && parent && (
+                                            <p className="text-[10px] text-theme-muted mt-0.5 flex items-center gap-1">
+                                              <span className="font-mono">{parent.codigo}</span>
+                                              <span className="opacity-50">›</span>
+                                              <span className="line-clamp-1">{parent.nombre}</span>
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        {isActive && (
+                                          <Check size={14} className="shrink-0 text-theme-primary mt-0.5" />
                                         )}
-                                      </div>
-
-                                      {isActive && (
-                                        <Check size={14} className="shrink-0 text-theme-primary mt-0.5" />
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Hidden input for form validation */}
-                    <input
-                      type="text"
-                      required
-                      readOnly
-                      tabIndex={-1}
-                      value={formMemoria.partidaId}
-                      className="absolute opacity-0 h-0 w-0 pointer-events-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Alineación Estratégica con Operación POA */}
-                <div className="sm:col-span-2 space-y-3 p-4 rounded-xl bg-theme-base/60 border border-theme-border">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="block text-xs font-bold uppercase text-theme-main">
-                        Operación POA (Alineación Estratégica SPO)
-                      </label>
-                      <p className="text-[11px] text-theme-muted">
-                        Vincule el gasto a una Operación formal de su Área/Gerencia para trazabilidad del POA.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowQuickOperacion(!showQuickOperacion)}
-                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600/20 transition-colors flex items-center gap-1"
-                    >
-                      <Plus size={13} /> {showQuickOperacion ? 'Ocultar Creación' : '+ Nueva Operación'}
-                    </button>
-                  </div>
-
-                  {/* Subformulario inline para crear Operación al vuelo */}
-                  {showQuickOperacion && (
-                    <div className="p-3.5 rounded-xl bg-theme-surface border border-indigo-200 dark:border-indigo-800 space-y-3 shadow-sm animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
-                          <Building2 size={14} /> Registrar Nueva Operación para su Área
-                        </span>
-                        <span className="text-[10px] text-theme-muted">Se guardará e indexará al instante</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                        <div>
-                          <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
-                            Código de Operación *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Ej. OP-INF-08"
-                            value={quickOpForm.codigo}
-                            onChange={(e) => setQuickOpForm({ ...quickOpForm, codigo: e.target.value })}
-                            className="input-theme text-xs py-1.5 font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
-                            Acción a Corto Plazo (ACP Padre) *
-                          </label>
-                          <select
-                            value={quickOpForm.acp_id}
-                            onChange={(e) => setQuickOpForm({ ...quickOpForm, acp_id: Number(e.target.value) })}
-                            className="input-theme text-xs py-1.5 bg-theme-surface text-theme-main"
-                          >
-                            <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione ACP...</option>
-                            {accionesCortoPlazo.map((acp) => (
-                              <option key={acp.id} value={acp.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
-                                {acp.codigo} - {acp.descripcion.slice(0, 45)}...
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="sm:col-span-2">
-                          <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
-                            Descripción de la Operación *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Ej. Fortalecimiento de la Infraestructura de Servidores..."
-                            value={quickOpForm.descripcion}
-                            onChange={(e) => setQuickOpForm({ ...quickOpForm, descripcion: e.target.value })}
-                            className="input-theme text-xs py-1.5"
-                          />
-                        </div>
-
-                        <div className="sm:col-span-2 flex items-center justify-between pt-1">
-                          <label className="flex items-center gap-2 text-xs font-medium text-theme-main cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={quickOpForm.es_contratacion}
-                              onChange={(e) => setQuickOpForm({ ...quickOpForm, es_contratacion: e.target.checked })}
-                              className="rounded text-indigo-600 focus:ring-indigo-500"
-                            />
-                            Aplica para Contrataciones / Compras
-                          </label>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setShowQuickOperacion(false)}
-                              className="px-2.5 py-1 text-xs text-theme-muted hover:text-theme-main"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleSaveQuickOperacion}
-                              className="btn-primary text-xs px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white"
-                            >
-                              Guardar y Vincular
-                            </button>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ))
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  )}
+                      )}
 
-                  {/* Selector de Operación existente */}
+                      <input
+                        type="text"
+                        required
+                        readOnly
+                        tabIndex={-1}
+                        value={formMemoria.partidaId}
+                        className="absolute opacity-0 h-0 w-0 pointer-events-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 2. Operación POA */}
                   <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold uppercase text-theme-muted">
+                        2. Operación POA Institucional *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickOperacion(!showQuickOperacion)}
+                        className="text-[11px] font-semibold text-theme-primary hover:underline flex items-center gap-1"
+                      >
+                        <Plus size={12} /> {showQuickOperacion ? 'Ocultar' : '+ Nueva Operación'}
+                      </button>
+                    </div>
+
                     <select
                       required
                       value={formMemoria.operacionId}
@@ -1658,7 +1524,7 @@ export default function MemoriasPage() {
                       }}
                       className={`input-theme text-xs bg-theme-surface text-theme-main ${!formMemoria.operacionId ? 'border-amber-500/80 bg-amber-500/5' : ''}`}
                     >
-                      <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">(Obligatorio) Seleccione Operación POA institucional *...</option>
+                      <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione Operación POA institucional *...</option>
                       {(() => {
                         const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
                         const areaId = sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null);
@@ -1681,173 +1547,267 @@ export default function MemoriasPage() {
                         ));
                       })()}
                     </select>
-                    {!formMemoria.operacionId && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1 flex items-center gap-1">
-                        <AlertCircle size={13} /> Seleccione una operación o cree una nueva con el botón de arriba.
-                      </p>
-                    )}
                   </div>
+                </div>
 
-                  {/* Checkbox Contrataciones */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <input
-                      type="checkbox"
-                      id="chk-es-contratacion"
-                      checked={formMemoria.es_contratacion}
-                      onChange={(e) => setFormMemoria({ ...formMemoria, es_contratacion: e.target.checked })}
-                      className="w-4 h-4 rounded text-theme-primary focus:ring-theme-primary cursor-pointer"
-                    />
-                    <label htmlFor="chk-es-contratacion" className="text-xs font-semibold text-theme-main cursor-pointer select-none">
-                      ¿Corresponde a Contrataciones / Compras Públicas (PAC)?
-                    </label>
-                  </div>
+                {/* Subformulario quick operación si está abierto */}
+                {showQuickOperacion && (
+                  <div className="p-3.5 rounded-xl bg-theme-surface border border-theme-border space-y-3 shadow-sm animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-theme-main flex items-center gap-1.5">
+                        <Building2 size={14} className="text-theme-primary" /> Registrar Nueva Operación para su Área
+                      </span>
+                    </div>
 
-                  {/* Banner dinámico de ruta de aprobación */}
-                  {(() => {
-                    const esContratacion = formMemoria.es_contratacion;
-                    const esMayor2000 = totalCalculadoMemoria >= 2000;
-                    const rutaCompleta = esContratacion && esMayor2000;
-                    return (
-                      <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs ${rutaCompleta
-                          ? 'bg-indigo-50/80 border-indigo-200 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-200'
-                          : 'bg-emerald-50/80 border-emerald-200 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200'
-                        }`}>
-                        <AlertCircle size={16} className={`shrink-0 mt-0.5 ${rutaCompleta ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
-                        <div>
-                          <p className="font-bold">
-                            {rutaCompleta
-                              ? '📌 Ruta Institucional Completa (PAC ≥ 2.000 Bs):'
-                              : '📌 Ruta Directa (Gasto Menor o No Contratación):'}
-                          </p>
-                          <p className="text-[11px] mt-0.5 opacity-90">
-                            {rutaCompleta
-                              ? 'Elaborador ➔ Gerencia de Área ➔ Planificación (Validación SPO/PAC) ➔ Aprobación Presupuestaria Final'
-                              : 'Elaborador ➔ Gerencia de Área ➔ Aprobación Presupuestaria Final (Omite Planificación)'}
-                          </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      <div>
+                        <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
+                          Código de Operación *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej. OP-INF-08"
+                          value={quickOpForm.codigo}
+                          onChange={(e) => setQuickOpForm({ ...quickOpForm, codigo: e.target.value })}
+                          className="input-theme text-xs py-1.5 font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
+                          Acción a Corto Plazo (ACP Padre) *
+                        </label>
+                        <select
+                          value={quickOpForm.acp_id}
+                          onChange={(e) => setQuickOpForm({ ...quickOpForm, acp_id: Number(e.target.value) })}
+                          className="input-theme text-xs py-1.5 bg-theme-surface text-theme-main"
+                        >
+                          <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione ACP...</option>
+                          {accionesCortoPlazo.map((acp) => (
+                            <option key={acp.id} value={acp.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
+                              {acp.codigo} - {acp.descripcion.slice(0, 45)}...
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
+                          Descripción de la Operación *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Fortalecimiento de la Infraestructura de Servidores..."
+                          value={quickOpForm.descripcion}
+                          onChange={(e) => setQuickOpForm({ ...quickOpForm, descripcion: e.target.value })}
+                          className="input-theme text-xs py-1.5"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2 flex items-center justify-between pt-1">
+                        <label className="flex items-center gap-2 text-xs font-medium text-theme-main cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={quickOpForm.es_contratacion}
+                            onChange={(e) => setQuickOpForm({ ...quickOpForm, es_contratacion: e.target.checked })}
+                            className="rounded text-theme-primary focus:ring-theme-primary"
+                          />
+                          Aplica para Contrataciones / Compras
+                        </label>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowQuickOperacion(false)}
+                            className="px-2.5 py-1 text-xs text-theme-muted hover:text-theme-main"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveQuickOperacion}
+                            className="btn-primary text-xs px-3 py-1"
+                          >
+                            Guardar y Vincular
+                          </button>
                         </div>
                       </div>
-                    );
-                  })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Checkbox Contratación PAC */}
+                <div className="flex items-center gap-2 pt-1 border-t border-theme-border/60">
+                  <input
+                    type="checkbox"
+                    id="chk-es-contratacion"
+                    checked={formMemoria.es_contratacion}
+                    onChange={(e) => setFormMemoria({ ...formMemoria, es_contratacion: e.target.checked })}
+                    className="w-4 h-4 rounded text-theme-primary focus:ring-theme-primary cursor-pointer"
+                  />
+                  <label htmlFor="chk-es-contratacion" className="text-xs font-semibold text-theme-main cursor-pointer select-none">
+                    ¿Corresponde a Contrataciones / Compras Públicas (PAC)?
+                  </label>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
-                  Justificación Técnica / Sustento del Requerimiento *
-                </label>
-                <textarea
-                  required
-                  rows={2}
-                  value={formMemoria.justificacion}
-                  onChange={(e) => setFormMemoria({ ...formMemoria, justificacion: e.target.value })}
-                  placeholder="Detalle los objetivos operativos y necesidad institucional de los bienes o servicios solicitados..."
-                  className="input-theme text-xs"
-                />
-              </div>
+              {/* PASO 2: Despliegue de Datos y Formulación Oficial */}
+              {formMemoria.partidaId && formMemoria.operacionId ? (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  {/* Cabecera Informativa Fija (Código y Área/Sección Solicitante) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-theme-base/50 border border-theme-border">
+                    <div>
+                      <span className="text-[10px] font-semibold uppercase text-theme-muted block">Código Asignado</span>
+                      <span className="text-xs font-mono font-bold text-theme-main">{formMemoria.codigo}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold uppercase text-theme-muted block">Área / Sección Solicitante</span>
+                      <span className="text-xs font-semibold text-theme-main">
+                        {secciones.find((s) => s.id === Number(formMemoria.seccionId))?.nombre || user?.seccion_nombre || 'Sección Solicitante'}
+                        {' — '}
+                        <span className="text-theme-muted text-[11px]">
+                          {secciones.find((s) => s.id === Number(formMemoria.seccionId))?.area_nombre || user?.area_nombre || 'Área'}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-theme-main">
-                    Desglose de Ítems / Renglones de la Memoria
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleAddRenglon}
-                    className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
-                  >
-                    <Plus size={14} /> Agregar item
-                  </button>
-                </div>
+                  {/* Formato Oficial: Desglose de Ítems a la izquierda + Justificación Amplia a la derecha */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                    {/* Columna Izquierda: Tabla de Renglones / Ítems (8 cols) */}
+                    <div className="lg:col-span-8 flex flex-col justify-between space-y-2">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-theme-main">
+                            Desglose de Ítems / Renglones de la Memoria
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleAddRenglon}
+                            className="btn-primary text-xs px-2.5 py-1 flex items-center gap-1"
+                          >
+                            <Plus size={13} /> Agregar ítem
+                          </button>
+                        </div>
 
-                <div className="border border-theme-border rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-theme-base border-b border-theme-border font-semibold text-theme-muted">
-                        <th className="py-2.5 px-3">#</th>
-                        <th className="py-2.5 px-3">Descripción del Bien / Servicio</th>
-                        <th className="py-2.5 px-3 w-32">Unidad Medida</th>
-                        <th className="py-2.5 px-3 w-24 text-right">Cantidad</th>
-                        <th className="py-2.5 px-3 w-32 text-right">P. Unitario (Bs.)</th>
-                        <th className="py-2.5 px-3 w-32 text-right">Subtotal</th>
-                        <th className="py-2.5 px-3 w-12 text-center"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-theme-border">
-                      {formMemoria.renglones.map((renglon, idx) => {
-                        const subtotal = (Number(renglon.cantidad) || 0) * (Number(renglon.precio_unitario) || 0);
-                        return (
-                          <tr key={idx} className="bg-theme-surface">
-                            <td className="py-2 px-3 font-bold text-theme-muted">{idx + 1}</td>
-                            <td className="py-2 px-3">
-                              <input
-                                type="text"
-                                required
-                                placeholder="Ej. Renovación de licencias de servidor..."
-                                value={renglon.descripcion}
-                                onChange={(e) => handleUpdateRenglon(idx, 'descripcion', e.target.value)}
-                                className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-1 focus:outline-none text-theme-main"
-                              />
-                            </td>
-                            <td className="py-2 px-3">
-                              <input
-                                type="text"
-                                required
-                                placeholder="Servicio, Licencia, Unidad..."
-                                value={renglon.unidad_medida}
-                                onChange={(e) => handleUpdateRenglon(idx, 'unidad_medida', e.target.value)}
-                                className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-1 focus:outline-none text-theme-main"
-                              />
-                            </td>
-                            <td className="py-2 px-3 text-right">
-                              <input
-                                type="number"
-                                required
-                                min="0.01"
-                                step="any"
-                                placeholder="1"
-                                value={renglon.cantidad === 0 || renglon.cantidad === '0' ? '' : renglon.cantidad}
-                                onChange={(e) => handleUpdateRenglon(idx, 'cantidad', e.target.value)}
-                                className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-1 text-right focus:outline-none text-theme-main font-semibold"
-                              />
-                            </td>
-                            <td className="py-2 px-3 text-right">
-                              <input
-                                type="number"
-                                required
-                                min="0"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={renglon.precio_unitario === 0 || renglon.precio_unitario === '0' ? '' : renglon.precio_unitario}
-                                onChange={(e) => handleUpdateRenglon(idx, 'precio_unitario', e.target.value)}
-                                className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-1 text-right focus:outline-none text-theme-main font-semibold"
-                              />
-                            </td>
-                            <td className="py-2 px-3 text-right font-bold text-theme-main">{formatMoney(subtotal)}</td>
-                            <td className="py-2 px-3 text-center">
-                              {formMemoria.renglones.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveRenglon(idx)}
-                                  className="text-rose-500 hover:text-rose-700 p-1"
-                                >
-                                  ✕
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                        <div className="border border-theme-border rounded-xl overflow-hidden bg-theme-surface">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-theme-base border-b border-theme-border font-semibold text-theme-muted text-[11px]">
+                                <th className="py-2 px-2 w-7 text-center">#</th>
+                                <th className="py-2 px-2">Descripción</th>
+                                <th className="py-2 px-2 w-24">U. Medida</th>
+                                <th className="py-2 px-2 w-16 text-right">Cant.</th>
+                                <th className="py-2 px-2 w-24 text-right">P. Unit. (Bs.)</th>
+                                <th className="py-2 px-2.5 w-24 text-right">Subtotal</th>
+                                <th className="py-2 px-1 w-7 text-center"></th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-theme-border">
+                              {formMemoria.renglones.map((renglon, idx) => {
+                                const subtotal = (Number(renglon.cantidad) || 0) * (Number(renglon.precio_unitario) || 0);
+                                return (
+                                  <tr key={idx} className="hover:bg-theme-border/10 transition-colors">
+                                    <td className="py-1.5 px-2 text-center font-bold text-theme-muted text-[11px]">{idx + 1}</td>
+                                    <td className="py-1.5 px-2">
+                                      <input
+                                        type="text"
+                                        required
+                                        placeholder="Descripción del ítem..."
+                                        value={renglon.descripcion}
+                                        onChange={(e) => handleUpdateRenglon(idx, 'descripcion', e.target.value)}
+                                        className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-0.5 focus:outline-none text-theme-main text-xs uppercase"
+                                      />
+                                    </td>
+                                    <td className="py-1.5 px-2">
+                                      <input
+                                        type="text"
+                                        required
+                                        placeholder="Unidad..."
+                                        value={renglon.unidad_medida}
+                                        onChange={(e) => handleUpdateRenglon(idx, 'unidad_medida', e.target.value)}
+                                        className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-0.5 focus:outline-none text-theme-main text-xs uppercase"
+                                      />
+                                    </td>
+                                    <td className="py-1.5 px-2 text-right">
+                                      <input
+                                        type="number"
+                                        required
+                                        min="0.01"
+                                        step="any"
+                                        value={renglon.cantidad === 0 || renglon.cantidad === '0' ? '' : renglon.cantidad}
+                                        onChange={(e) => handleUpdateRenglon(idx, 'cantidad', e.target.value)}
+                                        className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-0.5 text-right focus:outline-none text-theme-main text-xs font-semibold"
+                                      />
+                                    </td>
+                                    <td className="py-1.5 px-2 text-right">
+                                      <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        step="0.01"
+                                        value={renglon.precio_unitario === 0 || renglon.precio_unitario === '0' ? '' : renglon.precio_unitario}
+                                        onChange={(e) => handleUpdateRenglon(idx, 'precio_unitario', e.target.value)}
+                                        className="w-full bg-transparent border-b border-theme-border/60 focus:border-theme-primary px-1 py-0.5 text-right focus:outline-none text-theme-main text-xs font-semibold"
+                                      />
+                                    </td>
+                                    <td className="py-1.5 px-2.5 text-right font-bold text-theme-main font-mono text-xs">{formatMoney(subtotal)}</td>
+                                    <td className="py-1.5 px-1 text-center">
+                                      {formMemoria.renglones.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveRenglon(idx)}
+                                          className="text-theme-muted hover:text-rose-500 p-0.5 transition-colors"
+                                          title="Eliminar renglón"
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
 
-                <div className="mt-3 flex justify-end items-center gap-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-theme-muted">
-                    Total Presupuesto Proyectado:
-                  </span>
-                  <span className="text-lg font-bold text-theme-primary">{formatMoney(totalCalculadoMemoria)}</span>
+                      <div className="flex justify-end items-center gap-3 pt-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-theme-muted">
+                          Total Proyectado:
+                        </span>
+                        <span className="text-base font-bold text-theme-primary font-mono">{formatMoney(totalCalculadoMemoria)}</span>
+                      </div>
+                    </div>
+
+                    {/* Columna Derecha: Justificación amplia a la misma altura (4 cols) */}
+                    <div className="lg:col-span-4 flex flex-col justify-between">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-theme-main mb-2">
+                        Justificación Técnica y Sustento *
+                      </label>
+                      <div className="flex-1 flex flex-col rounded-xl border border-theme-border bg-theme-surface p-3 space-y-2">
+                        <textarea
+                          required
+                          value={formMemoria.justificacion}
+                          onChange={(e) => setFormMemoria({ ...formMemoria, justificacion: e.target.value })}
+                          placeholder="Detalle los objetivos operativos, necesidad y justificación técnica del gasto..."
+                          className="w-full flex-1 min-h-[200px] bg-transparent resize-none focus:outline-none text-xs text-theme-main uppercase leading-relaxed placeholder:normal-case placeholder:text-theme-muted"
+                        />
+                        <div className="text-[10px] text-theme-muted border-t border-theme-border/60 pt-1 flex justify-between">
+                          <span>Sustento POA</span>
+                          <span>{formMemoria.justificacion.length} caracteres</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-8 rounded-xl border border-dashed border-theme-border text-center text-theme-muted space-y-1.5">
+                  <Layers className="mx-auto text-theme-muted opacity-50 mb-1" size={28} />
+                  <p className="text-xs font-semibold text-theme-main">Paso 2: Seleccione la Partida y la Operación POA para continuar</p>
+                  <p className="text-[11px]">Una vez asignados ambos parámetros, se desplegará el desglose de ítems y la justificación técnica de la memoria.</p>
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-4 border-t border-theme-border">
                 <button
@@ -1857,7 +1817,11 @@ export default function MemoriasPage() {
                 >
                   Cancelar
                 </button>
-                <button type="submit" disabled={actionLoading} className="btn-primary text-xs px-6 py-2">
+                <button
+                  type="submit"
+                  disabled={actionLoading || !formMemoria.partidaId || !formMemoria.operacionId}
+                  className="btn-primary text-xs px-6 py-2"
+                >
                   {editingMemoria ? 'Guardar Cambios' : 'Registrar Memoria'}
                 </button>
               </div>
@@ -1866,16 +1830,21 @@ export default function MemoriasPage() {
         </div>
       )}
 
-      {/* Ficha Oficial / Modal Detallado de Memoria */}
+      {/* Ficha Oficial / Modal Detallado de Memoria (Formato de Creación) */}
       {fichaMemoria && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="card w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl bg-theme-surface">
+          <div className="card w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl bg-theme-surface">
             <div className="p-5 border-b border-theme-border flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="text-theme-primary" size={20} />
-                <span className="text-sm font-bold text-theme-main font-mono">
-                  FICHA TÉCNICA POA • {fichaMemoria.codigo}
-                </span>
+              <div className="flex items-center gap-2.5">
+                <FileText className="text-theme-primary" size={22} />
+                <div>
+                  <h3 className="text-base font-bold text-theme-main font-mono">
+                    Revisión de Memoria • {fichaMemoria.codigo}
+                  </h3>
+                  <p className="text-xs text-theme-muted">
+                    Gestión {activeGestion?.anio || fichaMemoria.gestion_anio || '2027'} • Estado: {fichaMemoria.estado.replace(/_/g, ' ')}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -1884,8 +1853,6 @@ export default function MemoriasPage() {
                     if (!el) return;
                     const html = el.innerHTML;
 
-                    // Crear un iframe invisible, escribir solo el contenido del reporte
-                    // y lanzar el diálogo de impresión desde él — sin abrir ventana extra.
                     const iframe = document.createElement('iframe');
                     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
                     document.body.appendChild(iframe);
@@ -1927,9 +1894,9 @@ export default function MemoriasPage() {
                       setTimeout(() => document.body.removeChild(iframe), 500);
                     }, 400);
                   }}
-                  className="p-1.5 rounded-lg border border-theme-border text-theme-muted hover:text-theme-main text-xs flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-lg border border-theme-border text-theme-muted hover:text-theme-main text-xs flex items-center gap-1.5 transition-colors"
                 >
-                  <Printer size={14} /> Imprimir
+                  <Printer size={14} /> Imprimir Ficha
                 </button>
                 <button onClick={() => setFichaMemoria(null)} className="text-theme-muted hover:text-theme-main text-lg font-bold">
                   ✕
@@ -1938,85 +1905,151 @@ export default function MemoriasPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-theme-base border border-theme-border">
-                <div>
-                  <span className="text-theme-muted uppercase font-semibold">Área Solicitante:</span>
-                  <p className="font-bold text-theme-main mt-0.5">{fichaMemoria.area_nombre}</p>
-                  <p className="text-[11px] text-theme-muted">{fichaMemoria.seccion_nombre}</p>
+              {/* PASO 1: Parámetros Base de la Memoria */}
+              <div className="p-4 rounded-xl bg-theme-base/60 border border-theme-border space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-theme-main flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-theme-primary text-theme-primaryText flex items-center justify-center text-[10px] font-bold">1</span>
+                  Parámetros Base de la Memoria (Partida, Operación y Contratación)
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Partida Presupuestaria */}
+                  <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
+                    <span className="text-[10px] font-semibold uppercase text-theme-muted block mb-1">
+                      1. Partida Presupuestaria de Egreso
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-xs text-theme-primary bg-theme-base px-2 py-0.5 rounded border border-theme-border">
+                        {fichaMemoria.partida_codigo || 'N/A'}
+                      </span>
+                      <span className="text-xs font-semibold text-theme-main line-clamp-1">
+                        {fichaMemoria.partida_nombre || 'Sin partida asignada'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Operación POA */}
+                  <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
+                    <span className="text-[10px] font-semibold uppercase text-theme-muted block mb-1">
+                      2. Operación POA Institucional
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-xs text-theme-main bg-theme-base px-2 py-0.5 rounded border border-theme-border">
+                        {fichaMemoria.operacion_codigo ? `POA: ${fichaMemoria.operacion_codigo}` : 'Sin Operación'}
+                      </span>
+                      <span className="text-xs text-theme-main line-clamp-1">
+                        {fichaMemoria.operacion_descripcion || (fichaMemoria.es_contratacion ? 'Contratación Institucional' : 'Gasto Corriente')}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-theme-muted uppercase font-semibold">Partida Presupuestaria:</span>
-                  <p className="font-mono font-bold text-theme-main mt-0.5">{fichaMemoria.partida_codigo || 'N/A'}</p>
-                  <p className="text-[11px] text-theme-muted line-clamp-1">{fichaMemoria.partida_nombre || 'Sin partida'}</p>
-                </div>
-                <div>
-                  <span className="text-theme-muted uppercase font-semibold">Operación POA:</span>
-                  <p className="font-mono font-bold text-theme-main mt-0.5">
-                    {fichaMemoria.operacion_codigo ? fichaMemoria.operacion_codigo : 'Sin asignar'}
-                  </p>
-                  <p className="text-[11px] text-theme-muted line-clamp-1">
-                    {fichaMemoria.operacion_descripcion || (fichaMemoria.es_contratacion ? 'Contratación' : 'Gasto General')}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-theme-muted uppercase font-semibold">Monto Total:</span>
-                  <p className="font-bold text-theme-primary text-base mt-0.5">{formatMoney(fichaMemoria.total_presupuesto)}</p>
-                  <span className={`inline-block text-[10px] font-bold px-1.5 py-0.2 rounded mt-0.5 border ${fichaMemoria.es_contratacion
-                      ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-200'
-                      : 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-200'
-                    }`}>
-                    {fichaMemoria.es_contratacion ? 'PAC (Contrataciones)' : 'Gasto Corriente'}
+
+                {/* Modalidad Contrataciones PAC */}
+                <div className="flex items-center gap-2 pt-1 border-t border-theme-border/60">
+                  <span className="text-xs font-semibold text-theme-muted">Modalidad de Adquisición:</span>
+                  <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border border-theme-border bg-theme-border/30 text-theme-main">
+                    {fichaMemoria.es_contratacion ? '✓ Aplica a Contrataciones / Compras Públicas (PAC)' : 'Gasto Corriente Operativo (No PAC)'}
                   </span>
                 </div>
               </div>
 
-              <div>
-                <span className="text-theme-muted uppercase font-semibold">Justificación y Sustento:</span>
-                <p className="p-3 mt-1 rounded-xl bg-theme-base border border-theme-border text-theme-main text-xs leading-relaxed">
-                  {fichaMemoria.justificacion}
-                </p>
-                {fichaMemoria.motivo_rechazo && (
-                  <div className={`mt-2.5 p-3 rounded-xl border text-xs ${fichaMemoria.estado === 'RECHAZADO'
-                    ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-200'
-                    : 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-200'
-                    }`}>
-                    <strong>💬 {fichaMemoria.estado === 'RECHAZADO' ? 'Motivo del Rechazo:' : 'Nota de Revisión / Aprobación:'}</strong>
-                    <p className="mt-1 font-medium italic">"{fichaMemoria.motivo_rechazo}"</p>
+              {/* PASO 2: Despliegue de Datos y Formato Oficial */}
+              <div className="space-y-4">
+                {/* Cabecera Informativa Fija (Código y Área/Sección Solicitante) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-theme-base/50 border border-theme-border">
+                  <div>
+                    <span className="text-[10px] font-semibold uppercase text-theme-muted block">Código Asignado</span>
+                    <span className="text-xs font-mono font-bold text-theme-main">{fichaMemoria.codigo}</span>
                   </div>
-                )}
-              </div>
+                  <div>
+                    <span className="text-[10px] font-semibold uppercase text-theme-muted block">Área / Sección Solicitante</span>
+                    <span className="text-xs font-semibold text-theme-main">
+                      {fichaMemoria.seccion_nombre || 'Sección Solicitante'}
+                      {' — '}
+                      <span className="text-theme-muted text-[11px]">
+                        {fichaMemoria.area_nombre || 'Área'}
+                      </span>
+                    </span>
+                  </div>
+                </div>
 
-              <div>
-                <h4 className="font-bold text-theme-main mb-2 uppercase tracking-wider text-xs">Renglones Detallados de la Memoria</h4>
-                <div className="border border-theme-border rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-theme-base border-b border-theme-border font-semibold text-theme-muted">
-                        <th className="py-2.5 px-3">#</th>
-                        <th className="py-2.5 px-3">Descripción</th>
-                        <th className="py-2.5 px-3">U. Medida</th>
-                        <th className="py-2.5 px-3 text-right">Cantidad</th>
-                        <th className="py-2.5 px-3 text-right">P. Unitario</th>
-                        <th className="py-2.5 px-3 text-right">Total Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-theme-border">
-                      {(fichaMemoria.detalles || []).map((d, idx) => (
-                        <tr key={d.id || idx}>
-                          <td className="py-2.5 px-3 font-bold text-theme-muted">{idx + 1}</td>
-                          <td className="py-2.5 px-3 font-medium text-theme-main">{d.descripcion}</td>
-                          <td className="py-2.5 px-3 text-theme-muted">{d.unidad_medida}</td>
-                          <td className="py-2.5 px-3 text-right font-semibold">{d.cantidad}</td>
-                          <td className="py-2.5 px-3 text-right font-semibold">{formatMoney(d.precio_unitario)}</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-theme-main">{formatMoney(d.precio_total || 0)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Formato Oficial: Desglose de Ítems a la izquierda + Justificación a la derecha */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                  {/* Columna Izquierda: Tabla de Renglones / Ítems (8 cols) */}
+                  <div className="lg:col-span-8 flex flex-col justify-between space-y-2">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-theme-main">
+                          Desglose de Ítems / Renglones de la Memoria ({fichaMemoria.detalles?.length || 0} ítems)
+                        </span>
+                      </div>
+
+                      <div className="border border-theme-border rounded-xl overflow-hidden bg-theme-surface">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-theme-base border-b border-theme-border font-semibold text-theme-muted text-[11px]">
+                              <th className="py-2 px-2.5 w-7 text-center">#</th>
+                              <th className="py-2 px-2.5">Descripción del Bien / Servicio</th>
+                              <th className="py-2 px-2 w-24">U. Medida</th>
+                              <th className="py-2 px-2 w-16 text-right">Cant.</th>
+                              <th className="py-2 px-2 w-24 text-right">P. Unit. (Bs.)</th>
+                              <th className="py-2 px-2.5 w-24 text-right">Subtotal</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-theme-border">
+                            {(fichaMemoria.detalles || []).map((d, idx) => (
+                              <tr key={d.id || idx} className="hover:bg-theme-border/10 transition-colors">
+                                <td className="py-2 px-2.5 text-center font-bold text-theme-muted text-[11px]">{idx + 1}</td>
+                                <td className="py-2 px-2.5 font-medium text-theme-main">{d.descripcion}</td>
+                                <td className="py-2 px-2 text-theme-muted">{d.unidad_medida}</td>
+                                <td className="py-2 px-2 text-right font-semibold">{d.cantidad}</td>
+                                <td className="py-2 px-2 text-right font-semibold">{formatMoney(d.precio_unitario)}</td>
+                                <td className="py-2 px-2.5 text-right font-bold text-theme-main font-mono">{formatMoney(d.precio_total || (Number(d.cantidad) * Number(d.precio_unitario)))}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end items-center gap-3 pt-1">
+                      <span className="text-xs font-bold uppercase tracking-wider text-theme-muted">
+                        Total Presupuesto Proyectado:
+                      </span>
+                      <span className="text-base font-bold text-theme-primary font-mono">{formatMoney(fichaMemoria.total_presupuesto)}</span>
+                    </div>
+                  </div>
+
+                  {/* Columna Derecha: Justificación amplia a la misma altura (4 cols) */}
+                  <div className="lg:col-span-4 flex flex-col justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-theme-main mb-2">
+                      Justificación Técnica y Sustento
+                    </label>
+                    <div className="flex-1 flex flex-col justify-between rounded-xl border border-theme-border bg-theme-surface p-3.5 space-y-2">
+                      <p className="text-xs text-theme-main uppercase leading-relaxed whitespace-pre-wrap flex-1">
+                        {fichaMemoria.justificacion}
+                      </p>
+                      <div className="text-[10px] text-theme-muted border-t border-theme-border/60 pt-1.5 flex justify-between">
+                        <span>Sustento Auditoría POA</span>
+                        <span>{fichaMemoria.justificacion?.length || 0} caracteres</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Registro de Participantes / Firmas */}
+              {/* Nota de Rechazo / Observación si existe */}
+              {fichaMemoria.motivo_rechazo && (
+                <div className={`p-3 rounded-xl border text-xs ${fichaMemoria.estado === 'RECHAZADO'
+                  ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/60 dark:border-rose-800 dark:text-rose-200'
+                  : 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-200'
+                  }`}>
+                  <strong>💬 {fichaMemoria.estado === 'RECHAZADO' ? 'Motivo del Rechazo:' : 'Nota de Revisión / Aprobación:'}</strong>
+                  <p className="mt-1 font-medium italic">"{fichaMemoria.motivo_rechazo}"</p>
+                </div>
+              )}
+
+              {/* Registro de Control y Firmas Institucionales */}
               <div className="border-t border-theme-border pt-4">
                 <span className="text-theme-muted uppercase font-semibold text-xs">Registro de Control y Firmas Institucionales:</span>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 mt-2">
@@ -2063,22 +2096,102 @@ export default function MemoriasPage() {
               </div>
             </div>
 
+            {/* Footer con Acciones Directas de Revisión */}
             <div className="p-4 border-t border-theme-border flex items-center justify-between">
-              {!isGestionBloqueada && (isElaborador || isGerente || isPlanificador || isAprobador) && (
-                <button
-                  onClick={() => {
-                    const targetMem = fichaMemoria;
-                    setFichaMemoria(null);
-                    handleOpenEditar(targetMem);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                >
-                  <Edit3 size={14} /> Editar Memoria
-                </button>
-              )}
-              <div className="flex items-center gap-2 ml-auto">
+              <div>
+                {!isGestionBloqueada && (isElaborador || isGerente || isPlanificador || isAprobador) && (
+                  <button
+                    onClick={() => {
+                      const targetMem = fichaMemoria;
+                      setFichaMemoria(null);
+                      handleOpenEditar(targetMem);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                  >
+                    <Edit3 size={14} /> Editar Memoria
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Acciones de aprobación directa según la etapa en la que se encuentra la memoria */}
+                {(fichaMemoria.estado === 'PENDIENTE_GERENCIA' || fichaMemoria.estado === 'BORRADOR') && (isGerente || isAprobador) && (
+                  <>
+                    <button
+                      onClick={() => {
+                        const target = fichaMemoria;
+                        setFichaMemoria(null);
+                        handleRechazar(target);
+                      }}
+                      className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
+                    >
+                      <XCircle size={14} /> Rechazar
+                    </button>
+                    <button
+                      onClick={() => {
+                        const target = fichaMemoria;
+                        setFichaMemoria(null);
+                        handleAprobarGerente(target);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                    >
+                      <CheckCircle2 size={14} /> Aprobar Gerencia
+                    </button>
+                  </>
+                )}
+
+                {fichaMemoria.estado === 'PENDIENTE_PLANIFICACION' && (isPlanificador || isAprobador) && (
+                  <>
+                    <button
+                      onClick={() => {
+                        const target = fichaMemoria;
+                        setFichaMemoria(null);
+                        handleRechazar(target);
+                      }}
+                      className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
+                    >
+                      <XCircle size={14} /> Rechazar
+                    </button>
+                    <button
+                      onClick={() => {
+                        const target = fichaMemoria;
+                        setFichaMemoria(null);
+                        handleAprobarPlanificacion(target);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                    >
+                      <CheckCircle2 size={14} /> Aprobar Planificación
+                    </button>
+                  </>
+                )}
+
+                {(fichaMemoria.estado === 'APROBADO_GERENCIA' || fichaMemoria.estado === 'APROBADO_PLANIFICACION') && isAprobador && (
+                  <>
+                    <button
+                      onClick={() => {
+                        const target = fichaMemoria;
+                        setFichaMemoria(null);
+                        handleRechazar(target);
+                      }}
+                      className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
+                    >
+                      <XCircle size={14} /> Rechazar
+                    </button>
+                    <button
+                      onClick={() => {
+                        const target = fichaMemoria;
+                        setFichaMemoria(null);
+                        handleAprobarFinanciero(target);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                    >
+                      <CheckCircle2 size={14} /> Aprobar Presupuestos
+                    </button>
+                  </>
+                )}
+
                 <button onClick={() => setFichaMemoria(null)} className="btn-primary text-xs px-5 py-2">
-                  Cerrar Ficha
+                  Cerrar
                 </button>
               </div>
             </div>
