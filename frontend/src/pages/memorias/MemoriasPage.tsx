@@ -502,22 +502,24 @@ export default function MemoriasPage() {
         memoriaCompleta.partida_id ||
         (memoriaCompleta.detalles && (memoriaCompleta.detalles[0]?.partida || (memoriaCompleta.detalles[0] as any)?.partida_id)) ||
         (partidas.find((p) => p.codigo === memoriaCompleta.partida_codigo)?.id) ||
-        (partidas.find((p) => p.codigo === (memoriaCompleta.detalles && memoriaCompleta.detalles[0]?.partida_codigo))?.id);
+        (partidas.find((p) => p.codigo === (memoriaCompleta.detalles && memoriaCompleta.detalles[0]?.partida_codigo))?.id) ||
+        (partidas.find((p) => p.codigo === mem.partida_codigo)?.id) ||
+        '';
 
       const opId = typeof memoriaCompleta.operacion === 'object'
         ? (memoriaCompleta.operacion as any)?.id
-        : (memoriaCompleta.operacion || (operaciones.find((o) => o.codigo === memoriaCompleta.operacion_codigo)?.id || ''));
+        : (memoriaCompleta.operacion || (operaciones.find((o) => o.codigo === (memoriaCompleta.operacion_codigo || mem.operacion_codigo))?.id || ''));
 
       const secId = typeof memoriaCompleta.seccion === 'object'
         ? (memoriaCompleta.seccion as any)?.id
-        : (memoriaCompleta.seccion || (secciones.find((s) => s.nombre === memoriaCompleta.seccion_nombre)?.id || ''));
+        : (memoriaCompleta.seccion || (secciones.find((s) => s.nombre === (memoriaCompleta.seccion_nombre || mem.seccion_nombre))?.id || user?.seccion || ''));
 
       setFormMemoria({
-        codigo: memoriaCompleta.codigo,
-        seccionId: secId,
-        operacionId: opId,
-        es_contratacion: Boolean(memoriaCompleta.es_contratacion),
-        justificacion: memoriaCompleta.justificacion || '',
+        codigo: memoriaCompleta.codigo || mem.codigo,
+        seccionId: secId ? Number(secId) : '',
+        operacionId: opId ? Number(opId) : '',
+        es_contratacion: Boolean(memoriaCompleta.es_contratacion ?? mem.es_contratacion),
+        justificacion: memoriaCompleta.justificacion || mem.justificacion || '',
         partidaId: rawPartidaId ? Number(rawPartidaId) : '',
         renglones: (memoriaCompleta.detalles && memoriaCompleta.detalles.length > 0)
           ? memoriaCompleta.detalles.map((d: any) => ({
@@ -609,13 +611,18 @@ export default function MemoriasPage() {
 
   async function handleGuardarMemoria(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedGestionId || !formMemoria.seccionId || !formMemoria.partidaId) {
+
+    const finalSeccionId = Number(formMemoria.seccionId) || (editingMemoria ? (typeof editingMemoria.seccion === 'object' ? (editingMemoria.seccion as any)?.id : Number(editingMemoria.seccion)) : Number(user?.seccion || secciones[0]?.id));
+    const finalPartidaId = Number(formMemoria.partidaId) || (editingMemoria ? Number(editingMemoria.partida_id || (editingMemoria.detalles && (editingMemoria.detalles[0]?.partida || (editingMemoria.detalles[0] as any)?.partida_id))) : 0);
+    const finalOperacionId = Number(formMemoria.operacionId) || (editingMemoria ? (typeof editingMemoria.operacion === 'object' ? (editingMemoria.operacion as any)?.id : Number(editingMemoria.operacion)) : 0);
+
+    if (!selectedGestionId || !finalSeccionId || !finalPartidaId) {
       mostrarMensaje('error', 'Complete la sección y la partida presupuestaria obligatorias.');
       alertService.error('Campos Incompletos', 'Complete la sección y la partida presupuestaria obligatorias.');
       return;
     }
 
-    if (!formMemoria.operacionId) {
+    if (!finalOperacionId) {
       mostrarMensaje('error', 'Debe seleccionar o registrar una Operación POA obligatoria para alinear la Memoria de Cálculo.');
       alertService.error('Operación POA Obligatoria', 'Debe seleccionar o registrar una Operación POA obligatoria para vincular y formular la Memoria de Cálculo.');
       return;
@@ -632,14 +639,14 @@ export default function MemoriasPage() {
       const payload = {
         codigo: formMemoria.codigo.trim().toUpperCase(),
         gestion: selectedGestionId,
-        seccion: Number(formMemoria.seccionId),
-        operacion: Number(formMemoria.operacionId),
+        seccion: finalSeccionId,
+        operacion: finalOperacionId,
         es_contratacion: formMemoria.es_contratacion,
         justificacion: formMemoria.justificacion.trim().toUpperCase(),
-        partida_id: Number(formMemoria.partidaId),
+        partida_id: finalPartidaId,
         detalles: formMemoria.renglones.map((r) => ({
-          partida: Number(formMemoria.partidaId),
-          partida_id: Number(formMemoria.partidaId),
+          partida: finalPartidaId,
+          partida_id: finalPartidaId,
           descripcion: r.descripcion.trim().toUpperCase(),
           unidad_medida: r.unidad_medida.trim().toUpperCase(),
           cantidad: Number(r.cantidad),
@@ -836,7 +843,11 @@ export default function MemoriasPage() {
       case 'APROBADO_PLANIFICACION':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700 shadow-sm"><CheckCircle2 size={12} /> Pendiente Presupuestos</span>;
       case 'APROBADO_FINANZAS':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700 shadow-sm"><CheckCircle2 size={12} /> Aprobado Presupuestos (POA)</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/90 dark:text-emerald-200 dark:border-emerald-700 shadow-sm">
+            <CheckCircle2 size={12} /> Aprobado POA {activeGestion?.anio || ''}
+          </span>
+        );
       case 'RECHAZADO':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-900 border border-rose-300 dark:bg-rose-950/90 dark:text-rose-200 dark:border-rose-700 shadow-sm"><XCircle size={12} /> Rechazado</span>;
       default:
@@ -1113,14 +1124,6 @@ export default function MemoriasPage() {
                         )}
                       </div>
                       <p className="text-xs text-theme-main line-clamp-2">{mem.justificacion}</p>
-                      {mem.motivo_rechazo && (
-                        <p className={`text-[11px] font-medium mt-1 p-1.5 rounded-lg border ${mem.estado === 'RECHAZADO'
-                          ? 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300'
-                          : 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300'
-                          }`}>
-                          💬 <strong>{mem.estado === 'RECHAZADO' ? 'Motivo Rechazo:' : 'Nota / Obs:'}</strong> "{mem.motivo_rechazo}"
-                        </p>
-                      )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-theme-primary/10 text-theme-primary">
@@ -1150,8 +1153,8 @@ export default function MemoriasPage() {
                           <Eye size={15} />
                         </button>
 
-                        {/* Botón Editar para cualquier estado si el usuario tiene permisos */}
-                        {!isGestionBloqueada && (isElaborador || isGerente || isPlanificador || isAprobador) && (
+                        {/* Botón Editar para memorias no aprobadas definitivamente */}
+                        {!isGestionBloqueada && mem.estado !== 'APROBADO_FINANZAS' && (isElaborador || isGerente || isPlanificador || isAprobador) && (
                           <button
                             onClick={() => handleOpenEditar(mem)}
                             className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
@@ -1379,7 +1382,9 @@ export default function MemoriasPage() {
                     {/* Combobox selector de partida */}
                     <div className="relative" ref={partidaSelectorRef}>
                       {(() => {
-                        const selected = egresoLeafs.find((p) => p.id === Number(formMemoria.partidaId));
+                        const selected =
+                          egresoLeafs.find((p) => p.id === Number(formMemoria.partidaId)) ||
+                          partidas.find((p) => p.id === Number(formMemoria.partidaId));
                         return (
                           <button
                             type="button"
@@ -1552,17 +1557,20 @@ export default function MemoriasPage() {
                       <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione Operación POA institucional *...</option>
                       {(() => {
                         const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
-                        const areaId = sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null);
-                        const opsFiltradas = areaId
+                        const areaId = (editingMemoria as any)?.area_id || (sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null));
+                        let opsFiltradas = areaId
                           ? operaciones.filter((o) => Number(o.area || (o as any).area_id) === Number(areaId))
                           : operaciones;
 
-                        if (opsFiltradas.length === 0 && operaciones.length > 0) {
-                          return operaciones.map((op) => (
-                            <option key={op.id} value={op.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
-                              [{op.codigo}] {op.descripcion.slice(0, 60)} {op.es_contratacion ? '(Contratación)' : ''}
-                            </option>
-                          ));
+                        if (opsFiltradas.length === 0) {
+                          opsFiltradas = operaciones;
+                        }
+
+                        if (formMemoria.operacionId && !opsFiltradas.some((o) => o.id === Number(formMemoria.operacionId))) {
+                          const opActual = operaciones.find((o) => o.id === Number(formMemoria.operacionId));
+                          if (opActual) {
+                            opsFiltradas = [opActual, ...opsFiltradas];
+                          }
                         }
 
                         return opsFiltradas.map((op) => (
@@ -1677,7 +1685,7 @@ export default function MemoriasPage() {
               </div>
 
               {/* PASO 2: Despliegue de Datos y Formulación Oficial (50% Tabla / 50% Justificación) */}
-              {formMemoria.partidaId && formMemoria.operacionId ? (
+              {(editingMemoria || (formMemoria.partidaId && formMemoria.operacionId)) ? (
                 <div className="space-y-4 animate-in fade-in duration-200">
                   {/* Formato Oficial: Desglose de Ítems a la izquierda (50%) + Justificación Amplia a la derecha (50%) */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
@@ -1826,7 +1834,7 @@ export default function MemoriasPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={actionLoading || !formMemoria.partidaId || !formMemoria.operacionId}
+                  disabled={actionLoading || (!editingMemoria && (!formMemoria.partidaId || !formMemoria.operacionId))}
                   className="btn-primary text-xs px-6 py-2"
                 >
                   {editingMemoria ? 'Guardar Cambios' : 'Registrar Memoria'}
@@ -2098,7 +2106,7 @@ export default function MemoriasPage() {
             {/* Footer con Acciones Directas de Revisión */}
             <div className="p-4 border-t border-theme-border flex items-center justify-between">
               <div>
-                {!isGestionBloqueada && (isElaborador || isGerente || isPlanificador || isAprobador) && (
+                {!isGestionBloqueada && fichaMemoria.estado !== 'APROBADO_FINANZAS' && (isElaborador || isGerente || isPlanificador || isAprobador) && (
                   <button
                     onClick={() => {
                       const targetMem = fichaMemoria;

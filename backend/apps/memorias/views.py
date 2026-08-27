@@ -131,6 +131,10 @@ class MemoriaCalculoViewSet(viewsets.ModelViewSet):
         if not self.check_area_permission(instance):
              raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para editar memorias de esta área.']})
 
+        # No permitir editar memorias que ya están aprobadas definitivamente en presupuestos (salvo cambio de estado)
+        if instance.estado == MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS and 'estado' not in serializer.validated_data:
+            raise serializers.ValidationError({'non_field_errors': ['No se puede modificar una memoria que ya cuenta con aprobación final POA.']})
+
         if instance.gestion.estado not in [Gestion.EstadoGestion.FORMULACION, Gestion.EstadoGestion.EN_EJECUCION] and 'estado' not in serializer.validated_data:
             raise serializers.ValidationError({
                 'non_field_errors': [f'No se puede editar la memoria de la Gestión {instance.gestion.anio} porque la gestión está {instance.gestion.get_estado_display().lower()}.']
