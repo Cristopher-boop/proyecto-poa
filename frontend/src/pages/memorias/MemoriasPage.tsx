@@ -260,18 +260,24 @@ export default function MemoriasPage() {
   const [partidaSelectorOpen, setPartidaSelectorOpen] = useState(false);
   const partidaSelectorRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  const [operacionSelectorOpen, setOperacionSelectorOpen] = useState(false);
+  const operacionSelectorRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (partidaSelectorRef.current && !partidaSelectorRef.current.contains(e.target as Node)) {
         setPartidaSelectorOpen(false);
       }
+      if (operacionSelectorRef.current && !operacionSelectorRef.current.contains(e.target as Node)) {
+        setOperacionSelectorOpen(false);
+      }
     }
-    if (partidaSelectorOpen) {
+    if (partidaSelectorOpen || operacionSelectorOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [partidaSelectorOpen]);
+  }, [partidaSelectorOpen, operacionSelectorOpen]);
 
   // Helper para verificar si una partida está activa (estado !== 0 / false)
   const isPartidaActiva = (p: Partida | null | undefined): boolean => {
@@ -1154,11 +1160,6 @@ export default function MemoriasPage() {
                             POA: {mem.operacion_codigo}
                           </span>
                         )}
-                        {mem.es_contratacion && (
-                          <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-theme-border/40 text-theme-muted border border-theme-border">
-                            PAC
-                          </span>
-                        )}
                       </div>
                       <p className="text-xs text-theme-main line-clamp-2">{mem.justificacion}</p>
                     </td>
@@ -1366,10 +1367,10 @@ export default function MemoriasPage() {
                               </div>
                             ) : (
                               groupedPartidas.map((group, gIdx) => (
-                                <div key={gIdx}>
+                                <div key={gIdx} className="border-b border-theme-border/40 last:border-0">
                                   {group.parent && (
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-theme-base/80 border-b border-theme-border/60 sticky top-0 z-[5]">
-                                      <span className="font-mono text-[10px] font-bold text-theme-muted/70 bg-theme-border/60 px-1 rounded">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-theme-base border-b border-theme-border/60">
+                                      <span className="font-mono text-[10px] font-bold text-theme-muted/80 bg-theme-border/60 px-1 rounded">
                                         {group.parent.codigo}
                                       </span>
                                       <span className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide line-clamp-1">
@@ -1456,25 +1457,12 @@ export default function MemoriasPage() {
                         onClick={() => setShowQuickOperacion(!showQuickOperacion)}
                         className="text-[11px] font-semibold text-theme-primary hover:underline flex items-center gap-1"
                       >
-                        <Plus size={12} /> {showQuickOperacion ? 'Ocultar' : '+ Nueva Operación'}
+                        <Plus size={12} /> {showQuickOperacion ? 'Ocultar' : 'Nueva Operación'}
                       </button>
                     </div>
 
-                    <select
-                      required
-                      value={formMemoria.operacionId}
-                      onChange={(e) => {
-                        const opId = Number(e.target.value) || '';
-                        const opObj = operaciones.find((o) => o.id === opId);
-                        setFormMemoria({
-                          ...formMemoria,
-                          operacionId: opId,
-                          es_contratacion: opObj ? (opObj.es_contratacion ?? formMemoria.es_contratacion) : formMemoria.es_contratacion,
-                        });
-                      }}
-                      className={`input-theme text-xs bg-theme-surface text-theme-main ${!formMemoria.operacionId ? 'border-amber-500/80 bg-amber-500/5' : ''}`}
-                    >
-                      <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione Operación POA institucional *...</option>
+                    {/* Combobox selector de operación (sin buscador, solo selección de lista) */}
+                    <div className="relative" ref={operacionSelectorRef}>
                       {(() => {
                         const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
                         const areaId = (editingMemoria as any)?.area_id || (sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null));
@@ -1493,13 +1481,108 @@ export default function MemoriasPage() {
                           }
                         }
 
-                        return opsFiltradas.map((op) => (
-                          <option key={op.id} value={op.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
-                            [{op.codigo}] {op.descripcion.slice(0, 60)} {op.es_contratacion ? '(Contratación)' : ''}
-                          </option>
-                        ));
+                        const selectedOp = operaciones.find((o) => o.id === Number(formMemoria.operacionId));
+
+                        return (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setOperacionSelectorOpen(!operacionSelectorOpen)}
+                              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left ${selectedOp
+                                ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
+                                : 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
+                                }`}
+                            >
+                              {selectedOp ? (
+                                <span className="flex-1 min-w-0">
+                                  <span className="font-mono font-bold text-xs text-theme-primary mr-2">
+                                    {selectedOp.codigo}
+                                  </span>
+                                  <span className="text-xs text-theme-main line-clamp-1">{selectedOp.descripcion}</span>
+                                </span>
+                              ) : (
+                                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                                  <AlertCircle size={14} className="shrink-0" />
+                                  Seleccione Operación POA institucional...
+                                </span>
+                              )}
+                              <svg
+                                className={`w-4 h-4 shrink-0 text-theme-muted transition-transform ${operacionSelectorOpen ? 'rotate-180' : ''}`}
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+
+                            {/* Dropdown lista de operaciones sin buscador */}
+                            {operacionSelectorOpen && (
+                              <div
+                                className="absolute z-50 mt-1 w-full bg-theme-surface border border-theme-border rounded-xl shadow-xl overflow-hidden flex flex-col"
+                                style={{ maxHeight: '240px' }}
+                              >
+                                <div className="overflow-y-auto" style={{ maxHeight: '240px' }}>
+                                  {opsFiltradas.length === 0 ? (
+                                    <div className="py-6 text-center text-theme-muted text-xs">
+                                      No existen operaciones disponibles para su área.
+                                    </div>
+                                  ) : (
+                                    opsFiltradas.map((op) => {
+                                      const isActive = op.id === Number(formMemoria.operacionId);
+                                      return (
+                                        <button
+                                          key={op.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setFormMemoria({
+                                              ...formMemoria,
+                                              operacionId: op.id,
+                                              es_contratacion: op.es_contratacion ?? formMemoria.es_contratacion,
+                                            });
+                                            setOperacionSelectorOpen(false);
+                                          }}
+                                          className={`w-full flex items-start gap-3 px-3 py-2 text-left transition-colors border-b border-theme-border/30 last:border-0 ${isActive
+                                            ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
+                                            : 'hover:bg-theme-border/30'
+                                            }`}
+                                        >
+                                          <span
+                                            className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${isActive
+                                              ? 'bg-theme-primary text-theme-primaryText'
+                                              : 'bg-theme-base text-theme-primary border border-theme-border'
+                                              }`}
+                                          >
+                                            {op.codigo}
+                                          </span>
+
+                                          <div className="flex-1 min-w-0">
+                                            <p className={`text-xs leading-tight ${isActive ? 'font-semibold text-theme-main' : 'text-theme-main'}`}>
+                                              {op.descripcion}
+                                            </p>
+                                          </div>
+
+                                          {isActive && (
+                                            <Check size={14} className="shrink-0 text-theme-primary mt-0.5" />
+                                          )}
+                                        </button>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            <input
+                              type="text"
+                              required
+                              readOnly
+                              tabIndex={-1}
+                              value={formMemoria.operacionId}
+                              className="absolute opacity-0 h-0 w-0 pointer-events-none"
+                            />
+                          </>
+                        );
                       })()}
-                    </select>
+                    </div>
                   </div>
                 </div>
 
@@ -1557,39 +1640,27 @@ export default function MemoriasPage() {
                         />
                       </div>
 
-                      <div className="sm:col-span-2 flex items-center justify-between pt-1">
-                        <label className="flex items-center gap-2 text-xs font-medium text-theme-main cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={quickOpForm.es_contratacion}
-                            onChange={(e) => setQuickOpForm({ ...quickOpForm, es_contratacion: e.target.checked })}
-                            className="rounded text-theme-primary focus:ring-theme-primary"
-                          />
-                          Aplica para Contrataciones / Compras
-                        </label>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setShowQuickOperacion(false)}
-                            className="px-2.5 py-1 text-xs text-theme-muted hover:text-theme-main"
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSaveQuickOperacion}
-                            className="btn-primary text-xs px-3 py-1"
-                          >
-                            Guardar y Vincular
-                          </button>
-                        </div>
+                      <div className="sm:col-span-2 flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowQuickOperacion(false)}
+                          className="px-2.5 py-1 text-xs text-theme-muted hover:text-theme-main"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveQuickOperacion}
+                          className="btn-primary text-xs px-3.5 py-1"
+                        >
+                          Guardar y Vincular
+                        </button>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* 3. Checkbox Contratación PAC */}
+                {/* 3. Checkbox Contratación */}
                 <div className="flex items-center gap-2 pt-1 border-t border-theme-border/60">
                   <input
                     type="checkbox"
@@ -1599,7 +1670,7 @@ export default function MemoriasPage() {
                     className="w-4 h-4 rounded text-theme-primary focus:ring-theme-primary cursor-pointer"
                   />
                   <label htmlFor="chk-es-contratacion" className="text-xs font-semibold text-theme-main cursor-pointer select-none">
-                    ¿Corresponde a Contrataciones / Compras Públicas (PAC)?
+                    Aplica a Contrataciones
                   </label>
                 </div>
               </div>
@@ -1716,17 +1787,17 @@ export default function MemoriasPage() {
                     </div>
 
                     {/* Columna Derecha: Justificación amplia a la misma altura (6 cols - 50%) */}
-                    <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
+                    <div className="lg:col-span-6 flex flex-col space-y-2 h-full">
                       <label className="block text-xs font-bold uppercase tracking-wider text-theme-main">
                         Justificación Técnica y Sustento *
                       </label>
-                      <div className="flex-1 flex flex-col rounded-xl border border-theme-border bg-theme-surface p-3.5 space-y-2">
+                      <div className="flex-1 flex flex-col justify-between rounded-xl border border-theme-border bg-theme-surface p-3.5 space-y-2 min-h-[260px]">
                         <textarea
                           required
                           value={formMemoria.justificacion}
                           onChange={(e) => setFormMemoria({ ...formMemoria, justificacion: e.target.value })}
                           placeholder="Detalle los objetivos operativos, necesidad institucional y justificación técnica del gasto..."
-                          className="w-full flex-1 min-h-[260px] max-h-[360px] overflow-y-auto bg-transparent resize-none focus:outline-none text-xs text-theme-main uppercase leading-relaxed placeholder:normal-case placeholder:text-theme-muted"
+                          className="w-full flex-1 min-h-[200px] h-full bg-transparent resize-none focus:outline-none text-xs text-theme-main uppercase leading-relaxed placeholder:normal-case placeholder:text-theme-muted overflow-y-auto"
                         />
                         <div className="text-[10px] text-theme-muted border-t border-theme-border/60 pt-1.5 flex justify-between">
                           <span>Sustento Auditoría POA</span>
@@ -1891,18 +1962,18 @@ export default function MemoriasPage() {
                   </div>
                 </div>
 
-                {/* Modalidad Contrataciones PAC */}
+                {/* Modalidad Contrataciones */}
                 <div className="flex items-center gap-2 pt-1 border-t border-theme-border/60">
                   <span className="text-xs font-semibold text-theme-muted">Modalidad de Adquisición:</span>
                   <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border border-theme-border bg-theme-border/30 text-theme-main">
-                    {fichaMemoria.es_contratacion ? '✓ Aplica a Contrataciones / Compras Públicas (PAC)' : 'Gasto Corriente Operativo (No PAC)'}
+                    {fichaMemoria.es_contratacion ? '✓ Aplica a Contrataciones' : 'Gasto Corriente Operativo'}
                   </span>
                 </div>
               </div>
 
-              {/* PASO 2: Despliegue de Datos y Formato Oficial (50% Tabla / 50% Justificación) */}
+              {/* PASO 2: Despliegue de Datos Oficiales */}
               <div className="space-y-4">
-                {/* Formato Oficial: Desglose de Ítems a la izquierda (50%) + Justificación a la derecha (50%) */}
+                {/* Formato Oficial: Desglose de Ítems a la izquierda (50%) + Justificación Amplia a la derecha (50%) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
                   {/* Columna Izquierda: Tabla de Renglones / Ítems (6 cols - 50%) */}
                   <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
@@ -1950,12 +2021,12 @@ export default function MemoriasPage() {
                   </div>
 
                   {/* Columna Derecha: Justificación amplia a la misma altura (6 cols - 50%) */}
-                  <div className="lg:col-span-6 flex flex-col justify-between space-y-2">
+                  <div className="lg:col-span-6 flex flex-col space-y-2 h-full">
                     <label className="block text-xs font-bold uppercase tracking-wider text-theme-main">
                       Justificación Técnica y Sustento
                     </label>
-                    <div className="flex-1 flex flex-col justify-between rounded-xl border border-theme-border bg-theme-surface p-3.5 space-y-2">
-                      <div className="max-h-[350px] min-h-[250px] overflow-y-auto pr-1">
+                    <div className="flex-1 flex flex-col justify-between rounded-xl border border-theme-border bg-theme-surface p-3.5 space-y-2 min-h-[260px]">
+                      <div className="flex-1 min-h-[200px] overflow-y-auto pr-1">
                         <p className="text-xs text-theme-main uppercase leading-relaxed whitespace-pre-wrap">
                           {fichaMemoria.justificacion}
                         </p>
@@ -2021,7 +2092,7 @@ export default function MemoriasPage() {
                   {/* 3. Planificación */}
                   <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
                     <span className="text-[10px] uppercase font-bold text-theme-muted block">3. Planificación (SPO)</span>
-                    <p className="font-semibold text-xs text-theme-main mt-0.5">Alineación PAC</p>
+                    <p className="font-semibold text-xs text-theme-main mt-0.5">Alineación Contratación</p>
                     {fichaMemoria.es_contratacion && parseFloat(fichaMemoria.total_presupuesto || '0') >= 2000 ? (
                       fichaMemoria.estado === 'RECHAZADO' && fichaMemoria.motivo_rechazo?.includes('[PLANIFICACI') ? (
                         <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold">✕ Rechazado Planificación</span>
