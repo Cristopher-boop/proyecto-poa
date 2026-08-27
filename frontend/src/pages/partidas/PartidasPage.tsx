@@ -8,6 +8,8 @@ import {
   XCircle,
   SlidersHorizontal,
   Layers,
+  Power,
+  X,
 } from 'lucide-react';
 import { Partida, PartidaFormData, ClasePartida } from '../../types/partida';
 import { partidaService } from '../../services/partidaService';
@@ -122,9 +124,9 @@ export default function PartidasPage() {
               setEditingPartida(null);
               setShowModal(true);
             }}
-            className="btn-primary shrink-0 self-start sm:self-auto cursor-pointer"
+            className="btn-primary text-xs flex items-center gap-1.5 cursor-pointer shrink-0 self-start sm:self-auto"
           >
-            <Plus size={18} />
+            <Plus size={16} />
             <span>Nueva Partida</span>
           </button>
         </div>
@@ -145,10 +147,10 @@ export default function PartidasPage() {
 
         <div className="card p-5">
           <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-xl bg-triad-green-50 text-triad-green-600 dark:bg-triad-green-500/15 dark:text-triad-green-500">
+            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
               <CheckCircle2 size={20} />
             </div>
-            <span className="text-xs font-semibold text-triad-green-600 dark:text-triad-green-500 uppercase tracking-wider">Activas</span>
+            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Activas</span>
           </div>
           <p className="text-3xl font-bold text-theme-main mt-3">{partidasActivas}</p>
           <p className="text-xs text-theme-muted mt-1">Disponibles para formulación y gastos</p>
@@ -156,10 +158,10 @@ export default function PartidasPage() {
 
         <div className="card p-5">
           <div className="flex items-center justify-between">
-            <div className="p-2.5 rounded-xl bg-triad-rose-50 text-triad-rose-600 dark:bg-triad-rose-500/15 dark:text-triad-rose-500">
+            <div className="p-2.5 rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
               <XCircle size={20} />
             </div>
-            <span className="text-xs font-semibold text-triad-rose-600 dark:text-triad-rose-500 uppercase tracking-wider">Inactivas</span>
+            <span className="text-xs font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider">Inactivas</span>
           </div>
           <p className="text-3xl font-bold text-theme-main mt-3">{partidasInactivas}</p>
           <p className="text-xs text-theme-muted mt-1">Dadas de baja lógica en el sistema</p>
@@ -210,7 +212,7 @@ export default function PartidasPage() {
                 setSearch('');
                 setSelectedEstado('TODOS');
               }}
-              className="text-theme-primary hover:underline font-medium"
+              className="text-theme-primary hover:underline font-medium cursor-pointer"
             >
               Limpiar filtros
             </button>
@@ -220,8 +222,6 @@ export default function PartidasPage() {
 
       {/* Tabla de Partidas */}
       <div className="rounded-2xl border border-theme-border bg-theme-surface shadow-panel overflow-hidden">
-        <div className="h-1.5 bg-theme-primary" />
-
         {loading ? (
           <div className="p-12 text-center text-theme-muted">
             <div className="animate-spin inline-block w-6 h-6 border-2 border-theme-primary border-t-transparent rounded-full mb-2" />
@@ -292,21 +292,21 @@ export default function PartidasPage() {
 
                       {/* Descripción */}
                       <td className="px-6 py-4 text-xs text-theme-muted max-w-xs truncate" title={partida.descripcion || ''}>
-                        {partida.descripcion || <span className="italic">Sin descripción</span>}
+                        {partida.descripcion || <span className="italic opacity-60">Sin descripción</span>}
                       </td>
 
                       {/* Estado */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
                             partida.estado
-                              ? 'bg-triad-green-50 text-triad-green-600 dark:bg-triad-green-500/15 dark:text-triad-green-500'
-                              : 'bg-triad-rose-50 text-triad-rose-600 dark:bg-triad-rose-500/15 dark:text-triad-rose-500'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 border-rose-200 dark:border-rose-800/50'
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              partida.estado ? 'bg-triad-green-600 dark:bg-triad-green-500' : 'bg-triad-rose-600 dark:bg-triad-rose-500'
+                              partida.estado ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-rose-600 dark:bg-rose-400'
                             }`}
                           />
                           {partida.estado ? 'Activa' : 'Inactiva'}
@@ -314,30 +314,35 @@ export default function PartidasPage() {
                       </td>
 
                       {/* Acciones */}
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-semibold space-x-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingPartida(partida);
-                            setShowModal(true);
-                          }}
-                          className="text-theme-primary hover:text-theme-primaryHover hover:underline inline-flex items-center gap-1"
-                        >
-                          <Edit2 size={13} />
-                          <span>Editar</span>
-                        </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-semibold">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPartida(partida);
+                              setShowModal(true);
+                            }}
+                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            title="Editar Partida"
+                          >
+                            <Edit2 size={14} />
+                            <span>Editar</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleToggleEstado(partida)}
-                          className={
-                            partida.estado
-                              ? 'text-triad-rose-600 dark:text-triad-rose-500 hover:underline'
-                              : 'text-triad-green-600 dark:text-triad-green-500 hover:underline'
-                          }
-                        >
-                          {partida.estado ? 'Desactivar' : 'Activar'}
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleEstado(partida)}
+                            className={`p-1.5 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer ${
+                              partida.estado
+                                ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30'
+                                : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+                            }`}
+                            title={partida.estado ? 'Desactivar (Baja Lógica)' : 'Reactivar Partida'}
+                          >
+                            <Power size={14} />
+                            <span>{partida.estado ? 'Desactivar' : 'Activar'}</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -413,16 +418,16 @@ const PartidaModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-theme-surface rounded-2xl shadow-xl w-full max-w-lg border border-theme-border overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+      <div className="card w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
         {/* Cabecera del modal */}
-        <div className="p-6 border-b border-theme-border flex justify-between items-center bg-theme-base/50">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-theme-primary/10 text-theme-primary">
+        <div className="flex items-center justify-between pb-3 border-b border-theme-border">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-theme-primary/10 text-theme-primary">
               <FileSpreadsheet size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-theme-main">
+              <h3 className="text-base font-bold text-theme-main">
                 {partida ? 'Editar Partida Presupuestaria' : 'Nueva Partida Presupuestaria'}
               </h3>
               <p className="text-xs text-theme-muted">
@@ -434,19 +439,19 @@ const PartidaModal: React.FC<{
           <button
             type="button"
             onClick={onClose}
-            className="text-theme-muted hover:text-theme-main text-2xl leading-none px-2 py-1 rounded-lg hover:bg-theme-base"
+            className="p-1 rounded-lg text-theme-muted hover:text-theme-main hover:bg-theme-base cursor-pointer"
           >
-            ×
+            <X size={18} />
           </button>
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Código */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-theme-main mb-1.5">
-                Código <span className="text-triad-rose-600">*</span>
+              <label className="block text-xs font-semibold text-theme-main mb-1.5">
+                Código <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -460,14 +465,14 @@ const PartidaModal: React.FC<{
 
             {/* Clase */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-theme-main mb-1.5">
-                Clase de Gasto <span className="text-triad-rose-600">*</span>
+              <label className="block text-xs font-semibold text-theme-main mb-1.5">
+                Clase de Gasto <span className="text-rose-500">*</span>
               </label>
               <select
                 value={formData.clase}
                 onChange={(e) => setFormData({ ...formData, clase: e.target.value as ClasePartida })}
                 required
-                className="input-theme text-xs"
+                className="w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 text-xs text-theme-main focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none"
               >
                 <option value="EGRESO">Egreso</option>
                 <option value="INGRESO">Ingreso</option>
@@ -477,8 +482,8 @@ const PartidaModal: React.FC<{
 
           {/* Nombre */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-theme-main mb-1.5">
-              Nombre / Denominación <span className="text-triad-rose-600">*</span>
+            <label className="block text-xs font-semibold text-theme-main mb-1.5">
+              Nombre / Denominación <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -492,7 +497,7 @@ const PartidaModal: React.FC<{
 
           {/* Descripción */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-theme-main mb-1.5">
+            <label className="block text-xs font-semibold text-theme-main mb-1.5">
               Descripción / Alcance
             </label>
             <textarea
@@ -505,8 +510,8 @@ const PartidaModal: React.FC<{
           </div>
 
           {/* Estado activo */}
-          <div className="pt-2">
-            <label className="flex items-center gap-2.5 text-xs font-medium text-theme-main cursor-pointer p-2.5 rounded-xl border border-theme-border bg-theme-base/30 hover:bg-theme-base transition-colors">
+          <div className="pt-1">
+            <label className="flex items-center gap-2.5 text-xs font-medium text-theme-main cursor-pointer p-3 rounded-xl border border-theme-border bg-theme-base/30 hover:bg-theme-base transition-colors">
               <input
                 type="checkbox"
                 checked={formData.estado}
@@ -523,11 +528,11 @@ const PartidaModal: React.FC<{
           </div>
 
           {/* Botones de acción */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-theme-border">
+          <div className="flex justify-end gap-3 pt-3 border-t border-theme-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-theme-border text-xs font-semibold text-theme-main hover:bg-theme-base transition-colors"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-theme-muted hover:bg-theme-base transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -535,7 +540,7 @@ const PartidaModal: React.FC<{
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary text-xs font-semibold px-5 py-2.5 disabled:opacity-50"
+              className="btn-primary text-xs font-semibold px-5 py-2.5 disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Guardando...' : partida ? 'Guardar Cambios' : 'Registrar Partida'}
             </button>
