@@ -320,13 +320,14 @@ export default function OrganizacionalPage() {
                       </div>
                     </div>
 
-                    <div className="pt-1 flex justify-end">
+                    <div className="pt-2 flex justify-end">
                       <button
                         type="button"
                         onClick={() => setActiveTab('areas')}
-                        className="text-xs font-semibold text-theme-primary hover:underline cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl bg-theme-primary/10 hover:bg-theme-primary/20 text-theme-primary text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                       >
-                        Administrar área →
+                        <span>Administrar área</span>
+                        <span>→</span>
                       </button>
                     </div>
                   </div>

@@ -315,32 +315,30 @@ export const SeccionesList: React.FC<{
 
                       {/* Acciones */}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-semibold">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
                             onClick={() => {
                               setEditingSeccion(seccion);
                               setShowModal(true);
                             }}
-                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer flex items-center justify-center"
                             title="Editar Sección"
                           >
-                            <Edit2 size={14} />
-                            <span>Editar</span>
+                            <Edit2 size={16} />
                           </button>
 
                           <button
                             type="button"
                             onClick={() => handleToggleEstado(seccion)}
-                            className={`p-1.5 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer ${
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center ${
                               seccion.estado
                                 ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30'
                                 : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
                             }`}
                             title={seccion.estado ? 'Desactivar (Baja Lógica)' : 'Reactivar Sección'}
                           >
-                            <Power size={14} />
-                            <span>{seccion.estado ? 'Desactivar' : 'Activar'}</span>
+                            <Power size={16} />
                           </button>
                         </div>
                       </td>
