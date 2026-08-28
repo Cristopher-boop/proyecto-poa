@@ -21,17 +21,28 @@ class AreaSerializer(serializers.ModelSerializer):
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     secciones_count = serializers.SerializerMethodField()
     secciones = SeccionSerializer(many=True, read_only=True)
+    gestion_id = serializers.SerializerMethodField()
+    gestion_anio = serializers.SerializerMethodField()
 
     class Meta:
         model = Area
         fields = [
             'id', 'programa', 'programa_nombre', 'programa_codigo',
+            'gestion_id', 'gestion_anio',
             'codigo', 'nombre', 'tipo', 'tipo_display', 'descripcion',
             'estado', 'secciones_count', 'secciones', 'created_at', 'updated_at'
         ]
 
     def get_secciones_count(self, obj):
         return obj.secciones.filter(estado=True).count()
+
+    def get_gestion_id(self, obj):
+        presupuesto = obj.presupuestos.select_related('gestion').order_by('created_at').last()
+        return presupuesto.gestion.id if presupuesto and presupuesto.gestion else None
+
+    def get_gestion_anio(self, obj):
+        presupuesto = obj.presupuestos.select_related('gestion').order_by('created_at').last()
+        return presupuesto.gestion.anio if presupuesto and presupuesto.gestion else None
 
 
 class ProgramaSerializer(serializers.ModelSerializer):

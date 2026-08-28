@@ -1,4 +1,4 @@
-﻿from django.db import models
+from django.db import models
 from apps.core.models import TimeStampedModel
 
 class Programa(TimeStampedModel):

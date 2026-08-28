@@ -7,9 +7,11 @@ import {
   Power,
   X,
   SlidersHorizontal,
+  Calendar,
 } from 'lucide-react';
 import { Area, AreaFormData, Programa } from '../../types/organizacional';
 import { organizacionalService } from '../../services/organizacionalService';
+import { getGestiones, Gestion } from '../../services/presupuestoService';
 import alertService from '../../utils/alerts';
 
 export const AreasList: React.FC<{
@@ -19,6 +21,7 @@ export const AreasList: React.FC<{
 }> = ({ externalShowCreate, onCloseExternalCreate }) => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [programas, setProgramas] = useState<Programa[]>([]);
+  const [gestiones, setGestiones] = useState<Gestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingArea, setEditingArea] = useState<Area | null>(null);
@@ -30,6 +33,7 @@ export const AreasList: React.FC<{
   useEffect(() => {
     fetchAreas();
     fetchProgramas();
+    fetchGestiones();
   }, []);
 
   useEffect(() => {
@@ -61,6 +65,15 @@ export const AreasList: React.FC<{
     }
   };
 
+  const fetchGestiones = async () => {
+    try {
+      const data = await getGestiones();
+      setGestiones(data || []);
+    } catch (error) {
+      console.error('Error fetching gestiones:', error);
+    }
+  };
+
   const areasFiltradas = useMemo(() => {
     const term = search.trim().toLowerCase();
 
@@ -72,7 +85,8 @@ export const AreasList: React.FC<{
         (area.programa_nombre ?? '').toLowerCase().includes(term) ||
         (area.tipo_display ?? '').toLowerCase().includes(term) ||
         area.tipo.toLowerCase().includes(term) ||
-        (area.descripcion ?? '').toLowerCase().includes(term);
+        (area.descripcion ?? '').toLowerCase().includes(term) ||
+        (area.gestion_anio ? String(area.gestion_anio).includes(term) : false);
 
       const matchPrograma =
         selectedPrograma === 'TODOS' ||
@@ -131,10 +145,10 @@ export const AreasList: React.FC<{
         <div>
           <h3 className="text-base font-bold text-theme-main flex items-center gap-2">
             <Building2 className="text-theme-primary" size={18} />
-            <span>Catálogo de Áreas y Gerencias</span>
+            <span>Catálogo de Áreas, Gerencias y Unidades</span>
           </h3>
           <p className="text-xs text-theme-muted mt-0.5">
-            Gerencias de área y unidades operativas responsables del presupuesto.
+            Entidades operativas y estratégicas asignadas a la formulación y ejecución presupuestaria.
           </p>
         </div>
 
@@ -163,7 +177,7 @@ export const AreasList: React.FC<{
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar área, código, gerencia o programa..."
+              placeholder="Buscar por código, nombre o programa..."
               className="input-theme pl-10 text-xs w-full"
             />
           </div>
@@ -181,9 +195,9 @@ export const AreasList: React.FC<{
               className="border border-theme-border rounded-xl px-3 py-2 text-xs bg-theme-surface text-theme-main focus:outline-none focus:ring-2 focus:ring-theme-primary"
             >
               <option value="TODOS">Todos los Programas</option>
-              {programas.map((prog) => (
-                <option key={prog.id} value={String(prog.id)}>
-                  {prog.codigo} - {prog.nombre}
+              {programas.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.codigo} - {p.nombre}
                 </option>
               ))}
             </select>
@@ -298,23 +312,19 @@ export const AreasList: React.FC<{
                       </td>
 
                       {/* Tipo */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            area.tipo === 'GERENCIA'
-                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50'
-                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50'
-                          }`}
-                        >
-                          {area.tipo_display || (area.tipo === 'GERENCIA' ? 'Gerencia' : 'Unidad')}
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-theme-muted">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                          {area.tipo === 'GERENCIA' ? 'Gerencia' : 'Unidad'}
                         </span>
                       </td>
 
                       {/* Programa */}
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-theme-muted font-medium">
-                        {area.programa_nombre ||
-                          programas.find((p) => p.id === area.programa)?.nombre ||
-                          'Sin programa'}
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-theme-muted">
+                        {area.programa_nombre ? (
+                          <span className="font-medium text-theme-main">{area.programa_nombre}</span>
+                        ) : (
+                          <span className="italic opacity-60">Programa {area.programa}</span>
+                        )}
                       </td>
 
                       {/* Estado */}
@@ -378,6 +388,7 @@ export const AreasList: React.FC<{
         <AreaModal
           area={editingArea}
           programas={programas}
+          gestiones={gestiones}
           onClose={handleCloseModal}
           onSave={() => {
             fetchAreas();
@@ -392,11 +403,13 @@ export const AreasList: React.FC<{
 const AreaModal: React.FC<{
   area?: Area | null;
   programas: Programa[];
+  gestiones: Gestion[];
   onClose: () => void;
   onSave: () => void;
-}> = ({ area, programas, onClose, onSave }) => {
+}> = ({ area, programas, gestiones, onClose, onSave }) => {
   const [formData, setFormData] = useState<AreaFormData>({
     programa: area?.programa || '',
+    gestion: (area as any)?.gestion_id || area?.gestion || (gestiones.length === 1 ? gestiones[0].id : ''),
     codigo: area?.codigo || '',
     nombre: area?.nombre || '',
     tipo: area?.tipo || 'GERENCIA',
@@ -411,11 +424,16 @@ const AreaModal: React.FC<{
     setLoading(true);
 
     try {
+      const payload = {
+        ...formData,
+        gestion: formData.gestion ? Number(formData.gestion) : null,
+      };
+
       if (area) {
-        await organizacionalService.updateArea(area.id, formData);
+        await organizacionalService.updateArea(area.id, payload);
         alertService.success('¡Área actualizada!', `El área "${formData.nombre}" se guardó correctamente.`);
       } else {
-        await organizacionalService.createArea(formData);
+        await organizacionalService.createArea(payload);
         alertService.success('¡Área creada!', `El área "${formData.nombre}" fue registrada con éxito.`);
       }
 
@@ -479,6 +497,33 @@ const AreaModal: React.FC<{
               </select>
             </div>
 
+            {/* Gestión */}
+            <div>
+              <label className="block text-xs font-semibold text-theme-main mb-1.5">
+                Gestión Institucional <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={formData.gestion || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    gestion: e.target.value ? Number(e.target.value) : '',
+                  })
+                }
+                required
+                className="w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 text-xs text-theme-main focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none"
+              >
+                <option value="">Seleccione una gestión</option>
+                {gestiones.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    Gestión {g.anio} {g.estado ? `(${g.estado})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Código */}
             <div>
               <label className="block text-xs font-semibold text-theme-main mb-1.5">
@@ -490,12 +535,10 @@ const AreaModal: React.FC<{
                 onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
                 required
                 className="input-theme text-xs font-mono font-bold"
-                placeholder="Ej: GER-001, P-1-PL"
+                placeholder="Ej: GER-001, PL, UT"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Nombre */}
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-theme-main mb-1.5">
@@ -507,24 +550,24 @@ const AreaModal: React.FC<{
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 required
                 className="input-theme text-xs"
-                placeholder="Ej: Gerencia Comercial, Unidad Jurídica..."
+                placeholder="Ej: Gerencia Comercial, Planificación..."
               />
             </div>
+          </div>
 
-            {/* Tipo */}
-            <div>
-              <label className="block text-xs font-semibold text-theme-main mb-1.5">
-                Tipo <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={formData.tipo}
-                onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'GERENCIA' | 'UNIDAD' })}
-                className="w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 text-xs text-theme-main focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none"
-              >
-                <option value="GERENCIA">Gerencia</option>
-                <option value="UNIDAD">Unidad</option>
-              </select>
-            </div>
+          {/* Tipo */}
+          <div>
+            <label className="block text-xs font-semibold text-theme-main mb-1.5">
+              Tipo de Estructura <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={formData.tipo}
+              onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'GERENCIA' | 'UNIDAD' })}
+              className="w-full rounded-xl border border-theme-border bg-theme-surface px-4 py-2.5 text-xs text-theme-main focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none"
+            >
+              <option value="GERENCIA">Gerencia</option>
+              <option value="UNIDAD">Unidad</option>
+            </select>
           </div>
 
           {/* Descripción */}

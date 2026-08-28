@@ -42,12 +42,75 @@ class AreaViewSet(viewsets.ModelViewSet):
     queryset = (
         Area.objects
         .select_related('programa')
-        .prefetch_related('secciones')
+        .prefetch_related('secciones', 'presupuestos__gestion')
         .all()
         .order_by('codigo')
     )
     serializer_class = AreaSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        gestion_id = self.request.data.get('gestion') or self.request.data.get('gestion_id')
+        if gestion_id:
+            try:
+                from apps.presupuestos.models import Gestion, PresupuestoArea
+                from decimal import Decimal
+                gestion = Gestion.objects.filter(id=gestion_id).first()
+                if gestion:
+                    PresupuestoArea.objects.get_or_create(
+                        gestion=gestion,
+                        area=instance,
+                        defaults={
+                            'monto_inicial': Decimal('0.00'),
+                            'monto_actual': Decimal('0.00'),
+                            'estado': PresupuestoArea.EstadoPresupuesto.ABIERTO,
+                        }
+                    )
+            except Exception as e:
+                print("Error creando PresupuestoArea:", e)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        gestion_id = self.request.data.get('gestion') or self.request.data.get('gestion_id')
+        if gestion_id:
+            try:
+                from apps.presupuestos.models import Gestion, PresupuestoArea
+                from decimal import Decimal
+                gestion = Gestion.objects.filter(id=gestion_id).first()
+                if gestion:
+                    presupuestos = PresupuestoArea.objects.filter(area=instance)
+                    if presupuestos.exists():
+                        if not presupuestos.filter(gestion=gestion).exists():
+                            presupuesto_vacio = presupuestos.filter(
+                                monto_inicial=Decimal('0.00'),
+                                monto_actual=Decimal('0.00')
+                            ).first()
+                            if presupuesto_vacio:
+                                presupuesto_vacio.gestion = gestion
+                                presupuesto_vacio.save(update_fields=['gestion'])
+                            else:
+                                PresupuestoArea.objects.get_or_create(
+                                    gestion=gestion,
+                                    area=instance,
+                                    defaults={
+                                        'monto_inicial': Decimal('0.00'),
+                                        'monto_actual': Decimal('0.00'),
+                                        'estado': PresupuestoArea.EstadoPresupuesto.ABIERTO,
+                                    }
+                                )
+                    else:
+                        PresupuestoArea.objects.get_or_create(
+                            gestion=gestion,
+                            area=instance,
+                            defaults={
+                                'monto_inicial': Decimal('0.00'),
+                                'monto_actual': Decimal('0.00'),
+                                'estado': PresupuestoArea.EstadoPresupuesto.ABIERTO,
+                            }
+                        )
+            except Exception as e:
+                print("Error actualizando PresupuestoArea:", e)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
