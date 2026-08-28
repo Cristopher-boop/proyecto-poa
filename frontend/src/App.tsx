@@ -14,6 +14,8 @@ import OrganizacionalPage from "./pages/organizacional/OrganizacionalPage";
 import LogsPage from "./pages/logs/LogsPage";
 import TraspasosPage from "./pages/traspasos/TraspasosPage";
 
+import CertificacionesPage from "./pages/certificaciones/CertificacionesPage";
+
 export default function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="poa-theme">
@@ -26,6 +28,7 @@ export default function App() {
                 <Route index element={<DashboardPage />} />
                 <Route path="presupuestos" element={<PresupuestosPage />} />
                 <Route path="partidas" element={<PartidasPage />} />
+                <Route path="certificaciones" element={<CertificacionesPage />} />
                 <Route path="memorias" element={<MemoriasPage />} />
                 <Route path="traspasos" element={<TraspasosPage />} />
                 <Route path="ejecucion" element={<EjecucionPage />} />
