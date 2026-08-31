@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 import openpyxl
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 from apps.presupuestos.models import Gestion, Partida, PresupuestoArea
 from apps.organizacional.models import Area, Seccion
@@ -209,7 +210,8 @@ class Command(BaseCommand):
                     gestion=gestion,
                     seccion=seccion,
                     justificacion=justificacion_final,
-                    estado=MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS
+                    estado=MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
+                    fecha_aprobacion=timezone.now()
                 )
                 count_memorias += 1
 
