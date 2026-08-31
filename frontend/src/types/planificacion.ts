@@ -16,6 +16,10 @@ export interface AccionCortoPlazo {
   id: number;
   accion_mediano_plazo: number;
   amp_codigo?: string;
+  amp_descripcion?: string;
+  programa_id?: number;
+  programa_codigo?: string;
+  programa_nombre?: string;
   gestion?: number;
   gestion_anio?: number;
   codigo: string;
@@ -39,9 +43,18 @@ export interface Operacion {
   id: number;
   accion_corto_plazo: number;
   acp_codigo?: string;
+  acp_descripcion?: string;
+  acp_programa_id?: number;
+  acp_programa_codigo?: string;
+  amp_codigo?: string;
+  gestion_id?: number;
+  gestion_anio?: number;
   area: number;
   area_codigo?: string;
   area_nombre?: string;
+  area_programa_id?: number;
+  area_programa_codigo?: string;
+  area_programa_nombre?: string;
   codigo: string;
   descripcion: string;
   es_contratacion: boolean;
@@ -49,3 +62,4 @@ export interface Operacion {
   tareas?: Tarea[];
   created_at: string;
 }
+
