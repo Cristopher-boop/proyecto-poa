@@ -2,21 +2,19 @@ from rest_framework import serializers
 from decimal import Decimal
 from django.db.models import Sum
 from .models import Gasto
-from apps.memorias.models import DetallePresupuestoMemoria
+from apps.memorias.models import MemoriaCalculo
 
 
 class GastoSerializer(serializers.ModelSerializer):
-    detalle_descripcion = serializers.CharField(source='detalle_memoria.descripcion', read_only=True)
-    partida_id = serializers.IntegerField(source='detalle_memoria.partida.id', read_only=True)
-    partida_codigo = serializers.CharField(source='detalle_memoria.partida.codigo', read_only=True)
-    partida_nombre = serializers.CharField(source='detalle_memoria.partida.nombre', read_only=True)
-    memoria_codigo = serializers.CharField(source='detalle_memoria.memoria.codigo', read_only=True)
-    memoria_id = serializers.IntegerField(source='detalle_memoria.memoria.id', read_only=True)
-    area_id = serializers.IntegerField(source='detalle_memoria.memoria.seccion.area.id', read_only=True)
-    area_nombre = serializers.CharField(source='detalle_memoria.memoria.seccion.area.nombre', read_only=True)
-    seccion_nombre = serializers.CharField(source='detalle_memoria.memoria.seccion.nombre', read_only=True)
-    gestion_anio = serializers.IntegerField(source='detalle_memoria.memoria.gestion.anio', read_only=True)
-    gestion_id = serializers.IntegerField(source='detalle_memoria.memoria.gestion.id', read_only=True)
+    partida_id = serializers.SerializerMethodField()
+    partida_codigo = serializers.SerializerMethodField()
+    partida_nombre = serializers.SerializerMethodField()
+    memoria_codigo = serializers.CharField(source='memoria.codigo', read_only=True)
+    area_id = serializers.IntegerField(source='memoria.seccion.area.id', read_only=True)
+    area_nombre = serializers.CharField(source='memoria.seccion.area.nombre', read_only=True)
+    seccion_nombre = serializers.CharField(source='memoria.seccion.nombre', read_only=True)
+    gestion_anio = serializers.IntegerField(source='memoria.gestion.anio', read_only=True)
+    gestion_id = serializers.IntegerField(source='memoria.gestion.id', read_only=True)
     usuario_nombre = serializers.SerializerMethodField()
 
     class Meta:
@@ -27,12 +25,10 @@ class GastoSerializer(serializers.ModelSerializer):
             'fecha_gasto',
             'comprobante_num',
             'observacion',
-            'detalle_memoria',
-            'detalle_descripcion',
+            'memoria',
             'partida_id',
             'partida_codigo',
             'partida_nombre',
-            'memoria_id',
             'memoria_codigo',
             'area_id',
             'area_nombre',
@@ -45,6 +41,22 @@ class GastoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'usuario_registro', 'created_at']
 
+    def get_partida(self, obj):
+        detalle = obj.memoria.detalles.first()
+        return detalle.partida if detalle else None
+
+    def get_partida_id(self, obj):
+        partida = self.get_partida(obj)
+        return partida.id if partida else None
+
+    def get_partida_codigo(self, obj):
+        partida = self.get_partida(obj)
+        return partida.codigo if partida else None
+
+    def get_partida_nombre(self, obj):
+        partida = self.get_partida(obj)
+        return partida.nombre if partida else None
+
     def get_usuario_nombre(self, obj):
         if not obj.usuario_registro:
             return None
@@ -55,12 +67,10 @@ class GastoSerializer(serializers.ModelSerializer):
         if monto is not None and monto <= Decimal('0.00'):
             raise serializers.ValidationError({'monto_ejecutado': 'El monto ejecutado debe ser mayor a 0.'})
 
-        detalle = data.get('detalle_memoria') or (self.instance.detalle_memoria if self.instance else None)
-        if detalle and monto is not None:
-            cant = detalle.cantidad or Decimal('0.00')
-            precio = detalle.precio_unitario or Decimal('0.00')
-            precio_total = cant * precio
-            gastos_qs = detalle.gastos.all()
+        memoria = data.get('memoria') or (self.instance.memoria if self.instance else None)
+        if memoria and monto is not None:
+            precio_total = memoria.total_presupuestado or Decimal('0.00')
+            gastos_qs = memoria.gastos.all()
             if self.instance:
                 gastos_qs = gastos_qs.exclude(id=self.instance.id)
             total_otros_gastos = gastos_qs.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
@@ -68,7 +78,7 @@ class GastoSerializer(serializers.ModelSerializer):
 
             if Decimal(str(monto)) > saldo_maximo:
                 raise serializers.ValidationError({
-                    'monto_ejecutado': f'El monto asignado (Bs. {monto}) supera el saldo disponible restante para este ítem (Bs. {saldo_maximo:.2f}).'
+                    'monto_ejecutado': f'El monto asignado (Bs. {monto}) supera el saldo disponible restante para esta memoria (Bs. {saldo_maximo:.2f}).'
                 })
 
         return data

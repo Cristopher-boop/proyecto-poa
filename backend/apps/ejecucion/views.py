@@ -2,48 +2,34 @@ from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F
 from decimal import Decimal
 
 from .models import Gasto
 from .serializers import GastoSerializer
-from apps.memorias.models import DetallePresupuestoMemoria, MemoriaCalculo
+from apps.memorias.models import MemoriaCalculo
 from apps.memorias.utils import recalcular_saldos_memoria
 from apps.presupuestos.models import PresupuestoArea, Gestion
 
 
-def recalcular_estado_detalle_y_presupuesto(detalle):
+def recalcular_estado_memoria_y_presupuesto(memoria):
     """
     Función utilitaria que actualiza:
-    1. El estado de ejecución del DetallePresupuestoMemoria (PENDIENTE, EJECUTADO_PARCIAL, COMPLETADO)
-    2. Los campos almacenados de saldo en MemoriaCalculo y DetallePresupuestoMemoria
-    3. El monto_actual del PresupuestoArea correspondiente.
+    1. Los campos almacenados de saldo en MemoriaCalculo
+    2. El monto_actual del PresupuestoArea correspondiente.
     """
-    memoria = detalle.memoria
     area = memoria.seccion.area
     gestion = memoria.gestion
 
-    # 1. Actualizar saldos almacenados de la memoria y sus detalles
+    # 1. Actualizar saldos almacenados de la memoria
     recalcular_saldos_memoria(memoria)
 
-    # 2. Actualizar estado del detalle
-    monto_total_item = (detalle.cantidad or Decimal('0.00')) * (detalle.precio_unitario or Decimal('0.00'))
-    total_gastado_item = detalle.total_ejecutado
-
-    if total_gastado_item <= Decimal('0.00'):
-        detalle.estado_ejecucion = DetallePresupuestoMemoria.EstadoGasto.PENDIENTE
-    elif total_gastado_item < monto_total_item:
-        detalle.estado_ejecucion = DetallePresupuestoMemoria.EstadoGasto.EJECUTADO_PARCIAL
-    else:
-        detalle.estado_ejecucion = DetallePresupuestoMemoria.EstadoGasto.COMPLETADO
-    detalle.save(update_fields=['estado_ejecucion'])
-
-    # 3. Actualizar PresupuestoArea en tiempo real: Monto_Actual = Monto_Inicial - Gastos_Ejecutados
+    # 2. Actualizar PresupuestoArea en tiempo real: Monto_Actual = Monto_Inicial - Gastos_Ejecutados
     presupuesto = PresupuestoArea.objects.filter(gestion=gestion, area=area).first()
     if presupuesto:
         total_gastos_area = Gasto.objects.filter(
-            detalle_memoria__memoria__gestion=gestion,
-            detalle_memoria__memoria__seccion__area=area
+            memoria__gestion=gestion,
+            memoria__seccion__area=area
         ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
 
         presupuesto.monto_actual = max(Decimal('0.00'), presupuesto.monto_inicial - total_gastos_area)
@@ -52,9 +38,8 @@ def recalcular_estado_detalle_y_presupuesto(detalle):
 
 class GastoViewSet(viewsets.ModelViewSet):
     queryset = Gasto.objects.select_related(
-        'detalle_memoria__memoria__gestion',
-        'detalle_memoria__memoria__seccion__area',
-        'detalle_memoria__partida',
+        'memoria__gestion',
+        'memoria__seccion__area',
         'usuario_registro'
     ).all().order_by('-fecha_gasto', '-created_at')
     serializer_class = GastoSerializer
@@ -70,7 +55,7 @@ class GastoViewSet(viewsets.ModelViewSet):
         # Trabajadores y Elaboradores solo ven gastos de su propia área
         if not (is_admin_aprobador or is_gerente):
             if user.seccion and user.seccion.area_id:
-                qs = qs.filter(detalle_memoria__memoria__seccion__area_id=user.seccion.area_id)
+                qs = qs.filter(memoria__seccion__area_id=user.seccion.area_id)
             else:
                 qs = qs.none()
 
@@ -78,26 +63,21 @@ class GastoViewSet(viewsets.ModelViewSet):
         gestion_anio = self.request.query_params.get('anio')
         area_id = self.request.query_params.get('area')
         memoria_id = self.request.query_params.get('memoria')
-        partida_id = self.request.query_params.get('partida')
         search = self.request.query_params.get('search')
 
         if gestion_id:
-            qs = qs.filter(detalle_memoria__memoria__gestion_id=gestion_id)
+            qs = qs.filter(memoria__gestion_id=gestion_id)
         if gestion_anio:
-            qs = qs.filter(detalle_memoria__memoria__gestion__anio=gestion_anio)
+            qs = qs.filter(memoria__gestion__anio=gestion_anio)
         if area_id:
-            qs = qs.filter(detalle_memoria__memoria__seccion__area_id=area_id)
+            qs = qs.filter(memoria__seccion__area_id=area_id)
         if memoria_id:
-            qs = qs.filter(detalle_memoria__memoria_id=memoria_id)
-        if partida_id:
-            qs = qs.filter(detalle_memoria__partida_id=partida_id)
+            qs = qs.filter(memoria_id=memoria_id)
         if search:
             qs = qs.filter(
                 Q(comprobante_num__icontains=search) |
                 Q(observacion__icontains=search) |
-                Q(detalle_memoria__descripcion__icontains=search) |
-                Q(detalle_memoria__partida__codigo__icontains=search) |
-                Q(detalle_memoria__partida__nombre__icontains=search)
+                Q(memoria__codigo__icontains=search)
             )
         return qs
 
@@ -110,7 +90,7 @@ class GastoViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             gasto = serializer.save(usuario_registro=user)
-            recalcular_estado_detalle_y_presupuesto(gasto.detalle_memoria)
+            recalcular_estado_memoria_y_presupuesto(gasto.memoria)
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -121,7 +101,7 @@ class GastoViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             gasto = serializer.save()
-            recalcular_estado_detalle_y_presupuesto(gasto.detalle_memoria)
+            recalcular_estado_memoria_y_presupuesto(gasto.memoria)
 
     def perform_destroy(self, instance):
         user = self.request.user
@@ -130,10 +110,10 @@ class GastoViewSet(viewsets.ModelViewSet):
         if not is_admin_aprobador:
             raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede anular o eliminar ejecuciones presupuestarias.']})
 
-        detalle = instance.detalle_memoria
+        memoria = instance.memoria
         with transaction.atomic():
             instance.delete()
-            recalcular_estado_detalle_y_presupuesto(detalle)
+            recalcular_estado_memoria_y_presupuesto(memoria)
 
     @action(detail=False, methods=['get'], url_path='resumen-ejecucion')
     def resumen_ejecucion(self, request):
@@ -150,15 +130,15 @@ class GastoViewSet(viewsets.ModelViewSet):
         if not gestion:
             return Response({'error': 'No se encontró la gestión solicitada.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Gastos por Área (Optimizado en 2 consultas en lugar de N+1)
+        # Gastos por Área
         presupuestos_map = {
             p.area_id: p.monto_inicial
             for p in PresupuestoArea.objects.filter(gestion=gestion)
         }
         gastos_por_area_map = {
-            item['detalle_memoria__memoria__seccion__area_id']: item['total'] or Decimal('0.00')
-            for item in Gasto.objects.filter(detalle_memoria__memoria__gestion=gestion)
-            .values('detalle_memoria__memoria__seccion__area_id')
+            item['memoria__seccion__area_id']: item['total'] or Decimal('0.00')
+            for item in Gasto.objects.filter(memoria__gestion=gestion)
+            .values('memoria__seccion__area_id')
             .annotate(total=Sum('monto_ejecutado'))
         }
 
@@ -190,26 +170,54 @@ class GastoViewSet(viewsets.ModelViewSet):
             })
 
         # Gastos por Partida (Top 10)
-        from apps.presupuestos.models import Partida
-        qs_gastos = Gasto.objects.filter(detalle_memoria__memoria__gestion=gestion)
+        # We need to map Gasto -> Memoria -> Detalle -> Partida.
+        # But a Gasto belongs to a Memoria, which has many Detalles. Since the user said all items of a memoria belong to the same partida,
+        # we can just use the partida of the first detail. But how to do it efficiently?
+        # We can join with detalles, but we might multiply the monto_ejecutado if there are multiple detalles.
+        # Let's get the mapping Memoria -> Partida by fetching the first detail of each Memoria that has gastos.
+        qs_gastos = Gasto.objects.filter(memoria__gestion=gestion)
         if not (is_admin_aprobador or is_gerente) and user.is_authenticated and user.seccion:
-            qs_gastos = qs_gastos.filter(detalle_memoria__memoria__seccion__area_id=user.seccion.area_id)
+            qs_gastos = qs_gastos.filter(memoria__seccion__area_id=user.seccion.area_id)
 
-        partidas_gastos = (
-            qs_gastos
-            .values('detalle_memoria__partida__codigo', 'detalle_memoria__partida__nombre')
-            .annotate(total=Sum('monto_ejecutado'))
-            .order_by('-total')[:10]
-        )
+        # Get total gasto per Memoria
+        gastos_por_memoria = qs_gastos.values('memoria_id').annotate(total=Sum('monto_ejecutado'))
+        
+        # Build mapping Memoria -> Partida Info
+        memoria_ids = [m['memoria_id'] for m in gastos_por_memoria]
+        from apps.memorias.models import DetallePresupuestoMemoria
+        detalles = DetallePresupuestoMemoria.objects.filter(memoria_id__in=memoria_ids).select_related('partida')
+        
+        memoria_partida_map = {}
+        for d in detalles:
+            if d.memoria_id not in memoria_partida_map:
+                memoria_partida_map[d.memoria_id] = {
+                    'codigo': d.partida.codigo,
+                    'nombre': d.partida.nombre
+                }
 
-        por_partida = [
-            {
-                'partida_codigo': item['detalle_memoria__partida__codigo'],
-                'partida_nombre': item['detalle_memoria__partida__nombre'],
-                'monto_ejecutado': str(item['total'] or Decimal('0.00')),
-            }
-            for item in partidas_gastos
-        ]
+        partidas_totales = {}
+        for m_gasto in gastos_por_memoria:
+            m_id = m_gasto['memoria_id']
+            total = m_gasto['total']
+            partida_info = memoria_partida_map.get(m_id)
+            if partida_info:
+                p_code = partida_info['codigo']
+                if p_code not in partidas_totales:
+                    partidas_totales[p_code] = {
+                        'partida_codigo': p_code,
+                        'partida_nombre': partida_info['nombre'],
+                        'monto_ejecutado': Decimal('0.00')
+                    }
+                partidas_totales[p_code]['monto_ejecutado'] += total
+
+        # Sort top 10
+        por_partida_list = list(partidas_totales.values())
+        por_partida_list.sort(key=lambda x: x['monto_ejecutado'], reverse=True)
+        por_partida = por_partida_list[:10]
+        
+        # Convert Decimals to string
+        for p in por_partida:
+            p['monto_ejecutado'] = str(p['monto_ejecutado'])
 
         total_inicial_global = sum(Decimal(x['monto_inicial']) for x in por_area)
         total_gastado_global = sum(Decimal(x['monto_ejecutado']) for x in por_area)

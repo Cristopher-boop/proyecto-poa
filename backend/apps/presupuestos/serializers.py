@@ -43,7 +43,7 @@ class GestionSerializer(serializers.ModelSerializer):
 
     def get_total_presupuesto_ejecutado(self, obj):
         gastos = Gasto.objects.filter(
-            detalle_memoria__memoria__gestion=obj
+            memoria__gestion=obj
         ).aggregate(total=Sum('monto_ejecutado'))['total']
         return str(gastos or Decimal('0.00'))
 
@@ -89,8 +89,8 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
 
     def get_monto_ejecutado(self, obj):
         gastos = Gasto.objects.filter(
-            detalle_memoria__memoria__seccion__area=obj.area,
-            detalle_memoria__memoria__gestion=obj.gestion
+            memoria__seccion__area=obj.area,
+            memoria__gestion=obj.gestion
         ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
         return str(gastos)
 
@@ -98,8 +98,8 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
         if not obj.monto_inicial or obj.monto_inicial == Decimal('0.00'):
             return 0.0
         gastos = Gasto.objects.filter(
-            detalle_memoria__memoria__seccion__area=obj.area,
-            detalle_memoria__memoria__gestion=obj.gestion
+            memoria__seccion__area=obj.area,
+            memoria__gestion=obj.gestion
         ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
         porcentaje = (gastos / obj.monto_inicial) * Decimal('100.0')
         return round(float(porcentaje), 2)

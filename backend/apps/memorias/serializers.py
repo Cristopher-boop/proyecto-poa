@@ -19,8 +19,6 @@ class DetallePresupuestoMemoriaSerializer(serializers.ModelSerializer):
     memoria_codigo = serializers.CharField(source='memoria.codigo', read_only=True)
     memoria_estado = serializers.CharField(source='memoria.estado', read_only=True)
     area_nombre = serializers.CharField(source='memoria.seccion.area.nombre', read_only=True)
-    gastos_count = serializers.SerializerMethodField()
-    gastos = serializers.SerializerMethodField()
 
     class Meta:
         model = DetallePresupuestoMemoria
@@ -46,8 +44,6 @@ class DetallePresupuestoMemoriaSerializer(serializers.ModelSerializer):
             'estado_ejecucion',
             'monto_ejecutado',
             'monto_disponible',
-            'gastos_count',
-            'gastos',
             'created_at',
         ]
         read_only_fields = ['id', 'created_at']
@@ -60,22 +56,6 @@ class DetallePresupuestoMemoriaSerializer(serializers.ModelSerializer):
         cant = obj.cantidad or Decimal('0.00')
         precio = obj.precio_unitario or Decimal('0.00')
         return str(cant * precio)
-
-    def get_gastos_count(self, obj):
-        return obj.gastos.count()
-
-    def get_gastos(self, obj):
-        return [
-            {
-                'id': g.id,
-                'monto_ejecutado': str(g.monto_ejecutado),
-                'fecha_gasto': str(g.fecha_gasto),
-                'comprobante_num': g.comprobante_num,
-                'observacion': g.observacion,
-                'usuario_nombre': (g.usuario_registro.get_full_name() or g.usuario_registro.username) if g.usuario_registro else 'Admin',
-            }
-            for g in obj.gastos.all().order_by('-fecha_gasto', '-created_at')
-        ]
 
 
 class RegistroMemoriaUsuarioSerializer(serializers.ModelSerializer):

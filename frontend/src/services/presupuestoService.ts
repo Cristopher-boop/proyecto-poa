@@ -121,12 +121,10 @@ export interface Gasto {
   fecha_gasto: string;
   comprobante_num: string | null;
   observacion: string | null;
-  detalle_memoria: number;
-  detalle_descripcion: string;
+  memoria: number;
   partida_id: number;
   partida_codigo: string;
   partida_nombre: string;
-  memoria_id: number;
   memoria_codigo: string;
   area_id: number;
   area_nombre: string;
@@ -468,7 +466,7 @@ export async function getGastos(params?: {
 }
 
 export async function createGasto(payload: {
-  detalle_memoria: number;
+  memoria: number;
   monto_ejecutado: number | string;
   fecha_gasto: string;
   comprobante_num?: string;
@@ -512,7 +510,7 @@ export async function getResumenEjecucion(params?: { gestion?: number; anio?: nu
 export async function updateGasto(
   id: number,
   payload: {
-    detalle_memoria?: number;
+    memoria?: number;
     monto_ejecutado?: number | string;
     fecha_gasto?: string;
     comprobante_num?: string;

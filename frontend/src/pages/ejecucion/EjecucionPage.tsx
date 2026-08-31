@@ -27,7 +27,7 @@ import {
   Gestion,
   Gasto,
   PresupuestoArea,
-  DetallePresupuestoMemoria,
+  MemoriaCalculo,
   ResumenEjecucion,
   Area,
   getGestiones,
@@ -36,7 +36,7 @@ import {
   updateGasto,
   deleteGasto,
   getPresupuestosArea,
-  getDetallesPresupuesto,
+  getMemorias,
   getResumenEjecucion,
   getAreas,
 } from '../../services/presupuestoService';
@@ -56,11 +56,11 @@ export default function EjecucionPage() {
   const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [presupuestosArea, setPresupuestosArea] = useState<PresupuestoArea[]>([]);
-  const [detallesPresupuesto, setDetallesPresupuesto] = useState<DetallePresupuestoMemoria[]>([]);
+  const [memorias, setMemorias] = useState<MemoriaCalculo[]>([]);
   const [resumen, setResumen] = useState<ResumenEjecucion | null>(null);
   const [areas, setAreas] = useState<Area[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'gastos' | 'areas' | 'partidas' | 'items'>('gastos');
+  const [activeTab, setActiveTab] = useState<'gastos' | 'areas' | 'partidas' | 'memorias'>('gastos');
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -91,13 +91,13 @@ export default function EjecucionPage() {
   const [searchModalCodigo, setSearchModalCodigo] = useState<string>('');
   const [searchModalDinero, setSearchModalDinero] = useState<string>('');
   const [formGasto, setFormGasto] = useState<{
-    detalleMemoriaId: number | '';
+    memoria: number | '';
     monto: number | '';
     fecha: string;
     comprobante: string;
     observacion: string;
   }>({
-    detalleMemoriaId: '',
+    memoria: '',
     monto: '',
     fecha: new Date().toISOString().split('T')[0],
     comprobante: '',
@@ -108,14 +108,14 @@ export default function EjecucionPage() {
     handleOpenCrearGastoConItem();
   }
 
-  function handleOpenCrearGastoConItem(detalleId?: number) {
+  function handleOpenCrearGastoConItem(memoriaId?: number) {
     setEditingGastoId(null);
     setModalError(null);
     setSearchModalGeneral('');
     setSearchModalCodigo('');
     setSearchModalDinero('');
     setFormGasto({
-      detalleMemoriaId: detalleId || '',
+      memoria: memoriaId || '',
       monto: '',
       fecha: new Date().toISOString().split('T')[0],
       comprobante: '',
@@ -131,7 +131,7 @@ export default function EjecucionPage() {
     setSearchModalCodigo('');
     setSearchModalDinero('');
     setFormGasto({
-      detalleMemoriaId: gasto.detalle_memoria,
+      memoria: gasto.memoria,
       monto: typeof gasto.monto_ejecutado === 'string' ? parseFloat(gasto.monto_ejecutado) : gasto.monto_ejecutado,
       fecha: gasto.fecha_gasto,
       comprobante: gasto.comprobante_num || '',
@@ -171,15 +171,15 @@ export default function EjecucionPage() {
 
   async function cargarDatosEjecucion(gId: number) {
     try {
-      const [listaGastos, techos, detalles, resData] = await Promise.all([
+      const [listaGastos, techos, memoriasData, resData] = await Promise.all([
         getGastos({ gestion: gId }),
         getPresupuestosArea({ gestion: gId }),
-        getDetallesPresupuesto({ gestion: gId }),
+        getMemorias({ gestion: gId }),
         getResumenEjecucion({ gestion: gId }).catch(() => null),
       ]);
       setGastos(Array.isArray(listaGastos) ? listaGastos : []);
       setPresupuestosArea(Array.isArray(techos) ? techos : []);
-      setDetallesPresupuesto(Array.isArray(detalles) ? detalles : []);
+      setMemorias(Array.isArray(memoriasData) ? memoriasData : []);
       setResumen(resData);
     } catch (err) {
       console.error(err);
@@ -237,32 +237,34 @@ export default function EjecucionPage() {
     return Math.min(100, Math.round((totalGastado / totalInicial) * 10000) / 100);
   }, [totalInicial, totalGastado]);
 
-  // Ítems aprobados disponibles para ejecutar
+  // Memorias aprobadas disponibles para ejecutar
   const renglonesDisponibles = useMemo(() => {
-    return (Array.isArray(detallesPresupuesto) ? detallesPresupuesto : [])
-      .filter((d) => ['APROBADO_FINANZAS', 'APROBADO_GERENCIA'].includes(d.memoria_estado || ''))
-      .map((d) => {
-        const totalItem = parseFloat(d.precio_total || '0');
-        const gastado = parseFloat(d.monto_ejecutado || '0');
-        const saldo = parseFloat(d.monto_disponible || String(Math.max(0, totalItem - gastado)));
+    return (Array.isArray(memorias) ? memorias : [])
+      .filter((m) => ['APROBADO_FINANZAS', 'APROBADO_GERENCIA'].includes(m.estado || ''))
+      .map((m) => {
+        const totalMemoria = parseFloat(m.total_presupuesto || '0');
+        const gastado = parseFloat(m.total_ejecutado || '0');
+        const saldo = parseFloat(m.total_disponible || String(Math.max(0, totalMemoria - gastado)));
+        
+        let estadoGasto = 'PENDIENTE';
+        if (gastado > 0 && saldo > 0) estadoGasto = 'EJECUTADO_PARCIAL';
+        if (saldo <= 0 && gastado > 0) estadoGasto = 'COMPLETADO';
+        
         return {
-          detalleId: d.id!,
-          descripcion: d.descripcion,
-          memoriaCodigo: d.memoria_codigo || '',
-          areaNombre: d.area_nombre || '',
-          partidaCodigo: d.partida_codigo || '',
-          partidaNombre: d.partida_nombre || '',
-          montoTotal: totalItem,
+          memoriaId: m.id,
+          codigo: m.codigo,
+          areaNombre: m.area_nombre || '',
+          seccionNombre: m.seccion_nombre || '',
+          montoTotal: totalMemoria,
           montoGastado: gastado,
           saldoDisponible: saldo,
-          estadoGasto: d.estado_ejecucion || 'PENDIENTE',
-          gastosCount: d.gastos_count || 0,
-          gastosList: d.gastos || [],
+          estadoGasto: estadoGasto,
+          gastosList: gastos.filter(g => g.memoria === m.id)
         };
       });
-  }, [detallesPresupuesto]);
+  }, [memorias, gastos]);
 
-  // Ítems filtrados en Pestaña 3
+  // Memorias filtradas en Pestaña 3
   const renglonesFiltrados = useMemo(() => {
     return renglonesDisponibles.filter((r) => {
       const matchArea = filtroAreaItem === 'todas' || r.areaNombre.toLowerCase() === filtroAreaItem.toLowerCase();
@@ -270,31 +272,28 @@ export default function EjecucionPage() {
       const term = searchItem.toLowerCase().trim();
       const matchSearch =
         !term ||
-        r.descripcion.toLowerCase().includes(term) ||
-        r.memoriaCodigo.toLowerCase().includes(term) ||
-        r.partidaCodigo.toLowerCase().includes(term) ||
-        r.partidaNombre.toLowerCase().includes(term) ||
+        r.codigo.toLowerCase().includes(term) ||
+        r.seccionNombre.toLowerCase().includes(term) ||
         r.areaNombre.toLowerCase().includes(term);
       return matchArea && matchEstado && matchSearch;
     });
   }, [renglonesDisponibles, filtroAreaItem, filtroEstadoItem, searchItem]);
 
-  // Ítems filtrados dentro del Modal de Registro de Gasto (Filtros divididos)
+  // Memorias filtradas dentro del Modal de Registro de Gasto (Filtros divididos)
   const modalRenglonesFiltrados = useMemo(() => {
     return renglonesDisponibles.filter((r) => {
-      // 1. Buscador General: SOLO descripción o área (NO busca código ni dinero)
+      // 1. Buscador General: SOLO sección o área
       const termGen = searchModalGeneral.toLowerCase().trim();
       const matchGeneral =
         !termGen ||
-        r.descripcion.toLowerCase().includes(termGen) ||
+        r.seccionNombre.toLowerCase().includes(termGen) ||
         r.areaNombre.toLowerCase().includes(termGen);
 
-      // 2. Filtro por Código: SOLO código de memoria o código de partida
+      // 2. Filtro por Código: SOLO código de memoria
       const termCod = searchModalCodigo.toLowerCase().trim();
       const matchCodigo =
         !termCod ||
-        r.memoriaCodigo.toLowerCase().includes(termCod) ||
-        r.partidaCodigo.toLowerCase().includes(termCod);
+        r.codigo.toLowerCase().includes(termCod);
 
       // 3. Filtro por Dinero: busca saldo disponible numérico o valor
       const termDin = searchModalDinero.trim();
@@ -311,14 +310,14 @@ export default function EjecucionPage() {
   }, [renglonesDisponibles, searchModalGeneral, searchModalCodigo, searchModalDinero]);
 
   const selectedItemForGasto = useMemo(() => {
-    if (!formGasto.detalleMemoriaId) return null;
-    return renglonesDisponibles.find((r) => r.detalleId === Number(formGasto.detalleMemoriaId)) || null;
-  }, [formGasto.detalleMemoriaId, renglonesDisponibles]);
+    if (!formGasto.memoria) return null;
+    return renglonesDisponibles.find((r) => r.memoriaId === Number(formGasto.memoria)) || null;
+  }, [formGasto.memoria, renglonesDisponibles]);
 
   // Guardar Gasto (Crear o Editar)
   async function handleGuardarGasto(e: React.FormEvent) {
     e.preventDefault();
-    if (!formGasto.detalleMemoriaId || !formGasto.monto || Number(formGasto.monto) <= 0) {
+    if (!formGasto.memoria || !formGasto.monto || Number(formGasto.monto) <= 0) {
       mostrarMensaje('error', 'Seleccione un ítem presupuestario e indique un monto mayor a 0.');
       return;
     }
@@ -327,7 +326,7 @@ export default function EjecucionPage() {
     try {
       if (editingGastoId) {
         await updateGasto(editingGastoId, {
-          detalle_memoria: Number(formGasto.detalleMemoriaId),
+          memoria: Number(formGasto.memoria),
           monto_ejecutado: Number(formGasto.monto),
           fecha_gasto: formGasto.fecha,
           comprobante_num: formGasto.comprobante,
@@ -336,7 +335,7 @@ export default function EjecucionPage() {
         mostrarMensaje('success', `Gasto ejecutado actualizado a ${formatMoney(formGasto.monto)} correctamente.`);
       } else {
         await createGasto({
-          detalle_memoria: Number(formGasto.detalleMemoriaId),
+          memoria: Number(formGasto.memoria),
           monto_ejecutado: Number(formGasto.monto),
           fecha_gasto: formGasto.fecha,
           comprobante_num: formGasto.comprobante,
@@ -349,7 +348,7 @@ export default function EjecucionPage() {
       setShowModalGasto(false);
       setEditingGastoId(null);
       setFormGasto({
-        detalleMemoriaId: '',
+        memoria: '',
         monto: '',
         fecha: new Date().toISOString().split('T')[0],
         comprobante: '',
@@ -405,7 +404,6 @@ export default function EjecucionPage() {
         (g.comprobante_num && g.comprobante_num.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (g.observacion && g.observacion.toLowerCase().includes(searchTerm.toLowerCase())) ||
         g.area_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.detalle_descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
         g.partida_codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         g.partida_nombre.toLowerCase().includes(searchTerm.toLowerCase());
       return matchArea && matchSearch;
@@ -559,11 +557,11 @@ export default function EjecucionPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('items')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'items' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
+          onClick={() => setActiveTab('memorias')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'memorias' ? 'border-theme-primary text-theme-main font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
         >
-          <Layers size={16} /> 3. Control de Ítems Presupuestados ({renglonesFiltrados.length})
+          <Layers size={16} /> 3. Control de Memorias ({renglonesFiltrados.length})
         </button>
       </div>
 
@@ -615,7 +613,7 @@ export default function EjecucionPage() {
                   <th className="py-3.5 px-4">N° Hoja de Ruta</th>
                   <th className="py-3.5 px-4">Área / Sección</th>
                   <th className="py-3.5 px-4">N° de Partida</th>
-                  <th className="py-3.5 px-4">Ítem Imputado</th>
+                  <th className="py-3.5 px-4">Memoria Imputada</th>
                   <th className="py-3.5 px-4">Observación</th>
                   <th className="py-3.5 px-4">Fecha</th>
                   <th className="py-3.5 px-4 text-right">Monto Ejecutado</th>
@@ -655,7 +653,6 @@ export default function EjecucionPage() {
                         <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300">
                           {g.memoria_codigo}
                         </span>
-                        <p className="text-xs text-theme-main font-medium mt-1">{g.detalle_descripcion}</p>
                       </td>
                       <td className="py-3.5 px-4 max-w-xs text-xs text-theme-muted">{g.observacion || '-'}</td>
                       <td className="py-3.5 px-4 font-mono text-xs text-theme-muted whitespace-nowrap">
@@ -784,16 +781,16 @@ export default function EjecucionPage() {
         </div>
       )}
 
-      {/* PESTAÑA 3: CONTROL DE ÍTEMS DE MEMORIA */}
-      {activeTab === 'items' && (
+      {/* PESTAÑA 3: CONTROL DE MEMORIAS */}
+      {activeTab === 'memorias' && (
         <div className="space-y-4">
-          {/* Barra de Filtros de Ítems */}
+          {/* Barra de Filtros de Memorias */}
           <div className="card p-4 flex flex-col md:flex-row gap-3 items-center">
             <div className="relative flex-1 w-full">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
               <input
                 type="text"
-                placeholder="Buscar por ítem, memoria, partida o área..."
+                placeholder="Buscar por código de memoria, sección o área..."
                 value={searchItem}
                 onChange={(e) => setSearchItem(e.target.value)}
                 className="input-theme pl-10 text-xs"
@@ -838,16 +835,14 @@ export default function EjecucionPage() {
             )}
           </div>
 
-          {/* Tabla de Ítems */}
+          {/* Tabla de Memorias */}
           <div className="card overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
-                  <th className="py-3.5 px-4">Memoria</th>
-                  <th className="py-3.5 px-4">Área</th>
-                  <th className="py-3.5 px-4">Partida</th>
-                  <th className="py-3.5 px-4">Descripción del Ítem</th>
-                  <th className="py-3.5 px-4 text-right">Presupuesto Ítem</th>
+                  <th className="py-3.5 px-4">Código Memoria</th>
+                  <th className="py-3.5 px-4">Área / Sección</th>
+                  <th className="py-3.5 px-4 text-right">Presupuesto</th>
                   <th className="py-3.5 px-4 text-right">Gastado</th>
                   <th className="py-3.5 px-4 text-right">Saldo Restante</th>
                   <th className="py-3.5 px-4 text-center">Estado Gasto</th>
@@ -857,20 +852,21 @@ export default function EjecucionPage() {
               <tbody className="divide-y divide-theme-border">
                 {renglonesFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-theme-muted">
-                      No hay ítems aprobados que coincidan con los filtros aplicados.
+                    <td colSpan={7} className="py-12 text-center text-theme-muted">
+                      No hay memorias aprobadas que coincidan con los filtros aplicados.
                     </td>
                   </tr>
                 ) : (
                   renglonesPaginados.map((r) => {
-                    const isExpanded = !!expandedItems[r.detalleId];
+                    const isExpanded = !!expandedItems[r.memoriaId];
                     return (
-                      <React.Fragment key={r.detalleId}>
+                      <React.Fragment key={r.memoriaId}>
                         <tr className="hover:bg-theme-border/20 transition-colors">
-                          <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.memoriaCodigo}</td>
-                          <td className="py-3.5 px-4 text-xs font-medium text-theme-main">{r.areaNombre}</td>
-                          <td className="py-3.5 px-4 font-mono text-xs text-theme-muted">{r.partidaCodigo}</td>
-                          <td className="py-3.5 px-4 text-xs font-semibold text-theme-main">{r.descripcion}</td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{r.codigo}</td>
+                          <td className="py-3.5 px-4 text-xs font-medium text-theme-main">
+                            <p className="font-semibold">{r.areaNombre}</p>
+                            <p className="text-[11px] text-theme-muted">{r.seccionNombre}</p>
+                          </td>
                           <td className="py-3.5 px-4 text-right font-medium text-xs text-theme-main">{formatMoney(r.montoTotal)}</td>
                           <td className="py-3.5 px-4 text-right font-medium text-xs text-rose-600 dark:text-rose-400">
                             {formatMoney(r.montoGastado)}
@@ -895,25 +891,25 @@ export default function EjecucionPage() {
                             <div className="flex items-center justify-center gap-1.5">
                               {/* Botón Acordeón Ver Gastos */}
                               <button
-                                onClick={() => toggleExpandItem(r.detalleId)}
+                                onClick={() => toggleExpandItem(r.memoriaId)}
                                 className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
                                   isExpanded
                                     ? 'bg-theme-primary/15 text-theme-primary'
                                     : 'bg-theme-base border border-theme-border text-theme-muted hover:text-theme-main'
                                 }`}
-                                title="Ver historial de ejecuciones/gastos parciales de este ítem"
+                                title="Ver historial de ejecuciones/gastos de esta memoria"
                               >
                                 {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                                <span>{r.gastosCount} gasto(s)</span>
+                                <span>{r.gastosList.length} gasto(s)</span>
                               </button>
 
                               {/* Botón Directo + Registrar Gasto */}
                               {canExecuteGasto && (
                                 <button
-                                  onClick={() => handleOpenCrearGastoConItem(r.detalleId)}
+                                  onClick={() => handleOpenCrearGastoConItem(r.memoriaId)}
                                   disabled={r.saldoDisponible <= 0}
                                   className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
-                                  title={r.saldoDisponible <= 0 ? 'Sin saldo disponible en este ítem' : 'Registrar nuevo gasto en este ítem'}
+                                  title={r.saldoDisponible <= 0 ? 'Sin saldo disponible en esta memoria' : 'Registrar nuevo gasto en esta memoria'}
                                 >
                                   <Plus size={13} />
                                   <span>Gasto</span>
@@ -926,16 +922,16 @@ export default function EjecucionPage() {
                         {/* Fila desplegable con el historial de gastos parciales */}
                         {isExpanded && (
                           <tr className="bg-theme-base/40 border-b border-theme-border">
-                            <td colSpan={9} className="p-4">
+                            <td colSpan={7} className="p-4">
                               <div className="p-4 rounded-xl border border-theme-border bg-theme-surface space-y-3 shadow-inner">
                                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-theme-border pb-2.5">
                                   <h4 className="text-xs font-bold text-theme-main flex items-center gap-2">
                                     <Receipt size={16} className="text-rose-500" />
-                                    Ejecuciones Parciales del Ítem: <span className="font-mono text-theme-primary">{r.descripcion}</span>
+                                    Gastos de la Memoria: <span className="font-mono text-theme-primary">{r.codigo}</span>
                                   </h4>
                                   <div className="flex items-center gap-3 text-xs">
                                     <span className="text-theme-muted">
-                                      Gastos Registrados: <strong className="text-theme-main">{r.gastosCount}</strong>
+                                      Gastos Registrados: <strong className="text-theme-main">{r.gastosList.length}</strong>
                                     </span>
                                     <span className="text-theme-muted">
                                       Saldo Restante: <strong className="text-emerald-600 dark:text-emerald-400">{formatMoney(r.saldoDisponible)}</strong>
@@ -945,7 +941,7 @@ export default function EjecucionPage() {
 
                                 {r.gastosList.length === 0 ? (
                                   <p className="text-xs text-theme-muted italic py-3 text-center">
-                                    No hay ejecuciones ni gastos registrados para este ítem todavía.
+                                    No hay gastos registrados para esta memoria todavía.
                                   </p>
                                 ) : (
                                   <div className="overflow-x-auto rounded-lg border border-theme-border">
@@ -980,22 +976,20 @@ export default function EjecucionPage() {
                                                       fecha_gasto: g.fecha_gasto,
                                                       comprobante_num: g.comprobante_num,
                                                       observacion: g.observacion,
-                                                      detalle_memoria: r.detalleId,
-                                                      detalle_descripcion: r.descripcion,
+                                                      memoria: r.memoriaId,
+                                                      memoria_codigo: r.codigo,
                                                       partida_id: 0,
-                                                      partida_codigo: r.partidaCodigo,
-                                                      partida_nombre: r.partidaNombre,
-                                                      memoria_id: 0,
-                                                      memoria_codigo: r.memoriaCodigo,
+                                                      partida_codigo: '',
+                                                      partida_nombre: '',
                                                       area_id: 0,
                                                       area_nombre: r.areaNombre,
-                                                      seccion_nombre: '',
+                                                      seccion_nombre: r.seccionNombre,
                                                       gestion_id: 0,
                                                       gestion_anio: 0,
                                                       usuario_registro: 0,
                                                       usuario_nombre: g.usuario_nombre,
                                                       created_at: '',
-                                                    })
+                                                    } as any)
                                                   }
                                                   className="p-1 rounded text-blue-600 hover:bg-blue-500/10 transition-colors"
                                                   title="Editar este gasto parcial"
@@ -1116,7 +1110,7 @@ export default function EjecucionPage() {
 
                 <div>
                   <label className="block font-semibold uppercase text-theme-muted mb-1.5">
-                    Seleccionar Ítem / Renglón de Memoria Aprobada *
+                    Seleccionar Memoria Aprobada *
                   </label>
 
                   {/* 3 Filtros Divididos */}
@@ -1126,11 +1120,11 @@ export default function EjecucionPage() {
                       <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
                       <input
                         type="text"
-                        placeholder="General (descripción)..."
+                        placeholder="General (sección/área)..."
                         value={searchModalGeneral}
                         onChange={(e) => setSearchModalGeneral(e.target.value)}
                         className="input-theme pl-8 py-1.5 text-[11px]"
-                        title="Busca por descripción del ítem o nombre de área"
+                        title="Busca por sección o nombre de área"
                       />
                     </div>
 
@@ -1139,11 +1133,11 @@ export default function EjecucionPage() {
                       <FileText size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
                       <input
                         type="text"
-                        placeholder="Código (Mem./Part.)..."
+                        placeholder="Código Memoria..."
                         value={searchModalCodigo}
                         onChange={(e) => setSearchModalCodigo(e.target.value)}
                         className="input-theme pl-8 py-1.5 text-[11px] font-mono"
-                        title="Busca por código de memoria o partida"
+                        title="Busca por código de memoria"
                       />
                     </div>
 
@@ -1157,7 +1151,7 @@ export default function EjecucionPage() {
                         value={searchModalDinero}
                         onChange={(e) => setSearchModalDinero(e.target.value)}
                         className="input-theme pl-8 py-1.5 text-[11px] font-mono"
-                        title="Filtra ítems con saldo disponible mínimo"
+                        title="Filtra memorias con saldo disponible mínimo"
                       />
                     </div>
                   </div>
@@ -1182,20 +1176,19 @@ export default function EjecucionPage() {
                   <div className="max-h-40 overflow-y-auto rounded-xl border border-theme-border bg-theme-base divide-y divide-theme-border/60">
                     {modalRenglonesFiltrados.length === 0 ? (
                       <div className="p-3 text-center text-theme-muted text-xs">
-                        No hay ítems que coincidan con los filtros aplicados.
+                        No hay memorias que coincidan con los filtros aplicados.
                       </div>
                     ) : (
                       modalRenglonesFiltrados.map((r) => {
-                        const isSelected = formGasto.detalleMemoriaId === r.detalleId;
-                        const descCorta = r.descripcion.length > 38 ? `${r.descripcion.slice(0, 38)}...` : r.descripcion;
+                        const isSelected = formGasto.memoria === r.memoriaId;
                         const isDisabled = r.saldoDisponible <= 0 && !editingGastoId && !isSelected;
 
                         return (
                           <div
-                            key={r.detalleId}
+                            key={r.memoriaId}
                             onClick={() => {
                               if (!isDisabled) {
-                                setFormGasto({ ...formGasto, detalleMemoriaId: r.detalleId });
+                                setFormGasto({ ...formGasto, memoria: r.memoriaId });
                               }
                             }}
                             className={`p-2.5 flex items-center justify-between text-xs transition-colors ${
@@ -1209,10 +1202,7 @@ export default function EjecucionPage() {
                             <div className="min-w-0 flex-1 pr-3">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-mono font-bold text-[11px] text-theme-primary px-1.5 py-0.5 rounded bg-theme-primary/10">
-                                  {r.memoriaCodigo}
-                                </span>
-                                <span className="font-mono text-[10px] text-theme-muted">
-                                  P.{r.partidaCodigo}
+                                  {r.codigo}
                                 </span>
                                 {isDisabled && (
                                   <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
@@ -1220,8 +1210,8 @@ export default function EjecucionPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-theme-main font-medium mt-1 truncate" title={r.descripcion}>
-                                {descCorta}
+                              <p className="text-xs text-theme-main font-medium mt-1 truncate">
+                                {r.areaNombre} - {r.seccionNombre}
                               </p>
                             </div>
                             <div className="text-right shrink-0">
@@ -1240,7 +1230,7 @@ export default function EjecucionPage() {
                 {selectedItemForGasto && (
                   <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-1">
                     <p className="font-semibold text-blue-900 dark:text-blue-200">
-                      Área: {selectedItemForGasto.areaNombre} • Partida: {selectedItemForGasto.partidaCodigo}
+                      Memoria: {selectedItemForGasto.codigo} • Área: {selectedItemForGasto.areaNombre}
                     </p>
                     <div className="flex justify-between text-[11px] text-blue-800 dark:text-blue-300">
                       <span>Total Presupuestado: {formatMoney(selectedItemForGasto.montoTotal)}</span>

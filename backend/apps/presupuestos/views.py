@@ -59,8 +59,8 @@ class GestionViewSet(viewsets.ModelViewSet):
 
                 # Obtener gastos ya ejecutados si los hubiera
                 gastos_area = Gasto.objects.filter(
-                    detalle_memoria__memoria__gestion=gestion,
-                    detalle_memoria__memoria__seccion__area=area
+                    memoria__gestion=gestion,
+                    memoria__seccion__area=area
                 ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
 
                 monto_disponible = max(Decimal('0.00'), total_monto - gastos_area)
@@ -127,8 +127,8 @@ class GestionViewSet(viewsets.ModelViewSet):
                 )['total'] or Decimal('0.00')
 
                 gastos_area = Gasto.objects.filter(
-                    detalle_memoria__memoria__gestion=gestion,
-                    detalle_memoria__memoria__seccion__area=area
+                    memoria__gestion=gestion,
+                    memoria__seccion__area=area
                 ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
 
                 monto_disponible = max(Decimal('0.00'), total_monto - gastos_area)
@@ -236,7 +236,7 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
         total_disponible = presupuestos.aggregate(total=Sum('monto_actual'))['total'] or Decimal('0.00')
 
         total_gastos = Gasto.objects.filter(
-            detalle_memoria__memoria__gestion=gestion
+            memoria__gestion=gestion
         ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
 
         porcentaje_global = Decimal('0.0')
@@ -276,8 +276,8 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
 
         # Gastos totales del área
         gastos_area_total = Gasto.objects.filter(
-            detalle_memoria__memoria__gestion=gestion,
-            detalle_memoria__memoria__seccion__area=area
+            memoria__gestion=gestion,
+            memoria__seccion__area=area
         ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
 
         # Desglose por Sección
@@ -290,24 +290,14 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
             memorias = MemoriaCalculo.objects.filter(
                 gestion=gestion,
                 seccion=seccion,
-            ).prefetch_related('detalles__partida', 'detalles__gastos')
+            ).prefetch_related('detalles__partida', 'gastos')
 
             memorias_data = []
             for memoria in memorias:
                 # ── Ítems individuales (DetallePresupuestoMemoria) ──────────────
                 items_data = []
                 for detalle in memoria.detalles.all():
-                    gastos_item = []
-                    for gasto in detalle.gastos.all():
-                        gastos_item.append({
-                            'gasto_id': gasto.id,
-                            'fecha_gasto': str(gasto.fecha_gasto),
-                            'monto': str(gasto.monto_ejecutado or Decimal('0.00')),
-                            'comprobante': gasto.comprobante_num or '',
-                            'observacion': gasto.observacion or '',
-                        })
                     precio_total = (detalle.cantidad or Decimal('0')) * (detalle.precio_unitario or Decimal('0'))
-                    sobrante = precio_total - (detalle.total_ejecutado or Decimal('0'))
                     items_data.append({
                         'detalle_id': detalle.id,
                         'descripcion': detalle.descripcion,
@@ -315,12 +305,12 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                         'cantidad': str(detalle.cantidad or Decimal('0')),
                         'precio_unitario': str(detalle.precio_unitario or Decimal('0')),
                         'precio_total': str(precio_total),
-                        'total_ejecutado': str(detalle.total_ejecutado or Decimal('0')),
-                        'saldo_sobrante': str(sobrante),
+                        'total_ejecutado': '0.00',
+                        'saldo_sobrante': str(precio_total),
                         'estado_ejecucion': detalle.estado_ejecucion,
                         'partida_codigo': detalle.partida.codigo if detalle.partida else '',
                         'partida_nombre': detalle.partida.nombre if detalle.partida else '',
-                        'gastos': gastos_item,
+                        'gastos': [],
                     })
 
                 # ── Traspasos involucrados en esta memoria ───────────────────
@@ -346,66 +336,47 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                     })
 
                 # ── Agrupación por partida (mantener compatibilidad existente) ──
-                partidas_data = {}
-                for detalle in memoria.detalles.all():
-                    codigo = detalle.partida.codigo if detalle.partida else 'SIN_PARTIDA'
-                    nombre = detalle.partida.nombre if detalle.partida else 'Sin Partida'
-                    pkey = f"{codigo}"
-                    if pkey not in partidas_data:
-                        partidas_data[pkey] = {
-                            'partida_codigo': codigo,
-                            'partida_nombre': nombre,
-                            'presupuestado': Decimal('0.00'),
-                            'gastado': Decimal('0.00'),
-                            'gastos_detalle': [],
-                        }
-                    subtotal = (detalle.cantidad or Decimal('0')) * (detalle.precio_unitario or Decimal('0'))
-                    partidas_data[pkey]['presupuestado'] += subtotal
+                # Asumimos que todos los ítems de la memoria comparten la misma partida
+                primer_detalle = memoria.detalles.first()
+                if primer_detalle and primer_detalle.partida:
+                    codigo = primer_detalle.partida.codigo
+                    nombre = primer_detalle.partida.nombre
+                else:
+                    codigo = 'SIN_PARTIDA'
+                    nombre = 'Sin Partida'
 
-                    # Gastos individuales de este detalle
-                    for gasto in detalle.gastos.all():
-                        monto_g = gasto.monto_ejecutado or Decimal('0.00')
-                        partidas_data[pkey]['gastado'] += Decimal(str(monto_g))
-                        partidas_data[pkey]['gastos_detalle'].append({
-                            'gasto_id': gasto.id,
-                            'fecha_gasto': str(gasto.fecha_gasto),
-                            'monto': str(monto_g),
-                            'comprobante': gasto.comprobante_num or '',
-                            'observacion': gasto.observacion or '',
-                            'item_descripcion': detalle.descripcion,
-                        })
-
-                total_pres_mem = sum(p['presupuestado'] for p in partidas_data.values())
-                total_gast_mem = sum(p['gastado'] for p in partidas_data.values())
+                total_pres_mem = sum((d.cantidad or Decimal('0')) * (d.precio_unitario or Decimal('0')) for d in memoria.detalles.all())
+                
+                gastos_detalle = []
+                total_gast_mem = Decimal('0.00')
+                for gasto in memoria.gastos.all():
+                    monto_g = gasto.monto_ejecutado or Decimal('0.00')
+                    total_gast_mem += Decimal(str(monto_g))
+                    gastos_detalle.append({
+                        'gasto_id': gasto.id,
+                        'fecha_gasto': str(gasto.fecha_gasto),
+                        'monto': str(monto_g),
+                        'comprobante': gasto.comprobante_num or '',
+                        'observacion': gasto.observacion or '',
+                        'item_descripcion': 'Gasto a nivel memoria',
+                    })
 
                 monto_entrante = memoria.monto_entrante
                 monto_saliente = memoria.monto_saliente
                 disponible_real = memoria.saldo_disponible
 
-                num_partidas = len(partidas_data)
-                partidas_list = []
-                for v in partidas_data.values():
-                    if num_partidas == 1:
-                        p_entrante = monto_entrante
-                        p_saliente = monto_saliente
-                    elif total_pres_mem > Decimal('0.00'):
-                        ratio = v['presupuestado'] / total_pres_mem
-                        p_entrante = round(monto_entrante * ratio, 2)
-                        p_saliente = round(monto_saliente * ratio, 2)
-                    else:
-                        p_entrante = Decimal('0.00')
-                        p_saliente = Decimal('0.00')
+                p_disponible = (total_pres_mem + monto_entrante - monto_saliente) - total_gast_mem
 
-                    p_disponible = (v['presupuestado'] + p_entrante - p_saliente) - v['gastado']
-
-                    partidas_list.append({
-                        **v,
-                        'presupuestado': str(v['presupuestado']),
-                        'monto_entrante': str(p_entrante),
-                        'monto_saliente': str(p_saliente),
-                        'gastado': str(v['gastado']),
-                        'disponible': str(p_disponible),
-                    })
+                partidas_list = [{
+                    'partida_codigo': codigo,
+                    'partida_nombre': nombre,
+                    'presupuestado': str(total_pres_mem),
+                    'monto_entrante': str(monto_entrante),
+                    'monto_saliente': str(monto_saliente),
+                    'gastado': str(total_gast_mem),
+                    'disponible': str(p_disponible),
+                    'gastos_detalle': gastos_detalle,
+                }]
 
                 memorias_data.append({
                     'memoria_id': memoria.id,
@@ -425,8 +396,8 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
 
             # Totales de la sección
             gastos_seccion = Gasto.objects.filter(
-                detalle_memoria__memoria__gestion=gestion,
-                detalle_memoria__memoria__seccion=seccion,
+                memoria__gestion=gestion,
+                memoria__seccion=seccion,
             ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
 
             pres_seccion = sum(

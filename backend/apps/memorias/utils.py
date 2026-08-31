@@ -11,9 +11,8 @@ def recalcular_saldos_memoria(memoria):
 
     detalles = memoria.detalles.all()
 
-    # 1. Recalcular cada renglón / detalle de la memoria
+    # 1. Recalcular presupuestado
     total_presupuestado_memoria = Decimal('0.0000')
-    total_ejecutado_memoria = Decimal('0.0000')
 
     for d in detalles:
         total_item = d.total_programado or (
@@ -21,30 +20,30 @@ def recalcular_saldos_memoria(memoria):
             * (d.precio_unitario or Decimal('0.00'))
             * (d.factor_calculo or Decimal('1.0000'))
         )
-        total_gastado_item = d.gastos.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-        saldo_item = max(Decimal('0.00'), total_item - total_gastado_item)
-
-        d.total_ejecutado = total_gastado_item
-        d.saldo_disponible = saldo_item
+        # Los detalles ya no trackean gastos, solo la memoria
+        d.total_ejecutado = Decimal('0.0000')
+        d.saldo_disponible = Decimal('0.0000') # o se puede omitir actualizar
         d.save(update_fields=['total_ejecutado', 'saldo_disponible'])
 
         total_presupuestado_memoria += total_item
-        total_ejecutado_memoria += total_gastado_item
 
-    # 2. Monto entrante = SUM(monto) de traspasos de entrada aprobados
+    # 2. Total ejecutado
+    total_ejecutado_memoria = memoria.gastos.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
+
+    # 3. Monto entrante = SUM(monto) de traspasos de entrada aprobados
     monto_entrante = memoria.traspasos_entrada.filter(
         estado='APROBADO'
     ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
 
-    # 3. Monto saliente = SUM(monto) de traspasos de salida aprobados
+    # 4. Monto saliente = SUM(monto) de traspasos de salida aprobados
     monto_saliente = memoria.traspasos_salida.filter(
         estado='APROBADO'
     ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
 
-    # 4. Saldo disponible global de la memoria
+    # 5. Saldo disponible global de la memoria
     saldo_disponible_memoria = (total_presupuestado_memoria + monto_entrante) - monto_saliente - total_ejecutado_memoria
 
-    # 5. Persistir en la MemoriaCalculo
+    # 6. Persistir en la MemoriaCalculo
     memoria.total_presupuestado = total_presupuestado_memoria
     memoria.total_ejecutado = total_ejecutado_memoria
     memoria.monto_entrante = monto_entrante
