@@ -1110,7 +1110,6 @@ export default function PresupuestosPage() {
                           <span className="font-mono text-sm font-extrabold text-black">{memoria.memoria_codigo}</span>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-gray-400 text-gray-600 uppercase">{memoria.estado_display}</span>
                         </div>
-                        <p className="text-xs text-gray-600 mt-1 leading-snug max-w-2xl">{memoria.justificacion}</p>
                       </div>
                       <div className="text-right shrink-0 ml-4">
                         <p className="text-[9px] text-gray-500 font-semibold uppercase">Presupuestado</p>
@@ -1118,42 +1117,7 @@ export default function PresupuestosPage() {
                       </div>
                     </div>
 
-                    {/* Traspasos de la Memoria */}
-                    {hasTraspasos && (
-                      <div className="mb-3 border border-blue-300 bg-blue-50 rounded p-3">
-                        <p className="text-[10px] font-extrabold uppercase text-blue-700 mb-2 flex items-center gap-1">
-                          <ArrowRightLeft size={11} /> Modificaciones Presupuestarias (Traspasos)
-                        </p>
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-300">
-                              <th className="py-1 pr-3 text-left">Tipo</th>
-                              <th className="py-1 pr-3 text-left">Memoria Contraparte</th>
-                              <th className="py-1 pr-3 text-left">Fecha</th>
-                              <th className="py-1 pr-3 text-left">Motivo</th>
-                              <th className="py-1 text-right">Monto</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {memoria.traspasos.map(t => (
-                              <tr key={t.traspaso_id} className="border-b border-blue-100">
-                                <td className="py-1 pr-3">
-                                  <span className={`font-bold ${t.tipo === 'ENTRADA' ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                    {t.tipo === 'ENTRADA' ? '▲ ENTRADA' : '▼ SALIDA'}
-                                  </span>
-                                </td>
-                                <td className="py-1 pr-3 font-mono font-bold text-black">{t.memoria_contraparte_codigo}</td>
-                                <td className="py-1 pr-3 font-mono text-gray-600">{t.fecha}</td>
-                                <td className="py-1 pr-3 text-gray-700">{t.motivo}</td>
-                                <td className={`py-1 text-right font-extrabold ${t.tipo === 'ENTRADA' ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                  {t.tipo === 'ENTRADA' ? '+' : '-'}{formatMoney(t.monto)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                    {/* Traspasos de la Memoria (movido abajo) */}
 
                     {/* Tabla de Ítems */}
                     {(memoria.items || []).length === 0 ? (
@@ -1169,62 +1133,138 @@ export default function PresupuestosPage() {
                             <th className="border border-gray-600 p-1.5 text-center w-16">Unidad</th>
                             <th className="border border-gray-600 p-1.5 text-right w-24">P. Unitario</th>
                             <th className="border border-gray-600 p-1.5 text-right w-24">Presupuestado</th>
-                            <th className="border border-gray-600 p-1.5 text-right w-24">Ejecutado</th>
-                            <th className="border border-gray-600 p-1.5 text-right w-24">Sobrante</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {memoria.items.map((item, iIdx) => {
-                            const sobrante = parseFloat(item.saldo_sobrante || '0');
-                            return (
-                              <React.Fragment key={item.detalle_id}>
-                                {/* Fila del Ítem */}
-                                <tr className="bg-gray-50">
-                                  <td className="border border-gray-300 p-1.5 text-center font-bold text-gray-600">{iIdx + 1}</td>
-                                  <td className="border border-gray-300 p-1.5 font-semibold text-black">{item.descripcion}</td>
-                                  <td className="border border-gray-300 p-1.5">
-                                    <span className="font-mono text-[9px] font-bold text-gray-700">{item.partida_codigo}</span>
-                                  </td>
-                                  <td className="border border-gray-300 p-1.5 text-center font-mono">{item.cantidad}</td>
-                                  <td className="border border-gray-300 p-1.5 text-center uppercase text-gray-600">{item.unidad_medida}</td>
-                                  <td className="border border-gray-300 p-1.5 text-right font-mono">{formatMoney(item.precio_unitario)}</td>
-                                  <td className="border border-gray-300 p-1.5 text-right font-bold text-black">{formatMoney(item.precio_total)}</td>
-                                  <td className="border border-gray-300 p-1.5 text-right font-bold text-rose-700">{formatMoney(item.total_ejecutado)}</td>
-                                  <td className={`border border-gray-300 p-1.5 text-right font-extrabold ${sobrante >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                                    {formatMoney(item.saldo_sobrante)}
-                                  </td>
-                                </tr>
-                                {/* Subfilas de Gastos del Ítem */}
-                                {(item.gastos || []).map(gasto => (
-                                  <tr key={gasto.gasto_id} className="bg-white">
-                                    <td className="border border-gray-200 p-1 text-center text-gray-300">↳</td>
-                                    <td className="border border-gray-200 p-1 pl-4 text-gray-600 italic text-[10px]" colSpan={5}>
-                                      Gasto: {gasto.fecha_gasto}
-                                      {gasto.comprobante ? ` · Comprobante: ${gasto.comprobante}` : ''}
-                                      {gasto.observacion ? ` · ${gasto.observacion}` : ''}
-                                    </td>
-                                    <td className="border border-gray-200 p-1 text-right text-gray-500 text-[10px]">—</td>
-                                    <td className="border border-gray-200 p-1 text-right font-bold text-rose-600 text-[10px]">
-                                      {formatMoney(gasto.monto)}
-                                    </td>
-                                    <td className="border border-gray-200 p-1"></td>
-                                  </tr>
-                                ))}
-                              </React.Fragment>
-                            );
-                          })}
+                          {memoria.items.map((item, iIdx) => (
+                            <tr key={item.detalle_id} className="bg-gray-50">
+                              <td className="border border-gray-300 p-1.5 text-center font-bold text-gray-600">{iIdx + 1}</td>
+                              <td className="border border-gray-300 p-1.5 font-semibold text-black">{item.descripcion}</td>
+                              <td className="border border-gray-300 p-1.5">
+                                <span className="font-mono text-[9px] font-bold text-gray-700">{item.partida_codigo}</span>
+                              </td>
+                              <td className="border border-gray-300 p-1.5 text-center font-mono">{item.cantidad}</td>
+                              <td className="border border-gray-300 p-1.5 text-center uppercase text-gray-600">{item.unidad_medida}</td>
+                              <td className="border border-gray-300 p-1.5 text-right font-mono">{formatMoney(item.precio_unitario)}</td>
+                              <td className="border border-gray-300 p-1.5 text-right font-bold text-black">{formatMoney(item.precio_total)}</td>
+                            </tr>
+                          ))}
                         </tbody>
                         {/* Subtotales de la Memoria */}
                         <tfoot>
                           <tr style={{ backgroundColor: '#002060', color: '#ffffff' }} className="font-extrabold text-[10px]">
-                            <td colSpan={6} className="border border-gray-600 p-1.5 text-right uppercase">Subtotal Memoria {memoria.memoria_codigo}:</td>
+                            <td colSpan={5} className="border border-gray-600 p-1.5 text-right uppercase">Totales Memoria {memoria.memoria_codigo}:</td>
+                            <td className="border border-gray-600 p-1.5 text-right">Presupuestado:</td>
                             <td className="border border-gray-600 p-1.5 text-right">{formatMoney(totalPres)}</td>
-                            <td className="border border-gray-600 p-1.5 text-right">{formatMoney(totalGast)}</td>
-                            <td className="border border-gray-600 p-1.5 text-right">{formatMoney(totalDisp)}</td>
                           </tr>
                         </tfoot>
                       </table>
                     )}
+
+                    {/* Movimientos y Gastos de la Memoria */}
+                    {(() => {
+                      const gastosMemoria = memoria.partidas && memoria.partidas[0] ? memoria.partidas[0].gastos_detalle : [];
+                      const traspasosMemoria = memoria.traspasos || [];
+                      
+                      const movimientos = [
+                        ...gastosMemoria.map(g => ({
+                          tipo: 'GASTO',
+                          fecha: g.fecha_gasto,
+                          detalle: `Comprobante: ${g.comprobante || 'S/N'}`,
+                          observacion: g.observacion || '—',
+                          montoStr: g.monto,
+                          montoVal: parseFloat(g.monto || '0')
+                        })),
+                        ...traspasosMemoria.map(t => ({
+                          tipo: t.tipo === 'ENTRADA' ? 'TRASPASO_ENTRADA' : 'TRASPASO_SALIDA',
+                          fecha: t.fecha,
+                          detalle: `Contraparte: ${t.memoria_contraparte_codigo}`,
+                          observacion: t.motivo || '—',
+                          montoStr: t.monto,
+                          montoVal: parseFloat(t.monto || '0')
+                        }))
+                      ];
+
+                      // Ordenar por fecha cronológicamente
+                      movimientos.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+                      if (movimientos.length > 0) {
+                        return (
+                          <div className="mt-3 border border-gray-300 bg-gray-50 rounded p-3">
+                            <p className="text-[10px] font-extrabold uppercase text-black mb-2 flex items-center gap-1">
+                              <RefreshCw size={11} /> Movimientos y Gastos Registrados en la Memoria
+                            </p>
+                            <table className="w-full text-xs border-collapse">
+                              <thead>
+                                <tr className="text-[9px] font-bold uppercase text-black border-b border-gray-300">
+                                  <th className="py-1 pr-3 text-left">Fecha</th>
+                                  <th className="py-1 pr-3 text-left">Tipo</th>
+                                  <th className="py-1 pr-3 text-left">Detalle / Contraparte</th>
+                                  <th className="py-1 pr-3 text-left">Motivo / Observación</th>
+                                  <th className="py-1 text-right">Monto</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {movimientos.map((mov, idx) => {
+                                  let textColor = 'text-gray-700';
+                                  let sign = '';
+                                  let tipoLabel = '';
+                                  
+                                  if (mov.tipo === 'GASTO') {
+                                    textColor = 'text-rose-700';
+                                    sign = '-';
+                                    tipoLabel = 'Gasto';
+                                  } else if (mov.tipo === 'TRASPASO_ENTRADA') {
+                                    textColor = 'text-emerald-700';
+                                    sign = '+';
+                                    tipoLabel = '▲ Traspaso Entrada';
+                                  } else {
+                                    textColor = 'text-rose-700';
+                                    sign = '-';
+                                    tipoLabel = '▼ Traspaso Salida';
+                                  }
+
+                                  return (
+                                    <tr key={idx} className="border-b border-gray-200 last:border-0 hover:bg-gray-100 transition-colors">
+                                      <td className="py-1 pr-3 font-mono text-gray-700 whitespace-nowrap">{mov.fecha}</td>
+                                      <td className={`py-1 pr-3 font-bold text-[10px] uppercase ${textColor}`}>{tipoLabel}</td>
+                                      <td className="py-1 pr-3 font-mono font-bold text-black">{mov.detalle}</td>
+                                      <td className="py-1 pr-3 text-gray-700 max-w-sm truncate" title={mov.observacion}>{mov.observacion}</td>
+                                      <td className={`py-1 text-right font-extrabold whitespace-nowrap ${textColor}`}>{sign}{formatMoney(mov.montoStr)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {/* Totales Resumen al Final de la Memoria */}
+                    <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3 justify-end items-center bg-gray-50 border border-gray-200 rounded p-3">
+                      <div className="text-right">
+                        <p className="text-[9px] text-gray-500 font-semibold uppercase">Total Presupuestado</p>
+                        <p className="text-sm font-extrabold text-black">{formatMoney(totalPres)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] text-gray-500 font-semibold uppercase">Adicionado (Traspasos)</p>
+                        <p className="text-sm font-extrabold text-emerald-600">+{formatMoney(memoria.monto_entrante || '0')}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] text-gray-500 font-semibold uppercase">Retirado (Traspasos)</p>
+                        <p className="text-sm font-extrabold text-rose-600">-{formatMoney(memoria.monto_saliente || '0')}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] text-gray-500 font-semibold uppercase">Total Ejecutado (Gastos)</p>
+                        <p className="text-sm font-extrabold text-rose-600">-{formatMoney(totalGast)}</p>
+                      </div>
+                      <div className="text-right pl-4 border-l border-gray-300">
+                        <p className="text-[9px] text-gray-500 font-semibold uppercase">Saldo Disponible</p>
+                        <p className={`text-sm font-extrabold ${totalDisp >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatMoney(totalDisp)}</p>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
