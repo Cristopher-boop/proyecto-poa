@@ -305,7 +305,7 @@ export default function OrganizacionalPage() {
                           areaSecciones.map((seccion) => (
                             <div
                               key={seccion.id}
-                              className="p-2.5 rounded-xl bg-theme-base text-xs font-medium text-theme-main flex items-center gap-2 border border-theme-border/40"
+                              className="p-2.5 rounded-xl bg-theme-base text-xs font-medium text-theme-main flex items-center gap-2"
                             >
                               <div className="w-1.5 h-1.5 rounded-full bg-theme-primary shrink-0" />
                               <span className="truncate">{seccion.nombre}</span>

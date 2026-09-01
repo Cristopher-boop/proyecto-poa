@@ -56,12 +56,12 @@ class AccionMedianoPlazoViewSet(viewsets.ModelViewSet):
 
 
 class AccionCortoPlazoViewSet(viewsets.ModelViewSet):
-    queryset = AccionCortoPlazo.objects.select_related('accion_mediano_plazo', 'gestion').all()
+    queryset = AccionCortoPlazo.objects.select_related('accion_mediano_plazo__programa', 'gestion').all()
     serializer_class = AccionCortoPlazoSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['accion_mediano_plazo', 'gestion', 'estado']
-    search_fields = ['codigo', 'descripcion']
+    filterset_fields = ['accion_mediano_plazo', 'gestion', 'estado', 'accion_mediano_plazo__programa']
+    search_fields = ['codigo', 'descripcion', 'accion_mediano_plazo__codigo']
 
     def perform_create(self, serializer):
         rol = get_user_role(self.request.user)
@@ -94,12 +94,16 @@ class AccionCortoPlazoViewSet(viewsets.ModelViewSet):
 
 
 class OperacionViewSet(viewsets.ModelViewSet):
-    queryset = Operacion.objects.select_related('accion_corto_plazo', 'area').prefetch_related('tareas').all()
+    queryset = Operacion.objects.select_related(
+        'accion_corto_plazo__accion_mediano_plazo__programa',
+        'accion_corto_plazo__gestion',
+        'area__programa'
+    ).prefetch_related('tareas').all()
     serializer_class = OperacionSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['accion_corto_plazo', 'area', 'es_contratacion', 'estado']
-    search_fields = ['codigo', 'descripcion', 'area__nombre']
+    filterset_fields = ['accion_corto_plazo', 'area', 'es_contratacion', 'estado', 'accion_corto_plazo__gestion', 'area__programa']
+    search_fields = ['codigo', 'descripcion', 'area__nombre', 'area__codigo', 'accion_corto_plazo__codigo']
 
     def get_queryset(self):
         qs = super().get_queryset()

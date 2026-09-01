@@ -14,7 +14,7 @@ from apps.usuarios.models import Usuario
 # Planificación. Se pueden reemplazar mediante variables de entorno sin tocar
 # el código del reinicio.
 PROJECT_DIR = Path(__file__).resolve().parent
-SOURCE_DIR = PROJECT_DIR.parent.parent
+SOURCE_DIR = PROJECT_DIR.parent if (PROJECT_DIR.parent / '27.7 consolidado general 2027 (1).xlsx').is_file() else PROJECT_DIR.parent.parent
 CONSOLIDADO_2027 = Path(os.getenv(
     'POA_2027_CONSOLIDADO',
     SOURCE_DIR / '27.7 consolidado general 2027 (1).xlsx'

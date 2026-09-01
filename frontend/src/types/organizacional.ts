@@ -17,6 +17,8 @@ export interface Area {
   programa: number;
   programa_nombre?: string;
   programa_codigo?: string;
+  gestion?: number | null;
+  gestion_anio?: number;
   codigo: string;
   nombre: string;
   tipo: 'GERENCIA' | 'UNIDAD';
@@ -74,6 +76,7 @@ export interface ProgramaFormData {
 
 export interface AreaFormData {
   programa: number | string;
+  gestion?: number | string | null;
   codigo: string;
   nombre: string;
   tipo: 'GERENCIA' | 'UNIDAD';

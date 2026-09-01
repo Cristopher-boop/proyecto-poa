@@ -18,6 +18,7 @@ from pathlib import Path
 import openpyxl
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.memorias.models import DetallePresupuestoMemoria, MemoriaCalculo
 from apps.memorias.utils import recalcular_saldos_memoria
@@ -289,7 +290,7 @@ class Command(BaseCommand):
             if MemoriaCalculo.objects.filter(codigo=code).exists():
                 raise CommandError(f'Ya existe la memoria {code}; la importación fue cancelada para evitar duplicados.')
             justification = next((item['justificacion'] for item in memory_data['items'] if item['justificacion']), f"Importado de la hoja {memory_data['hoja']}.")
-            memory = MemoriaCalculo.objects.create(codigo=code, gestion=gestion, seccion=section, operacion=operation, justificacion=justification, es_contratacion=True, estado=MemoriaCalculo.EstadoMemoria.BORRADOR)
+            memory = MemoriaCalculo.objects.create(codigo=code, gestion=gestion, seccion=section, operacion=operation, justificacion=justification, es_contratacion=True, estado=MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS, fecha_aprobacion=timezone.now())
             for item in memory_data['items']:
                 DetallePresupuestoMemoria.objects.create(memoria=memory, partida=partida, descripcion=item['descripcion'], unidad_medida=item['unidad_medida'][:50], mes_requerido=requirement['mes_requerido'][:120], fuente_excel=memory_data['hoja'][:120], factor_calculo=item['factor_calculo'], total_programado=item['total_origen'], cantidad=item['cantidad'], precio_unitario=item['precio_unitario'])
             recalcular_saldos_memoria(memory)
@@ -300,11 +301,66 @@ class Command(BaseCommand):
         budget.save(update_fields=['monto_inicial', 'monto_actual', 'updated_at'])
 
     def _get_operation(self, gestion, program, area, requirement):
-        amp, _ = AccionMedianoPlazo.objects.get_or_create(codigo=f'AMP-2027-P{program.codigo}', defaults={'programa': program, 'descripcion': f'Planificación estratégica institucional del Programa {program.codigo} para la gestión 2027.', 'periodo_inicio': 2026, 'periodo_fin': 2030})
-        acp, _ = AccionCortoPlazo.objects.get_or_create(codigo=f'ACP-2027-P{program.codigo}', defaults={'accion_mediano_plazo': amp, 'gestion': gestion, 'descripcion': requirement['accion']})
-        operation_key = re.sub(r'[^A-Z0-9]', '', key(requirement['operacion']))[:12]
-        code = f'OP-2027-{area.codigo[-4:]}-{operation_key}'[:30]
-        operation, _ = Operacion.objects.get_or_create(codigo=code, defaults={'accion_corto_plazo': acp, 'area': area, 'descripcion': requirement['operacion'], 'es_contratacion': True})
+        descripciones_oficiales = {
+            '1': 'Fortalecer la gestión institucional mediante la mejora continua de los procesos, la modernización tecnológica, y el fortalecimiento de la transparencia institucional a nivel nacional en el año 2027.',
+            '2': 'Fortalecer la gestión financiera de la Empresa Pública Transporte Aéreo Militar mediante la administración eficiente de los recursos, contribuyendo a la sostenibilidad y al desarrollo empresarial en la gestión 2027',
+            '410': 'Incrementar la participación en el mercado de transporte aéreo de pasajeros, carga y correo, mediante la implementación de estrategias comerciales, a nivel nacional en el año 2027',
+            '210': 'Gestionar la prestación segura, eficiente y continua de las operaciones aeronáuticas mediante la gestión integral de la flota aérea, la aeronavegabilidad continua y el cumplimiento de los estándares de seguridad operacional a nivel nacional en la gestión 2027',
+        }
+        desc_oficial = descripciones_oficiales.get(str(program.codigo), requirement['accion'])
+
+        amp, _ = AccionMedianoPlazo.objects.update_or_create(
+            codigo=f'AMP-P{program.codigo}-01',
+            defaults={
+                'programa': program,
+                'descripcion': desc_oficial,
+                'periodo_inicio': 2026,
+                'periodo_fin': 2030,
+                'estado': True
+            }
+        )
+        acp, _ = AccionCortoPlazo.objects.update_or_create(
+            codigo=f'ACP-P{program.codigo}-{gestion.anio}',
+            defaults={
+                'accion_mediano_plazo': amp,
+                'gestion': gestion,
+                'descripcion': desc_oficial,
+                'estado': True
+            }
+        )
+
+        area_sigla = area.codigo.split('-')[-1] if '-' in area.codigo else area.codigo
+
+        # 1. Buscar si ya existe una operación para esta área por coincidencia de texto o palabras clave
+        req_norm = key(requirement['operacion'])
+        ops_area = list(Operacion.objects.filter(area=area))
+        for op in ops_area:
+            op_norm = key(op.descripcion)
+            if op_norm[:20] in req_norm or req_norm[:20] in op_norm:
+                return op
+            words_req = set(w for w in req_norm.split() if len(w) > 4)
+            words_op = set(w for w in op_norm.split() if len(w) > 4)
+            if len(words_req & words_op) >= 2:
+                return op
+
+        # 2. Si es un requerimiento genérico o el área tiene una sola operación oficial, reutilizar la existente
+        if ops_area and ('SIN CORRELACION' in requirement['operacion'] or 'REQUERIMIENTO CONSOLIDADO' in requirement['operacion'] or len(ops_area) == 1):
+            return ops_area[0]
+
+        # 3. Si no existe, crear con código limpio OP-<SIGLA>-<NUM>
+        num_existentes = len(ops_area) + 1
+        code = f'OP-{area_sigla}-{num_existentes:02d}'
+
+        operation, _ = Operacion.objects.get_or_create(
+            codigo=code,
+            defaults={
+                'accion_corto_plazo': acp,
+                'area': area,
+                'descripcion': requirement['operacion'],
+                'es_contratacion': True,
+                'estado': True
+            }
+        )
         return operation
 
     def _print_report(self, report):

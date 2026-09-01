@@ -1,129 +1,204 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import {
-  ChevronsLeft,
-  ChevronsRight,
-  ClipboardList,
-  LayoutDashboard,
   WalletCards,
-  BookOpenText,
-  TrendingDown,
   Building2,
   FileSpreadsheet,
   Compass,
+  FileText,
+  BookOpenText,
+  TrendingDown,
   ArrowRightLeft,
+  ClipboardList,
+  ChevronDown,
+  ChevronRight,
+  Menu
 } from "lucide-react";
-
-export type ModuleKey = "dashboard" | "presupuestos" | "partidas" | "memorias" | "ejecucion" | "traspasos" | "planificacion" | "organizacional";
-
-interface ModuleItem {
-  key: ModuleKey;
-  label: string;
-  icon: any;
-  path: string;
-}
-
-const modules: ModuleItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { key: "presupuestos", label: "Presupuestos", icon: WalletCards, path: "/presupuestos" },
-  { key: "partidas", label: "Partidas Presup.", icon: FileSpreadsheet, path: "/partidas" },
-  { key: "memorias", label: "Memorias de Cálculo", icon: BookOpenText, path: "/memorias" },
-  { key: "traspasos", label: "Modificaciones Presup.", icon: ArrowRightLeft, path: "/traspasos" },
-  { key: "ejecucion", label: "Ejecución Presupuestaria", icon: TrendingDown, path: "/ejecucion" },
-  { key: "planificacion", label: "Planificación Estratégica", icon: Compass, path: "/planificacion" },
-  { key: "organizacional", label: "Estructura Org.", icon: Building2, path: "/organizacional" },
-];
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    organizacion: false,
+    gastos: false
+  });
+  
   const navigate = useNavigate();
   const location = useLocation();
 
   const { user } = useAuth();
   const isAdmin = user?.is_superuser || user?.rol_nombre?.toUpperCase() === 'ADMINISTRADOR';
 
-  const visibleModules = useMemo(() => {
-    if (isAdmin) {
-      return [...modules, { key: "logs", label: "Auditoría / Logs", icon: ClipboardList, path: "/logs" }];
+  // Si colapsamos, cerramos los menús desplegables
+  useEffect(() => {
+    if (collapsed) {
+      setOpenMenus({ organizacion: false, gastos: false });
     }
-    return modules;
-  }, [isAdmin]);
+  }, [collapsed]);
 
-  const getActiveKey = (): string => {
-    if (location.pathname.startsWith('/memorias')) return 'memorias';
-    if (location.pathname.startsWith('/traspasos')) return 'traspasos';
-    if (location.pathname.startsWith('/ejecucion')) return 'ejecucion';
-    if (location.pathname.startsWith('/presupuestos')) return 'presupuestos';
-    if (location.pathname.startsWith('/planificacion')) return 'planificacion';
-    if (location.pathname.startsWith('/partidas')) return 'partidas';
-    if (location.pathname.startsWith('/organizacional')) return 'organizacional';
-    if (location.pathname.startsWith('/logs')) return 'logs';
-    return 'dashboard';
+  const toggleMenu = (menu: string) => {
+    if (collapsed) {
+      setCollapsed(false);
+      setOpenMenus({ [menu]: true });
+    } else {
+      setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
+    }
   };
 
-  const activeKey = getActiveKey();
+  const isActive = (path: string) => location.pathname.startsWith(path);
+  
+  const isOrganizacionActive = isActive('/partidas') || isActive('/planificacion') || isActive('/organizacional');
+  const isGastosActive = isActive('/ejecucion') || isActive('/traspasos');
+
+  const navItemClass = (active: boolean) => 
+    `w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+      active
+        ? "bg-theme-primary text-theme-primaryText shadow-sm font-semibold"
+        : "text-theme-muted hover:bg-theme-border/50 hover:text-theme-main"
+    }`;
+
+  const subItemClass = (active: boolean) =>
+    `w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-150 pl-10 ${
+      active
+        ? "text-theme-primary font-bold bg-theme-primary/5"
+        : "text-theme-muted hover:text-theme-main hover:bg-theme-border/30"
+    }`;
 
   return (
-    <aside className={`h-screen sticky top-0 flex flex-col bg-theme-sidebar border-r border-theme-border transition-all duration-200 ${collapsed ? "w-[76px]" : "w-64"}`}>
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-theme-border">
-        <div className="w-9 h-9 rounded-lg bg-theme-primary text-theme-primaryText flex items-center justify-center font-bold shrink-0 shadow-sm text-base transition-colors duration-200">
-          P
-        </div>
+    <aside className={`h-screen sticky top-0 flex flex-col bg-theme-sidebar border-r border-theme-border transition-all duration-300 z-20 ${collapsed ? "w-[72px]" : "w-64"}`}>
+      {/* Header / Logo */}
+      <div className="flex items-center gap-3 px-4 h-16 border-b border-theme-border relative">
+        <button 
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-9 h-9 rounded-lg bg-theme-primary text-theme-primaryText flex items-center justify-center font-bold shrink-0 shadow-sm text-base transition-colors hover:opacity-90"
+          title="Alternar Menú"
+        >
+          {collapsed ? <Menu size={18} /> : 'P'}
+        </button>
         {!collapsed && (
-          <div className="leading-tight">
+          <div className="leading-tight overflow-hidden whitespace-nowrap">
             <span className="font-display font-bold text-theme-main tracking-wide text-lg block">POA</span>
             <span className="text-[9px] uppercase tracking-[0.18em] text-theme-muted">Gestión operativa</span>
           </div>
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+      {/* Navegación */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-1 custom-scrollbar">
         {!collapsed && (
-          <p className="px-3 mb-2 text-[10px] uppercase tracking-widest text-theme-muted font-semibold">Módulos</p>
+          <p className="px-3 mb-3 text-[10px] uppercase tracking-widest text-theme-muted font-semibold">Módulos</p>
         )}
 
-        <div className="space-y-0.5">
-          {visibleModules.map(({ key, label, icon: Icon, path }) => {
-            const active = activeKey === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => navigate(path)}
-                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${active
-                    ? "bg-theme-primary text-theme-primaryText shadow-sm font-semibold"
-                    : "text-theme-muted hover:bg-theme-border/50 hover:text-theme-main"
-                  }`}
-                title={collapsed ? label : undefined}
-              >
-                <Icon size={17} className="shrink-0" />
-                {!collapsed && <span>{label}</span>}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+        {/* 1. Presupuestos */}
+        <button
+          onClick={() => navigate('/presupuestos')}
+          className={navItemClass(isActive('/presupuestos'))}
+          title={collapsed ? "Presupuestos" : undefined}
+        >
+          <WalletCards size={18} className="shrink-0" />
+          {!collapsed && <span>Presupuestos</span>}
+        </button>
 
-      <div className="px-3 pb-3">
-        {!collapsed && (
-          <div className="mb-3 rounded-xl border border-theme-border bg-theme-base px-3 py-2.5">
-            <div className="flex items-center gap-2 text-xs text-theme-muted">
-              <ClipboardList size={14} />
-              <span>Superadministrador</span>
+        {/* 2. Organización (Dropdown) */}
+        <div>
+          <button
+            onClick={() => toggleMenu('organizacion')}
+            className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${isOrganizacionActive && !openMenus.organizacion && collapsed ? 'bg-theme-primary/10 text-theme-primary' : 'text-theme-muted hover:bg-theme-border/50 hover:text-theme-main'}`}
+            title={collapsed ? "Organización" : undefined}
+          >
+            <div className="flex items-center gap-3">
+              <Building2 size={18} className="shrink-0" />
+              {!collapsed && <span>Organización</span>}
             </div>
+            {!collapsed && (
+              openMenus.organizacion ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+            )}
+          </button>
+          
+          {/* Submenú Organización */}
+          {!collapsed && openMenus.organizacion && (
+            <div className="mt-1 space-y-1 overflow-hidden">
+              <button onClick={() => navigate('/partidas')} className={subItemClass(isActive('/partidas'))}>
+                <FileSpreadsheet size={15} className="shrink-0" />
+                <span>Partidas Presup.</span>
+              </button>
+              <button onClick={() => navigate('/planificacion')} className={subItemClass(isActive('/planificacion'))}>
+                <Compass size={15} className="shrink-0" />
+                <span>Planificación Estratégica</span>
+              </button>
+              <button onClick={() => navigate('/organizacional')} className={subItemClass(isActive('/organizacional'))}>
+                <Building2 size={15} className="shrink-0" />
+                <span>Estructura Org.</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Certificaciones */}
+        <button
+          onClick={() => navigate('/certificaciones')}
+          className={navItemClass(isActive('/certificaciones'))}
+          title={collapsed ? "Certificaciones" : undefined}
+        >
+          <FileText size={18} className="shrink-0" />
+          {!collapsed && <span>Certificaciones</span>}
+        </button>
+
+        {/* 4. Memorias de Calculo */}
+        <button
+          onClick={() => navigate('/memorias')}
+          className={navItemClass(isActive('/memorias'))}
+          title={collapsed ? "Memorias de Cálculo" : undefined}
+        >
+          <BookOpenText size={18} className="shrink-0" />
+          {!collapsed && <span>Memorias de Cálculo</span>}
+        </button>
+
+        {/* 5. Gastos (Dropdown) */}
+        <div>
+          <button
+            onClick={() => toggleMenu('gastos')}
+            className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${isGastosActive && !openMenus.gastos && collapsed ? 'bg-theme-primary/10 text-theme-primary' : 'text-theme-muted hover:bg-theme-border/50 hover:text-theme-main'}`}
+            title={collapsed ? "Gastos" : undefined}
+          >
+            <div className="flex items-center gap-3">
+              <TrendingDown size={18} className="shrink-0" />
+              {!collapsed && <span>Gastos</span>}
+            </div>
+            {!collapsed && (
+              openMenus.gastos ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+            )}
+          </button>
+          
+          {/* Submenú Gastos */}
+          {!collapsed && openMenus.gastos && (
+            <div className="mt-1 space-y-1 overflow-hidden">
+              <button onClick={() => navigate('/ejecucion')} className={subItemClass(isActive('/ejecucion'))}>
+                <TrendingDown size={15} className="shrink-0" />
+                <span>Ejecuciones</span>
+              </button>
+              <button onClick={() => navigate('/traspasos')} className={subItemClass(isActive('/traspasos'))}>
+                <ArrowRightLeft size={15} className="shrink-0" />
+                <span>Modificaciones</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 6. Auditoría / Usuarios (Solo Admin) */}
+        {isAdmin && (
+          <div className="pt-4 mt-4 border-t border-theme-border/50">
+            <button
+              onClick={() => navigate('/logs')}
+              className={navItemClass(isActive('/logs'))}
+              title={collapsed ? "Auditoría / Usuarios" : undefined}
+            >
+              <ClipboardList size={18} className="shrink-0" />
+              {!collapsed && <span>Auditoría / Usuarios</span>}
+            </button>
           </div>
         )}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => setCollapsed((v) => !v)}
-        className="flex items-center gap-2 px-4 h-11 border-t border-theme-border text-theme-muted hover:text-theme-primary hover:bg-theme-border/30 text-sm transition-colors"
-      >
-        {collapsed ? <ChevronsRight size={17} /> : <ChevronsLeft size={17} />}
-        {!collapsed && <span className="text-xs">Colapsar</span>}
-      </button>
+      </nav>
     </aside>
   );
 }
