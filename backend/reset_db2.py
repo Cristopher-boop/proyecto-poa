@@ -9,12 +9,10 @@ django.setup()
 
 from apps.usuarios.models import Usuario
 
-
-# Archivos fuente versionados fuera de la carpeta del proyecto, entregados por
-# Planificación. Se pueden reemplazar mediante variables de entorno sin tocar
-# el código del reinicio.
+# Archivos fuente versionados fuera de la carpeta del proyecto, entregados por Planificación.
 PROJECT_DIR = Path(__file__).resolve().parent
 SOURCE_DIR = PROJECT_DIR.parent if (PROJECT_DIR.parent / '27.7 consolidado general 2027 (1).xlsx').is_file() else PROJECT_DIR.parent.parent
+
 CONSOLIDADO_2027 = Path(os.getenv(
     'POA_2027_CONSOLIDADO',
     SOURCE_DIR / '27.7 consolidado general 2027 (1).xlsx'
@@ -27,8 +25,6 @@ AREAS_2027 = (
     'PL', 'UT', 'AI', 'AJ', 'CIAC', 'OD', 'IF', 'GAA', 'GC', 'GO',
     'AE', 'SMS', 'EA', 'LP', 'CB', 'SC', 'CIJ', 'GYA', 'RIB', 'TDD',
 )
-# Estas áreas no tienen correlación completa (operación/mes) en el Excel de
-# requerimientos. Sus importes se restauran desde el consolidado autorizado.
 AREAS_PRIORIDAD_CONSOLIDADO = {
     'GAA', 'AE', 'EA', 'LP', 'CB', 'SC', 'CIJ', 'GYA', 'RIB', 'TDD',
 }
@@ -36,7 +32,7 @@ AREAS_PRIORIDAD_CONSOLIDADO = {
 
 def reset():
     print("=" * 60)
-    print(" REINICIO BASE DE DATOS - POA GESTIÓN 2027")
+    print(" REINICIO BASE DE DATOS - POA GESTIÓN 2027 ÚNICAMENTE")
     print("=" * 60)
 
     # ────────────────────────────────────────────────────────────
@@ -87,12 +83,29 @@ def reset():
     # ────────────────────────────────────────────────────────────
     print("\n[4/5] Cargando datos semilla oficiales...")
 
-    print("  [*] Catalogo de partidas presupuestarias (INGRESO / EGRESO)...")
+    print("  [*] Catálogo de partidas presupuestarias (INGRESO / EGRESO)...")
     try:
         call_command('import_partidas')
         print("  [OK] Partidas importadas.")
     except Exception as e:
         print(f"  [!] Error en import_partidas: {e}")
+
+    print("  [*] Estructura organizacional institucional...")
+    try:
+        call_command('seed_organizacional')
+        print("  [OK] Estructura organizacional cargada.")
+    except Exception as e:
+        print(f"  [!] Error en seed_organizacional: {e}")
+        return
+
+    print("  [*] Planificación estratégica (PEI 2026-2030, POA 2027)...")
+    try:
+        from seed_planificacion import sembrar_planificacion
+        sembrar_planificacion()
+        print("  [OK] Planificación estratégica cargada.")
+    except Exception as e:
+        print(f"  [!] Error en seed_planificacion: {e}")
+        return
 
     if not CONSOLIDADO_2027.is_file() or not OPERACIONES_2027.is_file():
         print("  [!] No se encontraron los Excel oficiales POA 2027.")
@@ -113,12 +126,12 @@ def reset():
                 prioridad_consolidado=area in AREAS_PRIORIDAD_CONSOLIDADO,
                 apply=True,
             )
-        print("  [OK] 20 áreas y 254 memorias POA 2027 cargadas.")
+        print("  [OK] 20 áreas y memorias POA 2027 cargadas.")
     except Exception as e:
         print(f"  [!] Error al importar POA 2027: {e}")
         return
 
-    print("  [*] Consolidando justificaciones múltiples desde el Excel...")
+    print("  [*] Consolidando justificaciones múltiples desde el Excel 2027...")
     try:
         call_command(
             'actualizar_justificaciones_poa_2027',
@@ -126,9 +139,9 @@ def reset():
             consolidado=str(CONSOLIDADO_2027),
             apply=True,
         )
-        print("  [OK] Justificaciones actualizadas.")
+        print("  [OK] Justificaciones 2027 actualizadas.")
     except Exception as e:
-        print(f"  [!] Error al actualizar justificaciones: {e}")
+        print(f"  [!] Error al actualizar justificaciones 2027: {e}")
         return
 
     print("  [*] Usuarios de prueba por Rol (SoyAprobador, SoyGerenteI, SoyElaboradorI, SoyTrabajadorI)...")
@@ -147,15 +160,19 @@ def reset():
     print("=" * 60)
     try:
         from apps.organizacional.models import Area, Seccion, Programa
-        from apps.presupuestos.models import Partida
+        from apps.presupuestos.models import Partida, Gestion
+        from apps.planificacion.models import AccionMedianoPlazo, AccionCortoPlazo, Operacion, Tarea
         from apps.memorias.models import MemoriaCalculo, DetallePresupuestoMemoria
 
+        print(f"  Gestiones    : {', '.join(str(g.anio) for g in Gestion.objects.all())}")
         print(f"  Programas    : {Programa.objects.count()}")
-        print(f"  Areas        : {Area.objects.count()}")
+        print(f"  Áreas        : {Area.objects.count()}")
         print(f"  Secciones    : {Seccion.objects.count()}")
-        print(f"  Partidas     : {Partida.objects.count()} "
-              f"(INGRESO: {Partida.objects.filter(clase='INGRESO').count()}, "
-              f"EGRESO: {Partida.objects.filter(clase='EGRESO').count()})")
+        print(f"  AMPs (PEI)   : {AccionMedianoPlazo.objects.count()}")
+        print(f"  ACPs (POA)   : {AccionCortoPlazo.objects.count()}")
+        print(f"  Operaciones  : {Operacion.objects.count()} (2027: {Operacion.objects.filter(accion_corto_plazo__gestion__anio=2027).count()})")
+        print(f"  Tareas       : {Tarea.objects.count()}")
+        print(f"  Partidas     : {Partida.objects.count()} (INGRESO: {Partida.objects.filter(clase='INGRESO').count()}, EGRESO: {Partida.objects.filter(clase='EGRESO').count()})")
         print(f"  Memorias     : {MemoriaCalculo.objects.count()}")
         print(f"  Detalles     : {DetallePresupuestoMemoria.objects.count()}")
         print(f"  Usuarios     : {Usuario.objects.count()}")

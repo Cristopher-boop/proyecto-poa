@@ -331,9 +331,9 @@ class Command(BaseCommand):
 
         area_sigla = area.codigo.split('-')[-1] if '-' in area.codigo else area.codigo
 
-        # 1. Buscar si ya existe una operación para esta área por coincidencia de texto o palabras clave
+        # 1. Buscar si ya existe una operación para esta área en la gestión 2027
         req_norm = key(requirement['operacion'])
-        ops_area = list(Operacion.objects.filter(area=area))
+        ops_area = list(Operacion.objects.filter(area=area, accion_corto_plazo=acp))
         for op in ops_area:
             op_norm = key(op.descripcion)
             if op_norm[:20] in req_norm or req_norm[:20] in op_norm:
@@ -343,13 +343,13 @@ class Command(BaseCommand):
             if len(words_req & words_op) >= 2:
                 return op
 
-        # 2. Si es un requerimiento genérico o el área tiene una sola operación oficial, reutilizar la existente
+        # 2. Si es un requerimiento genérico o el área tiene una sola operación oficial en 2027, reutilizar la existente
         if ops_area and ('SIN CORRELACION' in requirement['operacion'] or 'REQUERIMIENTO CONSOLIDADO' in requirement['operacion'] or len(ops_area) == 1):
             return ops_area[0]
 
-        # 3. Si no existe, crear con código limpio OP-<SIGLA>-<NUM>
+        # 3. Si no existe, crear con código limpio OP-<SIGLA>-2027-<NUM:02d>
         num_existentes = len(ops_area) + 1
-        code = f'OP-{area_sigla}-{num_existentes:02d}'
+        code = f'OP-{area_sigla}-{gestion.anio}-{num_existentes:02d}'
 
         operation, _ = Operacion.objects.get_or_create(
             codigo=code,

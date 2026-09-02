@@ -47,6 +47,7 @@ export interface Operacion {
   acp_programa_id?: number;
   acp_programa_codigo?: string;
   amp_codigo?: string;
+  amp_descripcion?: string;
   gestion_id?: number;
   gestion_anio?: number;
   area: number;

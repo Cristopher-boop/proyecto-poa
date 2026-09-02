@@ -48,7 +48,7 @@ export default function Sidebar() {
   const isActive = (path: string) => location.pathname.startsWith(path);
   
   const isOrganizacionActive = isActive('/partidas') || isActive('/planificacion') || isActive('/organizacional');
-  const isGastosActive = isActive('/ejecucion') || isActive('/traspasos');
+  const isGastosActive = isActive('/certificaciones') || isActive('/ejecucion') || isActive('/traspasos');
 
   const navItemClass = (active: boolean) => 
     `w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
@@ -134,17 +134,7 @@ export default function Sidebar() {
           )}
         </div>
 
-        {/* 3. Certificaciones */}
-        <button
-          onClick={() => navigate('/certificaciones')}
-          className={navItemClass(isActive('/certificaciones'))}
-          title={collapsed ? "Certificaciones" : undefined}
-        >
-          <FileText size={18} className="shrink-0" />
-          {!collapsed && <span>Certificaciones</span>}
-        </button>
-
-        {/* 4. Memorias de Calculo */}
+        {/* 3. Memorias de Calculo */}
         <button
           onClick={() => navigate('/memorias')}
           className={navItemClass(isActive('/memorias'))}
@@ -154,7 +144,7 @@ export default function Sidebar() {
           {!collapsed && <span>Memorias de Cálculo</span>}
         </button>
 
-        {/* 5. Gastos (Dropdown) */}
+        {/* 4. Gastos (Dropdown) */}
         <div>
           <button
             onClick={() => toggleMenu('gastos')}
@@ -173,6 +163,10 @@ export default function Sidebar() {
           {/* Submenú Gastos */}
           {!collapsed && openMenus.gastos && (
             <div className="mt-1 space-y-1 overflow-hidden">
+              <button onClick={() => navigate('/certificaciones')} className={subItemClass(isActive('/certificaciones'))}>
+                <FileText size={15} className="shrink-0" />
+                <span>Certificación POA</span>
+              </button>
               <button onClick={() => navigate('/ejecucion')} className={subItemClass(isActive('/ejecucion'))}>
                 <TrendingDown size={15} className="shrink-0" />
                 <span>Ejecuciones</span>

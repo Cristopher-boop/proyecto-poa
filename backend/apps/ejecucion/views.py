@@ -5,8 +5,8 @@ from django.db import transaction
 from django.db.models import Sum, Q, F
 from decimal import Decimal
 
-from .models import Gasto
-from .serializers import GastoSerializer
+from .models import Gasto, CertificacionPOA
+from .serializers import GastoSerializer, CertificacionPOASerializer
 from apps.memorias.models import MemoriaCalculo
 from apps.memorias.utils import recalcular_saldos_memoria
 from apps.presupuestos.models import PresupuestoArea, Gestion
@@ -239,3 +239,205 @@ class GastoViewSet(viewsets.ModelViewSet):
             'por_area': por_area,
             'por_partida': por_partida,
         })
+
+
+class CertificacionPOAViewSet(viewsets.ModelViewSet):
+    queryset = CertificacionPOA.objects.select_related(
+        'gestion',
+        'area',
+        'partida',
+        'memoria',
+        'creado_por'
+    ).prefetch_related(
+        'operaciones__accion_corto_plazo__accion_mediano_plazo__programa',
+        'operaciones__area__programa'
+    ).all().order_by('-fecha', '-created_at')
+    serializer_class = CertificacionPOASerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _check_can_edit(self, user):
+        rol = user.rol.nombre.upper() if user.rol else ''
+        if user.is_superuser:
+            return True, 'ADMIN'
+        if rol in ['ADMINISTRADOR', 'APROBADOR', 'PLANIFICADOR', 'PLANIFICACIÓN', 'PLANIFICACION']:
+            return True, 'PLANIFICADOR'
+        if rol == 'GERENTE':
+            return True, 'GERENTE'
+        return False, 'READONLY'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        can_edit, user_kind = self._check_can_edit(user)
+
+        # Si no es planificador ni admin, filtrar estrictamente por su área
+        if user_kind not in ['ADMIN', 'PLANIFICADOR']:
+            if user.seccion and user.seccion.area_id:
+                qs = qs.filter(area_id=user.seccion.area_id)
+            else:
+                qs = qs.none()
+
+        gestion_id = self.request.query_params.get('gestion')
+        gestion_anio = self.request.query_params.get('anio')
+        area_id = self.request.query_params.get('area')
+        estado = self.request.query_params.get('estado')
+        search = self.request.query_params.get('search')
+
+        if gestion_id:
+            qs = qs.filter(gestion_id=gestion_id)
+        if gestion_anio:
+            qs = qs.filter(gestion__anio=gestion_anio)
+        if area_id:
+            qs = qs.filter(area_id=area_id)
+        if estado:
+            qs = qs.filter(estado=estado)
+        if search:
+            qs = qs.filter(
+                Q(codigo_certificacion__icontains=search) |
+                Q(numero_oficio_solicitud__icontains=search) |
+                Q(concepto_gasto__icontains=search) |
+                Q(area__nombre__icontains=search) |
+                Q(solicitante_nombre__icontains=search)
+            )
+
+        return qs
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        can_edit, user_kind = self._check_can_edit(user)
+        if not can_edit:
+            raise serializers.ValidationError({
+                'non_field_errors': ['Los roles Elaborador y Trabajador NO PUEDEN crear certificaciones. Solo Gerente y Planificador tienen permisos.']
+            })
+
+        area = serializer.validated_data.get('area')
+        if user_kind == 'GERENTE':
+            if not (user.seccion and user.seccion.area_id):
+                raise serializers.ValidationError({
+                    'non_field_errors': ['Tu usuario Gerente no tiene un área asignada en la estructura organizacional. Contacta al administrador.']
+                })
+            if area and area.id != user.seccion.area_id:
+                raise serializers.ValidationError({
+                    'non_field_errors': ['Como Gerente, solo puedes crear certificaciones para tu propia área/gerencia.']
+                })
+
+        serializer.save(creado_por=user)
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        can_edit, user_kind = self._check_can_edit(user)
+        if not can_edit:
+            raise serializers.ValidationError({
+                'non_field_errors': ['Los roles Elaborador y Trabajador NO PUEDEN editar certificaciones. Solo Gerente y Planificador tienen permisos.']
+            })
+
+        instance = self.get_object()
+        if user_kind == 'GERENTE' and user.seccion and instance.area_id != user.seccion.area_id:
+            raise serializers.ValidationError({
+                'non_field_errors': ['Como Gerente, no puedes editar certificaciones de otra área.']
+            })
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        can_edit, user_kind = self._check_can_edit(user)
+        if not can_edit:
+            raise serializers.ValidationError({
+                'non_field_errors': ['Los roles Elaborador y Trabajador NO PUEDEN eliminar certificaciones. Solo Gerente y Planificador tienen permisos.']
+            })
+
+        if user_kind == 'GERENTE' and user.seccion and instance.area_id != user.seccion.area_id:
+            raise serializers.ValidationError({
+                'non_field_errors': ['Como Gerente, no puedes eliminar certificaciones de otra área.']
+            })
+
+        instance.delete()
+
+    @action(detail=False, methods=['get'], url_path='siguiente-correlativo')
+    def siguiente_correlativo(self, request):
+        """Genera el siguiente número correlativo específico para el área y el global de planificación."""
+        gestion_id = request.query_params.get('gestion')
+        area_id = request.query_params.get('area')
+
+        from apps.presupuestos.models import Gestion
+        from apps.organizacional.models import Area
+
+        gestion = Gestion.objects.filter(id=gestion_id).first() if gestion_id else Gestion.objects.first()
+        if not gestion:
+            return Response({'error': 'Gestión no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        anio = gestion.anio
+        anio_2dig = str(anio)[-2:]
+
+        area = Area.objects.filter(id=area_id).first() if area_id else None
+
+        # 1. Correlativo Específico de Gerencia
+        if area:
+            count_area = CertificacionPOA.objects.filter(gestion=gestion, area=area).count()
+            correlativo_area = count_area + 1
+            codigo_area_str = area.codigo or area.nombre
+            numero_oficio_solicitud = f"{codigo_area_str}.EPTAM. Stría Nº {correlativo_area:03d}/{anio_2dig}"
+        else:
+            correlativo_area = 1
+            numero_oficio_solicitud = f"GCIA.EPTAM. Stría Nº {correlativo_area:03d}/{anio_2dig}"
+
+        # 2. Correlativo Global de Planificación
+        count_global = CertificacionPOA.objects.filter(gestion=gestion).count()
+        correlativo_global = count_global + 1
+        codigo_certificacion = f"UPLANIF.EPTAM.CP. Nº {correlativo_global:03d}/{anio}"
+
+        return Response({
+            'gestion_id': gestion.id,
+            'gestion_anio': anio,
+            'area_id': area.id if area else None,
+            'correlativo_area': correlativo_area,
+            'numero_oficio_solicitud': numero_oficio_solicitud,
+            'correlativo_global': correlativo_global,
+            'codigo_certificacion': codigo_certificacion,
+        })
+
+    @action(detail=True, methods=['post'], url_path='enviar-planificacion')
+    def enviar_planificacion(self, request, pk=None):
+        """El Gerente envía la certificación a Planificación para su revisión y aprobación."""
+        user = request.user
+        can_edit, _ = self._check_can_edit(user)
+        if not can_edit:
+            return Response({'error': 'No tienes permisos para enviar certificaciones.'}, status=status.HTTP_403_FORBIDDEN)
+
+        cert = self.get_object()
+        cert.estado = CertificacionPOA.EstadoCertificacion.PENDIENTE_PLANIFICACION
+        cert.save(update_fields=['estado'])
+        return Response({'status': 'Certificación enviada a Planificación exitosamente', 'estado': cert.estado})
+
+    @action(detail=True, methods=['post'], url_path='aprobar')
+    def aprobar(self, request, pk=None):
+        """SOLO Planificación / Administrador puede aprobar formalmente."""
+        user = request.user
+        can_edit, user_kind = self._check_can_edit(user)
+        if user_kind not in ['ADMIN', 'PLANIFICADOR']:
+            return Response({
+                'error': 'Solo el rol de Planificación o Administrador puede aprobar formalmente la certificación. Como Gerente debes enviarla a Planificación.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        cert = self.get_object()
+        cert.estado = CertificacionPOA.EstadoCertificacion.APROBADO
+        cert.observacion_planificacion = request.data.get('observacion', '') or cert.observacion_planificacion
+        cert.save(update_fields=['estado', 'observacion_planificacion'])
+        return Response({'status': 'Certificación aprobada con éxito y devuelta a la gerencia', 'estado': cert.estado})
+
+    @action(detail=True, methods=['post'], url_path='observar')
+    def observar(self, request, pk=None):
+        """Planificación devuelve la certificación con observaciones a la gerencia."""
+        user = request.user
+        can_edit, user_kind = self._check_can_edit(user)
+        if user_kind not in ['ADMIN', 'PLANIFICADOR']:
+            return Response({'error': 'Solo Planificación puede observar la certificación.'}, status=status.HTTP_403_FORBIDDEN)
+
+        cert = self.get_object()
+        cert.estado = CertificacionPOA.EstadoCertificacion.OBSERVADO
+        cert.observacion_planificacion = request.data.get('observacion', 'Requiere corrección de datos')
+        cert.save(update_fields=['estado', 'observacion_planificacion'])
+        return Response({'status': 'Certificación devuelta con observaciones', 'estado': cert.estado})
+
+
