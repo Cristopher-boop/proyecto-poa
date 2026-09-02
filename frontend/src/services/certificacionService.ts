@@ -27,8 +27,34 @@ export const certificacionService = {
     await api.delete(`/api/v1/ejecucion/certificaciones/${id}/`);
   },
 
-  aprobarCertificacion: async (id: number): Promise<{ status: string; estado: string }> => {
-    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/aprobar/`);
+  getSiguienteCorrelativo: async (gestionId: number, areaId?: number): Promise<{
+    gestion_id: number;
+    gestion_anio: number;
+    area_id?: number | null;
+    correlativo_area: number;
+    numero_oficio_solicitud: string;
+    correlativo_global: number;
+    codigo_certificacion: string;
+  }> => {
+    const params: Record<string, any> = { gestion: gestionId };
+    if (areaId) params.area = areaId;
+    const response = await api.get('/api/v1/ejecucion/certificaciones/siguiente-correlativo/', { params });
+    return response.data;
+  },
+
+  enviarPlanificacion: async (id: number): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/enviar-planificacion/`);
+    return response.data;
+  },
+
+  aprobarCertificacion: async (id: number, observacion?: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/aprobar/`, { observacion });
+    return response.data;
+  },
+
+  observarCertificacion: async (id: number, observacion: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/observar/`, { observacion });
     return response.data;
   },
 };
+

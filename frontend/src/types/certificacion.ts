@@ -48,12 +48,23 @@ export interface CertificacionPOA {
   solicitante_cargo: string;
   elaborador_nombre: string;
   elaborador_cargo: string;
-  estado: 'BORRADOR' | 'APROBADO' | 'ANULADO';
+  observacion_planificacion?: string | null;
+  estado: 'BORRADOR' | 'PENDIENTE_PLANIFICACION' | 'APROBADO' | 'OBSERVADO' | 'ANULADO';
   estado_display: string;
   creado_por?: number | null;
   creado_por_nombre?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface SiguienteCorrelativoResponse {
+  gestion_id: number;
+  gestion_anio: number;
+  area_id?: number | null;
+  correlativo_area: number;
+  numero_oficio_solicitud: string;
+  correlativo_global: number;
+  codigo_certificacion: string;
 }
 
 export interface CertificacionFormData {
@@ -74,5 +85,7 @@ export interface CertificacionFormData {
   solicitante_cargo: string;
   elaborador_nombre: string;
   elaborador_cargo: string;
-  estado?: 'BORRADOR' | 'APROBADO' | 'ANULADO';
+  observacion_planificacion?: string;
+  estado?: 'BORRADOR' | 'PENDIENTE_PLANIFICACION' | 'APROBADO' | 'OBSERVADO' | 'ANULADO';
 }
+

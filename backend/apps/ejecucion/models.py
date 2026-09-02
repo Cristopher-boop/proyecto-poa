@@ -27,8 +27,10 @@ class Gasto(TimeStampedModel):
 
 class CertificacionPOA(TimeStampedModel):
     class EstadoCertificacion(models.TextChoices):
-        BORRADOR = 'BORRADOR', 'Borrador'
-        APROBADO = 'APROBADO', 'Aprobado'
+        BORRADOR = 'BORRADOR', 'Borrador (Gerencia)'
+        PENDIENTE_PLANIFICACION = 'PENDIENTE_PLANIFICACION', 'Enviado a Planificación'
+        APROBADO = 'APROBADO', 'Aprobado por Planificación'
+        OBSERVADO = 'OBSERVADO', 'Observado / Devuelto'
         ANULADO = 'ANULADO', 'Anulado'
 
     codigo_certificacion = models.CharField(max_length=100, verbose_name="Nº Certificación POA")
@@ -41,7 +43,7 @@ class CertificacionPOA(TimeStampedModel):
     # Soporte para una, dos o más operaciones asociadas
     operaciones = models.ManyToManyField(Operacion, blank=True, related_name='certificaciones_poa', verbose_name="Operaciones POA Asociadas")
     
-    # Vínculos presupuestarios
+    # Vínculos presupuestarios opcionales
     memoria = models.ForeignKey(MemoriaCalculo, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_poa', verbose_name="Memoria de Cálculo")
     partida = models.ForeignKey(Partida, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_poa', verbose_name="Partida Presupuestaria")
     partida_literal = models.CharField(max_length=255, blank=True, null=True, verbose_name="Partida Presupuestaria (Texto)")
@@ -61,7 +63,8 @@ class CertificacionPOA(TimeStampedModel):
     elaborador_nombre = models.CharField(max_length=150, blank=True, default="", verbose_name="Elaborado por (Nombre)")
     elaborador_cargo = models.CharField(max_length=150, blank=True, default="", verbose_name="Elaborado por (Cargo)")
     
-    estado = models.CharField(max_length=20, choices=EstadoCertificacion.choices, default=EstadoCertificacion.BORRADOR, verbose_name="Estado")
+    observacion_planificacion = models.TextField(blank=True, null=True, verbose_name="Observación de Planificación")
+    estado = models.CharField(max_length=30, choices=EstadoCertificacion.choices, default=EstadoCertificacion.BORRADOR, verbose_name="Estado")
     creado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_creadas', verbose_name="Creado por")
 
     class Meta:
@@ -71,3 +74,4 @@ class CertificacionPOA(TimeStampedModel):
 
     def __str__(self):
         return f"{self.codigo_certificacion} - {self.area.nombre} ({self.fecha})"
+

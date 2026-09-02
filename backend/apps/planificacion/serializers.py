@@ -20,6 +20,7 @@ class OperacionSerializer(serializers.ModelSerializer):
     acp_programa_id = serializers.ReadOnlyField(source='accion_corto_plazo.accion_mediano_plazo.programa_id')
     acp_programa_codigo = serializers.ReadOnlyField(source='accion_corto_plazo.accion_mediano_plazo.programa.codigo')
     amp_codigo = serializers.ReadOnlyField(source='accion_corto_plazo.accion_mediano_plazo.codigo')
+    amp_descripcion = serializers.ReadOnlyField(source='accion_corto_plazo.accion_mediano_plazo.descripcion')
     gestion_id = serializers.ReadOnlyField(source='accion_corto_plazo.gestion_id')
     gestion_anio = serializers.ReadOnlyField(source='accion_corto_plazo.gestion.anio')
     tareas = TareaSerializer(many=True, read_only=True)
@@ -28,7 +29,7 @@ class OperacionSerializer(serializers.ModelSerializer):
         model = Operacion
         fields = [
             'id', 'accion_corto_plazo', 'acp_codigo', 'acp_descripcion', 'acp_programa_id', 'acp_programa_codigo',
-            'amp_codigo', 'gestion_id', 'gestion_anio',
+            'amp_codigo', 'amp_descripcion', 'gestion_id', 'gestion_anio',
             'area', 'area_codigo', 'area_nombre', 'area_programa_id', 'area_programa_codigo', 'area_programa_nombre',
             'codigo', 'descripcion', 'es_contratacion', 'estado', 'tareas', 'created_at'
         ]

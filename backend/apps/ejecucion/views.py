@@ -311,10 +311,15 @@ class CertificacionPOAViewSet(viewsets.ModelViewSet):
             })
 
         area = serializer.validated_data.get('area')
-        if user_kind == 'GERENTE' and user.seccion and area and area.id != user.seccion.area_id:
-            raise serializers.ValidationError({
-                'non_field_errors': ['Como Gerente, solo puedes crear certificaciones para tu propia área/gerencia.']
-            })
+        if user_kind == 'GERENTE':
+            if not (user.seccion and user.seccion.area_id):
+                raise serializers.ValidationError({
+                    'non_field_errors': ['Tu usuario Gerente no tiene un área asignada en la estructura organizacional. Contacta al administrador.']
+                })
+            if area and area.id != user.seccion.area_id:
+                raise serializers.ValidationError({
+                    'non_field_errors': ['Como Gerente, solo puedes crear certificaciones para tu propia área/gerencia.']
+                })
 
         serializer.save(creado_por=user)
 
@@ -349,15 +354,90 @@ class CertificacionPOAViewSet(viewsets.ModelViewSet):
 
         instance.delete()
 
-    @action(detail=True, methods=['post'], url_path='aprobar')
-    def aprobar(self, request, pk=None):
+    @action(detail=False, methods=['get'], url_path='siguiente-correlativo')
+    def siguiente_correlativo(self, request):
+        """Genera el siguiente número correlativo específico para el área y el global de planificación."""
+        gestion_id = request.query_params.get('gestion')
+        area_id = request.query_params.get('area')
+
+        from apps.presupuestos.models import Gestion
+        from apps.organizacional.models import Area
+
+        gestion = Gestion.objects.filter(id=gestion_id).first() if gestion_id else Gestion.objects.first()
+        if not gestion:
+            return Response({'error': 'Gestión no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        anio = gestion.anio
+        anio_2dig = str(anio)[-2:]
+
+        area = Area.objects.filter(id=area_id).first() if area_id else None
+
+        # 1. Correlativo Específico de Gerencia
+        if area:
+            count_area = CertificacionPOA.objects.filter(gestion=gestion, area=area).count()
+            correlativo_area = count_area + 1
+            codigo_area_str = area.codigo or area.nombre
+            numero_oficio_solicitud = f"{codigo_area_str}.EPTAM. Stría Nº {correlativo_area:03d}/{anio_2dig}"
+        else:
+            correlativo_area = 1
+            numero_oficio_solicitud = f"GCIA.EPTAM. Stría Nº {correlativo_area:03d}/{anio_2dig}"
+
+        # 2. Correlativo Global de Planificación
+        count_global = CertificacionPOA.objects.filter(gestion=gestion).count()
+        correlativo_global = count_global + 1
+        codigo_certificacion = f"UPLANIF.EPTAM.CP. Nº {correlativo_global:03d}/{anio}"
+
+        return Response({
+            'gestion_id': gestion.id,
+            'gestion_anio': anio,
+            'area_id': area.id if area else None,
+            'correlativo_area': correlativo_area,
+            'numero_oficio_solicitud': numero_oficio_solicitud,
+            'correlativo_global': correlativo_global,
+            'codigo_certificacion': codigo_certificacion,
+        })
+
+    @action(detail=True, methods=['post'], url_path='enviar-planificacion')
+    def enviar_planificacion(self, request, pk=None):
+        """El Gerente envía la certificación a Planificación para su revisión y aprobación."""
         user = request.user
         can_edit, _ = self._check_can_edit(user)
         if not can_edit:
-            return Response({'error': 'No tienes permisos para aprobar certificaciones.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'No tienes permisos para enviar certificaciones.'}, status=status.HTTP_403_FORBIDDEN)
+
+        cert = self.get_object()
+        cert.estado = CertificacionPOA.EstadoCertificacion.PENDIENTE_PLANIFICACION
+        cert.save(update_fields=['estado'])
+        return Response({'status': 'Certificación enviada a Planificación exitosamente', 'estado': cert.estado})
+
+    @action(detail=True, methods=['post'], url_path='aprobar')
+    def aprobar(self, request, pk=None):
+        """SOLO Planificación / Administrador puede aprobar formalmente."""
+        user = request.user
+        can_edit, user_kind = self._check_can_edit(user)
+        if user_kind not in ['ADMIN', 'PLANIFICADOR']:
+            return Response({
+                'error': 'Solo el rol de Planificación o Administrador puede aprobar formalmente la certificación. Como Gerente debes enviarla a Planificación.'
+            }, status=status.HTTP_403_FORBIDDEN)
 
         cert = self.get_object()
         cert.estado = CertificacionPOA.EstadoCertificacion.APROBADO
-        cert.save(update_fields=['estado'])
-        return Response({'status': 'Certificación aprobada con éxito', 'estado': cert.estado})
+        cert.observacion_planificacion = request.data.get('observacion', '') or cert.observacion_planificacion
+        cert.save(update_fields=['estado', 'observacion_planificacion'])
+        return Response({'status': 'Certificación aprobada con éxito y devuelta a la gerencia', 'estado': cert.estado})
+
+    @action(detail=True, methods=['post'], url_path='observar')
+    def observar(self, request, pk=None):
+        """Planificación devuelve la certificación con observaciones a la gerencia."""
+        user = request.user
+        can_edit, user_kind = self._check_can_edit(user)
+        if user_kind not in ['ADMIN', 'PLANIFICADOR']:
+            return Response({'error': 'Solo Planificación puede observar la certificación.'}, status=status.HTTP_403_FORBIDDEN)
+
+        cert = self.get_object()
+        cert.estado = CertificacionPOA.EstadoCertificacion.OBSERVADO
+        cert.observacion_planificacion = request.data.get('observacion', 'Requiere corrección de datos')
+        cert.save(update_fields=['estado', 'observacion_planificacion'])
+        return Response({'status': 'Certificación devuelta con observaciones', 'estado': cert.estado})
+
 

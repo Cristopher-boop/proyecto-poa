@@ -130,6 +130,7 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
             'solicitante_cargo',
             'elaborador_nombre',
             'elaborador_cargo',
+            'observacion_planificacion',
             'estado',
             'estado_display',
             'creado_por',
