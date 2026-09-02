@@ -90,6 +90,7 @@ export default function EjecucionPage() {
   const [searchModalGeneral, setSearchModalGeneral] = useState<string>('');
   const [searchModalCodigo, setSearchModalCodigo] = useState<string>('');
   const [searchModalDinero, setSearchModalDinero] = useState<string>('');
+  const [searchModalArea, setSearchModalArea] = useState<string>('todas');
   const [formGasto, setFormGasto] = useState<{
     memoria: number | '';
     monto: number | '';
@@ -114,6 +115,7 @@ export default function EjecucionPage() {
     setSearchModalGeneral('');
     setSearchModalCodigo('');
     setSearchModalDinero('');
+    setSearchModalArea('todas');
     setFormGasto({
       memoria: memoriaId || '',
       monto: '',
@@ -130,6 +132,7 @@ export default function EjecucionPage() {
     setSearchModalGeneral('');
     setSearchModalCodigo('');
     setSearchModalDinero('');
+    setSearchModalArea('todas');
     setFormGasto({
       memoria: gasto.memoria,
       monto: typeof gasto.monto_ejecutado === 'string' ? parseFloat(gasto.monto_ejecutado) : gasto.monto_ejecutado,
@@ -250,11 +253,14 @@ export default function EjecucionPage() {
         if (gastado > 0 && saldo > 0) estadoGasto = 'EJECUTADO_PARCIAL';
         if (saldo <= 0 && gastado > 0) estadoGasto = 'COMPLETADO';
         
+        const partidasString = m.detalles?.map(d => d.partida_codigo || '').join(' ') || m.partida_codigo || '';
+        
         return {
           memoriaId: m.id,
           codigo: m.codigo,
           areaNombre: m.area_nombre || '',
           seccionNombre: m.seccion_nombre || '',
+          partidasString,
           montoTotal: totalMemoria,
           montoGastado: gastado,
           saldoDisponible: saldo,
@@ -274,7 +280,8 @@ export default function EjecucionPage() {
         !term ||
         r.codigo.toLowerCase().includes(term) ||
         r.seccionNombre.toLowerCase().includes(term) ||
-        r.areaNombre.toLowerCase().includes(term);
+        r.areaNombre.toLowerCase().includes(term) ||
+        r.partidasString.toLowerCase().includes(term);
       return matchArea && matchEstado && matchSearch;
     });
   }, [renglonesDisponibles, filtroAreaItem, filtroEstadoItem, searchItem]);
@@ -282,12 +289,16 @@ export default function EjecucionPage() {
   // Memorias filtradas dentro del Modal de Registro de Gasto (Filtros divididos)
   const modalRenglonesFiltrados = useMemo(() => {
     return renglonesDisponibles.filter((r) => {
-      // 1. Buscador General: SOLO sección o área
+      // 0. Filtro por Área
+      const matchArea = searchModalArea === 'todas' || r.areaNombre.toLowerCase() === searchModalArea.toLowerCase();
+
+      // 1. Buscador General: SOLO sección, área o partida
       const termGen = searchModalGeneral.toLowerCase().trim();
       const matchGeneral =
         !termGen ||
         r.seccionNombre.toLowerCase().includes(termGen) ||
-        r.areaNombre.toLowerCase().includes(termGen);
+        r.areaNombre.toLowerCase().includes(termGen) ||
+        r.partidasString.toLowerCase().includes(termGen);
 
       // 2. Filtro por Código: SOLO código de memoria
       const termCod = searchModalCodigo.toLowerCase().trim();
@@ -305,9 +316,9 @@ export default function EjecucionPage() {
         }
       }
 
-      return matchGeneral && matchCodigo && matchDinero;
+      return matchArea && matchGeneral && matchCodigo && matchDinero;
     });
-  }, [renglonesDisponibles, searchModalGeneral, searchModalCodigo, searchModalDinero]);
+  }, [renglonesDisponibles, searchModalGeneral, searchModalCodigo, searchModalDinero, searchModalArea]);
 
   const selectedItemForGasto = useMemo(() => {
     if (!formGasto.memoria) return null;
@@ -1113,18 +1124,36 @@ export default function EjecucionPage() {
                     Seleccionar Memoria Aprobada *
                   </label>
 
-                  {/* 3 Filtros Divididos */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                  {/* 4 Filtros Divididos */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-2">
+                    {/* 0. Filtro por Área */}
+                    <div className="relative">
+                      <Building2 size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                      <select
+                        value={searchModalArea}
+                        onChange={(e) => setSearchModalArea(e.target.value)}
+                        className="input-theme pl-8 py-1.5 text-[11px]"
+                        title="Filtra por Gerencia/Área"
+                      >
+                        <option value="todas">Todas las Áreas</option>
+                        {areas.map((a) => (
+                          <option key={a.id} value={a.nombre}>
+                            {a.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     {/* 1. Buscador General: Descripción / Área */}
                     <div className="relative">
                       <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
                       <input
                         type="text"
-                        placeholder="General (sección/área)..."
+                        placeholder="General (sección/partida)..."
                         value={searchModalGeneral}
                         onChange={(e) => setSearchModalGeneral(e.target.value)}
                         className="input-theme pl-8 py-1.5 text-[11px]"
-                        title="Busca por sección o nombre de área"
+                        title="Busca por sección o partida"
                       />
                     </div>
 
@@ -1156,7 +1185,7 @@ export default function EjecucionPage() {
                     </div>
                   </div>
 
-                  {(searchModalGeneral || searchModalCodigo || searchModalDinero) && (
+                  {(searchModalGeneral || searchModalCodigo || searchModalDinero || searchModalArea !== 'todas') && (
                     <div className="flex justify-end mb-2">
                       <button
                         type="button"
@@ -1164,6 +1193,7 @@ export default function EjecucionPage() {
                           setSearchModalGeneral('');
                           setSearchModalCodigo('');
                           setSearchModalDinero('');
+                          setSearchModalArea('todas');
                         }}
                         className="text-[10px] text-theme-primary font-bold hover:underline"
                       >
