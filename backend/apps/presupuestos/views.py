@@ -297,7 +297,7 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                 # ── Ítems individuales (DetallePresupuestoMemoria) ──────────────
                 items_data = []
                 for detalle in memoria.detalles.all():
-                    precio_total = (detalle.cantidad or Decimal('0')) * (detalle.precio_unitario or Decimal('0'))
+                    precio_total = detalle.precio_total
                     items_data.append({
                         'detalle_id': detalle.id,
                         'descripcion': detalle.descripcion,
@@ -345,7 +345,7 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                     codigo = 'SIN_PARTIDA'
                     nombre = 'Sin Partida'
 
-                total_pres_mem = sum((d.cantidad or Decimal('0')) * (d.precio_unitario or Decimal('0')) for d in memoria.detalles.all())
+                total_pres_mem = sum(d.precio_total for d in memoria.detalles.all())
                 
                 gastos_detalle = []
                 total_gast_mem = Decimal('0.00')

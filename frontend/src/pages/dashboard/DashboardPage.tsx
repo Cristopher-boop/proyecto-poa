@@ -62,6 +62,29 @@ export default function DashboardPage() {
     }
   }
 
+  async function cambiarGestion(gestionId: number) {
+    const selected = gestiones.find(g => g.id === gestionId);
+    if (!selected) return;
+    
+    setActiveGestion(selected);
+    setLoading(true);
+    try {
+      const [pData, mData, gData] = await Promise.all([
+        getPresupuestosArea({ gestion: selected.id }),
+        getMemorias({ gestion: selected.id }),
+        getGastos({ gestion: selected.id }),
+      ]);
+
+      setPresupuestos(Array.isArray(pData) ? pData : []);
+      setMemorias(Array.isArray(mData) ? mData : []);
+      setGastos(Array.isArray(gData) ? gData : []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const formatMoney = (val: number | string) => {
     const num = typeof val === "string" ? parseFloat(val) : val;
     return new Intl.NumberFormat("es-BO", {
@@ -90,7 +113,15 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-theme-surface border border-theme-border px-3 py-1.5 rounded-xl text-xs font-semibold text-theme-main">
             <Calendar size={15} className="text-theme-muted" />
-            <span>Gestión {activeGestion?.anio || 2026}</span>
+            <select
+              value={activeGestion?.id || ''}
+              onChange={(e) => cambiarGestion(Number(e.target.value))}
+              className="bg-transparent font-bold text-sm text-theme-main focus:outline-none cursor-pointer"
+            >
+              {gestiones.map(g => (
+                <option key={g.id} value={g.id}>Gestión {g.anio}</option>
+              ))}
+            </select>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-theme-primary/20 text-theme-main font-bold">
               {activeGestion?.estado_display || "En Formulación"}
             </span>

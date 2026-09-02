@@ -13,7 +13,8 @@ import {
   ClipboardList,
   ChevronDown,
   ChevronRight,
-  Menu
+  Menu,
+  LayoutDashboard
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -45,7 +46,7 @@ export default function Sidebar() {
     }
   };
 
-  const isActive = (path: string) => location.pathname.startsWith(path);
+  const isActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
   
   const isOrganizacionActive = isActive('/partidas') || isActive('/planificacion') || isActive('/organizacional');
   const isGastosActive = isActive('/certificaciones') || isActive('/ejecucion') || isActive('/traspasos');
@@ -88,6 +89,16 @@ export default function Sidebar() {
         {!collapsed && (
           <p className="px-3 mb-3 text-[10px] uppercase tracking-widest text-theme-muted font-semibold">Módulos</p>
         )}
+
+        {/* 0. Dashboard */}
+        <button
+          onClick={() => navigate('/')}
+          className={navItemClass(isActive('/'))}
+          title={collapsed ? "Dashboard" : undefined}
+        >
+          <LayoutDashboard size={18} className="shrink-0" />
+          {!collapsed && <span>Dashboard</span>}
+        </button>
 
         {/* 1. Presupuestos */}
         <button
