@@ -1234,6 +1234,11 @@ export default function EjecucionPage() {
                                 <span className="font-mono font-bold text-[11px] text-theme-primary px-1.5 py-0.5 rounded bg-theme-primary/10">
                                   {r.codigo}
                                 </span>
+                                {r.partidasString && (
+                                  <span className="font-mono text-blue-500 font-semibold text-[11px]">
+                                    PAR: {r.partidasString}
+                                  </span>
+                                )}
                                 {isDisabled && (
                                   <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
                                     Sin saldo disponible
