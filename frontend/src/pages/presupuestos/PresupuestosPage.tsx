@@ -25,6 +25,9 @@ import {
   ChevronLeft,
   Printer,
   X,
+  Search,
+  RotateCcw,
+  Filter,
 } from 'lucide-react';
 import {
   Gestion,
@@ -51,6 +54,21 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
+const MESES = [
+  { value: 1, label: "Enero" },
+  { value: 2, label: "Febrero" },
+  { value: 3, label: "Marzo" },
+  { value: 4, label: "Abril" },
+  { value: 5, label: "Mayo" },
+  { value: 6, label: "Junio" },
+  { value: 7, label: "Julio" },
+  { value: 8, label: "Agosto" },
+  { value: 9, label: "Septiembre" },
+  { value: 10, label: "Octubre" },
+  { value: 11, label: "Noviembre" },
+  { value: 12, label: "Diciembre" },
+];
+
 export default function PresupuestosPage() {
   const navigate = useNavigate();
 
@@ -71,7 +89,7 @@ export default function PresupuestosPage() {
   const [viewMode, setViewMode] = useState<'general' | 'area' | 'seccion' | 'reporte'>('general');
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
   const [selectedSeccionId, setSelectedSeccionId] = useState<number | null>(null);
-  const [tabSeccion, setTabSeccion] = useState<'presupuesto' | 'gastos'>('presupuesto');
+  const [tabSeccion, setTabSeccion] = useState<'presupuesto' | 'gastos' | 'partidas'>('presupuesto');
 
   const [detalleArea, setDetalleArea] = useState<DetalleArea | null>(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
@@ -80,9 +98,16 @@ export default function PresupuestosPage() {
   const [showModalGestion, setShowModalGestion] = useState(false);
   const [nuevoAnio, setNuevoAnio] = useState(new Date().getFullYear() + 1);
 
-  // Expansiones en vista sección
+  // Expansiones y filtros en vista sección
   const [expandedMemorias, setExpandedMemorias] = useState<Set<number>>(new Set());
   const [expandedPartidas, setExpandedPartidas] = useState<Set<string>>(new Set());
+  const [expandedPartidasConsolidadas, setExpandedPartidasConsolidadas] = useState<Set<string>>(new Set());
+  const [busquedaPartida, setBusquedaPartida] = useState<string>('');
+  const [showModalReportePartidas, setShowModalReportePartidas] = useState<boolean>(false);
+
+  // Filtro por meses de evaluación (mes a mes)
+  const [mesDesde, setMesDesde] = useState<number>(1);
+  const [mesHasta, setMesHasta] = useState<number>(12);
 
   useEffect(() => { cargarBase(); }, []);
   useEffect(() => { if (selectedGestionId) cargarDatos(selectedGestionId); }, [selectedGestionId]);
@@ -279,7 +304,7 @@ export default function PresupuestosPage() {
     return detalleArea.secciones.find(s => s.seccion_id === selectedSeccionId) || null;
   }, [viewMode, detalleArea, selectedSeccionId]);
 
-  // Recolectar egresos cronológicos de la sección activa
+  // Recolectar egresos cronológicos de la sección activa (filtrados por mes)
   const todosLosGastosSeccion = useMemo(() => {
     if (!seccionActivaData) return [];
     const list: Array<{
@@ -297,6 +322,13 @@ export default function PresupuestosPage() {
     seccionActivaData.memorias.forEach(mem => {
       mem.partidas.forEach(part => {
         part.gastos_detalle.forEach(g => {
+          if (g.fecha_gasto) {
+            const parts = g.fecha_gasto.split('-');
+            if (parts.length >= 2) {
+              const m = parseInt(parts[1], 10);
+              if (m < mesDesde || m > mesHasta) return;
+            }
+          }
           list.push({
             ...g,
             memoria_codigo: mem.memoria_codigo,
@@ -308,7 +340,181 @@ export default function PresupuestosPage() {
     });
 
     return list.sort((a, b) => new Date(b.fecha_gasto).getTime() - new Date(a.fecha_gasto).getTime());
-  }, [seccionActivaData]);
+  }, [seccionActivaData, mesDesde, mesHasta]);
+
+  // Consolidado por Partidas de la Sección Activa (Ordenadas Numéricamente y Filtradas por Mes)
+  const partidasConsolidadas = useMemo(() => {
+    if (!seccionActivaData) return [];
+    const map: Record<
+      string,
+      {
+        partida_codigo: string;
+        partida_nombre: string;
+        total_presupuestado: number;
+        total_agregado: number;
+        total_quitado: number;
+        total_ejecutado: number;
+        total_disponible: number;
+        porcentaje_ejecucion: number;
+        memorias: Array<{
+          memoria_id: number;
+          memoria_codigo: string;
+          justificacion: string;
+          presupuestado: number;
+          agregado: number;
+          quitado: number;
+          ejecutado: number;
+          disponible: number;
+          gastos_detalle: Array<{
+            gasto_id: number;
+            fecha_gasto: string;
+            monto: string;
+            comprobante: string;
+            observacion: string;
+            item_descripcion: string;
+          }>;
+        }>;
+      }
+    > = {};
+
+    seccionActivaData.memorias.forEach((memoria) => {
+      memoria.partidas.forEach((partida) => {
+        const cod = (partida.partida_codigo || '').trim();
+        const nom = (partida.partida_nombre || '').trim();
+        if (!cod) return;
+
+        if (!map[cod]) {
+          map[cod] = {
+            partida_codigo: cod,
+            partida_nombre: nom || `Partida ${cod}`,
+            total_presupuestado: 0,
+            total_agregado: 0,
+            total_quitado: 0,
+            total_ejecutado: 0,
+            total_disponible: 0,
+            porcentaje_ejecucion: 0,
+            memorias: [],
+          };
+        }
+
+        const pres = parseFloat(partida.presupuestado || '0');
+        const agr = parseFloat(partida.monto_entrante || '0');
+        const quit = parseFloat(partida.monto_saliente || '0');
+
+        // Filtrar gastos de la partida por el rango [mesDesde, mesHasta]
+        const gastosPeriodo = (partida.gastos_detalle || []).filter(g => {
+          if (!g.fecha_gasto) return true;
+          const parts = g.fecha_gasto.split('-');
+          if (parts.length >= 2) {
+            const m = parseInt(parts[1], 10);
+            return m >= mesDesde && m <= mesHasta;
+          }
+          return true;
+        });
+
+        const ejec = gastosPeriodo.reduce((sum, g) => sum + parseFloat(g.monto || '0'), 0);
+        const disp = Math.max(0, pres + agr - quit - ejec);
+
+        map[cod].total_presupuestado += pres;
+        map[cod].total_agregado += agr;
+        map[cod].total_quitado += quit;
+        map[cod].total_ejecutado += ejec;
+        map[cod].total_disponible += disp;
+
+        map[cod].memorias.push({
+          memoria_id: memoria.memoria_id,
+          memoria_codigo: memoria.memoria_codigo,
+          justificacion: memoria.justificacion,
+          presupuestado: pres,
+          agregado: agr,
+          quitado: quit,
+          ejecutado: ejec,
+          disponible: disp,
+          gastos_detalle: gastosPeriodo,
+        });
+      });
+    });
+
+    const list = Object.values(map);
+
+    list.forEach((p) => {
+      const base = p.total_presupuestado + p.total_agregado - p.total_quitado;
+      p.porcentaje_ejecucion =
+        base > 0
+          ? Math.min(100, Math.round((p.total_ejecutado / base) * 10000) / 100)
+          : p.total_presupuestado > 0
+          ? Math.min(100, Math.round((p.total_ejecutado / p.total_presupuestado) * 10000) / 100)
+          : 0;
+    });
+
+    // Ordenar ascendentemente por número / código de partida
+    return list.sort((a, b) => {
+      const numA = parseInt(a.partida_codigo.replace(/\D/g, ''), 10);
+      const numB = parseInt(b.partida_codigo.replace(/\D/g, ''), 10);
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numA - numB;
+      }
+      return a.partida_codigo.localeCompare(b.partida_codigo);
+    });
+  }, [seccionActivaData, mesDesde, mesHasta]);
+
+  // Partidas filtradas por búsqueda
+  const partidasFiltradas = useMemo(() => {
+    if (!busquedaPartida.trim()) return partidasConsolidadas;
+    const q = busquedaPartida.trim().toLowerCase();
+    return partidasConsolidadas.filter(
+      (p) =>
+        p.partida_codigo.toLowerCase().includes(q) ||
+        p.partida_nombre.toLowerCase().includes(q)
+    );
+  }, [partidasConsolidadas, busquedaPartida]);
+
+  // Totales de la pestaña de Partidas
+  const totalPartidasPresupuestado = useMemo(() => {
+    return partidasConsolidadas.reduce((acc, p) => acc + p.total_presupuestado, 0);
+  }, [partidasConsolidadas]);
+
+  const totalPartidasAgregado = useMemo(() => {
+    return partidasConsolidadas.reduce((acc, p) => acc + p.total_agregado, 0);
+  }, [partidasConsolidadas]);
+
+  const totalPartidasQuitado = useMemo(() => {
+    return partidasConsolidadas.reduce((acc, p) => acc + p.total_quitado, 0);
+  }, [partidasConsolidadas]);
+
+  const totalPartidasEjecutado = useMemo(() => {
+    return partidasConsolidadas.reduce((acc, p) => acc + p.total_ejecutado, 0);
+  }, [partidasConsolidadas]);
+
+  const totalPartidasDisponible = useMemo(() => {
+    return partidasConsolidadas.reduce((acc, p) => acc + p.total_disponible, 0);
+  }, [partidasConsolidadas]);
+
+  const pctPartidasGlobal = useMemo(() => {
+    const base = totalPartidasPresupuestado + totalPartidasAgregado - totalPartidasQuitado;
+    if (base > 0) {
+      return Math.min(100, Math.round((totalPartidasEjecutado / base) * 10000) / 100);
+    }
+    return totalPartidasPresupuestado > 0
+      ? Math.min(100, Math.round((totalPartidasEjecutado / totalPartidasPresupuestado) * 10000) / 100)
+      : 0;
+  }, [totalPartidasPresupuestado, totalPartidasAgregado, totalPartidasQuitado, totalPartidasEjecutado]);
+
+  const togglePartidaConsolidada = (codigo: string) => {
+    setExpandedPartidasConsolidadas((prev) => {
+      const s = new Set(prev);
+      s.has(codigo) ? s.delete(codigo) : s.add(codigo);
+      return s;
+    });
+  };
+
+  const nombreMesDesde = MESES.find((m) => m.value === mesDesde)?.label || "Enero";
+  const nombreMesHasta = MESES.find((m) => m.value === mesHasta)?.label || "Diciembre";
+  const hayFiltroMeses = mesDesde !== 1 || mesHasta !== 12;
+  const resetearFiltroMeses = () => {
+    setMesDesde(1);
+    setMesHasta(12);
+  };
 
   if (loading) {
     return (
@@ -722,10 +928,18 @@ export default function PresupuestosPage() {
                     )
                   })
                 </button>
+                <button
+                  onClick={() => setTabSeccion('partidas')}
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+                    tabSeccion === 'partidas' ? 'border-theme-primary text-theme-main font-extrabold' : 'border-transparent text-theme-muted hover:text-theme-main'
+                  }`}
+                >
+                  <BookOpenText size={14} /> Consolidado por Partidas ({partidasConsolidadas.length})
+                </button>
               </div>
 
-              {tabSeccion === 'presupuesto' ? (
-                /* Listado de Memorias de Cálculo */
+              {/* PESTAÑA 1: ESTRUCTURA POA Y PARTIDAS */}
+              {tabSeccion === 'presupuesto' && (
                 <div className="space-y-4">
                   <div className="px-1">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-theme-muted">
@@ -827,43 +1041,43 @@ export default function PresupuestosPage() {
                                     ? Math.min(100, Math.round(parseFloat(partida.gastado) / parseFloat(partida.presupuestado) * 10000) / 100)
                                     : 0;
 
-                                          const tieneTraspasosP = Number(partida.monto_entrante || 0) > 0 || Number(partida.monto_saliente || 0) > 0;
-                                          return (
-                                            <div key={pKey} className="border border-theme-border rounded-xl bg-theme-surface overflow-hidden">
-                                              {/* Cabecera Partida */}
-                                              <button
-                                                onClick={() => togglePartida(pKey)}
-                                                className="w-full p-4 flex items-center justify-between gap-4 hover:bg-theme-border/10 transition-colors text-left"
-                                              >
-                                                <div className="flex-1 min-w-0">
-                                                  <div className="flex items-center gap-2">
-                                                    <span className="font-mono text-xs font-bold text-theme-primary">{partida.partida_codigo}</span>
-                                                    <span className="text-xs font-semibold text-theme-main truncate">{partida.partida_nombre}</span>
-                                                  </div>
+                                  const tieneTraspasosP = Number(partida.monto_entrante || 0) > 0 || Number(partida.monto_saliente || 0) > 0;
+                                  return (
+                                    <div key={pKey} className="border border-theme-border rounded-xl bg-theme-surface overflow-hidden">
+                                      {/* Cabecera Partida */}
+                                      <button
+                                        onClick={() => togglePartida(pKey)}
+                                        className="w-full p-4 flex items-center justify-between gap-4 hover:bg-theme-border/10 transition-colors text-left"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-mono text-xs font-bold text-theme-primary">{partida.partida_codigo}</span>
+                                            <span className="text-xs font-semibold text-theme-main truncate">{partida.partida_nombre}</span>
+                                          </div>
 
-                                                  <div className={`grid gap-2 mt-3 text-left ${tieneTraspasosP ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
-                                                    <div>
-                                                      <span className="text-[10px] text-theme-muted">Presupuesto</span>
-                                                      <p className="text-xs font-bold text-theme-main">{formatMoney(partida.presupuestado)}</p>
-                                                    </div>
-                                                    {tieneTraspasosP && (
-                                                      <div>
-                                                        <span className="text-[10px] text-theme-muted">Traspasos (Ent / Sal)</span>
-                                                        <p className="text-xs font-mono font-bold">
-                                                          <span className="text-emerald-600 dark:text-emerald-400">+{formatMoney(partida.monto_entrante || 0)}</span> /{' '}
-                                                          <span className="text-rose-600 dark:text-rose-400">-{formatMoney(partida.monto_saliente || 0)}</span>
-                                                        </p>
-                                                      </div>
-                                                    )}
-                                                    <div>
-                                                      <span className="text-[10px] text-theme-muted text-rose-600">Ejecutado</span>
-                                                      <p className="text-xs font-bold text-rose-600 dark:text-rose-400">{formatMoney(partida.gastado)}</p>
-                                                    </div>
-                                                    <div>
-                                                      <span className="text-[10px] text-theme-muted text-emerald-600">Disponible</span>
-                                                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(partida.disponible)}</p>
-                                                    </div>
-                                                  </div>
+                                          <div className={`grid gap-2 mt-3 text-left ${tieneTraspasosP ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+                                            <div>
+                                              <span className="text-[10px] text-theme-muted">Presupuesto</span>
+                                              <p className="text-xs font-bold text-theme-main">{formatMoney(partida.presupuestado)}</p>
+                                            </div>
+                                            {tieneTraspasosP && (
+                                              <div>
+                                                <span className="text-[10px] text-theme-muted">Traspasos (Ent / Sal)</span>
+                                                <p className="text-xs font-mono font-bold">
+                                                  <span className="text-emerald-600 dark:text-emerald-400">+{formatMoney(partida.monto_entrante || 0)}</span> /{' '}
+                                                  <span className="text-rose-600 dark:text-rose-400">-{formatMoney(partida.monto_saliente || 0)}</span>
+                                                </p>
+                                              </div>
+                                            )}
+                                            <div>
+                                              <span className="text-[10px] text-theme-muted text-rose-600">Ejecutado</span>
+                                              <p className="text-xs font-bold text-rose-600 dark:text-rose-400">{formatMoney(partida.gastado)}</p>
+                                            </div>
+                                            <div>
+                                              <span className="text-[10px] text-theme-muted text-emerald-600">Disponible</span>
+                                              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(partida.disponible)}</p>
+                                            </div>
+                                          </div>
 
                                           <div className="w-full bg-theme-border/60 rounded-full h-1.5 mt-2.5 overflow-hidden">
                                             <div className={`h-full ${pctP > 80 ? 'bg-rose-500' : pctP > 50 ? 'bg-amber-500' : 'bg-theme-primary'}`}
@@ -937,8 +1151,10 @@ export default function PresupuestosPage() {
                     })
                   )}
                 </div>
-              ) : (
-                /* Libro Auxiliar de Gastos - Historial Cronológico Detallado */
+              )}
+
+              {/* PESTAÑA 2: LIBRO AUXILIAR DE GASTOS */}
+              {tabSeccion === 'gastos' && (
                 <div className="card overflow-hidden bg-theme-surface">
                   <div className="p-4 bg-theme-base/60 border-b border-theme-border/60 flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-theme-main flex items-center gap-1.5">
@@ -1027,6 +1243,320 @@ export default function PresupuestosPage() {
                       </table>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* PESTAÑA 3: CONSOLIDADO POR PARTIDAS */}
+              {tabSeccion === 'partidas' && (
+                <div className="space-y-4">
+                  {/* Barra de herramientas de la pestaña de partidas */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-theme-surface p-4 rounded-xl border border-theme-border shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-xl bg-theme-primary/10 text-theme-primary">
+                        <BookOpenText size={18} />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-theme-main">
+                          Lista Consolidada por Orden de Partidas
+                        </h3>
+                        <p className="text-[11px] text-theme-muted">
+                          Gestión {activeGestion?.anio || detalleArea?.gestion_anio} • {detalleArea?.area_nombre} ({detalleArea?.area_codigo}) • {seccionActivaData.seccion_nombre}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Filtro Mes Desde */}
+                      <div className="flex items-center gap-1.5 bg-theme-base border border-theme-border px-2.5 py-1.5 rounded-xl text-xs">
+                        <Calendar size={13} className="text-theme-muted" />
+                        <label className="text-theme-muted font-medium text-[11px]">Desde:</label>
+                        <select
+                          value={mesDesde}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setMesDesde(val);
+                            if (val > mesHasta) setMesHasta(val);
+                          }}
+                          className="bg-transparent font-bold text-theme-main focus:outline-none cursor-pointer text-xs"
+                        >
+                          {MESES.map((m) => (
+                            <option key={m.value} value={m.value}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Filtro Mes Hasta */}
+                      <div className="flex items-center gap-1.5 bg-theme-base border border-theme-border px-2.5 py-1.5 rounded-xl text-xs">
+                        <Calendar size={13} className="text-theme-muted" />
+                        <label className="text-theme-muted font-medium text-[11px]">Hasta:</label>
+                        <select
+                          value={mesHasta}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setMesHasta(val);
+                            if (val < mesDesde) setMesDesde(val);
+                          }}
+                          className="bg-transparent font-bold text-theme-main focus:outline-none cursor-pointer text-xs"
+                        >
+                          {MESES.map((m) => (
+                            <option key={m.value} value={m.value}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Botón Limpiar Filtro de Meses */}
+                      {hayFiltroMeses && (
+                        <button
+                          onClick={resetearFiltroMeses}
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all flex items-center gap-1"
+                          title="Restablecer a todo el año (Enero a Diciembre)"
+                        >
+                          <RotateCcw size={12} />
+                          Limpiar
+                        </button>
+                      )}
+
+                      {/* Input de Búsqueda */}
+                      <div className="relative">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" />
+                        <input
+                          type="text"
+                          placeholder="Buscar partida..."
+                          value={busquedaPartida}
+                          onChange={(e) => setBusquedaPartida(e.target.value)}
+                          className="pl-9 pr-3 py-1.5 text-xs rounded-xl bg-theme-base border border-theme-border text-theme-main placeholder:text-theme-muted focus:outline-none focus:border-theme-primary w-full sm:w-44"
+                        />
+                        {busquedaPartida && (
+                          <button
+                            onClick={() => setBusquedaPartida('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main text-xs"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Botón de Impresión de Reporte */}
+                      <button
+                        onClick={() => setShowModalReportePartidas(true)}
+                        className="px-3 py-1.5 rounded-xl bg-theme-primary text-theme-primaryText text-xs font-bold hover:bg-theme-primaryHover transition-all flex items-center gap-1.5 shadow-sm shrink-0"
+                        title="Imprimir reporte oficial de partidas presupuestarias"
+                      >
+                        <Printer size={14} />
+                        Imprimir Partidas
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Indicador de Rango de Meses Activo */}
+                  {hayFiltroMeses && (
+                    <div className="text-[11px] px-3 py-1.5 rounded-xl bg-theme-primary/10 border border-theme-primary/20 text-theme-main flex items-center gap-2">
+                      <Filter size={13} className="text-theme-primary shrink-0" />
+                      <span>
+                        Evaluando ejecución presupuestaria correspondiente al periodo: <strong>{nombreMesDesde} a {nombreMesHasta} {activeGestion?.anio || ''}</strong>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Resumen KPIs de Partidas */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+                    <div className="card p-3 text-center">
+                      <span className="text-[9px] font-bold text-theme-muted uppercase block">Total Presupuestado</span>
+                      <p className="text-sm font-bold text-theme-main mt-0.5">{formatMoney(totalPartidasPresupuestado)}</p>
+                    </div>
+                    <div className="card p-3 text-center bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-800/40">
+                      <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase block">Agregado (+)</span>
+                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">+{formatMoney(totalPartidasAgregado)}</p>
+                    </div>
+                    <div className="card p-3 text-center bg-rose-50/40 dark:bg-rose-950/20 border-rose-200/60 dark:border-rose-800/40">
+                      <span className="text-[9px] font-bold text-rose-700 dark:text-rose-400 uppercase block">Quitado (-)</span>
+                      <p className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-0.5">-{formatMoney(totalPartidasQuitado)}</p>
+                    </div>
+                    <div className="card p-3 text-center bg-rose-50/30 dark:bg-rose-950/15 border-rose-200/50 dark:border-rose-800/30">
+                      <span className="text-[9px] font-bold text-rose-700 dark:text-rose-400 uppercase block">
+                        Ejecutado ({nombreMesDesde.slice(0, 3)} - {nombreMesHasta.slice(0, 3)})
+                      </span>
+                      <p className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-0.5">{formatMoney(totalPartidasEjecutado)}</p>
+                    </div>
+                    <div className="card p-3 text-center bg-emerald-50/50 dark:bg-emerald-950/25 border-emerald-200/70 dark:border-emerald-800/50">
+                      <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase block">Disponible</span>
+                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{formatMoney(totalPartidasDisponible)}</p>
+                    </div>
+                    <div className="card p-3 text-center">
+                      <span className="text-[9px] font-bold text-theme-muted uppercase block">% Ejecución</span>
+                      <p className="text-sm font-bold text-theme-main mt-0.5">{pctPartidasGlobal}%</p>
+                    </div>
+                  </div>
+
+                  {/* Tabla Principal de Partidas Consolidadas */}
+                  <div className="card overflow-hidden bg-theme-surface">
+                    {partidasFiltradas.length === 0 ? (
+                      <div className="p-12 text-center text-theme-muted space-y-2">
+                        <BookOpenText size={36} className="mx-auto opacity-30 text-theme-primary" />
+                        <p className="font-semibold text-sm">
+                          {busquedaPartida ? 'No se encontraron partidas para la búsqueda.' : 'Sin partidas configuradas en esta sección.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs text-left border-collapse">
+                          <thead>
+                            <tr className="bg-theme-base/60 text-[10px] font-bold uppercase tracking-wider text-theme-muted border-b border-theme-border">
+                              <th className="py-3 px-3 text-center w-10">Nº</th>
+                              <th className="py-3 px-3 text-center w-24">Nº Partida</th>
+                              <th className="py-3 px-4">Nombre de la Partida</th>
+                              <th className="py-3 px-3 text-right">Total Presupuestado</th>
+                              <th className="py-3 px-3 text-right text-emerald-700 dark:text-emerald-400">Agregado (+)</th>
+                              <th className="py-3 px-3 text-right text-rose-700 dark:text-rose-400">Quitado (-)</th>
+                              <th className="py-3 px-3 text-right text-rose-600 dark:text-rose-400">
+                                Ejecutado ({nombreMesDesde.slice(0, 3)} - {nombreMesHasta.slice(0, 3)})
+                              </th>
+                              <th className="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">Disponible</th>
+                              <th className="py-3 px-3 text-center w-20">Porcentaje</th>
+                              <th className="py-3 px-2 text-center w-12">Detalle</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-theme-border/60">
+                            {partidasFiltradas.map((partida, idx) => {
+                              const isExp = expandedPartidasConsolidadas.has(partida.partida_codigo);
+                              return (
+                                <React.Fragment key={`partida-${partida.partida_codigo}`}>
+                                  <tr
+                                    onClick={() => togglePartidaConsolidada(partida.partida_codigo)}
+                                    className="hover:bg-theme-border/20 transition-colors cursor-pointer"
+                                  >
+                                    <td className="py-3 px-3 text-center font-bold text-theme-muted text-[11px]">
+                                      {idx + 1}
+                                    </td>
+                                    <td className="py-3 px-3 text-center font-mono font-bold text-theme-primary text-xs">
+                                      {partida.partida_codigo}
+                                    </td>
+                                    <td className="py-3 px-4 font-semibold text-theme-main text-xs">
+                                      {partida.partida_nombre}
+                                    </td>
+                                    <td className="py-3 px-3 text-right font-medium text-theme-main text-xs">
+                                      {formatMoney(partida.total_presupuestado)}
+                                    </td>
+                                    <td className="py-3 px-3 text-right font-medium text-emerald-600 dark:text-emerald-400 text-xs">
+                                      {partida.total_agregado > 0 ? `+${formatMoney(partida.total_agregado)}` : '0,00 Bs'}
+                                    </td>
+                                    <td className="py-3 px-3 text-right font-medium text-rose-600 dark:text-rose-400 text-xs">
+                                      {partida.total_quitado > 0 ? `-${formatMoney(partida.total_quitado)}` : '0,00 Bs'}
+                                    </td>
+                                    <td className="py-3 px-3 text-right font-bold text-rose-600 dark:text-rose-400 text-xs">
+                                      {formatMoney(partida.total_ejecutado)}
+                                    </td>
+                                    <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                                      {formatMoney(partida.total_disponible)}
+                                    </td>
+                                    <td className="py-3 px-3 text-center">
+                                      <span
+                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                          partida.porcentaje_ejecucion > 80
+                                            ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                            : partida.porcentaje_ejecucion > 50
+                                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                            : 'bg-theme-border text-theme-main'
+                                        }`}
+                                      >
+                                        {partida.porcentaje_ejecucion}%
+                                      </span>
+                                    </td>
+                                    <td className="py-3 px-2 text-center text-theme-muted">
+                                      {isExp ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                                    </td>
+                                  </tr>
+
+                                  {/* Desglose de Memorias al Expandir la Partida */}
+                                  {isExp && (
+                                    <tr className="bg-theme-base/30">
+                                      <td colSpan={10} className="p-4 border-l-4 border-theme-primary/60">
+                                        <div className="space-y-3">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-bold uppercase text-theme-muted">
+                                              Memorias de Cálculo Asociadas a la Partida {partida.partida_codigo}:
+                                            </span>
+                                            <span className="text-[10px] text-theme-muted font-bold">
+                                              {partida.memorias.length} memoria(s)
+                                            </span>
+                                          </div>
+
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {partida.memorias.map((mem) => (
+                                              <div
+                                                key={`mem-${mem.memoria_id}`}
+                                                className="p-3 rounded-xl bg-theme-surface border border-theme-border text-xs space-y-2"
+                                              >
+                                                <div className="flex items-center justify-between">
+                                                  <span className="font-mono font-bold text-theme-primary text-xs">
+                                                    {mem.memoria_codigo}
+                                                  </span>
+                                                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                    Disp: {formatMoney(mem.disponible)}
+                                                  </span>
+                                                </div>
+                                                <p className="text-[11px] text-theme-muted line-clamp-2">{mem.justificacion}</p>
+                                                <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-theme-border/60 text-[10px]">
+                                                  <div>
+                                                    <span className="text-theme-muted block">Presupuesto:</span>
+                                                    <span className="font-bold text-theme-main">{formatMoney(mem.presupuestado)}</span>
+                                                  </div>
+                                                  <div>
+                                                    <span className="text-theme-muted block">Traspasos:</span>
+                                                    <span className="font-bold text-blue-600 dark:text-blue-400">
+                                                      +{formatMoney(mem.agregado)} / -{formatMoney(mem.quitado)}
+                                                    </span>
+                                                  </div>
+                                                  <div>
+                                                    <span className="text-theme-muted block">Ejecutado:</span>
+                                                    <span className="font-bold text-rose-600 dark:text-rose-400">{formatMoney(mem.ejecutado)}</span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot>
+                            <tr className="bg-theme-base/80 font-black border-t-2 border-theme-border text-xs text-theme-main">
+                              <td colSpan={3} className="py-3 px-4 text-right uppercase tracking-wider text-[11px]">
+                                TOTAL CONSOLIDADO DE PARTIDAS:
+                              </td>
+                              <td className="py-3 px-3 text-right text-xs">
+                                {formatMoney(totalPartidasPresupuestado)}
+                              </td>
+                              <td className="py-3 px-3 text-right text-xs text-emerald-600 dark:text-emerald-400">
+                                +{formatMoney(totalPartidasAgregado)}
+                              </td>
+                              <td className="py-3 px-3 text-right text-xs text-rose-600 dark:text-rose-400">
+                                -{formatMoney(totalPartidasQuitado)}
+                              </td>
+                              <td className="py-3 px-3 text-right text-xs text-rose-600 dark:text-rose-400">
+                                {formatMoney(totalPartidasEjecutado)}
+                              </td>
+                              <td className="py-3 px-3 text-right text-xs text-emerald-600 dark:text-emerald-400">
+                                {formatMoney(totalPartidasDisponible)}
+                              </td>
+                              <td className="py-3 px-3 text-center text-xs">
+                                {pctPartidasGlobal}%
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -1334,6 +1864,248 @@ export default function PresupuestosPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE REPORTE E IMPRESIÓN OFICIAL POR PARTIDAS */}
+      {showModalReportePartidas && seccionActivaData && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:bg-white print:static print:overflow-visible">
+          <div className="bg-theme-surface border border-theme-border rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden print:max-w-none print:max-h-none print:border-none print:shadow-none print:w-full">
+            {/* Barra de Controles Superior (Oculta al Imprimir) */}
+            <div className="p-4 border-b border-theme-border flex items-center justify-between bg-theme-base/60 print:hidden">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-theme-primary/10 text-theme-primary">
+                  <FileText size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-theme-main">Vista Previa - Reporte Oficial de Partidas</h3>
+                  <p className="text-[11px] text-theme-muted">
+                    {detalleArea?.area_nombre} • {seccionActivaData.seccion_nombre} • Gestión {activeGestion?.anio || detalleArea?.gestion_anio}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText text-xs font-bold hover:bg-theme-primaryHover transition-all flex items-center gap-1.5 shadow"
+                >
+                  <Printer size={15} />
+                  Imprimir Reporte (PDF)
+                </button>
+                <button
+                  onClick={() => setShowModalReportePartidas(false)}
+                  className="p-2 rounded-xl text-theme-muted hover:text-theme-main hover:bg-theme-border/40 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Hoja Imprimible Oficial */}
+            <div className="p-4 sm:p-8 overflow-y-auto print:overflow-visible bg-white text-black">
+              <div id="reporte-partidas-printable" className="w-full bg-white text-black max-w-4xl mx-auto space-y-6">
+                {/* Cabecera Institucional */}
+                <div className="border-b-2 border-black pb-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-600">
+                        ESTADO PLURINACIONAL DE BOLIVIA
+                      </p>
+                      <h1 className="text-base sm:text-lg font-black uppercase tracking-wider text-black mt-0.5">
+                        EMPRESA PÚBLICA DE TRANSPORTE AÉREO MILITAR - EPTAM
+                      </h1>
+                      <p className="text-[10px] font-semibold tracking-wide text-gray-500 uppercase">
+                        SISTEMA INTEGRADO DE PROGRAMACIÓN OPERATIVA ANUAL (POA)
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-block border-2 border-black px-2.5 py-1 text-xs font-black uppercase tracking-wider">
+                        POA {activeGestion?.anio || detalleArea?.gestion_anio || '2026'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 text-center">
+                    <h2 className="text-base sm:text-lg font-black uppercase tracking-wide text-black underline underline-offset-4">
+                      REPORTE CONSOLIDADO POR PARTIDAS PRESUPUESTARIAS
+                    </h2>
+                    <p className="text-xs font-bold text-gray-700 mt-1 uppercase">
+                      {detalleArea?.area_nombre} — {seccionActivaData.seccion_nombre}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metadatos */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] border border-gray-400 bg-gray-50 p-3 rounded">
+                  <div>
+                    <span className="font-bold text-gray-500 block uppercase text-[9px]">Gestión Fiscal:</span>
+                    <span className="font-bold text-black">{activeGestion?.anio || detalleArea?.gestion_anio}</span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-gray-500 block uppercase text-[9px]">Periodo Evaluado:</span>
+                    <span className="font-bold text-black">
+                      {mesDesde === mesHasta ? nombreMesDesde : `${nombreMesDesde} - ${nombreMesHasta}`}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-gray-500 block uppercase text-[9px]">Gerencia / Unidad:</span>
+                    <span className="font-bold text-black truncate block">
+                      {detalleArea?.area_nombre} ({detalleArea?.area_codigo})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-gray-500 block uppercase text-[9px]">Sección Operativa:</span>
+                    <span className="font-bold text-black truncate block">
+                      {seccionActivaData.seccion_nombre}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-gray-500 block uppercase text-[9px]">Fecha de Emisión:</span>
+                    <span className="font-medium text-black">
+                      {new Date().toLocaleDateString('es-BO')} {new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Resumen Ejecutivo */}
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center">
+                  <div className="border border-gray-400 p-2 rounded bg-white">
+                    <p className="text-[8px] font-bold uppercase text-gray-600">Presupuestado</p>
+                    <p className="text-xs font-black text-black mt-0.5">{formatMoney(totalPartidasPresupuestado)}</p>
+                  </div>
+                  <div className="border border-gray-400 p-2 rounded bg-white">
+                    <p className="text-[8px] font-bold uppercase text-gray-600">Agregado (+)</p>
+                    <p className="text-xs font-black text-emerald-800 mt-0.5">+{formatMoney(totalPartidasAgregado)}</p>
+                  </div>
+                  <div className="border border-gray-400 p-2 rounded bg-white">
+                    <p className="text-[8px] font-bold uppercase text-gray-600">Quitado (-)</p>
+                    <p className="text-xs font-black text-red-800 mt-0.5">-{formatMoney(totalPartidasQuitado)}</p>
+                  </div>
+                  <div className="border border-gray-400 p-2 rounded bg-white">
+                    <p className="text-[8px] font-bold uppercase text-gray-600">
+                      Ejecutado {hayFiltroMeses ? `(${nombreMesDesde.slice(0, 3)} - ${nombreMesHasta.slice(0, 3)})` : ''}
+                    </p>
+                    <p className="text-xs font-black text-red-700 mt-0.5">{formatMoney(totalPartidasEjecutado)}</p>
+                  </div>
+                  <div className="border border-gray-400 p-2 rounded bg-white">
+                    <p className="text-[8px] font-bold uppercase text-gray-600">Disponible</p>
+                    <p className="text-xs font-black text-emerald-700 mt-0.5">{formatMoney(totalPartidasDisponible)}</p>
+                  </div>
+                  <div className="border border-gray-400 p-2 rounded bg-white">
+                    <p className="text-[8px] font-bold uppercase text-gray-600">% Avance</p>
+                    <p className="text-xs font-black text-black mt-0.5">{pctPartidasGlobal}%</p>
+                  </div>
+                </div>
+
+                {/* Tabla de Partidas */}
+                <div>
+                  <table className="w-full border-collapse border border-gray-400 text-[10px]">
+                    <thead>
+                      <tr className="bg-gray-200 border-b border-gray-400 font-black text-black uppercase tracking-wider text-[9px]">
+                        <th className="border border-gray-400 py-1.5 px-2 text-center w-8">Nº</th>
+                        <th className="border border-gray-400 py-1.5 px-2 text-center w-20">Nº Partida</th>
+                        <th className="border border-gray-400 py-1.5 px-3 text-left">Nombre de Partida</th>
+                        <th className="border border-gray-400 py-1.5 px-2.5 text-right w-24">Total Presupuestado</th>
+                        <th className="border border-gray-400 py-1.5 px-2.5 text-right w-20">Agregado (+)</th>
+                        <th className="border border-gray-400 py-1.5 px-2.5 text-right w-20">Quitado (-)</th>
+                        <th className="border border-gray-400 py-1.5 px-2.5 text-right w-24">
+                          Ejecutado {hayFiltroMeses ? `(${nombreMesDesde.slice(0, 3)} - ${nombreMesHasta.slice(0, 3)})` : ''}
+                        </th>
+                        <th className="border border-gray-400 py-1.5 px-2.5 text-right w-24">Disponible</th>
+                        <th className="border border-gray-400 py-1.5 px-2 text-center w-14">% Ejec.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {partidasConsolidadas.map((p, idx) => (
+                        <tr key={`print-p-${p.partida_codigo}`} className={idx % 2 === 1 ? 'bg-gray-50' : 'bg-white'}>
+                          <td className="border border-gray-400 py-1.5 px-2 text-center font-bold text-gray-600">
+                            {idx + 1}
+                          </td>
+                          <td className="border border-gray-400 py-1.5 px-2 text-center font-mono font-bold text-black">
+                            {p.partida_codigo}
+                          </td>
+                          <td className="border border-gray-400 py-1.5 px-3 font-semibold text-black">
+                            {p.partida_nombre}
+                          </td>
+                          <td className="border border-gray-400 py-1.5 px-2.5 text-right font-medium text-black">
+                            {formatMoney(p.total_presupuestado)}
+                          </td>
+                          <td className="border border-gray-400 py-1.5 px-2.5 text-right font-medium text-emerald-800">
+                            {p.total_agregado > 0 ? `+${formatMoney(p.total_agregado)}` : '0,00 Bs'}
+                          </td>
+                          <td className="border border-gray-400 py-1.5 px-2.5 text-right font-medium text-red-800">
+                            {p.total_quitado > 0 ? `-${formatMoney(p.total_quitado)}` : '0,00 Bs'}
+                          </td>
+                          <td className="border border-gray-400 py-1.5 px-2.5 text-right font-medium text-red-700">
+                            {formatMoney(p.total_ejecutado)}
+                          </td>
+                          <td className="border border-gray-400 py-1.5 px-2.5 text-right font-bold text-emerald-800">
+                            {formatMoney(p.total_disponible)}
+                          </td>
+                          <td className="border border-gray-400 py-1.5 px-2 text-center font-bold text-black">
+                            {p.porcentaje_ejecucion}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-gray-300 border-t-2 border-black font-black text-black">
+                        <td colSpan={3} className="border border-gray-400 py-2 px-3 text-right uppercase tracking-wider">
+                          TOTAL GENERAL CONSOLIDADO:
+                        </td>
+                        <td className="border border-gray-400 py-2 px-2.5 text-right font-black">
+                          {formatMoney(totalPartidasPresupuestado)}
+                        </td>
+                        <td className="border border-gray-400 py-2 px-2.5 text-right font-black text-emerald-800">
+                          +{formatMoney(totalPartidasAgregado)}
+                        </td>
+                        <td className="border border-gray-400 py-2 px-2.5 text-right font-black text-red-800">
+                          -{formatMoney(totalPartidasQuitado)}
+                        </td>
+                        <td className="border border-gray-400 py-2 px-2.5 text-right font-black text-red-800">
+                          {formatMoney(totalPartidasEjecutado)}
+                        </td>
+                        <td className="border border-gray-400 py-2 px-2.5 text-right font-black text-emerald-800">
+                          {formatMoney(totalPartidasDisponible)}
+                        </td>
+                        <td className="border border-gray-400 py-2 px-2 text-center font-black">
+                          {pctPartidasGlobal}%
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Firmas */}
+                <div className="pt-8 pb-4 mt-8">
+                  <div className="grid grid-cols-3 gap-6 text-center">
+                    <div className="border-t border-black pt-2">
+                      <p className="text-[10px] font-bold uppercase text-black">Elaborado por</p>
+                      <p className="text-[9px] text-gray-600 mt-1">Responsable de Planificación y Presupuesto</p>
+                      <p className="text-[8px] text-gray-500 mt-4">Firma y Sello</p>
+                    </div>
+                    <div className="border-t border-black pt-2">
+                      <p className="text-[10px] font-bold uppercase text-black">Revisado por</p>
+                      <p className="text-[9px] text-gray-600 mt-1">Jefe de Planificación Institucional</p>
+                      <p className="text-[8px] text-gray-500 mt-4">Firma y Sello</p>
+                    </div>
+                    <div className="border-t border-black pt-2">
+                      <p className="text-[10px] font-bold uppercase text-black">Aprobado por</p>
+                      <p className="text-[9px] text-gray-600 mt-1">Gerente de Área / Dirección EPTAM</p>
+                      <p className="text-[8px] text-gray-500 mt-4">Firma y Sello</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nota al pie */}
+                <div className="border-t border-gray-300 pt-2 text-[8px] text-gray-500 flex justify-between">
+                  <span>Sistema POA - EPTAM • Documento Oficial de Control por Partidas Presupuestarias</span>
+                  <span>Montos expresados en Bolivianos (Bs.)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
