@@ -139,11 +139,17 @@
   }
 
   #reporte-seccion-printable,
-  #reporte-seccion-printable * {
+  #reporte-seccion-printable *,
+  #reporte-dashboard-printable,
+  #reporte-dashboard-printable *,
+  #reporte-partidas-printable,
+  #reporte-partidas-printable * {
     visibility: visible !important;
   }
 
-  #reporte-seccion-printable {
+  #reporte-seccion-printable,
+  #reporte-dashboard-printable,
+  #reporte-partidas-printable {
     display: block !important;
     position: absolute !important;
     left: 0 !important;
@@ -161,3 +167,4 @@
     overflow: visible !important;
   }
 }
+

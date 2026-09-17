@@ -31,6 +31,9 @@ export interface PresupuestoArea {
   area_nombre: string;
   area_codigo: string;
   area_tipo: 'GERENCIA' | 'UNIDAD';
+  programa_id?: number;
+  programa_codigo?: string;
+  programa_nombre?: string;
   monto_inicial: string;
   monto_actual: string;
   monto_ejecutado: string;

@@ -165,6 +165,13 @@ def reset():
     except Exception as e:
         print(f"  [!] Error en seed_test_users: {e}")
 
+    print("  [*] Ejecución de gastos oficiales 2026 desde Excel...")
+    try:
+        from seed_gastos import sembrar_gastos
+        sembrar_gastos()
+    except Exception as e:
+        print(f"  [!] Error en seed_gastos: {e}")
+
     # ────────────────────────────────────────────────────────────
     # RESUMEN FINAL
     # ────────────────────────────────────────────────────────────
@@ -176,6 +183,7 @@ def reset():
         from apps.presupuestos.models import Partida, Gestion
         from apps.planificacion.models import AccionMedianoPlazo, AccionCortoPlazo, Operacion, Tarea
         from apps.memorias.models import MemoriaCalculo, DetallePresupuestoMemoria
+        from apps.ejecucion.models import Gasto
 
         print(f"  Gestiones    : {', '.join(str(g.anio) for g in Gestion.objects.all())}")
         print(f"  Programas    : {Programa.objects.count()}")
@@ -188,6 +196,7 @@ def reset():
         print(f"  Partidas     : {Partida.objects.count()} (INGRESO: {Partida.objects.filter(clase='INGRESO').count()}, EGRESO: {Partida.objects.filter(clase='EGRESO').count()})")
         print(f"  Memorias     : {MemoriaCalculo.objects.count()} (2026: {MemoriaCalculo.objects.filter(gestion__anio=2026).count()}, 2027: {MemoriaCalculo.objects.filter(gestion__anio=2027).count()})")
         print(f"  Detalles     : {DetallePresupuestoMemoria.objects.count()}")
+        print(f"  Gastos (Ejec): {Gasto.objects.count()}")
         print(f"  Usuarios     : {Usuario.objects.count()}")
     except Exception as e:
         print(f"  [!] No se pudo generar el resumen: {e}")
