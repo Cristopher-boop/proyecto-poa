@@ -1,0 +1,78 @@
+<tbody className="divide-y divide-theme-border">
+            {memoriasFiltradas.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-12 text-center text-theme-muted">
+                  <FileText size={36} className="mx-auto mb-2 opacity-40" />
+                  <p className="font-medium">No se encontraron memorias en esta bandeja.</p>
+                  {!isGestionBloqueada && canCreate && (
+                    <button onClick={handleOpenCrear} className="btn-primary mt-3 text-xs">
+                      Crear Memoria de Cálculo
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ) : (
+              memoriasPaginadas.map((mem) => {
+                const total = parseFloat(mem.total_presupuesto || '0');
+                const isHighlighted = highlightedMemoriaId === mem.id;
+                return (
+                  <tr
+                    key={mem.id}
+                    id={`memoria-row-${mem.id}`}
+                    className={`transition-all duration-500 ${
+                      isHighlighted
+                        ? 'bg-amber-500/20 dark:bg-amber-500/30 ring-2 ring-amber-500 ring-inset animate-pulse font-semibold'
+                        : 'hover:bg-theme-border/20'
+                    }`}
+                  >
+                    <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{mem.codigo}</td>
+                    <td className="py-3.5 px-4">
+                      <p className="font-semibold text-theme-main text-xs">{mem.area_nombre}</p>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <p className="font-mono font-bold text-xs text-theme-main">{mem.partida_codigo || 'Partida'}</p>
+                      <p className="text-[11px] text-theme-muted line-clamp-1">{mem.partida_nombre || 'Sin partida'}</p>
+                    </td>
+                    <td className="py-3.5 px-4 max-w-xs">
+                      <div className="flex flex-wrap items-center gap-1 mb-1">
+                        {mem.operacion_codigo && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-theme-base text-theme-main border border-theme-border">
+                            POA: {mem.operacion_codigo}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-theme-main line-clamp-2">{mem.justificacion}</p>
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-theme-primary/10 text-theme-primary">
+                        {mem.total_items ?? (mem.detalles ? mem.detalles.length : 0)}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-bold text-theme-main text-xs">{formatMoney(total)}</td>
+                    <td className="py-3.5 px-4 text-center">
+                      {getBadgeEstado(mem.estado)}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={async () => {
+                            try {
+                              const memoriaCompleta = await getMemoria(mem.id);
+                              setFichaMemoria(memoriaCompleta);
+                            } catch (err) {
+                              console.error('Error al cargar ficha:', err);
+                              mostrarMensaje('error', 'No se pudo cargar la ficha técnica.');
+                            }
+                          }}
+                          className="p-2 rounded-xl text-theme-muted hover:text-theme-primary hover:bg-theme-primary/10 transition-colors"
+                          title="Ver Ficha Técnica y Acciones de Revisión"
+                        >
+                          <Eye size={17} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
