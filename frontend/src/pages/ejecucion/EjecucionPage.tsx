@@ -22,6 +22,8 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  RotateCcw,
+  X,
 } from 'lucide-react';
 import {
   Gestion,
@@ -41,6 +43,21 @@ import {
   getAreas,
 } from '../../services/presupuestoService';
 import { useAuth } from '../../hooks/useAuth';
+
+const MESES = [
+  { num: 1, nombre: 'Enero' },
+  { num: 2, nombre: 'Febrero' },
+  { num: 3, nombre: 'Marzo' },
+  { num: 4, nombre: 'Abril' },
+  { num: 5, nombre: 'Mayo' },
+  { num: 6, nombre: 'Junio' },
+  { num: 7, nombre: 'Julio' },
+  { num: 8, nombre: 'Agosto' },
+  { num: 9, nombre: 'Septiembre' },
+  { num: 10, nombre: 'Octubre' },
+  { num: 11, nombre: 'Noviembre' },
+  { num: 12, nombre: 'Diciembre' },
+];
 
 export default function EjecucionPage() {
   const { user } = useAuth();
@@ -67,6 +84,18 @@ export default function EjecucionPage() {
 
   const [filtroArea, setFiltroArea] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchHR, setSearchHR] = useState<string>('');
+  const [mesDesde, setMesDesde] = useState<number>(1);
+  const [mesHasta, setMesHasta] = useState<number>(12);
+
+  const hayFiltroMeses = mesDesde !== 1 || mesHasta !== 12;
+  const nombreMesDesde = MESES.find((m) => m.num === mesDesde)?.nombre || 'Enero';
+  const nombreMesHasta = MESES.find((m) => m.num === mesHasta)?.nombre || 'Diciembre';
+
+  const resetearFiltroMeses = () => {
+    setMesDesde(1);
+    setMesHasta(12);
+  };
 
   // Paginación
   const PAGE_SIZE = 10;
@@ -397,7 +426,7 @@ export default function EjecucionPage() {
 
   useEffect(() => {
     setCurrentPageGastos(1);
-  }, [searchTerm, filtroArea, selectedGestionId]);
+  }, [searchTerm, searchHR, filtroArea, mesDesde, mesHasta, selectedGestionId]);
 
   const totalPagesItems = Math.ceil(renglonesFiltrados.length / PAGE_SIZE);
 
@@ -409,17 +438,53 @@ export default function EjecucionPage() {
   // Gastos filtrados
   const gastosFiltrados = useMemo(() => {
     return (Array.isArray(gastos) ? gastos : []).filter((g) => {
+      // Filtro de Área
       const matchArea = filtroArea === 'todas' || String(g.area_id) === filtroArea;
-      const matchSearch =
-        !searchTerm.trim() ||
-        (g.comprobante_num && g.comprobante_num.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (g.observacion && g.observacion.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        g.area_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.partida_codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.partida_nombre.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchArea && matchSearch;
+
+      // Filtro de Rango de Meses (fecha_gasto)
+      let matchMes = true;
+      if (hayFiltroMeses && g.fecha_gasto) {
+        const parts = g.fecha_gasto.split('-');
+        if (parts.length >= 2) {
+          const mesNum = parseInt(parts[1], 10);
+          matchMes = mesNum >= mesDesde && mesNum <= mesHasta;
+        }
+      }
+
+      // Filtro específico por Hoja de Ruta (HR)
+      let matchHR = true;
+      if (searchHR.trim()) {
+        const termHR = searchHR.toLowerCase().trim();
+        const comp = (g.comprobante_num || '').toLowerCase();
+        const obs = (g.observacion || '').toLowerCase();
+        matchHR = comp.includes(termHR) || obs.includes(termHR);
+      }
+
+      // Búsqueda general
+      let matchSearch = true;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase().trim();
+        matchSearch = Boolean(
+          (g.comprobante_num && g.comprobante_num.toLowerCase().includes(term)) ||
+          (g.observacion && g.observacion.toLowerCase().includes(term)) ||
+          (g.area_nombre && g.area_nombre.toLowerCase().includes(term)) ||
+          (g.seccion_nombre && g.seccion_nombre.toLowerCase().includes(term)) ||
+          (g.memoria_codigo && g.memoria_codigo.toLowerCase().includes(term)) ||
+          (g.partida_codigo && g.partida_codigo.toLowerCase().includes(term)) ||
+          (g.partida_nombre && g.partida_nombre.toLowerCase().includes(term))
+        );
+      }
+
+      return matchArea && matchMes && matchHR && matchSearch;
     });
-  }, [gastos, filtroArea, searchTerm]);
+  }, [gastos, filtroArea, mesDesde, mesHasta, hayFiltroMeses, searchHR, searchTerm]);
+
+  const totalMontoGastosFiltrados = useMemo(() => {
+    return gastosFiltrados.reduce(
+      (acc, g) => acc + parseFloat(String(g.monto_ejecutado) || '0'),
+      0
+    );
+  }, [gastosFiltrados]);
 
   const totalPagesGastos = Math.ceil(gastosFiltrados.length / PAGE_SIZE);
 
@@ -579,41 +644,167 @@ export default function EjecucionPage() {
       {/* PESTAÑA 1: HISTORIAL DE GASTOS */}
       {activeTab === 'gastos' && (
         <div className="space-y-4">
-          <div className="card p-4 flex flex-col md:flex-row gap-3 items-center">
-            <div className="relative flex-1 w-full">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
-              <input
-                type="text"
-                placeholder="Buscar por hoja de ruta, observación, área, partida o ítem..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-theme pl-10 text-xs"
-              />
+          <div className="card p-4 space-y-3">
+            {/* Fila 1: Buscadores y Área */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+              {/* Buscador General */}
+              <div className="relative md:col-span-5">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-muted" />
+                <input
+                  type="text"
+                  placeholder="Buscar por observación, área, partida, memoria..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="input-theme pl-10 text-xs w-full"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Buscador Específico por Hoja de Ruta (HR) */}
+              <div className="relative md:col-span-4">
+                <FileText size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-rose-500" />
+                <input
+                  type="text"
+                  placeholder="Buscar N° Hoja de Ruta (ej. 2053, 1191)..."
+                  value={searchHR}
+                  onChange={(e) => setSearchHR(e.target.value)}
+                  className="input-theme pl-10 text-xs w-full font-medium"
+                />
+                {searchHR && (
+                  <button
+                    onClick={() => setSearchHR('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Selector de Área */}
+              <div className="md:col-span-3">
+                <select
+                  value={filtroArea}
+                  onChange={(e) => setFiltroArea(e.target.value)}
+                  className="input-theme text-xs py-2 w-full"
+                >
+                  <option value="todas">Todas las Áreas</option>
+                  {areas.map((a) => (
+                    <option key={a.id} value={String(a.id)}>
+                      {a.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <select
-              value={filtroArea}
-              onChange={(e) => setFiltroArea(e.target.value)}
-              className="input-theme text-xs py-2 w-full md:w-56"
-            >
-              <option value="todas">Todas las Áreas</option>
-              {areas.map((a) => (
-                <option key={a.id} value={String(a.id)}>
-                  {a.nombre}
-                </option>
-              ))}
-            </select>
+            {/* Fila 2: Filtro por Meses y Resumen */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-theme-border/60">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-bold text-theme-main flex items-center gap-1.5 mr-1">
+                  <Calendar size={15} className="text-theme-primary" />
+                  Filtrar por Mes:
+                </span>
 
-            {(searchTerm || filtroArea !== 'todas') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setFiltroArea('todas');
-                }}
-                className="text-xs text-theme-primary font-bold hover:underline whitespace-nowrap px-2"
-              >
-                Limpiar Filtros
-              </button>
+                <div className="flex items-center gap-1 bg-theme-base px-2 py-1 rounded-xl border border-theme-border">
+                  <span className="text-[11px] font-semibold text-theme-muted">Desde:</span>
+                  <select
+                    value={mesDesde}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setMesDesde(val);
+                      if (val > mesHasta) setMesHasta(val);
+                    }}
+                    className="bg-transparent text-xs font-bold text-theme-main focus:outline-none cursor-pointer"
+                  >
+                    {MESES.map((m) => (
+                      <option key={`desde-${m.num}`} value={m.num}>
+                        {m.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1 bg-theme-base px-2 py-1 rounded-xl border border-theme-border">
+                  <span className="text-[11px] font-semibold text-theme-muted">Hasta:</span>
+                  <select
+                    value={mesHasta}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setMesHasta(val);
+                      if (val < mesDesde) setMesDesde(val);
+                    }}
+                    className="bg-transparent text-xs font-bold text-theme-main focus:outline-none cursor-pointer"
+                  >
+                    {MESES.map((m) => (
+                      <option key={`hasta-${m.num}`} value={m.num}>
+                        {m.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {hayFiltroMeses && (
+                  <button
+                    onClick={resetearFiltroMeses}
+                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+                    title="Restablecer al año completo (Enero - Diciembre)"
+                  >
+                    <RotateCcw size={12} />
+                    Todo el Año
+                  </button>
+                )}
+
+                {(searchTerm || searchHR || filtroArea !== 'todas' || hayFiltroMeses) && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSearchHR('');
+                      setFiltroArea('todas');
+                      resetearFiltroMeses();
+                    }}
+                    className="text-xs text-rose-600 dark:text-rose-400 font-bold hover:underline whitespace-nowrap ml-2 flex items-center gap-1"
+                  >
+                    <X size={13} />
+                    Limpiar Todos los Filtros
+                  </button>
+                )}
+              </div>
+
+              {/* Resumen de Resultados Filtrados */}
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-theme-muted">
+                  Registros: <strong className="text-theme-main">{gastosFiltrados.length}</strong>
+                </span>
+                <span className="text-theme-muted">|</span>
+                <span className="text-theme-muted">
+                  Total Filtrado:{' '}
+                  <strong className="text-rose-600 dark:text-rose-400 font-bold">
+                    {formatMoney(totalMontoGastosFiltrados)}
+                  </strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Chip de Periodo Activo */}
+            {hayFiltroMeses && (
+              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-xs text-blue-800 dark:text-blue-300 flex items-center justify-between">
+                <span>
+                  🗓️ Evaluando gastos realizados entre <strong>{nombreMesDesde}</strong> y <strong>{nombreMesHasta}</strong>.
+                </span>
+                <button
+                  onClick={resetearFiltroMeses}
+                  className="font-bold underline hover:opacity-80 text-[11px]"
+                >
+                  Ver año completo
+                </button>
+              </div>
             )}
           </div>
 
