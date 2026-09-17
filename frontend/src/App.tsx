@@ -8,6 +8,7 @@ import DashboardPage from "./pages/dashboard/DashboardPage";
 import PresupuestosPage from "./pages/presupuestos/PresupuestosPage";
 import PartidasPage from "./pages/partidas/PartidasPage";
 import MemoriasPage from "./pages/memorias/MemoriasPage";
+import MemoriasPageLegacy from "./pages/memorias/MemoriasPageLegacy";
 import EjecucionPage from "./pages/ejecucion/EjecucionPage";
 import PlanificacionPage from "./pages/planificacion/PlanificacionPage";
 import OrganizacionalPage from "./pages/organizacional/OrganizacionalPage";
@@ -30,6 +31,7 @@ export default function App() {
                 <Route path="partidas" element={<PartidasPage />} />
                 <Route path="certificaciones" element={<CertificacionesPage />} />
                 <Route path="memorias" element={<MemoriasPage />} />
+                <Route path="memorias-legacy" element={<MemoriasPageLegacy />} />
                 <Route path="traspasos" element={<TraspasosPage />} />
                 <Route path="ejecucion" element={<EjecucionPage />} />
                 <Route path="planificacion" element={<PlanificacionPage />} />
