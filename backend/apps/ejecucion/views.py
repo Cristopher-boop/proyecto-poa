@@ -44,6 +44,7 @@ class GastoViewSet(viewsets.ModelViewSet):
     ).all().order_by('-fecha_gasto', '-created_at')
     serializer_class = GastoSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -254,6 +255,7 @@ class CertificacionPOAViewSet(viewsets.ModelViewSet):
     ).all().order_by('-fecha', '-created_at')
     serializer_class = CertificacionPOASerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def _check_can_edit(self, user):
         rol = user.rol.nombre.upper() if user.rol else ''

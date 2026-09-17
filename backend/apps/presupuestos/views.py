@@ -197,9 +197,10 @@ class PartidaViewSet(viewsets.ModelViewSet):
 
 
 class PresupuestoAreaViewSet(viewsets.ModelViewSet):
-    queryset = PresupuestoArea.objects.select_related('gestion', 'area').all().order_by('-gestion__anio', 'area__codigo')
+    queryset = PresupuestoArea.objects.select_related('gestion', 'area__programa').all().order_by('-gestion__anio', 'area__codigo')
     serializer_class = PresupuestoAreaSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()

@@ -60,6 +60,9 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
     area_nombre = serializers.CharField(source='area.nombre', read_only=True)
     area_codigo = serializers.CharField(source='area.codigo', read_only=True)
     area_tipo = serializers.CharField(source='area.tipo', read_only=True)
+    programa_id = serializers.IntegerField(source='area.programa.id', read_only=True)
+    programa_codigo = serializers.CharField(source='area.programa.codigo', read_only=True)
+    programa_nombre = serializers.CharField(source='area.programa.nombre', read_only=True)
     gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
     gestion_estado = serializers.CharField(source='gestion.estado', read_only=True)
     monto_ejecutado = serializers.SerializerMethodField()
@@ -77,6 +80,9 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
             'area_nombre',
             'area_codigo',
             'area_tipo',
+            'programa_id',
+            'programa_codigo',
+            'programa_nombre',
             'monto_inicial',
             'monto_actual',
             'monto_ejecutado',
