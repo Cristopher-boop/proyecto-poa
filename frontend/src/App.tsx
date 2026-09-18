@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { GestionProvider } from "./contexts/GestionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
@@ -22,25 +23,27 @@ export default function App() {
     <ThemeProvider defaultTheme="system" storageKey="poa-theme">
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<AppShell />}>
-                <Route index element={<DashboardPage />} />
-                <Route path="presupuestos" element={<PresupuestosPage />} />
-                <Route path="partidas" element={<PartidasPage />} />
-                <Route path="certificaciones" element={<CertificacionesPage />} />
-                <Route path="memorias" element={<MemoriasPage />} />
-                <Route path="memorias-legacy" element={<MemoriasPageLegacy />} />
-                <Route path="traspasos" element={<TraspasosPage />} />
-                <Route path="ejecucion" element={<EjecucionPage />} />
-                <Route path="planificacion" element={<PlanificacionPage />} />
-                <Route path="organizacional" element={<OrganizacionalPage />} />
-                <Route path="logs" element={<LogsPage />} />
+          <GestionProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<AppShell />}>
+                  <Route index element={<DashboardPage />} />
+                  <Route path="presupuestos" element={<PresupuestosPage />} />
+                  <Route path="partidas" element={<PartidasPage />} />
+                  <Route path="certificaciones" element={<CertificacionesPage />} />
+                  <Route path="memorias" element={<MemoriasPage />} />
+                  <Route path="memorias-legacy" element={<MemoriasPageLegacy />} />
+                  <Route path="traspasos" element={<TraspasosPage />} />
+                  <Route path="ejecucion" element={<EjecucionPage />} />
+                  <Route path="planificacion" element={<PlanificacionPage />} />
+                  <Route path="organizacional" element={<OrganizacionalPage />} />
+                  <Route path="logs" element={<LogsPage />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </GestionProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>

@@ -57,8 +57,16 @@ description: Siempre y cuando tenga que ver o no con la arquitectura general del
 ## ⚛️ 4. ARQUITECTURA DEL FRONTEND (REACT)
 - **Patrón**: Arquitectura Basada en Características (*Feature-Driven Architecture*).
 - **Estructura en `frontend/src/`**:
-  - `features/<modulo>/`: Contiene `pages/`, `components/` y `services/` específicos del dominio.
-  - `components/ui/`: Componentes visuales genéricos y reutilizables (botones, modales, tablas).
-  - `context/GestionContext.jsx`: **Estado global obligatorio** para mantener la Gestión activa (año fiscal seleccionado) sincronizada en todas las pantallas.
-  - `api/axiosClient.js`: Cliente HTTP centralizado con interceptores para inyección y refresco de tokens JWT.
-- **Regla**: No hacer llamadas `fetch` o `axios` directas dentro de componentes visuales; usar siempre la capa de servicios de la feature.
+  - `features/<modulo>/`: Contiene `pages/`, `components/`, `hooks/` y `api/` específicos del dominio.
+  - `components/commons/` (y su alias `components/ui/`): **Biblioteca institucional de componentes comunes y reutilizables**.
+    1. **`Button`**: Botón unificado con soporte de variantes institucionales (`primary`, `secondary`, `outline`, `danger`, `ghost`), tamaños y estado de carga (`loading`).
+    2. **`Modal`**: Ventana modal accesible con backdrop blur, bloqueo de scroll, control de Escape y múltiples tamaños preconfigurados.
+    3. **`DataTable`**: Tabla tipada genérica con spinners de carga, estados vacíos personalizados, paginación integrada y anchos de columna estrictos contra truncamiento.
+    4. **`StatusBadge`**: Insignias visuales consistentes para estados del POA mapeados a su color e ícono temático.
+    5. **`TabsFilter`**: Pestañas horizontales para navegación interna con insignias contadoras e indicador de pestaña activa configurable.
+    6. **`ResumenCards`**: Tarjetas de indicadores y KPIs métricos con diseño y proporciones idénticas al Dashboard (`card p-5`, encabezado con ícono `size={18}` en `p-2 rounded-xl`, monto en `text-2xl font-bold` y barra de progreso opcional `h-1.5`).
+    7. **`FilterPanel`**: Panel común de filtros avanzados desacoplados. Soporta filtrado por días y meses acotados al año de la gestión seleccionada, rangos de importes (mínimo/máximo), selectores de partida y área, botón para restablecer filtros y buscador general desacoplado (que no solapa atributos ya filtrados).
+  - `contexts/GestionContext.tsx`: **Estado global obligatorio** para mantener la Gestión activa (año fiscal seleccionado) sincronizada en todas las vistas sin peticiones redundantes.
+  - `api/axiosClient.ts`: Cliente HTTP centralizado con interceptores para inyección y refresco de tokens JWT.
+- **Regla Estricta**: Prohibido duplicar componentes de tablas, modales, tarjetas métricas o paneles de filtro en carpetas individuales de páginas. Todos los módulos deben consumir los componentes consolidados de `components/commons/`.
+- **Regla**: No hacer llamadas `fetch` o `axios` directas dentro de componentes visuales; usar siempre la capa de servicios o hooks de la feature.
