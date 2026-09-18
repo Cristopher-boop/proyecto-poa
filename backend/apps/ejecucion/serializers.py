@@ -69,16 +69,13 @@ class GastoSerializer(serializers.ModelSerializer):
 
         memoria = data.get('memoria') or (self.instance.memoria if self.instance else None)
         if memoria and monto is not None:
-            precio_total = memoria.total_presupuestado or Decimal('0.00')
-            gastos_qs = memoria.gastos.all()
-            if self.instance:
-                gastos_qs = gastos_qs.exclude(id=self.instance.id)
-            total_otros_gastos = gastos_qs.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-            saldo_maximo = max(Decimal('0.00'), precio_total - total_otros_gastos)
+            saldo_disponible_max = memoria.saldo_disponible
+            if self.instance and self.instance.memoria_id == memoria.id:
+                saldo_disponible_max += self.instance.monto_ejecutado
 
-            if Decimal(str(monto)) > saldo_maximo:
+            if Decimal(str(monto)) > saldo_disponible_max:
                 raise serializers.ValidationError({
-                    'monto_ejecutado': f'El monto asignado (Bs. {monto}) supera el saldo disponible restante para esta memoria (Bs. {saldo_maximo:.2f}).'
+                    'monto_ejecutado': f'El monto asignado (Bs. {monto:,.2f}) supera el saldo disponible restante para esta memoria (Bs. {saldo_disponible_max:,.2f}).'
                 })
 
         return data

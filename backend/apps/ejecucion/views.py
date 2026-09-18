@@ -8,32 +8,8 @@ from decimal import Decimal
 from .models import Gasto, CertificacionPOA
 from .serializers import GastoSerializer, CertificacionPOASerializer
 from apps.memorias.models import MemoriaCalculo
-from apps.memorias.utils import recalcular_saldos_memoria
 from apps.presupuestos.models import PresupuestoArea, Gestion
-
-
-def recalcular_estado_memoria_y_presupuesto(memoria):
-    """
-    Función utilitaria que actualiza:
-    1. Los campos almacenados de saldo en MemoriaCalculo
-    2. El monto_actual del PresupuestoArea correspondiente.
-    """
-    area = memoria.seccion.area
-    gestion = memoria.gestion
-
-    # 1. Actualizar saldos almacenados de la memoria
-    recalcular_saldos_memoria(memoria)
-
-    # 2. Actualizar PresupuestoArea en tiempo real: Monto_Actual = Monto_Inicial - Gastos_Ejecutados
-    presupuesto = PresupuestoArea.objects.filter(gestion=gestion, area=area).first()
-    if presupuesto:
-        total_gastos_area = Gasto.objects.filter(
-            memoria__gestion=gestion,
-            memoria__seccion__area=area
-        ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-
-        presupuesto.monto_actual = max(Decimal('0.00'), presupuesto.monto_inicial - total_gastos_area)
-        presupuesto.save(update_fields=['monto_actual'])
+from .services import GastoService, recalcular_estado_memoria_y_presupuesto
 
 
 class GastoViewSet(viewsets.ModelViewSet):
@@ -89,9 +65,8 @@ class GastoViewSet(viewsets.ModelViewSet):
         if not is_admin_aprobador:
             raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede registrar ejecuciones presupuestarias.']})
 
-        with transaction.atomic():
-            gasto = serializer.save(usuario_registro=user)
-            recalcular_estado_memoria_y_presupuesto(gasto.memoria)
+        gasto = GastoService.registrar_gasto(serializer.validated_data, user)
+        serializer.instance = gasto
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -100,9 +75,8 @@ class GastoViewSet(viewsets.ModelViewSet):
         if not is_admin_aprobador:
             raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede editar ejecuciones presupuestarias.']})
 
-        with transaction.atomic():
-            gasto = serializer.save()
-            recalcular_estado_memoria_y_presupuesto(gasto.memoria)
+        gasto = GastoService.actualizar_gasto(serializer.instance, serializer.validated_data)
+        serializer.instance = gasto
 
     def perform_destroy(self, instance):
         user = self.request.user
@@ -111,10 +85,7 @@ class GastoViewSet(viewsets.ModelViewSet):
         if not is_admin_aprobador:
             raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede anular o eliminar ejecuciones presupuestarias.']})
 
-        memoria = instance.memoria
-        with transaction.atomic():
-            instance.delete()
-            recalcular_estado_memoria_y_presupuesto(memoria)
+        GastoService.eliminar_gasto(instance)
 
     @action(detail=False, methods=['get'], url_path='resumen-ejecucion')
     def resumen_ejecucion(self, request):
