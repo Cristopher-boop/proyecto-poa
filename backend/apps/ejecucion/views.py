@@ -2,12 +2,12 @@ from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
-from django.db.models import Sum, Q, F
+from django.db.models import Sum, Q, F, Prefetch
 from decimal import Decimal
 
 from .models import Gasto, CertificacionPOA
 from .serializers import GastoSerializer, CertificacionPOASerializer
-from apps.memorias.models import MemoriaCalculo
+from apps.memorias.models import MemoriaCalculo, DetallePresupuestoMemoria
 from apps.presupuestos.models import PresupuestoArea, Gestion
 from .services import GastoService, recalcular_estado_memoria_y_presupuesto
 
@@ -17,6 +17,11 @@ class GastoViewSet(viewsets.ModelViewSet):
         'memoria__gestion',
         'memoria__seccion__area',
         'usuario_registro'
+    ).prefetch_related(
+        Prefetch(
+            'memoria__detalles',
+            queryset=DetallePresupuestoMemoria.objects.select_related('partida')
+        )
     ).all().order_by('-fecha_gasto', '-created_at')
     serializer_class = GastoSerializer
     permission_classes = [permissions.IsAuthenticated]

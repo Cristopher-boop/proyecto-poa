@@ -71,18 +71,16 @@ export function useEjecucion() {
 
     setLoading(true);
     try {
-      const [gList, techos, memList, resData, aList] = await Promise.all([
+      const [gList, techos, memList, aList] = await Promise.all([
         ejecucionApi.getGastos({ gestion: gestionActivaId }),
         ejecucionApi.getPresupuestosArea({ gestion: gestionActivaId }),
         ejecucionApi.getMemorias({ gestion: gestionActivaId }),
-        ejecucionApi.getResumenEjecucion({ gestion: gestionActivaId }).catch(() => null),
         ejecucionApi.getAreas(),
       ]);
 
       setGastos(gList);
       setPresupuestosArea(techos);
       setMemorias(memList);
-      setResumen(resData);
       setAreas(aList);
     } catch (err) {
       console.error('Error al cargar datos de ejecución presupuestaria:', err);
@@ -114,6 +112,23 @@ export function useEjecucion() {
     return Math.min(100, Math.round((totalGastadoGlobal / totalInicialGlobal) * 10000) / 100);
   }, [totalInicialGlobal, totalGastadoGlobal]);
 
+  // Agrupar gastos por ID de memoria para acceso O(1)
+  const gastosByMemoria = useMemo(() => {
+    const map = new Map<number, Gasto[]>();
+    for (let i = 0; i < gastos.length; i++) {
+      const g = gastos[i];
+      if (g.memoria) {
+        let list = map.get(g.memoria);
+        if (!list) {
+          list = [];
+          map.set(g.memoria, list);
+        }
+        list.push(g);
+      }
+    }
+    return map;
+  }, [gastos]);
+
   // Memorias con saldo para imputar gastos
   const renglonesDisponibles = useMemo(() => {
     return memorias
@@ -142,10 +157,10 @@ export function useEjecucion() {
           montoGastado: gastado,
           saldoDisponible: saldo,
           estadoGasto,
-          gastosList: gastos.filter((g) => g.memoria === m.id),
+          gastosList: gastosByMemoria.get(m.id) || [],
         };
       });
-  }, [memorias, gastos]);
+  }, [memorias, gastosByMemoria]);
 
   // Lista consolidada de partidas presupuestarias únicas disponibles en esta gestión
   const partidasDisponibles = useMemo(() => {

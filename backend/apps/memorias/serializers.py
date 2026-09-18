@@ -51,20 +51,21 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
             'monto_entrante', 'monto_saliente', 'saldo_disponible', 'codigo'
         ]
 
+    def _get_detalles(self, obj):
+        if not hasattr(obj, '_cached_detalles_list'):
+            obj._cached_detalles_list = list(obj.detalles.all())
+        return obj._cached_detalles_list
+
     def get_partida_codigo(self, obj):
-        detalles = obj.detalles.all()
-        if detalles:
-            return detalles[0].partida.codigo
-        return None
+        detalles = self._get_detalles(obj)
+        return detalles[0].partida.codigo if detalles and detalles[0].partida else None
 
     def get_partida_nombre(self, obj):
-        detalles = obj.detalles.all()
-        if detalles:
-            return detalles[0].partida.nombre
-        return None
+        detalles = self._get_detalles(obj)
+        return detalles[0].partida.nombre if detalles and detalles[0].partida else None
 
     def get_total_items(self, obj):
-        return len(obj.detalles.all())
+        return len(self._get_detalles(obj))
 
 class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
@@ -85,20 +86,21 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
 
+    def _get_detalles(self, obj):
+        if not hasattr(obj, '_cached_detalles_list'):
+            obj._cached_detalles_list = list(obj.detalles.all())
+        return obj._cached_detalles_list
+
     def get_partida_codigo(self, obj):
-        detalles = obj.detalles.all()
-        if detalles:
-            return detalles[0].partida.codigo
-        return None
+        detalles = self._get_detalles(obj)
+        return detalles[0].partida.codigo if detalles and detalles[0].partida else None
 
     def get_partida_nombre(self, obj):
-        detalles = obj.detalles.all()
-        if detalles:
-            return detalles[0].partida.nombre
-        return None
+        detalles = self._get_detalles(obj)
+        return detalles[0].partida.nombre if detalles and detalles[0].partida else None
 
     def get_total_items(self, obj):
-        return len(obj.detalles.all())
+        return len(self._get_detalles(obj))
 
 class TraspasoPresupuestarioSerializer(serializers.ModelSerializer):
     class Meta:

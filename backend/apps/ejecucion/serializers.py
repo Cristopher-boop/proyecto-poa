@@ -42,8 +42,10 @@ class GastoSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'usuario_registro', 'created_at']
 
     def get_partida(self, obj):
-        detalle = obj.memoria.detalles.first()
-        return detalle.partida if detalle else None
+        if not hasattr(obj, '_cached_partida'):
+            detalles = list(obj.memoria.detalles.all()) if obj.memoria else []
+            obj._cached_partida = detalles[0].partida if detalles else None
+        return obj._cached_partida
 
     def get_partida_id(self, obj):
         partida = self.get_partida(obj)
