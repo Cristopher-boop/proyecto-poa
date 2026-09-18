@@ -11,6 +11,8 @@ build/
 
 # Caché de Vite
 .vite/
+*.timestamp-*.mjs
+vite.config.*.timestamp*
 
 # Logs
 npm-debug.log*
