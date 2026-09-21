@@ -52,18 +52,24 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
         ]
 
     def get_partida_codigo(self, obj):
+        if not hasattr(obj, 'detalles'):
+            return None
         detalles = obj.detalles.all()
         if detalles:
             return detalles[0].partida.codigo
         return None
 
     def get_partida_nombre(self, obj):
+        if not hasattr(obj, 'detalles'):
+            return None
         detalles = obj.detalles.all()
         if detalles:
             return detalles[0].partida.nombre
         return None
 
     def get_total_items(self, obj):
+        if not hasattr(obj, 'detalles'):
+            return 0
         return len(obj.detalles.all())
 
 class MemoriaCalculoListSerializer(serializers.ModelSerializer):
