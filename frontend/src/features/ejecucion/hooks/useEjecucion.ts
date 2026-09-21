@@ -281,7 +281,7 @@ export function useEjecucion() {
                 tieneDetalleMatch = true;
                 const totalItem =
                   parseFloat(d.precio_total || '0') ||
-                  parseFloat(String(d.total_programado || '0')) ||
+                  parseFloat(String((d as any).total_programado || '0')) ||
                   (parseFloat(String(d.cantidad || '0')) * parseFloat(String(d.precio_unitario || '0')));
                 sumaPartida += totalItem;
               }

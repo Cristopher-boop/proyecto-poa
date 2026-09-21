@@ -34,13 +34,52 @@ class MemoriaCalculoService:
 
     @staticmethod
     @transaction.atomic
-    def crear_memoria(data, usuario):
+    def crear_memoria(data, request_data, usuario):
         gestion = data.get('gestion')
         if gestion and gestion.estado != Gestion.EstadoGestion.FORMULACION:
             raise ValidationError(f'No se pueden crear memorias en la Gestión {gestion.anio} porque la formulación está {gestion.get_estado_display().lower()}.')
         
+        # Generar código automático seguro sin colisión
+        if not data.get('codigo'):
+            if request_data.get('codigo'):
+                data['codigo'] = str(request_data['codigo']).strip().upper()
+                
+        if not data.get('codigo') or MemoriaCalculo.objects.filter(codigo=data['codigo']).exists():
+            anio = gestion.anio if gestion else timezone.now().year
+            prefix = f"MEM-{anio}-"
+            existing = MemoriaCalculo.objects.filter(codigo__startswith=prefix).values_list('codigo', flat=True)
+            max_num = 0
+            for c in existing:
+                try:
+                    num_str = c.split('-')[-1]
+                    num_val = int(num_str)
+                    if num_val > max_num:
+                        max_num = num_val
+                except (ValueError, IndexError):
+                    pass
+            data['codigo'] = f"{prefix}{str(max_num + 1).zfill(3)}"
+            
         memoria = MemoriaCalculo.objects.create(**data)
         
+        # Guardar detalles
+        detalles_data = request_data.get('detalles', [])
+        for det_data in detalles_data:
+            p_id = det_data.get('partida_id') or det_data.get('partida')
+            if p_id:
+                DetallePresupuestoMemoria.objects.create(
+                    memoria=memoria,
+                    partida_id=p_id,
+                    descripcion=det_data.get('descripcion', ''),
+                    unidad_medida=det_data.get('unidad_medida', 'UNIDAD'),
+                    cantidad=det_data.get('cantidad', 1),
+                    precio_unitario=det_data.get('precio_unitario', 0)
+                )
+
+        # Actualizar total_presupuestado
+        total = sum(float(d.cantidad or 0) * float(d.precio_unitario or 0) for d in memoria.detalles.all())
+        memoria.total_presupuestado = total
+        memoria.save(update_fields=['total_presupuestado'])
+
         if usuario and usuario.is_authenticated:
             RegistroMemoriaUsuario.objects.create(
                 memoria=memoria,
@@ -51,7 +90,7 @@ class MemoriaCalculoService:
 
     @staticmethod
     @transaction.atomic
-    def actualizar_memoria(memoria, data):
+    def actualizar_memoria(memoria, data, request_data):
         # Evitar modificar memorias aprobadas
         if memoria.estado == MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS and 'estado' not in data:
             raise ValidationError('No se puede modificar una memoria que ya cuenta con aprobación final POA.')
@@ -60,6 +99,26 @@ class MemoriaCalculoService:
             
         for key, value in data.items():
             setattr(memoria, key, value)
+            
+        # Actualizar detalles si vienen en el request
+        if 'detalles' in request_data:
+            memoria.detalles.all().delete()
+            for det_data in request_data['detalles']:
+                p_id = det_data.get('partida_id') or det_data.get('partida')
+                if p_id:
+                    DetallePresupuestoMemoria.objects.create(
+                        memoria=memoria,
+                        partida_id=p_id,
+                        descripcion=det_data.get('descripcion', ''),
+                        unidad_medida=det_data.get('unidad_medida', 'UNIDAD'),
+                        cantidad=det_data.get('cantidad', 1),
+                        precio_unitario=det_data.get('precio_unitario', 0)
+                    )
+            
+            # Recalcular total
+            total = sum(float(d.cantidad or 0) * float(d.precio_unitario or 0) for d in memoria.detalles.all())
+            memoria.total_presupuestado = total
+
         memoria.save()
         return memoria
 

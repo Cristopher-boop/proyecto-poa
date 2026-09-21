@@ -28,11 +28,28 @@ class RolePermissionMixin:
 
     def check_area_permission(self, memoria):
         user = self.request.user
+        if not user or not user.is_authenticated:
+            return False
         if user.is_superuser or self.check_role_permission(['ADMINISTRADOR', 'APROBADOR', 'PLANIFICACION']): 
             return True
-        if user.seccion and user.seccion.area_id == memoria.seccion.area_id:
-            return True
-        return False
+        user_area_id = None
+        if hasattr(user, 'seccion') and user.seccion:
+            user_area_id = user.seccion.area_id
+        elif hasattr(user, 'area') and user.area:
+            user_area_id = user.area.id
+        elif hasattr(user, 'area_id') and user.area_id:
+            user_area_id = user.area_id
+
+        target_area_id = None
+        if hasattr(memoria, 'seccion') and memoria.seccion:
+            target_area_id = getattr(memoria.seccion, 'area_id', None)
+        elif isinstance(memoria, dict) and 'seccion' in memoria:
+            sec = memoria['seccion']
+            target_area_id = getattr(sec, 'area_id', None)
+
+        if user_area_id and target_area_id:
+            return user_area_id == target_area_id
+        return True
 
 class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
     queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area').prefetch_related('detalles__partida', 'participaciones__usuario').all().order_by('-created_at')
@@ -86,6 +103,17 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
             ).distinct()
         return qs
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        memoria_id = serializer.instance.id
+        fresh_memoria = MemoriaCalculo.objects.select_related(
+            'gestion', 'seccion__area'
+        ).prefetch_related('detalles__partida', 'participaciones__usuario').get(id=memoria_id)
+        out_serializer = MemoriaCalculoSerializer(fresh_memoria, context={'request': request})
+        return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+
     def perform_create(self, serializer):
         if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
             raise serializers.ValidationError({'non_field_errors': ['Tu rol no tiene permiso para crear memorias.']})
@@ -93,7 +121,20 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
         if seccion and not self.check_area_permission(type('obj', (object,), {'seccion': seccion})):
             raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para crear memorias en otra área.']})
         
-        MemoriaCalculoService.crear_memoria(serializer.validated_data, self.request.user)
+        memoria = MemoriaCalculoService.crear_memoria(serializer.validated_data, self.request.data, self.request.user)
+        serializer.instance = memoria
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        fresh_memoria = MemoriaCalculo.objects.select_related(
+            'gestion', 'seccion__area'
+        ).prefetch_related('detalles__partida', 'participaciones__usuario').get(id=instance.id)
+        out_serializer = MemoriaCalculoSerializer(fresh_memoria, context={'request': request})
+        return Response(out_serializer.data)
 
     def perform_update(self, serializer):
         if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR', 'PLANIFICACION']):
@@ -101,10 +142,11 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
         if not self.check_area_permission(serializer.instance):
              raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para editar memorias de esta área.']})
              
-        MemoriaCalculoService.actualizar_memoria(serializer.instance, serializer.validated_data)
+        memoria = MemoriaCalculoService.actualizar_memoria(serializer.instance, serializer.validated_data, self.request.data)
+        serializer.instance = memoria
 
     def perform_destroy(self, instance):
-        if not self.check_role_permission(['APROBADOR', 'ELABORADOR']):
+        if not self.check_role_permission(['APROBADOR', 'ELABORADOR', 'GERENTE']):
             raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para eliminar memorias.']})
         if not self.check_area_permission(instance):
              raise serializers.ValidationError({'non_field_errors': ['No puedes eliminar memorias de otra área.']})

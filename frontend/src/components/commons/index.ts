@@ -5,3 +5,4 @@ export * from './StatusBadge';
 export * from './TabsFilter';
 export * from './ResumenCards';
 export * from './FilterPanel';
+export * from './Dropdown';

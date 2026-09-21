@@ -53,6 +53,7 @@ import {
 } from '../../../services/presupuestoService';
 import { planificacionService } from '../../../services/planificacionService';
 import { Operacion, AccionCortoPlazo } from '../../../types/planificacion';
+import { Dropdown, DropdownItem } from '../../../components/commons';
 
 export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
   
@@ -78,8 +79,8 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
   const isElaborador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && rolClean === 'ELABORADOR';
   const isTrabajador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && !isElaborador;
 
-  // Solo Elaborador y Aprobador/Superadmin pueden crear/formular nuevas memorias (Planificador NO formula)
-  const canCreate = isAprobador || isElaborador;
+  // Elaborador, Gerente y Aprobador/Superadmin pueden crear/formular nuevas memorias
+  const canCreate = isAprobador || isElaborador || isGerente;
   // Solo Superadmin, Aprobador y Planificador pueden ver todas las áreas institucionales
   const canGlobalView = isAprobador || isPlanificador;
 
@@ -155,6 +156,16 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
   useEffect(() => {
     cargarBase();
   }, []);
+
+  useEffect(() => {
+    if (!loading && gestiones.length > 0) {
+      if (memoria) {
+        handleOpenEditar(memoria);
+      } else {
+        handleOpenCrear();
+      }
+    }
+  }, [loading, memoria, gestiones.length]);
 
   useEffect(() => {
     if (selectedGestionId) {
@@ -382,6 +393,53 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
       return ac.localeCompare(bc);
     });
   }, [filteredPartidas, parentMap]);
+
+  // Opciones para el componente Dropdown de Partida
+  const partidaDropdownItems = useMemo((): DropdownItem[] => {
+    return egresoLeafs.map((leaf) => {
+      const parent = parentMap.get(leaf.codigo);
+      return {
+        id: leaf.id,
+        label: leaf.nombre,
+        badge: leaf.codigo,
+        group: parent ? `${parent.codigo} - ${parent.nombre}` : 'Partidas Generales',
+        groupBadge: parent ? parent.codigo : undefined,
+        sublabel: parent ? `${parent.codigo} › ${parent.nombre}` : undefined,
+      };
+    }).sort((a, b) => {
+      if (a.group && b.group && a.group !== b.group) {
+        return a.group.localeCompare(b.group);
+      }
+      return String(a.badge || '').localeCompare(String(b.badge || ''));
+    });
+  }, [egresoLeafs, parentMap]);
+
+  // Opciones para el componente Dropdown de Operaciones POA
+  const operacionDropdownItems = useMemo((): DropdownItem[] => {
+    const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
+    const areaId = (editingMemoria as any)?.area_id || (sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null));
+    let opsFiltradas = areaId
+      ? operaciones.filter((o) => Number(o.area || (o as any).area_id) === Number(areaId))
+      : operaciones;
+
+    if (opsFiltradas.length === 0) {
+      opsFiltradas = operaciones;
+    }
+
+    if (formMemoria.operacionId && !opsFiltradas.some((o) => o.id === Number(formMemoria.operacionId))) {
+      const opActual = operaciones.find((o) => o.id === Number(formMemoria.operacionId));
+      if (opActual) {
+        opsFiltradas = [opActual, ...opsFiltradas];
+      }
+    }
+
+    return opsFiltradas.map((op) => ({
+      id: op.id,
+      label: op.descripcion,
+      badge: op.codigo,
+      sublabel: op.es_contratacion ? '✓ Modalidad: Contrataciones' : undefined,
+    }));
+  }, [secciones, formMemoria.seccionId, editingMemoria, user?.area_id, operaciones, formMemoria.operacionId]);
 
   // Contadores por estado
   const conteos = useMemo(() => {
@@ -672,17 +730,10 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
         if (res && res.id) savedId = res.id;
       }
 
-      setShowModalMemoria(false);
-      if (selectedGestionId) await cargarMemorias(selectedGestionId);
-
-      // Si estábamos editando como revisor o elaborador, recargamos y mostramos la ficha técnica actualizada
-      if (savedId) {
-        try {
-          const fresca = await getMemoria(savedId);
-          setFichaMemoria(fresca);
-        } catch (e) {
-          console.error(e);
-        }
+      if (onSaved && savedId) {
+        onSaved(savedId);
+      } else if (onClose) {
+        onClose();
       }
     } catch (err: any) {
       mostrarMensaje('error', err.response?.data?.error || 'Error al guardar memoria.');
@@ -950,151 +1001,16 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
                     <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
                       1. Partida Presupuestaria de Egreso *
                     </label>
-
-                    {/* Combobox selector de partida */}
-                    <div className="relative" ref={partidaSelectorRef}>
-                      {(() => {
-                        const selected =
-                          egresoLeafs.find((p) => p.id === Number(formMemoria.partidaId)) ||
-                          partidas.find((p) => p.id === Number(formMemoria.partidaId));
-                        return (
-                          <button
-                            type="button"
-                            onClick={() => setPartidaSelectorOpen(!partidaSelectorOpen)}
-                            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left ${selected
-                              ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
-                              : 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
-                              }`}
-                          >
-                            {selected ? (
-                              <span className="flex-1 min-w-0">
-                                <span className="font-mono font-bold text-xs text-theme-primary mr-2">
-                                  {selected.codigo}
-                                </span>
-                                <span className="text-xs text-theme-main line-clamp-1">{selected.nombre}</span>
-                              </span>
-                            ) : (
-                              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                                <AlertCircle size={14} className="shrink-0" />
-                                Seleccionar partida de egreso obligatoria...
-                              </span>
-                            )}
-                            <svg
-                              className={`w-4 h-4 shrink-0 text-theme-muted transition-transform ${partidaSelectorOpen ? 'rotate-180' : ''}`}
-                              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                        );
-                      })()}
-
-                      {/* Dropdown con búsqueda y lista */}
-                      {partidaSelectorOpen && (
-                        <div className="absolute z-50 mt-1 w-full bg-theme-surface border border-theme-border rounded-xl shadow-xl overflow-hidden flex flex-col"
-                          style={{ maxHeight: '300px' }}>
-                          <div className="p-2 border-b border-theme-border sticky top-0 bg-theme-surface z-10">
-                            <div className="relative">
-                              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-theme-muted" />
-                              <input
-                                autoFocus
-                                type="text"
-                                value={searchPartidaQuery}
-                                onChange={(e) => setSearchPartidaQuery(e.target.value)}
-                                placeholder="Buscar por código, nombre o grupo..."
-                                className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted"
-                              />
-                            </div>
-                            <p className="text-[10px] text-theme-muted mt-1 ml-1">
-                              {filteredPartidas.length} partidas seleccionables (solo hojas de egreso)
-                            </p>
-                          </div>
-
-                          {/* Lista de resultados agrupados */}
-                          <div className="overflow-y-auto" style={{ maxHeight: '240px' }}>
-                            {filteredPartidas.length === 0 ? (
-                              <div className="py-8 text-center text-theme-muted text-xs">
-                                No se encontraron partidas de egreso
-                              </div>
-                            ) : (
-                              groupedPartidas.map((group, gIdx) => (
-                                <div key={gIdx} className="border-b border-theme-border/40 last:border-0">
-                                  {group.parent && (
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-theme-base border-b border-theme-border/60">
-                                      <span className="font-mono text-[10px] font-bold text-theme-muted/80 bg-theme-border/60 px-1 rounded">
-                                        {group.parent.codigo}
-                                      </span>
-                                      <span className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide line-clamp-1">
-                                        {group.parent.nombre}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {group.leafs.map((p) => {
-                                    const isActive = p.id === Number(formMemoria.partidaId);
-                                    const parent = parentMap.get(p.codigo);
-                                    return (
-                                      <button
-                                        key={p.id}
-                                        type="button"
-                                        onClick={() => {
-                                          setFormMemoria({ ...formMemoria, partidaId: p.id });
-                                          setPartidaSelectorOpen(false);
-                                          setSearchPartidaQuery('');
-                                        }}
-                                        className={`w-full flex items-start gap-3 pl-5 pr-3 py-2 text-left transition-colors border-b border-theme-border/30 last:border-0 ${isActive
-                                          ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
-                                          : 'hover:bg-theme-border/30'
-                                          }`}
-                                      >
-                                        <span className="shrink-0 flex items-start pt-0.5">
-                                          <span className="w-3 h-px bg-theme-border/70 mt-2 mr-1" />
-                                        </span>
-
-                                        <span
-                                          className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${isActive
-                                            ? 'bg-theme-primary text-theme-primaryText'
-                                            : 'bg-theme-base text-theme-primary border border-theme-border'
-                                            }`}
-                                        >
-                                          {p.codigo}
-                                        </span>
-
-                                        <div className="flex-1 min-w-0">
-                                          <p className={`text-xs leading-tight ${isActive ? 'font-semibold text-theme-main' : 'text-theme-main'}`}>
-                                            {p.nombre}
-                                          </p>
-                                          {searchPartidaQuery.trim() && parent && (
-                                            <p className="text-[10px] text-theme-muted mt-0.5 flex items-center gap-1">
-                                              <span className="font-mono">{parent.codigo}</span>
-                                              <span className="opacity-50">›</span>
-                                              <span className="line-clamp-1">{parent.nombre}</span>
-                                            </p>
-                                          )}
-                                        </div>
-
-                                        {isActive && (
-                                          <Check size={14} className="shrink-0 text-theme-primary mt-0.5" />
-                                        )}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <input
-                        type="text"
-                        required
-                        readOnly
-                        tabIndex={-1}
-                        value={formMemoria.partidaId}
-                        className="absolute opacity-0 h-0 w-0 pointer-events-none"
-                      />
-                    </div>
+                    <Dropdown
+                      items={partidaDropdownItems}
+                      value={formMemoria.partidaId}
+                      onChange={(val) => setFormMemoria({ ...formMemoria, partidaId: val })}
+                      placeholder="Seleccionar partida de egreso obligatoria..."
+                      searchPlaceholder="Buscar por código, nombre o grupo..."
+                      searchable
+                      required
+                      maxHeight="280px"
+                    />
                   </div>
 
                   {/* 2. Operación POA */}
@@ -1112,128 +1028,24 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
                       </button>
                     </div>
 
-                    {/* Combobox selector de operación (sin buscador, solo selección de lista) */}
-                    <div className="relative" ref={operacionSelectorRef}>
-                      {(() => {
-                        const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
-                        const areaId = (editingMemoria as any)?.area_id || (sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null));
-                        let opsFiltradas = areaId
-                          ? operaciones.filter((o) => Number(o.area || (o as any).area_id) === Number(areaId))
-                          : operaciones;
-
-                        if (opsFiltradas.length === 0) {
-                          opsFiltradas = operaciones;
-                        }
-
-                        if (formMemoria.operacionId && !opsFiltradas.some((o) => o.id === Number(formMemoria.operacionId))) {
-                          const opActual = operaciones.find((o) => o.id === Number(formMemoria.operacionId));
-                          if (opActual) {
-                            opsFiltradas = [opActual, ...opsFiltradas];
-                          }
-                        }
-
-                        const selectedOp = operaciones.find((o) => o.id === Number(formMemoria.operacionId));
-
-                        return (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setOperacionSelectorOpen(!operacionSelectorOpen)}
-                              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors text-left ${selectedOp
-                                ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
-                                : 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
-                                }`}
-                            >
-                              {selectedOp ? (
-                                <span className="flex-1 min-w-0">
-                                  <span className="font-mono font-bold text-xs text-theme-primary mr-2">
-                                    {selectedOp.codigo}
-                                  </span>
-                                  <span className="text-xs text-theme-main line-clamp-1">{selectedOp.descripcion}</span>
-                                </span>
-                              ) : (
-                                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                                  <AlertCircle size={14} className="shrink-0" />
-                                  Seleccione Operación POA institucional...
-                                </span>
-                              )}
-                              <svg
-                                className={`w-4 h-4 shrink-0 text-theme-muted transition-transform ${operacionSelectorOpen ? 'rotate-180' : ''}`}
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </button>
-
-                            {/* Dropdown lista de operaciones sin buscador */}
-                            {operacionSelectorOpen && (
-                              <div
-                                className="absolute z-50 mt-1 w-full bg-theme-surface border border-theme-border rounded-xl shadow-xl overflow-hidden flex flex-col"
-                                style={{ maxHeight: '240px' }}
-                              >
-                                <div className="overflow-y-auto" style={{ maxHeight: '240px' }}>
-                                  {opsFiltradas.length === 0 ? (
-                                    <div className="py-6 text-center text-theme-muted text-xs">
-                                      No existen operaciones disponibles para su área.
-                                    </div>
-                                  ) : (
-                                    opsFiltradas.map((op) => {
-                                      const isActive = op.id === Number(formMemoria.operacionId);
-                                      return (
-                                        <button
-                                          key={op.id}
-                                          type="button"
-                                          onClick={() => {
-                                            setFormMemoria({
-                                              ...formMemoria,
-                                              operacionId: op.id,
-                                              es_contratacion: op.es_contratacion ?? formMemoria.es_contratacion,
-                                            });
-                                            setOperacionSelectorOpen(false);
-                                          }}
-                                          className={`w-full flex items-start gap-3 px-3 py-2 text-left transition-colors border-b border-theme-border/30 last:border-0 ${isActive
-                                            ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
-                                            : 'hover:bg-theme-border/30'
-                                            }`}
-                                        >
-                                          <span
-                                            className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${isActive
-                                              ? 'bg-theme-primary text-theme-primaryText'
-                                              : 'bg-theme-base text-theme-primary border border-theme-border'
-                                              }`}
-                                          >
-                                            {op.codigo}
-                                          </span>
-
-                                          <div className="flex-1 min-w-0">
-                                            <p className={`text-xs leading-tight ${isActive ? 'font-semibold text-theme-main' : 'text-theme-main'}`}>
-                                              {op.descripcion}
-                                            </p>
-                                          </div>
-
-                                          {isActive && (
-                                            <Check size={14} className="shrink-0 text-theme-primary mt-0.5" />
-                                          )}
-                                        </button>
-                                      );
-                                    })
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            <input
-                              type="text"
-                              required
-                              readOnly
-                              tabIndex={-1}
-                              value={formMemoria.operacionId}
-                              className="absolute opacity-0 h-0 w-0 pointer-events-none"
-                            />
-                          </>
-                        );
-                      })()}
-                    </div>
+                    <Dropdown
+                      items={operacionDropdownItems}
+                      value={formMemoria.operacionId}
+                      onChange={(val) => {
+                        const op = operaciones.find((o) => o.id === Number(val));
+                        setFormMemoria({
+                          ...formMemoria,
+                          operacionId: val,
+                          es_contratacion: op?.es_contratacion ?? formMemoria.es_contratacion,
+                        });
+                      }}
+                      placeholder="Seleccione Operación POA institucional..."
+                      searchPlaceholder="Buscar operación por código o descripción..."
+                      searchable
+                      required
+                      maxHeight="250px"
+                      emptyMessage="No existen operaciones disponibles para su área."
+                    />
                   </div>
                 </div>
 
@@ -1264,18 +1076,19 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
                         <label className="block text-[10px] font-semibold uppercase text-theme-muted mb-1">
                           Acción a Corto Plazo (ACP Padre) *
                         </label>
-                        <select
+                        <Dropdown
+                          items={accionesCortoPlazo.map((acp) => ({
+                            id: acp.id,
+                            label: acp.descripcion,
+                            badge: acp.codigo,
+                          }))}
                           value={quickOpForm.acp_id}
-                          onChange={(e) => setQuickOpForm({ ...quickOpForm, acp_id: Number(e.target.value) })}
-                          className="input-theme text-xs py-1.5 bg-theme-surface text-theme-main"
-                        >
-                          <option value="" className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">Seleccione ACP...</option>
-                          {accionesCortoPlazo.map((acp) => (
-                            <option key={acp.id} value={acp.id} className="bg-white text-slate-900 dark:bg-[#272B33] dark:text-white">
-                              {acp.codigo} - {acp.descripcion.slice(0, 45)}...
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => setQuickOpForm({ ...quickOpForm, acp_id: Number(val) })}
+                          placeholder="Seleccione ACP..."
+                          searchPlaceholder="Buscar ACP..."
+                          searchable
+                          size="sm"
+                        />
                       </div>
 
                       <div className="sm:col-span-2">
