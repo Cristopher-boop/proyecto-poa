@@ -3,7 +3,10 @@ from django.utils import timezone
 from decimal import Decimal
 from rest_framework.exceptions import ValidationError
 
-from .models import MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria, TraspasoPresupuestario
+from .models import (
+    MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria,
+    TraspasoPresupuestario, ModificacionPresupuestaria, DetalleModificacion
+)
 from apps.presupuestos.models import Gestion
 from apps.usuarios.models import Usuario
 
@@ -354,3 +357,168 @@ class MemoriaCalculoService:
             )
 
         return memoria
+
+
+class ModificacionPresupuestariaService:
+
+    @staticmethod
+    @transaction.atomic
+    def registrar_modificacion(data, usuario):
+        from .utils import recalcular_saldos_memoria
+        from apps.organizacional.models import Area
+
+        gestion_id = data.get('gestion_id') or data.get('gestion')
+        area_id = data.get('area_id') or data.get('area')
+        motivo = str(data.get('motivo') or '').strip()
+        tipo = data.get('tipo') or ModificacionPresupuestaria.TipoModificacion.TRASPASO_INTRA_AREA
+        origenes = data.get('origenes') or []
+        destinos = data.get('destinos') or []
+
+        if not gestion_id:
+            raise ValidationError({'gestion': ['La gestión fiscal es obligatoria.']})
+        if not area_id:
+            raise ValidationError({'area': ['El área solicitante es obligatoria.']})
+        if not motivo:
+            raise ValidationError({'motivo': ['El motivo o justificación de la modificación es obligatorio.']})
+        if not origenes:
+            raise ValidationError({'origenes': ['Debe especificar al menos una memoria de origen (cedente).']})
+        if not destinos:
+            raise ValidationError({'destinos': ['Debe especificar al menos una memoria de destino (receptora).']})
+
+        try:
+            gestion = Gestion.objects.get(id=gestion_id)
+        except Gestion.DoesNotExist:
+            raise ValidationError({'gestion': ['La gestión especificada no existe.']})
+
+        try:
+            area = Area.objects.get(id=area_id)
+        except Area.DoesNotExist:
+            raise ValidationError({'area': ['El área especificada no existe.']})
+
+        def parse_item(item, idx, label):
+            m_id = item.get('memoria_id') or item.get('memoria')
+            if not m_id:
+                raise ValidationError({label: [f"Falta el identificador de memoria en la fila {idx + 1}."]})
+            try:
+                monto = Decimal(str(item.get('monto', 0))).quantize(Decimal('0.01'))
+            except Exception:
+                raise ValidationError({label: [f"Monto inválido en la fila {idx + 1}."]})
+            if monto <= Decimal('0.00'):
+                raise ValidationError({label: [f"El monto debe ser mayor a 0 en la fila {idx + 1}."]})
+            return int(m_id), monto
+
+        parsed_origenes = [parse_item(it, idx, 'origenes') for idx, it in enumerate(origenes)]
+        parsed_destinos = [parse_item(it, idx, 'destinos') for idx, it in enumerate(destinos)]
+
+        orig_ids = [m_id for m_id, _ in parsed_origenes]
+        dest_ids = [m_id for m_id, _ in parsed_destinos]
+
+        # Validar no duplicados dentro de la misma lista
+        if len(orig_ids) != len(set(orig_ids)):
+            raise ValidationError({'origenes': ['No puede repetir la misma memoria en los orígenes.']})
+        if len(dest_ids) != len(set(dest_ids)):
+            raise ValidationError({'destinos': ['No puede repetir la misma memoria en los destinos.']})
+
+        # Validar que no haya memorias en ambos lados
+        comunes = set(orig_ids).intersection(set(dest_ids))
+        if comunes:
+            raise ValidationError({'non_field_errors': ['Una misma memoria no puede figurar simultáneamente como origen y como destino.']})
+
+        # Cuadre de balance (suma salidas == suma entradas)
+        total_salidas = sum((monto for _, monto in parsed_origenes), Decimal('0.00'))
+        total_entradas = sum((monto for _, monto in parsed_destinos), Decimal('0.00'))
+
+        if abs(total_salidas - total_entradas) >= Decimal('0.01'):
+            raise ValidationError({
+                'non_field_errors': [
+                    f"La modificación no está compensada: Total Salidas (Bs. {total_salidas:,.2f}) != Total Entradas (Bs. {total_entradas:,.2f}). Diferencia: Bs. {abs(total_salidas - total_entradas):,.2f}."
+                ]
+            })
+
+        # Bloquear memorias en BD para concurrencia
+        all_ids = set(orig_ids + dest_ids)
+        memorias_dict = {
+            m.id: m for m in MemoriaCalculo.objects.select_for_update().select_related('seccion__area', 'gestion').filter(id__in=all_ids)
+        }
+
+        # Validar existencia de todas las memorias
+        for m_id in all_ids:
+            if m_id not in memorias_dict:
+                raise ValidationError({'non_field_errors': [f"La memoria con ID {m_id} no fue encontrada."]})
+
+        # Validar regla intra-área institucional y gestión
+        for m_id, m in memorias_dict.items():
+            if m.gestion_id != gestion.id:
+                raise ValidationError({'non_field_errors': [f"La memoria {m.codigo} pertenece a la gestión {m.gestion.anio}, distinta a la seleccionada ({gestion.anio})."]})
+            if m.seccion.area_id != area.id:
+                raise ValidationError({
+                    'non_field_errors': [
+                        f"La memoria {m.codigo} pertenece a {m.seccion.area.nombre}, distinta al área de la modificación ({area.nombre}). Los traspasos son estrictamente intra-área."
+                    ]
+                })
+
+        # Validar saldo disponible en orígenes
+        for m_id, monto in parsed_origenes:
+            m = memorias_dict[m_id]
+            if m.saldo_disponible < monto:
+                raise ValidationError({
+                    'origenes': [
+                        f"Saldo insuficiente en la memoria {m.codigo}. Saldo disponible: Bs. {m.saldo_disponible:,.2f}, solicitado ceder: Bs. {monto:,.2f}."
+                    ]
+                })
+
+        # Generar código correlativo oficial
+        area_sigla = area.codigo.replace('P-', '').split('-')[-1]
+        correlativo = ModificacionPresupuestaria.objects.filter(gestion=gestion, area=area).count() + 1
+        codigo = f"MOD-{area_sigla}-{gestion.anio}-{correlativo:03d}"
+        while ModificacionPresupuestaria.objects.filter(codigo=codigo).exists():
+            correlativo += 1
+            codigo = f"MOD-{area_sigla}-{gestion.anio}-{correlativo:03d}"
+
+        user = usuario if (usuario and usuario.is_authenticated) else None
+
+        # Crear cabecera
+        modificacion = ModificacionPresupuestaria.objects.create(
+            codigo=codigo,
+            gestion=gestion,
+            area=area,
+            tipo=tipo,
+            motivo=motivo,
+            total_monto=total_salidas,
+            estado=ModificacionPresupuestaria.EstadoModificacion.APROBADO,
+            usuario_registro=user,
+            fecha=timezone.now()
+        )
+
+        # Crear líneas de detalle
+        for m_id, monto in parsed_origenes:
+            DetalleModificacion.objects.create(
+                modificacion=modificacion,
+                memoria=memorias_dict[m_id],
+                tipo_movimiento=DetalleModificacion.TipoMovimiento.DISMINUCION,
+                monto=monto
+            )
+
+        for m_id, monto in parsed_destinos:
+            DetalleModificacion.objects.create(
+                modificacion=modificacion,
+                memoria=memorias_dict[m_id],
+                tipo_movimiento=DetalleModificacion.TipoMovimiento.INCREMENTO,
+                monto=monto
+            )
+
+        # Recalcular saldos de todas las memorias involucradas
+        for m in memorias_dict.values():
+            recalcular_saldos_memoria(m)
+
+        # Notificar
+        user_name = user.get_full_name() or user.username if user else "Sistema"
+        MemoriaCalculoService._notificar(
+            rol_nombre='GERENTE',
+            titulo=f"Modificación Presupuestaria Aprobada: {modificacion.codigo}",
+            mensaje=f"Se registró una modificación presupuestaria en {area.nombre} por Bs. {total_salidas:,.2f} ({len(parsed_origenes)} orígenes a {len(parsed_destinos)} destinos) por {user_name}.",
+            enlace="/traspasos",
+            usuario_origen=user
+        )
+
+        return modificacion

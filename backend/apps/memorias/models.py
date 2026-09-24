@@ -1,8 +1,9 @@
 from django.db import models
+from django.utils import timezone
 from decimal import Decimal
 from apps.core.models import TimeStampedModel
 from apps.presupuestos.models import Gestion, Partida
-from apps.organizacional.models import Seccion
+from apps.organizacional.models import Seccion, Area
 from apps.usuarios.models import Usuario
 
 class MemoriaCalculo(TimeStampedModel):
@@ -101,6 +102,79 @@ class TraspasoPresupuestario(TimeStampedModel):
 
     def __str__(self):
         return f"Traspaso Bs. {self.monto} ({self.memoria_origen.codigo} -> {self.memoria_destino.codigo})"
+
+
+class ModificacionPresupuestaria(TimeStampedModel):
+    class TipoModificacion(models.TextChoices):
+        TRASPASO_INTRA_AREA = 'TRASPASO_INTRA_AREA', 'Traspaso Intra-Área'
+        INCREMENTO = 'INCREMENTO', 'Incremento Presupuestario'
+        DISMINUCION = 'DISMINUCION', 'Disminución Presupuestaria'
+
+    class EstadoModificacion(models.TextChoices):
+        APROBADO = 'APROBADO', 'Aprobado'
+        ANULADO = 'ANULADO', 'Anulado'
+
+    codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
+    gestion = models.ForeignKey(Gestion, on_delete=models.CASCADE, related_name='modificaciones_presupuestarias', verbose_name="Gestión")
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='modificaciones_presupuestarias', verbose_name="Área")
+    tipo = models.CharField(max_length=30, choices=TipoModificacion.choices, default=TipoModificacion.TRASPASO_INTRA_AREA, verbose_name="Tipo")
+    motivo = models.TextField(verbose_name="Motivo / Justificación")
+    total_monto = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'), verbose_name="Monto Compensado")
+    estado = models.CharField(max_length=20, choices=EstadoModificacion.choices, default=EstadoModificacion.APROBADO, verbose_name="Estado")
+    usuario_registro = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='modificaciones_registradas',
+        verbose_name="Usuario Registro"
+    )
+    fecha = models.DateTimeField(default=timezone.now, verbose_name="Fecha")
+
+    class Meta:
+        verbose_name = "Modificación Presupuestaria"
+        verbose_name_plural = "Modificaciones Presupuestarias"
+        ordering = ['-fecha', '-id']
+
+    def __str__(self):
+        return f"{self.codigo} - {self.area.codigo} ({self.total_monto} Bs)"
+
+
+class DetalleModificacion(TimeStampedModel):
+    class TipoMovimiento(models.TextChoices):
+        DISMINUCION = 'DISMINUCION', 'Disminución (Cede fondos)'
+        INCREMENTO = 'INCREMENTO', 'Incremento (Recibe fondos)'
+
+    modificacion = models.ForeignKey(
+        ModificacionPresupuestaria,
+        on_delete=models.CASCADE,
+        related_name='detalles',
+        verbose_name="Modificación Presupuestaria"
+    )
+    memoria = models.ForeignKey(
+        MemoriaCalculo,
+        on_delete=models.CASCADE,
+        related_name='detalles_modificacion',
+        verbose_name="Memoria de Cálculo"
+    )
+    tipo_movimiento = models.CharField(
+        max_length=20,
+        choices=TipoMovimiento.choices,
+        verbose_name="Tipo de Movimiento"
+    )
+    monto = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        verbose_name="Monto"
+    )
+
+    class Meta:
+        verbose_name = "Detalle de Modificación Presupuestaria"
+        verbose_name_plural = "Detalles de Modificación Presupuestaria"
+
+    def __str__(self):
+        signo = "-" if self.tipo_movimiento == self.TipoMovimiento.DISMINUCION else "+"
+        return f"{self.modificacion.codigo}: {self.memoria.codigo} {signo}{self.monto} Bs"
 
 
 class RegistroMemoriaUsuario(TimeStampedModel):

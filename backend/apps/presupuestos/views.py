@@ -314,8 +314,8 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                         'gastos': [],
                     })
 
-                # ── Traspasos involucrados en esta memoria ───────────────────
-                from apps.memorias.models import TraspasoPresupuestario
+                # ── Traspasos y Modificaciones involucrados en esta memoria ───
+                from apps.memorias.models import TraspasoPresupuestario, DetalleModificacion
                 traspasos_data = []
                 for t in memoria.traspasos_entrada.all():
                     traspasos_data.append({
@@ -334,6 +334,15 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
                         'monto': str(t.monto),
                         'motivo': t.motivo,
                         'fecha': str(t.created_at.date()),
+                    })
+                for dm in memoria.detalles_modificacion.select_related('modificacion').all():
+                    traspasos_data.append({
+                        'traspaso_id': dm.modificacion.id,
+                        'tipo': 'ENTRADA' if dm.tipo_movimiento == DetalleModificacion.TipoMovimiento.INCREMENTO else 'SALIDA',
+                        'memoria_contraparte_codigo': dm.modificacion.codigo,
+                        'monto': str(dm.monto),
+                        'motivo': dm.modificacion.motivo,
+                        'fecha': str(dm.modificacion.fecha.date() if dm.modificacion.fecha else dm.created_at.date()),
                     })
 
                 # ── Agrupación por partida (mantener compatibilidad existente) ──

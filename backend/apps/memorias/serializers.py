@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria, TraspasoPresupuestario
+from .models import (
+    MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria,
+    TraspasoPresupuestario, ModificacionPresupuestaria, DetalleModificacion
+)
 from apps.usuarios.models import Usuario
 
 class RegistroMemoriaUsuarioSerializer(serializers.ModelSerializer):
@@ -32,6 +35,8 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     detalles = DetallePresupuestoMemoriaSerializer(many=True, read_only=True)
     gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
     seccion_nombre = serializers.CharField(source='seccion.nombre', read_only=True)
+    area_id = serializers.IntegerField(source='seccion.area_id', read_only=True)
+    area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
     operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True)
     partida_codigo = serializers.SerializerMethodField()
@@ -41,7 +46,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemoriaCalculo
         fields = [
-            'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_nombre', 'operacion', 'operacion_codigo',
+            'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_id', 'area_codigo', 'area_nombre', 'operacion', 'operacion_codigo',
             'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'fecha_aprobacion',
             'total_presupuestado', 'total_ejecutado', 'monto_entrante', 'monto_saliente', 'saldo_disponible',
             'participantes', 'detalles', 'partida_codigo', 'partida_nombre', 'total_items', 'created_at', 'updated_at'
@@ -70,6 +75,8 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
 class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
     seccion_nombre = serializers.CharField(source='seccion.nombre', read_only=True)
+    area_id = serializers.IntegerField(source='seccion.area_id', read_only=True)
+    area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
     operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True)
     partida_codigo = serializers.SerializerMethodField()
@@ -79,7 +86,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemoriaCalculo
         fields = [
-            'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_nombre', 'operacion', 'operacion_codigo',
+            'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_id', 'area_codigo', 'area_nombre', 'operacion', 'operacion_codigo',
             'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'fecha_aprobacion',
             'total_presupuestado', 'total_ejecutado', 'monto_entrante', 'monto_saliente', 'saldo_disponible',
             'partida_codigo', 'partida_nombre', 'total_items',
@@ -109,3 +116,60 @@ class TraspasoPresupuestarioSerializer(serializers.ModelSerializer):
         read_only_fields = ['estado', 'usuario_registro']
 
 TraspasoSerializer = TraspasoPresupuestarioSerializer
+
+
+class DetalleModificacionSerializer(serializers.ModelSerializer):
+    memoria_codigo = serializers.CharField(source='memoria.codigo', read_only=True)
+    partida_codigo = serializers.SerializerMethodField()
+    partida_nombre = serializers.SerializerMethodField()
+    tipo_movimiento_display = serializers.CharField(source='get_tipo_movimiento_display', read_only=True)
+
+    class Meta:
+        model = DetalleModificacion
+        fields = [
+            'id', 'memoria', 'memoria_codigo', 'partida_codigo', 'partida_nombre',
+            'tipo_movimiento', 'tipo_movimiento_display', 'monto', 'created_at'
+        ]
+
+    def get_partida_codigo(self, obj):
+        primero = obj.memoria.detalles.first()
+        return primero.partida.codigo if primero and primero.partida else None
+
+    def get_partida_nombre(self, obj):
+        primero = obj.memoria.detalles.first()
+        return primero.partida.nombre if primero and primero.partida else None
+
+
+class ModificacionPresupuestariaSerializer(serializers.ModelSerializer):
+    detalles = DetalleModificacionSerializer(many=True, read_only=True)
+    area_nombre = serializers.CharField(source='area.nombre', read_only=True)
+    area_codigo = serializers.CharField(source='area.codigo', read_only=True)
+    gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
+    usuario_registro_nombre = serializers.SerializerMethodField()
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    origenes = serializers.SerializerMethodField()
+    destinos = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ModificacionPresupuestaria
+        fields = [
+            'id', 'codigo', 'gestion', 'gestion_anio', 'area', 'area_codigo', 'area_nombre',
+            'tipo', 'tipo_display', 'motivo', 'total_monto', 'estado',
+            'usuario_registro', 'usuario_registro_nombre', 'fecha', 'created_at',
+            'detalles', 'origenes', 'destinos'
+        ]
+        read_only_fields = ['codigo', 'total_monto', 'estado', 'usuario_registro', 'fecha']
+
+    def get_usuario_registro_nombre(self, obj):
+        if obj.usuario_registro:
+            return obj.usuario_registro.get_full_name() or obj.usuario_registro.username
+        return None
+
+    def get_origenes(self, obj):
+        detalles = [d for d in obj.detalles.all() if d.tipo_movimiento == 'DISMINUCION']
+        return DetalleModificacionSerializer(detalles, many=True).data
+
+    def get_destinos(self, obj):
+        detalles = [d for d in obj.detalles.all() if d.tipo_movimiento == 'INCREMENTO']
+        return DetalleModificacionSerializer(detalles, many=True).data
+
