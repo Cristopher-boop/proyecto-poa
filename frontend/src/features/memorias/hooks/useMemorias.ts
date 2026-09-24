@@ -1,11 +1,18 @@
 import { useState, useCallback, useEffect } from 'react';
 import { memoriasApi, MemoriaCalculo } from '../api/memoriasApi';
 import alertService from '../../../utils/alerts';
+import { useAuth } from '../../../hooks/useAuth';
 
 export function useMemorias(gestionId: number | null, areaId: string, seccionId: string, activeTab: string, searchParams: any) {
+  const { user } = useAuth();
+  const rolName = (user?.rol_nombre || (user as any)?.rol?.nombre || '').toUpperCase().trim();
+  const rolClean = rolName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const isSuperuser = !!user?.is_superuser;
+  const isGerente = !isSuperuser && rolClean === 'GERENTE';
+
   const [memorias, setMemorias] = useState<MemoriaCalculo[]>([]);
   const [conteos, setConteos] = useState<any>({
-    todas: 0, borrador: 0, espera: 0, planificacion: 0, finanzas: 0, aprobadas: 0, rechazadas: 0
+    todas: 0, borrador: 0, espera: 0, planificacion: 0, finanzas: 0, aprobadas: 0, rechazadas: 0, pendiente: 0
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -21,13 +28,15 @@ export function useMemorias(gestionId: number | null, areaId: string, seccionId:
       if (areaId !== 'todas') params.area = areaId;
       if (seccionId !== 'todas') params.seccion = seccionId;
       
-      // No enviamos el estado al backend porque algunas pestaÃ±as agrupan mÃºltiples estados (ej. "espera")
+      // No enviamos el estado al backend porque algunas pestañas agrupan múltiples estados (ej. "espera")
       const data = await memoriasApi.getMemorias(params);
       
       const newConteos = {
         todas: data.length,
         borrador: data.filter(m => m.estado === 'BORRADOR').length,
-        espera: data.filter(m => ['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(m.estado)).length,
+        espera: isGerente && !isSuperuser
+          ? data.filter(m => m.estado === 'PENDIENTE_GERENCIA').length
+          : data.filter(m => ['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(m.estado)).length,
         planificacion: data.filter(m => m.estado === 'PENDIENTE_PLANIFICACION').length,
         finanzas: data.filter(m => ['APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(m.estado)).length,
         aprobadas: data.filter(m => m.estado === 'APROBADO_FINANZAS').length,
@@ -42,6 +51,9 @@ export function useMemorias(gestionId: number | null, areaId: string, seccionId:
         filteredData = data.filter(m => {
           if (activeTab === 'borrador') return m.estado === 'BORRADOR';
           if (activeTab === 'espera') {
+            if (isGerente && !isSuperuser) {
+              return m.estado === 'PENDIENTE_GERENCIA';
+            }
             return ['PENDIENTE_GERENCIA', 'PENDIENTE_PLANIFICACION', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'].includes(m.estado);
           }
           if (activeTab === 'pendiente') return m.estado === 'PENDIENTE_GERENCIA';
@@ -60,7 +72,7 @@ export function useMemorias(gestionId: number | null, areaId: string, seccionId:
     } finally {
       setLoading(false);
     }
-  }, [gestionId, areaId, seccionId, activeTab]);
+  }, [gestionId, areaId, seccionId, activeTab, isGerente, isSuperuser]);
 
   useEffect(() => {
     fetchMemorias();

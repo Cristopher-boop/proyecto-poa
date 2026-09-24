@@ -486,11 +486,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                   <>
                     {!isGestionBloqueada && (isElaborador || isAprobador || isGerente) && (
                       <button
-                        onClick={() => {
-                          const targetId = fichaMemoria.id;
-                          onClose();
-                          handleDelete();
-                        }}
+                        onClick={() => handleDelete()}
                         className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
                       >
                         <Trash2 size={14} /> Eliminar

@@ -76,8 +76,8 @@ export default function MemoriasPage() {
       setActiveTab(tabParam);
       return;
     }
-    if (isGerente) {
-      setActiveTab('pendiente');
+    if (isSuperuser || isGerente) {
+      setActiveTab('espera');
     } else if (isPlanificador) {
       setActiveTab('planificacion');
     } else if (isAprobador) {
@@ -85,7 +85,7 @@ export default function MemoriasPage() {
     } else {
       setActiveTab('todas');
     }
-  }, [user, isGerente, isPlanificador, isAprobador, searchParams]);
+  }, [user, isSuperuser, isGerente, isPlanificador, isAprobador, searchParams]);
 
   const handleCreate = () => {
     setSelectedMemoria(null);

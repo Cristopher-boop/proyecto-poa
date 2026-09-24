@@ -70,14 +70,21 @@ export const MemoriasFilter: React.FC<MemoriasFilterProps> = ({
         {(isTrabajador || isElaborador || isGerente || isSuperuser) && (
           <button
             onClick={() => setActiveTab('espera')}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'espera' ? 'border-amber-500 text-amber-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'}`}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+              activeTab === 'espera' || activeTab === 'pendiente'
+                ? 'border-amber-500 text-amber-600 font-bold'
+                : 'border-transparent text-theme-muted hover:text-theme-main'
+            }`}
             title="Memorias en trámite de revisión (Gerencia, Planificación y Presupuestos)"
           >
-            <Clock size={16} /> En Espera ({conteos.espera})
+            <Clock size={16} />
+            {isGerente && !isSuperuser
+              ? `Pendiente Gerencia (${conteos.pendiente ?? conteos.espera ?? 0})`
+              : `En Espera (${conteos.espera ?? 0})`}
           </button>
         )}
 
-        {isPlanificador && (
+        {(isPlanificador || isSuperuser) && (
           <button
             onClick={() => setActiveTab('planificacion')}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'planificacion' ? 'border-indigo-500 text-indigo-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'}`}
@@ -86,7 +93,7 @@ export const MemoriasFilter: React.FC<MemoriasFilterProps> = ({
           </button>
         )}
 
-        {isAprobador && !isSuperuser && (
+        {(isAprobador || isSuperuser) && (
           <button
             onClick={() => setActiveTab('finanzas')}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'finanzas' ? 'border-blue-500 text-blue-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'}`}
