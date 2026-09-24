@@ -87,6 +87,44 @@ AREA_MAP = {
     'TDD': 'TDD',
 }
 
+MEMORIAS_EXTRA_2026 = [
+    {
+        'area_sigla': 'SMS',
+        'justificacion': 'SERA UTILIZADOS PARA GASTOS DE INSPECCION, AUDITORIAS DE LA DIRECCION GENERAL DE AERONAUTICA DE BOLIVIA (DGAC)',
+        'es_contratacion': True,
+        'items': [
+            {
+                'partida': '31120',
+                'descripcion': 'REFRIGERIO INSPECCIONDGAC',
+                'unidad': 'MES',
+                'cantidad': Decimal('5.00'),
+                'precio_unitario': Decimal('2000.00'),
+                'total': Decimal('10000.00'),
+            }
+        ]
+    },
+    {
+        'area_sigla': 'GO',
+        'justificacion': (
+            'SE REQUIERE CONTAR CON PRESUPUESTO DESTINADO A CUBRIR GASTOS DE ALIMENTACIÓN Y '
+            'OTROS ASPECTOS LOGÍSTICOS RELACIONADOS CON LAS AUDITORÍAS PROGRAMADAS Y NO PROGRAMADAS '
+            'EFECTUADAS POR LA DGAC CON TODAS LAS ESTACIONES CERTIFICADAS, ASI COMO EN LAS ESTACIONES '
+            'QUE SE ENCUENTRAN EN PROCESO DE FUTURA CERTIFICACIÓN, COMO TRINIDAD Y GUAYARAMERÍN'
+        ),
+        'es_contratacion': True,
+        'items': [
+            {
+                'partida': '31120',
+                'descripcion': 'GASTOS POR ALIMENTACION Y OTROS SIMILARES',
+                'unidad': 'SERVICIO',
+                'cantidad': Decimal('1.00'),
+                'precio_unitario': Decimal('6000.00'),
+                'total': Decimal('6000.00'),
+            }
+        ]
+    },
+]
+
 class Command(BaseCommand):
     help = 'Carga las Memorias de Cálculo oficiales de la gestión 2026 desde el Excel CONSOLIDADO POA 2026 OFICIAL, descartando las partidas con total 0,00'
 
@@ -282,6 +320,88 @@ class Command(BaseCommand):
                 # Acumular presupuesto del área
                 area_totals[area.id] = area_totals.get(area.id, Decimal('0.00')) + sheet_total
                 total_presupuesto_2026 += sheet_total
+
+            # ────────────────────────────────────────────────────────
+            # Procesar Memorias de Cálculo Extras (no presentes en Excel)
+            # ────────────────────────────────────────────────────────
+            if MEMORIAS_EXTRA_2026:
+                self.stdout.write(f"Procesando {len(MEMORIAS_EXTRA_2026)} memorias de cálculo extras...")
+                for extra in MEMORIAS_EXTRA_2026:
+                    sigla_extra = extra['area_sigla'].upper()
+                    area_sigla = AREA_MAP.get(sigla_extra, sigla_extra)
+
+                    area = Area.objects.filter(codigo__iendswith=f"-{area_sigla}").first()
+                    if not area:
+                        area = Area.objects.filter(codigo__icontains=area_sigla).first()
+                    if not area:
+                        self.stdout.write(self.style.ERROR(f"  [!] Área no encontrada para sigla extra: {area_sigla}"))
+                        continue
+
+                    seccion = Seccion.objects.filter(area=area).first()
+                    if not seccion:
+                        seccion, _ = Seccion.objects.get_or_create(area=area, defaults={'nombre': area.nombre})
+
+                    operacion = Operacion.objects.filter(area=area, accion_corto_plazo__gestion=gestion).first()
+                    if not operacion:
+                        operacion = Operacion.objects.filter(area=area).first()
+
+                    correlativo = area_counters.get(area_sigla, 0) + 1
+                    area_counters[area_sigla] = correlativo
+                    memoria_code = f"MEM-{area_sigla}-2026-{correlativo:03d}"
+
+                    memoria = MemoriaCalculo.objects.create(
+                        codigo=memoria_code,
+                        gestion=gestion,
+                        seccion=seccion,
+                        operacion=operacion,
+                        justificacion=extra['justificacion'],
+                        es_contratacion=extra.get('es_contratacion', True),
+                        estado=MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
+                        fecha_aprobacion=timezone.now()
+                    )
+                    count_memorias += 1
+
+                    memoria_extra_total = Decimal('0.00')
+                    for item in extra['items']:
+                        partida_code = str(item['partida']).strip()
+                        if len(partida_code) == 4 and partida_code.isdigit():
+                            partida_code = f"{partida_code}0"
+
+                        partida, _ = Partida.objects.get_or_create(
+                            codigo=partida_code,
+                            clase=Partida.ClasePartida.EGRESO,
+                            defaults={'nombre': f"Partida {partida_code}"}
+                        )
+
+                        cant = decimal(item.get('cantidad'), Decimal('1.00'))
+                        unit = text(item.get('unidad_medida') or item.get('unidad') or 'UNIDAD')[:50]
+                        price = decimal(item.get('precio_unitario'))
+                        tot = decimal(item.get('total') or item.get('total_programado'))
+                        if tot == Decimal('0.00') and (cant * price) > 0:
+                            tot = (cant * price).quantize(Decimal('0.01'))
+
+                        base_tot = cant * price
+                        factor = (tot / base_tot).quantize(Decimal('0.0001')) if base_tot else Decimal('1.0000')
+
+                        DetallePresupuestoMemoria.objects.create(
+                            memoria=memoria,
+                            partida=partida,
+                            descripcion=item['descripcion'],
+                            unidad_medida=unit,
+                            fuente_excel="CARGA_MANUAL_EXTRA",
+                            factor_calculo=factor,
+                            total_programado=tot,
+                            cantidad=cant,
+                            precio_unitario=price,
+                            estado_ejecucion=DetallePresupuestoMemoria.EstadoGasto.PENDIENTE
+                        )
+                        count_detalles += 1
+                        memoria_extra_total += tot
+
+                    recalcular_saldos_memoria(memoria)
+                    area_totals[area.id] = area_totals.get(area.id, Decimal('0.00')) + memoria_extra_total
+                    total_presupuesto_2026 += memoria_extra_total
+                    self.stdout.write(f"  [+] Memoria extra {memoria.codigo} ({area_sigla}) creada: Bs {memoria_extra_total:,.2f}")
 
             # Guardar presupuestos consolidados por Área para la gestión 2026
             for area_id, monto_area in area_totals.items():
