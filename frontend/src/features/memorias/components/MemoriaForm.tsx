@@ -153,19 +153,25 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
     }
   }, [user?.rol_nombre, isSuperuser, isAprobador, isPlanificador, isGerente, isElaborador, isTrabajador, targetMemoriaId]);
 
+  const isFirstMount = useRef(true);
+
   useEffect(() => {
     cargarBase();
   }, []);
 
   useEffect(() => {
-    if (!loading && gestiones.length > 0) {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    if (!loading) {
       if (memoria) {
         handleOpenEditar(memoria);
       } else {
         handleOpenCrear();
       }
     }
-  }, [loading, memoria, gestiones.length]);
+  }, [memoria]);
 
   useEffect(() => {
     if (selectedGestionId) {
@@ -240,6 +246,12 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
       if (gList.length > 0) {
         const formulacionG = gList.find((g) => g.estado === 'FORMULACION');
         setSelectedGestionId(formulacionG ? formulacionG.id : gList[0].id);
+      }
+
+      if (memoria) {
+        await handleOpenEditar(memoria, pList, opList, sList);
+      } else {
+        handleOpenCrear();
       }
     } catch (err: any) {
       console.error(err);
@@ -395,14 +407,33 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
   }, [filteredPartidas, parentMap]);
 
   // Opciones para el componente Dropdown de Partida
+  // Opciones para el componente Dropdown de Partida
   const partidaDropdownItems = useMemo((): DropdownItem[] => {
-    return egresoLeafs.map((leaf) => {
-      const parent = parentMap.get(leaf.codigo);
+    let list = [...egresoLeafs];
+
+    // Asegurarnos de que la partida seleccionada siempre esté presente en la lista del Dropdown al editar
+    if (formMemoria.partidaId && !list.some((p) => Number(p.id) === Number(formMemoria.partidaId))) {
+      const pSeleccionada = partidas.find((p) => Number(p.id) === Number(formMemoria.partidaId));
+      if (pSeleccionada) {
+        list.unshift(pSeleccionada);
+      } else if (editingMemoria) {
+        list.unshift({
+          id: Number(formMemoria.partidaId),
+          codigo: editingMemoria.partida_codigo || 'PARTIDA',
+          nombre: editingMemoria.partida_nombre || 'Partida Asignada',
+          clase: 'EGRESO',
+          estado: true,
+        } as any);
+      }
+    }
+
+    return list.map((leaf) => {
+      const parent = parentMap.get(leaf.codigo) || partidas.find((p) => p.codigo !== leaf.codigo && leaf.codigo.startsWith(p.codigo.replace(/0+$/, '')));
       return {
         id: leaf.id,
         label: leaf.nombre,
         badge: leaf.codigo,
-        group: parent ? `${parent.codigo} - ${parent.nombre}` : 'Partidas Generales',
+        group: parent ? `${parent.codigo} - ${parent.nombre}` : 'Partidas Presupuestarias',
         groupBadge: parent ? parent.codigo : undefined,
         sublabel: parent ? `${parent.codigo} › ${parent.nombre}` : undefined,
       };
@@ -412,24 +443,36 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
       }
       return String(a.badge || '').localeCompare(String(b.badge || ''));
     });
-  }, [egresoLeafs, parentMap]);
+  }, [egresoLeafs, parentMap, formMemoria.partidaId, partidas, editingMemoria]);
 
   // Opciones para el componente Dropdown de Operaciones POA
   const operacionDropdownItems = useMemo((): DropdownItem[] => {
     const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
-    const areaId = (editingMemoria as any)?.area_id || (sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null));
+    const secAreaId = sec ? (typeof sec.area === 'object' ? (sec.area as any)?.id : sec.area || (sec as any).area_id) : null;
+    const areaId = (editingMemoria as any)?.area_id || secAreaId || (user as any)?.area_id || null;
     let opsFiltradas = areaId
-      ? operaciones.filter((o) => Number(o.area || (o as any).area_id) === Number(areaId))
+      ? operaciones.filter((o) => {
+          const oAreaId = typeof o.area === 'object' ? (o.area as any)?.id : o.area || (o as any).area_id;
+          return Number(oAreaId) === Number(areaId);
+        })
       : operaciones;
 
     if (opsFiltradas.length === 0) {
       opsFiltradas = operaciones;
     }
 
-    if (formMemoria.operacionId && !opsFiltradas.some((o) => o.id === Number(formMemoria.operacionId))) {
-      const opActual = operaciones.find((o) => o.id === Number(formMemoria.operacionId));
+    // Asegurarnos de que la operación seleccionada siempre esté presente en la lista del Dropdown al editar
+    if (formMemoria.operacionId && !opsFiltradas.some((o) => Number(o.id) === Number(formMemoria.operacionId))) {
+      const opActual = operaciones.find((o) => Number(o.id) === Number(formMemoria.operacionId));
       if (opActual) {
         opsFiltradas = [opActual, ...opsFiltradas];
+      } else if (editingMemoria && editingMemoria.operacion_codigo) {
+        opsFiltradas = [{
+          id: Number(formMemoria.operacionId),
+          codigo: editingMemoria.operacion_codigo,
+          descripcion: (editingMemoria as any).operacion_descripcion || `Operación ${editingMemoria.operacion_codigo}`,
+          es_contratacion: Boolean(editingMemoria.es_contratacion),
+        } as any, ...opsFiltradas];
       }
     }
 
@@ -439,7 +482,7 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
       badge: op.codigo,
       sublabel: op.es_contratacion ? '✓ Modalidad: Contrataciones' : undefined,
     }));
-  }, [secciones, formMemoria.seccionId, editingMemoria, user?.area_id, operaciones, formMemoria.operacionId]);
+  }, [secciones, formMemoria.seccionId, editingMemoria, user, operaciones, formMemoria.operacionId]);
 
   // Contadores por estado
   const conteos = useMemo(() => {
@@ -556,36 +599,111 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
     setShowModalMemoria(true);
   }
 
-  async function handleOpenEditar(mem: MemoriaCalculo) {
+  async function handleOpenEditar(
+    mem: MemoriaCalculo,
+    catalogoPartidas: Partida[] = partidas,
+    catalogoOperaciones: Operacion[] = operaciones,
+    catalogoSecciones: Seccion[] = secciones
+  ) {
     try {
+      if (mem.estado && mem.estado.includes('APROBADO')) {
+        alertService.error('Acción denegada', 'Las memorias de cálculo que ya han sido aprobadas no pueden ser modificadas.');
+        onClose();
+        return;
+      }
+
       // Cargamos la memoria completa (con detalles) antes de abrir el modal
       const memoriaCompleta = await getMemoria(mem.id);
+      if (memoriaCompleta.estado && memoriaCompleta.estado.includes('APROBADO')) {
+        alertService.error('Acción denegada', 'Las memorias de cálculo que ya han sido aprobadas no pueden ser modificadas.');
+        onClose();
+        return;
+      }
+
       setEditingMemoria(memoriaCompleta);
 
       // Partida ID segura recuperada de la memoria
-      const rawPartidaId =
-        memoriaCompleta.partida_id ||
-        (memoriaCompleta.detalles && (memoriaCompleta.detalles[0]?.partida || (memoriaCompleta.detalles[0] as any)?.partida_id)) ||
-        (partidas.find((p) => p.codigo === memoriaCompleta.partida_codigo)?.id) ||
-        (partidas.find((p) => p.codigo === (memoriaCompleta.detalles && memoriaCompleta.detalles[0]?.partida_codigo))?.id) ||
-        (partidas.find((p) => p.codigo === mem.partida_codigo)?.id) ||
-        '';
+      let resolvedPartidaId: number | '' = '';
+      const pDirect = (memoriaCompleta as any).partida_id ?? (memoriaCompleta as any).partida;
+      if (typeof pDirect === 'object' && pDirect !== null && pDirect.id) {
+        resolvedPartidaId = Number(pDirect.id);
+      } else if (pDirect && !isNaN(Number(pDirect))) {
+        resolvedPartidaId = Number(pDirect);
+      }
 
-      const opId = typeof memoriaCompleta.operacion === 'object'
-        ? (memoriaCompleta.operacion as any)?.id
-        : (memoriaCompleta.operacion || (operaciones.find((o) => o.codigo === (memoriaCompleta.operacion_codigo || mem.operacion_codigo))?.id || ''));
+      if (!resolvedPartidaId && memoriaCompleta.detalles && memoriaCompleta.detalles.length > 0) {
+        const d0 = memoriaCompleta.detalles[0];
+        const pVal = (d0 as any).partida_id ?? (d0 as any).partida;
+        if (typeof pVal === 'object' && pVal !== null && pVal.id) {
+          resolvedPartidaId = Number(pVal.id);
+        } else if (pVal && !isNaN(Number(pVal))) {
+          resolvedPartidaId = Number(pVal);
+        } else if (d0.partida_codigo) {
+          const match = catalogoPartidas.find((p) => p.codigo === d0.partida_codigo);
+          if (match) resolvedPartidaId = Number(match.id);
+        }
+      }
 
-      const secId = typeof memoriaCompleta.seccion === 'object'
-        ? (memoriaCompleta.seccion as any)?.id
-        : (memoriaCompleta.seccion || (secciones.find((s) => s.nombre === (memoriaCompleta.seccion_nombre || mem.seccion_nombre))?.id || user?.seccion || ''));
+      if (!resolvedPartidaId) {
+        const cod = memoriaCompleta.partida_codigo || (mem as any).partida_codigo;
+        if (cod) {
+          const match = catalogoPartidas.find((p) => p.codigo === cod);
+          if (match) resolvedPartidaId = Number(match.id);
+        }
+      }
+
+      if (!resolvedPartidaId) {
+        const nom = memoriaCompleta.partida_nombre || (mem as any).partida_nombre;
+        if (nom) {
+          const match = catalogoPartidas.find((p) => p.nombre.toLowerCase() === nom.toLowerCase());
+          if (match) resolvedPartidaId = Number(match.id);
+        }
+      }
+
+      // Operación POA segura recuperada de la memoria
+      let resolvedOpId: number | '' = '';
+      const opDirect = (memoriaCompleta as any).operacion_id ?? (memoriaCompleta as any).operacion;
+      if (typeof opDirect === 'object' && opDirect !== null && opDirect.id) {
+        resolvedOpId = Number(opDirect.id);
+      } else if (opDirect && !isNaN(Number(opDirect))) {
+        resolvedOpId = Number(opDirect);
+      }
+
+      if (!resolvedOpId) {
+        const opCod = memoriaCompleta.operacion_codigo || (mem as any).operacion_codigo;
+        if (opCod) {
+          const match = catalogoOperaciones.find((o) => o.codigo === opCod);
+          if (match) resolvedOpId = Number(match.id);
+        }
+      }
+
+      // Sección segura
+      let resolvedSecId: number | '' = '';
+      const secDirect = (memoriaCompleta as any).seccion_id ?? (memoriaCompleta as any).seccion;
+      if (typeof secDirect === 'object' && secDirect !== null && secDirect.id) {
+        resolvedSecId = Number(secDirect.id);
+      } else if (secDirect && !isNaN(Number(secDirect))) {
+        resolvedSecId = Number(secDirect);
+      }
+
+      if (!resolvedSecId) {
+        const secNom = memoriaCompleta.seccion_nombre || (mem as any).seccion_nombre;
+        if (secNom) {
+          const match = catalogoSecciones.find((s) => s.nombre.toLowerCase() === secNom.toLowerCase());
+          if (match) resolvedSecId = Number(match.id);
+        }
+      }
+      if (!resolvedSecId && user?.seccion) {
+        resolvedSecId = Number(user.seccion);
+      }
 
       setFormMemoria({
         codigo: memoriaCompleta.codigo || mem.codigo,
-        seccionId: secId ? Number(secId) : '',
-        operacionId: opId ? Number(opId) : '',
+        seccionId: resolvedSecId,
+        operacionId: resolvedOpId,
         es_contratacion: Boolean(memoriaCompleta.es_contratacion ?? mem.es_contratacion),
         justificacion: memoriaCompleta.justificacion || mem.justificacion || '',
-        partidaId: rawPartidaId ? Number(rawPartidaId) : '',
+        partidaId: resolvedPartidaId,
         renglones: (memoriaCompleta.detalles && memoriaCompleta.detalles.length > 0)
           ? memoriaCompleta.detalles.map((d: any) => ({
               descripcion: d.descripcion || '',

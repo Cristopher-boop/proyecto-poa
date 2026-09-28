@@ -3,8 +3,16 @@ import { partidasApi } from '../api/partidasApi';
 import type { Partida, PartidaEstadoFilter, PartidaStats } from '../types/partidas.types';
 import { GRUPOS_PRESUPUESTARIOS } from '../types/partidas.types';
 import alertService from '../../../utils/alerts';
+import { useAuth } from '../../../hooks/useAuth';
 
 export function usePartidas() {
+  const { user } = useAuth();
+  const rolName = (user?.rol_nombre || (user as any)?.rol?.nombre || '').toUpperCase().trim();
+  const rolClean = rolName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const isSuperuser = !!user?.is_superuser;
+  const isAprobador = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'ADMINISTRADOR';
+  const canManage = isAprobador; // Solo SuperAdmin y Aprobador pueden crear, editar y dar de baja
+
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -45,7 +53,8 @@ export function usePartidas() {
   }, []);
 
   const handleGrupoChange = useCallback((grupo: string) => {
-    setSelectedGrupo(grupo);
+    const val = (!grupo || grupo === 'todas') ? 'todos' : String(grupo).trim();
+    setSelectedGrupo(val);
     setCurrentPage(1);
   }, []);
 
@@ -99,7 +108,7 @@ export function usePartidas() {
       if (activeTab === 'inactivas' && partida.estado) return false;
 
       // 2. Filtro por Grupo presupuestario
-      if (selectedGrupo !== 'todos') {
+      if (selectedGrupo && selectedGrupo !== 'todos' && selectedGrupo !== 'todas') {
         const firstDigit = partida.codigo?.trim().charAt(0);
         if (selectedGrupo.startsWith(firstDigit) === false) return false;
       }
@@ -130,8 +139,8 @@ export function usePartidas() {
       const confirmado = await alertService.confirm({
         title: nuevoEstado ? '¿Activar partida presupuestaria?' : '¿Desactivar partida presupuestaria?',
         text: nuevoEstado
-          ? `La partida "${item.codigo} - ${item.nombre}" se habilitará para nuevas formulaciones y memorias.`
-          : `La partida "${item.codigo} - ${item.nombre}" quedará en baja lógica y no estará disponible para nuevas asignaciones.`,
+          ? `La partida "${item.codigo} - ${item.nombre}" se activará y estará disponible para asignaciones y memorias.`
+          : `La partida "${item.codigo} - ${item.nombre}" quedará inactiva y no podrá seleccionarse en nuevas formulaciones.`,
         confirmButtonText: nuevoEstado ? 'Sí, activar' : 'Sí, desactivar',
         isDanger: !nuevoEstado,
       });
@@ -173,6 +182,9 @@ export function usePartidas() {
     currentPage,
     pageSize,
     totalFiltrados: partidasFiltradas.length,
+    canManage,
+    isSuperuser,
+    isAprobador,
     setSearch: handleSearchChange,
     setActiveTab: handleTabChange,
     setSelectedGrupo: handleGrupoChange,

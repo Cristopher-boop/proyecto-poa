@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileSpreadsheet, CheckCircle2 } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
 import { Modal, Button } from '../../../components/commons';
 import { partidasApi } from '../api/partidasApi';
 import type { Partida, PartidaFormData, ClasePartida } from '../types/partidas.types';
@@ -186,27 +186,6 @@ export const PartidaModal: React.FC<PartidaModalProps> = ({
             className="input-theme text-xs w-full resize-none"
             placeholder="Detalle o conceptos que pueden imputarse técnicamente a esta partida..."
           />
-        </div>
-
-        {/* Estado activo / inactivo */}
-        <div className="pt-1">
-          <label className="flex items-center gap-3 text-xs text-theme-main cursor-pointer p-3 rounded-xl border border-theme-border bg-theme-base/40 hover:bg-theme-base transition-colors select-none">
-            <input
-              type="checkbox"
-              checked={formData.estado}
-              onChange={(e) => setFormData((prev) => ({ ...prev, estado: e.target.checked }))}
-              className="w-4 h-4 rounded text-theme-primary focus:ring-theme-primary focus:ring-offset-0 border-theme-border cursor-pointer"
-            />
-            <div>
-              <span className="font-semibold block text-theme-main flex items-center gap-1.5">
-                <CheckCircle2 size={13} className={formData.estado ? 'text-emerald-500' : 'text-gray-400'} />
-                Habilitada / Activa
-              </span>
-              <span className="text-[11px] text-theme-muted block mt-0.5">
-                Permite su selección en la formulación de Memorias de Cálculo y techos presupuestarios.
-              </span>
-            </div>
-          </label>
         </div>
       </form>
     </Modal>

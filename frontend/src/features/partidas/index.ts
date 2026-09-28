@@ -5,3 +5,4 @@ export * from './components/PartidasResumen';
 export * from './components/PartidasFilter';
 export * from './components/PartidasTable';
 export * from './components/PartidaModal';
+export * from './components/PartidaDetalleModal';

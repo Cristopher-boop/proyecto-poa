@@ -466,7 +466,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
             {/* Footer con Acciones Directas de Revisión */}
             <div className="p-4 border-t border-theme-border flex items-center justify-between">
               <div>
-                {!isGestionBloqueada && fichaMemoria.estado !== 'APROBADO_FINANZAS' && (isElaborador || isGerente || isPlanificador || isAprobador) && (
+                {!isGestionBloqueada && !fichaMemoria.estado.includes('APROBADO') && (isElaborador || isGerente || isPlanificador || isAprobador) && (
                   <button
                     onClick={() => {
                       const targetMem = fichaMemoria;
@@ -484,7 +484,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                 {/* 1. Acción de Borrador: Enviar a Gerencia / Eliminar */}
                 {fichaMemoria.estado === 'BORRADOR' && (
                   <>
-                    {!isGestionBloqueada && (isElaborador || isAprobador || isGerente) && (
+                    {!isGestionBloqueada && (isElaborador || isGerente || isSuperuser) && (
                       <button
                         onClick={() => handleDelete()}
                         className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"

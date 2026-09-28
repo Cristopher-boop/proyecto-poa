@@ -6,6 +6,7 @@ import {
   PartidasFilter,
   PartidasTable,
   PartidaModal,
+  PartidaDetalleModal,
   Partida,
 } from '../../features/partidas';
 
@@ -22,6 +23,7 @@ export default function PartidasPage() {
     currentPage,
     pageSize,
     totalFiltrados,
+    canManage,
     setSearch,
     setActiveTab,
     setSelectedGrupo,
@@ -32,6 +34,7 @@ export default function PartidasPage() {
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingPartida, setEditingPartida] = useState<Partida | null>(null);
+  const [viewingPartida, setViewingPartida] = useState<Partida | null>(null);
 
   const handleCreateNew = useCallback(() => {
     setEditingPartida(null);
@@ -43,9 +46,17 @@ export default function PartidasPage() {
     setShowModal(true);
   }, []);
 
+  const handleView = useCallback((partida: Partida) => {
+    setViewingPartida(partida);
+  }, []);
+
   const handleCloseModal = useCallback(() => {
     setShowModal(false);
     setEditingPartida(null);
+  }, []);
+
+  const handleCloseViewModal = useCallback(() => {
+    setViewingPartida(null);
   }, []);
 
   return (
@@ -90,6 +101,7 @@ export default function PartidasPage() {
         stats={stats}
         totalFiltrados={totalFiltrados}
         loading={loading}
+        canManage={canManage}
         onRefresh={refetch}
         onCreateNew={handleCreateNew}
       />
@@ -101,7 +113,9 @@ export default function PartidasPage() {
         totalItems={totalFiltrados}
         currentPage={currentPage}
         pageSize={pageSize}
+        canManage={canManage}
         onPageChange={setCurrentPage}
+        onView={handleView}
         onEdit={handleEdit}
         onToggleEstado={handleToggleEstado}
       />
@@ -113,6 +127,20 @@ export default function PartidasPage() {
           partida={editingPartida}
           onClose={handleCloseModal}
           onSave={refetch}
+        />
+      ) : null}
+
+      {/* Modal Detalle Lectura Partida */}
+      {viewingPartida ? (
+        <PartidaDetalleModal
+          isOpen={Boolean(viewingPartida)}
+          partida={viewingPartida}
+          canManage={canManage}
+          onClose={handleCloseViewModal}
+          onEdit={(p) => {
+            handleCloseViewModal();
+            handleEdit(p);
+          }}
         />
       ) : null}
     </div>

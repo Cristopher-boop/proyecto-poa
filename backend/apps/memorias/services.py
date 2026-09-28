@@ -91,9 +91,14 @@ class MemoriaCalculoService:
     @staticmethod
     @transaction.atomic
     def actualizar_memoria(memoria, data, request_data):
-        # Evitar modificar memorias aprobadas
-        if memoria.estado == MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS and 'estado' not in data:
-            raise ValidationError('No se puede modificar una memoria que ya cuenta con aprobación final POA.')
+        # Evitar modificar memorias aprobadas en cualquiera de sus etapas
+        estados_aprobados = [
+            MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA,
+            MemoriaCalculo.EstadoMemoria.APROBADO_PLANIFICACION,
+            MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
+        ]
+        if memoria.estado in estados_aprobados and 'estado' not in data:
+            raise ValidationError('No se puede modificar una memoria de cálculo que ya ha sido aprobada.')
         if memoria.gestion.estado not in [Gestion.EstadoGestion.FORMULACION, Gestion.EstadoGestion.EN_EJECUCION] and 'estado' not in data:
             raise ValidationError(f'No se puede editar la memoria de la Gestión {memoria.gestion.anio} porque la gestión está {memoria.gestion.get_estado_display().lower()}.')
             

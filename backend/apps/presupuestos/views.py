@@ -155,19 +155,58 @@ class PartidaViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None  # El catálogo de partidas se sirve completo, sin paginar
 
+    def check_manage_permission(self):
+        user = self.request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        rol = user.rol.nombre.upper() if user.rol else ''
+        rol_clean = rol.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        return rol_clean in ['ADMINISTRADOR', 'APROBADOR']
+
+    def create(self, request, *args, **kwargs):
+        if not self.check_manage_permission():
+            return Response(
+                {'detail': 'No tiene permisos para registrar nuevas partidas presupuestarias. Solo Aprobador y Administrador pueden gestionar el clasificador.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(estado=True)
+
+    def update(self, request, *args, **kwargs):
+        if not self.check_manage_permission():
+            return Response(
+                {'detail': 'No tiene permisos para modificar partidas presupuestarias. Solo Aprobador y Administrador pueden gestionar el clasificador.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
-        """Baja lógica al recibir DELETE"""
+        """Desactivación (baja lógica) al recibir DELETE"""
+        if not self.check_manage_permission():
+            return Response(
+                {'detail': 'No tiene permisos para desactivar partidas presupuestarias. Solo Aprobador y Administrador pueden gestionar el clasificador.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         instance = self.get_object()
         instance.estado = False
         instance.save(update_fields=['estado'])
         return Response(
-            {'detail': 'Partida dada de baja lógicamente.', 'estado': False},
+            {'detail': 'Partida desactivada con éxito.', 'estado': False},
             status=status.HTTP_200_OK,
         )
 
     @action(detail=True, methods=['post', 'patch'], url_path='toggle-estado')
     def toggle_estado(self, request, pk=None):
         """Activar o desactivar partida (baja lógica / reactivación)"""
+        if not self.check_manage_permission():
+            return Response(
+                {'detail': 'No tiene permisos para cambiar el estado de partidas presupuestarias. Solo Aprobador y Administrador pueden gestionar el clasificador.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         instance = self.get_object()
         nuevo_estado = request.data.get('estado')
         if nuevo_estado is None:

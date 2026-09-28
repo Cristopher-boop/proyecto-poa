@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { getGestiones, getAreas } from '../../services/presupuestoService';
+import { getGestiones, getAreas, deleteMemoria } from '../../services/presupuestoService';
+import alertService from '../../utils/alerts';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useMemorias } from '../../features/memorias/hooks/useMemorias';
@@ -102,8 +103,23 @@ export default function MemoriasPage() {
     setShowDetalle(true);
   };
 
-  const handleDelete = (id: number) => {
-    // TODO: Implementar lógica de eliminación con memoriasApi.deleteMemoria
+  const handleDelete = async (id: number) => {
+    const confirm = await alertService.confirm({
+      title: '¿Eliminar Memoria de Cálculo?',
+      text: 'Esta acción eliminará de forma permanente el borrador de la memoria de cálculo y todos sus ítems presupuestados.',
+      confirmButtonText: 'Sí, eliminar',
+      isDanger: true,
+    });
+    if (!confirm) return;
+
+    try {
+      await deleteMemoria(id);
+      alertService.success('Eliminado', 'La memoria de cálculo ha sido eliminada con éxito.');
+      refetch();
+    } catch (error: any) {
+      console.error(error);
+      alertService.error('Error', error?.response?.data?.detail || 'No se pudo eliminar la memoria de cálculo.');
+    }
   };
 
   const handleEnviarTodas = () => {
@@ -191,9 +207,11 @@ export default function MemoriasPage() {
         memorias={memorias}
         loading={loading}
         canCreate={canCreate}
+        isElaborador={isElaborador}
         isGerente={isGerente}
         isPlanificador={isPlanificador}
         isAprobador={isAprobador}
+        isSuperuser={isSuperuser}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}

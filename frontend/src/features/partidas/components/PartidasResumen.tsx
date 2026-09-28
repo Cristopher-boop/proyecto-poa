@@ -35,9 +35,9 @@ export const PartidasResumen: React.FC<PartidasResumenProps> = ({ stats }) => {
     },
     {
       id: 'inactivas',
-      title: 'Bajas Lógicas',
+      title: 'Inactivas',
       value: stats.inactivas,
-      subtitle: 'No utilizables en formulación',
+      subtitle: 'Partidas no habilitadas',
       icon: <XCircle size={18} />,
       color: 'rose',
     },
