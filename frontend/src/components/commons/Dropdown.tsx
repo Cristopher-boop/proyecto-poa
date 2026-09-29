@@ -165,7 +165,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
           {selectedItem ? (
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {selectedItem.badge && (
-                <span className="shrink-0 font-mono font-bold text-[11px] bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">
+                <span className="shrink-0 font-mono font-bold text-[11px] bg-slate-100 text-slate-900 border border-slate-300 dark:bg-slate-800 dark:text-white dark:border-slate-700 px-1.5 py-0.5 rounded">
                   {selectedItem.badge}
                 </span>
               )}
@@ -272,8 +272,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                           <span
                             className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
                               isSelected
-                                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold'
-                                : 'bg-slate-100 text-slate-700 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold'
+                                : 'bg-slate-100 text-slate-900 border border-slate-300/80 dark:bg-slate-800 dark:text-white dark:border-slate-700'
                             }`}
                           >
                             {it.badge}
@@ -282,7 +282,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         <div className="flex-1 min-w-0">
                           <p
                             className={`text-xs leading-tight ${
-                              isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
+                              isSelected ? 'font-bold text-slate-900 dark:text-white' : 'text-theme-main'
                             }`}
                           >
                             {it.label}
@@ -323,8 +323,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         <span
                           className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
                             isSelected
-                              ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold'
-                              : 'bg-slate-100 text-slate-700 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold'
+                              : 'bg-slate-100 text-slate-900 border border-slate-300/80 dark:bg-slate-800 dark:text-white dark:border-slate-700'
                           }`}
                         >
                           {it.badge}
@@ -333,7 +333,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                       <div className="flex-1 min-w-0">
                         <p
                           className={`text-xs leading-tight ${
-                            isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
+                            isSelected ? 'font-bold text-slate-900 dark:text-white' : 'text-theme-main'
                           }`}
                         >
                           {it.label}

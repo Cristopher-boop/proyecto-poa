@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FileSpreadsheet } from 'lucide-react';
-import { Modal, Button } from '../../../components/commons';
+import { FileSpreadsheet, Save } from 'lucide-react';
+import { Modal, Button, Dropdown, type DropdownItem } from '../../../components/commons';
 import { partidasApi } from '../api/partidasApi';
 import type { Partida, PartidaFormData, ClasePartida } from '../types/partidas.types';
 import alertService from '../../../utils/alerts';
@@ -48,6 +48,11 @@ export const PartidaModal: React.FC<PartidaModalProps> = ({
     }
   }, [partida, isOpen]);
 
+  const claseItems: DropdownItem[] = [
+    { id: 'EGRESO', label: 'Egreso (Gasto Operativo / Inversión)', badge: 'EGR' },
+    { id: 'INGRESO', label: 'Ingreso (Recurso Institucional)', badge: 'ING' },
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -90,10 +95,10 @@ export const PartidaModal: React.FC<PartidaModalProps> = ({
       title={partida ? 'Editar Partida Presupuestaria' : 'Nueva Partida Presupuestaria'}
       subtitle={
         partida
-          ? 'Modifique la información o denominación de la partida seleccionada'
+          ? `Modificando especificaciones de la partida "${partida.codigo}"`
           : 'Ingrese los datos técnicos para dar de alta la partida en el clasificador'
       }
-      icon={<FileSpreadsheet size={20} />}
+      icon={<FileSpreadsheet size={20} className="text-theme-primary" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -106,21 +111,23 @@ export const PartidaModal: React.FC<PartidaModalProps> = ({
             Cancelar
           </Button>
           <Button
-            type="button"
+            type="submit"
+            form="partida-form"
             variant="primary"
             loading={loading}
-            onClick={handleSubmit}
+            className="flex items-center gap-1.5"
           >
-            {partida ? 'Guardar Cambios' : 'Registrar Partida'}
+            <Save size={14} />
+            <span>{partida ? 'Guardar Cambios' : 'Registrar Partida'}</span>
           </Button>
         </div>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      <form id="partida-form" onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Código */}
           <div>
-            <label className="block text-xs font-semibold text-theme-main mb-1.5">
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-theme-muted mb-1.5">
               Código de Partida <span className="text-rose-500">*</span>
             </label>
             <input
@@ -128,7 +135,7 @@ export const PartidaModal: React.FC<PartidaModalProps> = ({
               value={formData.codigo}
               onChange={(e) => setFormData((prev) => ({ ...prev, codigo: e.target.value.trim() }))}
               required
-              className="input-theme text-xs font-mono font-bold w-full"
+              className="block w-full px-3 py-2 text-xs font-mono font-bold bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all uppercase"
               placeholder="Ej: 11100, 22100, 31100"
               autoFocus={!partida}
             />
@@ -137,53 +144,43 @@ export const PartidaModal: React.FC<PartidaModalProps> = ({
             </span>
           </div>
 
-          {/* Clase de Gasto */}
+          {/* Clase con Dropdown de commons */}
           <div>
-            <label className="block text-xs font-semibold text-theme-main mb-1.5">
-              Clase <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={formData.clase}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, clase: e.target.value as ClasePartida }))
-              }
+            <Dropdown
+              label="Flujo Presupuestario"
               required
-              className="w-full rounded-xl border border-theme-border bg-theme-surface px-3 py-2 text-xs text-theme-main focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none transition-colors"
-            >
-              <option value="EGRESO">Egreso (Gasto)</option>
-              <option value="INGRESO">Ingreso (Recurso)</option>
-            </select>
-            <span className="text-[10px] text-theme-muted mt-1 block">
-              Tipo de flujo presupuestario
-            </span>
+              items={claseItems}
+              value={formData.clase}
+              onChange={(val) => setFormData((prev) => ({ ...prev, clase: val as ClasePartida }))}
+            />
           </div>
         </div>
 
         {/* Nombre / Denominación */}
         <div>
-          <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            Nombre / Denominación Oficial <span className="text-rose-500">*</span>
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-theme-muted mb-1.5">
+            Denominación Oficial <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
             value={formData.nombre}
             onChange={(e) => setFormData((prev) => ({ ...prev, nombre: e.target.value }))}
             required
-            className="input-theme text-xs w-full"
+            className="block w-full px-3 py-2 text-xs bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all"
             placeholder="Ej: Sueldos y Salarios, Pasajes al Interior del País..."
           />
         </div>
 
         {/* Descripción / Alcance */}
         <div>
-          <label className="block text-xs font-semibold text-theme-main mb-1.5">
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-theme-muted mb-1.5">
             Descripción y Alcance del Gasto
           </label>
           <textarea
             value={formData.descripcion}
             onChange={(e) => setFormData((prev) => ({ ...prev, descripcion: e.target.value }))}
             rows={3}
-            className="input-theme text-xs w-full resize-none"
+            className="block w-full px-3 py-2 text-xs bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all resize-none"
             placeholder="Detalle o conceptos que pueden imputarse técnicamente a esta partida..."
           />
         </div>

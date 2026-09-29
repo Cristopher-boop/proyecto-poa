@@ -1,190 +1,151 @@
-import React from 'react';
-import { Layers, CheckCircle2, XCircle, Plus, RefreshCw, X, Search, Filter } from 'lucide-react';
-import { Dropdown, Button } from '../../../components/commons';
+import React, { useMemo } from 'react';
+import { Search, X, Filter, CheckCircle2, RotateCcw, RefreshCw } from 'lucide-react';
+import { Dropdown, type DropdownItem } from '../../../components/commons';
 import type { PartidaStats } from '../types/partidas.types';
 
 interface PartidasFilterProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
   selectedGrupo: string;
   onGrupoChange: (grupo: string) => void;
   gruposOpciones: Array<{ id: string; label: string; count: number }>;
+  selectedEstado: string;
+  onEstadoChange: (estado: string) => void;
   stats: PartidaStats;
   totalFiltrados: number;
   loading: boolean;
-  canManage?: boolean;
   onRefresh: () => void;
-  onCreateNew: () => void;
 }
 
 export const PartidasFilter: React.FC<PartidasFilterProps> = ({
-  activeTab,
-  onTabChange,
   searchTerm,
   onSearchChange,
   selectedGrupo,
   onGrupoChange,
   gruposOpciones,
+  selectedEstado,
+  onEstadoChange,
   stats,
   totalFiltrados,
   loading,
-  canManage = false,
   onRefresh,
-  onCreateNew,
 }) => {
-  const tabs = [
-    {
-      id: 'todas',
-      label: 'Todas',
-      count: stats.total,
-      icon: <Layers size={14} />,
-      activeClass: 'border-theme-primary text-theme-main font-bold',
-      badgeClass: 'bg-theme-primary/15 text-theme-primary',
-    },
-    {
-      id: 'activas',
-      label: 'Activas',
-      count: stats.activas,
-      icon: <CheckCircle2 size={14} className="text-emerald-500" />,
-      activeClass: 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold',
-      badgeClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-    },
-    {
-      id: 'inactivas',
-      label: 'Inactivas',
-      count: stats.inactivas,
-      icon: <XCircle size={14} className="text-rose-500" />,
-      activeClass: 'border-rose-500 text-rose-600 dark:text-rose-400 font-bold',
-      badgeClass: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
-    },
-  ];
-
-  const dropdownItems = [
+  const grupoItems = useMemo((): DropdownItem[] => [
     { id: 'todos', label: 'Todos los Capítulos / Rubros' },
     ...gruposOpciones.map((g) => ({
       id: g.id,
       label: g.label,
       badge: `${g.count}`,
     })),
-  ];
+  ], [gruposOpciones]);
+
+  const estadoItems: DropdownItem[] = useMemo(() => [
+    { id: 'todas', label: 'Todos los Estados', badge: `${stats.total}` },
+    { id: 'activas', label: 'Solo Activas', badge: `${stats.activas}` },
+    { id: 'inactivas', label: 'Solo Inactivas', badge: `${stats.inactivas}` },
+  ], [stats]);
 
   const hasActiveFilters = Boolean(
     searchTerm.trim() ||
     (selectedGrupo && selectedGrupo !== 'todos' && selectedGrupo !== 'todas') ||
-    activeTab !== 'todas'
+    (selectedEstado && selectedEstado !== 'todas')
   );
 
+  const handleReset = () => {
+    onSearchChange('');
+    onGrupoChange('todos');
+    onEstadoChange('todas');
+  };
+
   return (
-    <div className="space-y-3 mb-6">
-      {/* Pestañas horizontales superiores */}
-      <div className="flex border-b border-theme-border justify-between items-center gap-2">
-        <div className="flex gap-1 overflow-x-auto no-scrollbar">
-          {tabs.map((tab) => {
-            const isActive = tab.id === activeTab;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all duration-150 ${
-                  isActive
-                    ? tab.activeClass
-                    : 'border-transparent text-theme-muted hover:text-theme-main hover:border-theme-border'
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    isActive ? tab.badgeClass : 'bg-theme-border/40 text-theme-muted'
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Barra de Filtros: Buscador, Desplegable (Dropdown reutilizable) y Acciones */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
-        <div className="flex flex-1 flex-wrap gap-3 w-full sm:w-auto">
-          {/* Buscador de partidas */}
-          <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-theme-muted">
-              <Search size={14} />
-            </div>
-            <input
-              type="text"
-              placeholder="Buscar por código, concepto o descripción..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="block w-full pl-9 pr-3 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:ring-2 focus:ring-theme-primary/40 focus:border-theme-primary outline-none transition-all"
-            />
+    <div className="p-3.5 sm:p-4 rounded-2xl border border-theme-border bg-theme-surface shadow-sm space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+        {/* Buscador de partidas */}
+        <div className="lg:col-span-5 relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-theme-muted" />
           </div>
-
-          {/* Selector de Capítulo / Rubro con el Dropdown de Commons */}
-          <div className="flex-1 min-w-[230px] sm:max-w-xs">
-            <Dropdown
-              items={dropdownItems}
-              value={selectedGrupo || 'todos'}
-              onChange={(val) => onGrupoChange(String(val || 'todos'))}
-              placeholder="Todos los Capítulos / Rubros"
-              icon={<Filter size={14} className="text-theme-muted" />}
-              size="sm"
-            />
-          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Buscar por código, denominación o descripción..."
+            className="block w-full pl-9 pr-8 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all placeholder:text-theme-muted"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => onSearchChange('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main p-0.5 rounded transition-colors cursor-pointer"
+              title="Limpiar búsqueda"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
-        {/* Acciones: Refresco y Nueva Partida (solo Superadmin y Aprobador) */}
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        {/* Selector de Capítulo / Rubro */}
+        <div className="lg:col-span-4">
+          <Dropdown
+            items={grupoItems}
+            value={selectedGrupo || 'todos'}
+            onChange={(val) => onGrupoChange(String(val || 'todos'))}
+            placeholder="Todos los Capítulos / Rubros"
+            searchable
+            searchPlaceholder="Buscar rubro o capítulo..."
+            icon={<Filter className="h-3.5 w-3.5 text-theme-muted" />}
+            size="sm"
+          />
+        </div>
+
+        {/* Filtro de Estado (Todas, Activas, Inactivas) arriba de la tabla */}
+        <div className="lg:col-span-2">
+          <Dropdown
+            items={estadoItems}
+            value={selectedEstado || 'todas'}
+            onChange={(val) => onEstadoChange(String(val || 'todas'))}
+            placeholder="Todos los Estados"
+            icon={<CheckCircle2 className="h-3.5 w-3.5 text-theme-muted" />}
+            size="sm"
+          />
+        </div>
+
+        {/* Acciones Rápidas: Reset y Refrescar */}
+        <div className="lg:col-span-1 flex items-center justify-end gap-1.5">
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="p-2 rounded-xl border border-theme-border hover:bg-theme-base text-theme-muted hover:text-theme-main transition-colors text-xs flex items-center gap-1 cursor-pointer"
+              title="Restablecer filtros"
+            >
+              <RotateCcw size={14} />
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onRefresh}
-            className="p-2 border border-theme-border rounded-xl bg-theme-surface text-theme-muted hover:text-theme-main hover:bg-theme-border/20 transition-colors"
-            title="Refrescar catálogo"
             disabled={loading}
+            className="p-2 rounded-xl border border-theme-border hover:bg-theme-base text-theme-muted hover:text-theme-main transition-colors cursor-pointer disabled:opacity-50"
+            title="Recargar catálogo de partidas"
           >
-            <RefreshCw size={16} className={loading ? 'animate-spin text-theme-primary' : ''} />
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
-
-          {canManage ? (
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              icon={<Plus size={16} />}
-              onClick={onCreateNew}
-            >
-              Nueva Partida
-            </Button>
-          ) : null}
         </div>
       </div>
 
-      {/* Indicador de filtros aplicados */}
-      {hasActiveFilters ? (
-        <div className="flex items-center justify-between text-xs text-theme-muted px-1 pt-1">
-          <span>
-            Mostrando <strong className="text-theme-main">{totalFiltrados}</strong> de{' '}
-            <strong className="text-theme-main">{stats.total}</strong> partidas presupuestarias
+      {/* Indicador de resultados filtrados */}
+      <div className="flex items-center justify-between text-[11px] text-theme-muted pt-1 border-t border-theme-border/50">
+        <span>
+          Partidas en catálogo: <strong className="text-theme-main font-semibold">{totalFiltrados}</strong>
+        </span>
+        {hasActiveFilters && (
+          <span className="text-amber-600 dark:text-amber-400 font-medium">
+            Filtros aplicados
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              onSearchChange('');
-              onGrupoChange('todos');
-              onTabChange('todas');
-            }}
-            className="inline-flex items-center gap-1 text-theme-primary hover:underline font-semibold cursor-pointer"
-          >
-            <X size={12} />
-            Limpiar todos los filtros
-          </button>
-        </div>
-      ) : null}
+        )}
+      </div>
     </div>
   );
 };

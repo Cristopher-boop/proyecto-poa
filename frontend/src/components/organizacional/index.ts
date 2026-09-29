@@ -1,3 +1,1 @@
-export { ProgramasList } from './ProgramasList';
-export { AreasList } from './AreasList';
-export { SeccionesList } from './SeccionesList';
+export { ProgramasList, AreasList, SeccionesList } from '../../features/organizacional';

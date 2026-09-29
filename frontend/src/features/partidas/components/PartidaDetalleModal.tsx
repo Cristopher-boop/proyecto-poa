@@ -29,10 +29,10 @@ export const PartidaDetalleModal: React.FC<PartidaDetalleModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Detalle de Partida Presupuestaria"
-      subtitle="Consulta técnica de la información y clasificación en el clasificador presupuestario"
+      title="Detalles de la Partida Presupuestaria"
+      subtitle="Ficha técnica de consulta y clasificación oficial del clasificador"
       badge={
-        <span className="font-mono font-bold text-xs bg-theme-base px-2 py-0.5 rounded border border-theme-border text-theme-main">
+        <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2.5 py-0.5 rounded-lg">
           {partida.codigo}
         </span>
       }
@@ -40,11 +40,7 @@ export const PartidaDetalleModal: React.FC<PartidaDetalleModalProps> = ({
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-          >
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cerrar
           </Button>
 
@@ -55,107 +51,80 @@ export const PartidaDetalleModal: React.FC<PartidaDetalleModalProps> = ({
               onClick={() => onEdit(partida)}
               className="flex items-center gap-1.5"
             >
-              <Edit3 size={15} /> Editar Partida
+              <Edit3 size={14} /> Editar Partida
             </Button>
           )}
         </div>
       }
     >
-      <div className="space-y-4">
-        {/* Fila 1: Código y Clase */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {/* Código */}
-          <div>
-            <label className="block text-xs font-semibold text-theme-main mb-1.5">
-              Código de Partida
-            </label>
-            <div className="input-theme text-xs font-mono font-bold w-full bg-theme-base/50 flex items-center justify-between border border-theme-border py-2 px-3 rounded-xl select-all">
-              <span>{partida.codigo}</span>
-              <span className="text-[10px] font-sans font-normal text-theme-muted">
-                Clasificador Numérico
-              </span>
-            </div>
-            <span className="text-[10px] text-theme-muted mt-1 block">
-              Código clasificador numérico oficial
+      <div className="space-y-3.5 text-xs">
+        {/* Metadatos Rápidos: Código, Clase y Estado */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block mb-1">
+              Código Oficial
+            </span>
+            <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded inline-block">
+              {partida.codigo}
             </span>
           </div>
 
-          {/* Clase */}
-          <div>
-            <label className="block text-xs font-semibold text-theme-main mb-1.5">
-              Clase
-            </label>
-            <div className="w-full rounded-xl border border-theme-border bg-theme-base/50 px-3 py-2 text-xs font-semibold flex items-center justify-between">
-              <span className={isEgreso ? 'text-blue-700 dark:text-blue-300' : 'text-emerald-700 dark:text-emerald-300'}>
-                {isEgreso ? 'Egreso (Gasto)' : 'Ingreso (Recurso)'}
-              </span>
-              <span className="text-[10px] font-normal text-theme-muted">
-                {partida.clase_display || (isEgreso ? 'Egreso' : 'Ingreso')}
-              </span>
-            </div>
-            <span className="text-[10px] text-theme-muted mt-1 block">
-              Tipo de flujo presupuestario
+          <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block mb-1">
+              Flujo / Clase
+            </span>
+            <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 font-mono inline-block">
+              {isEgreso ? 'Egreso (Gasto)' : 'Ingreso (Recurso)'}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block mb-1">
+              Estado
+            </span>
+            <span
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold border select-none ${
+                isActiva
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+              }`}
+            >
+              {isActiva ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+              {isActiva ? 'Activa' : 'Inactiva'}
             </span>
           </div>
         </div>
 
-        {/* Fila 2: Nombre / Denominación Oficial */}
-        <div>
-          <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            Nombre / Denominación Oficial
-          </label>
-          <div className="input-theme text-xs font-medium w-full bg-theme-base/50 border border-theme-border py-2 px-3 rounded-xl select-all text-theme-main">
-            {partida.nombre}
-          </div>
+        {/* Denominación Oficial */}
+        <div className="p-3 rounded-xl bg-theme-surface border border-theme-border space-y-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block">
+            Denominación Oficial
+          </span>
+          <p className="text-xs font-semibold text-theme-main">{partida.nombre}</p>
         </div>
 
-        {/* Fila 3: Capítulo / Rubro */}
-        <div>
-          <label className="block text-xs font-semibold text-theme-main mb-1.5">
+        {/* Capítulo / Rubro */}
+        <div className="p-3 rounded-xl bg-theme-surface border border-theme-border space-y-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block">
             Capítulo / Rubro Institucional
-          </label>
-          <div className="input-theme text-xs w-full bg-theme-base/50 border border-theme-border py-2 px-3 rounded-xl text-theme-muted">
+          </span>
+          <p className="text-xs font-medium text-theme-main">
             {grupo.codigo} — {grupo.nombre}
-          </div>
+          </p>
         </div>
 
-        {/* Fila 4: Descripción y Alcance */}
-        <div>
-          <label className="block text-xs font-semibold text-theme-main mb-1.5">
+        {/* Descripción y Alcance */}
+        <div className="p-3 rounded-xl bg-theme-surface border border-theme-border space-y-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block">
             Descripción y Alcance del Gasto
-          </label>
-          <div className="input-theme text-xs w-full bg-theme-base/50 border border-theme-border py-2 px-3 rounded-xl min-h-[72px] whitespace-pre-wrap leading-relaxed text-theme-main">
-            {partida.descripcion ? (
-              partida.descripcion
-            ) : (
+          </span>
+          <p className="text-xs text-theme-main font-normal leading-relaxed whitespace-pre-wrap">
+            {partida.descripcion || (
               <span className="italic text-theme-muted">
                 Sin descripción técnica o alcance específico registrado.
               </span>
             )}
-          </div>
-        </div>
-
-        {/* Fila 5: Estado activo / inactivo (mismo formato visual que la edición) */}
-        <div className="pt-1">
-          <div className="flex items-center gap-3 text-xs text-theme-main p-3 rounded-xl border border-theme-border bg-theme-base/40 select-none">
-            <div className="w-5 h-5 rounded-md flex items-center justify-center bg-theme-surface border border-theme-border">
-              {isActiva ? (
-                <CheckCircle2 size={14} className="text-emerald-500" />
-              ) : (
-                <XCircle size={14} className="text-rose-500" />
-              )}
-            </div>
-            <div>
-              <span className="font-semibold block text-theme-main flex items-center gap-1.5">
-                {isActiva ? 'Partida Activa' : 'Partida Inactiva'}
-              </span>
-              <span className="text-[11px] text-theme-muted block mt-0.5">
-                {isActiva
-                  ? 'Disponible para selección en la formulación de Memorias de Cálculo.'
-                  : 'Partida inactiva. No se puede seleccionar en nuevas formulaciones.'}
-              </span>
-            </div>
-          </div>
+          </p>
         </div>
       </div>
     </Modal>

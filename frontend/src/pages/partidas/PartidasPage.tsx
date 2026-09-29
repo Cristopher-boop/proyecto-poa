@@ -1,18 +1,17 @@
 import React, { useState, useCallback } from 'react';
-import { FileSpreadsheet } from 'lucide-react';
 import {
   usePartidas,
+  PartidasHeader,
   PartidasResumen,
   PartidasFilter,
   PartidasTable,
   PartidaModal,
   PartidaDetalleModal,
-  Partida,
+  type Partida,
 } from '../../features/partidas';
 
 export default function PartidasPage() {
   const {
-    partidas,
     paginatedPartidas,
     loading,
     stats,
@@ -60,53 +59,32 @@ export default function PartidasPage() {
   }, []);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Cabecera Principal */}
-      <div className="card p-6 bg-gradient-to-r from-theme-surface via-theme-surface to-brand-50/20 dark:to-brand-900/10">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="p-3.5 rounded-2xl bg-theme-primary/15 text-theme-primary shadow-sm">
-              <FileSpreadsheet size={28} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-6 rounded-full bg-theme-primary" />
-                <span className="text-xs font-semibold uppercase tracking-widest text-theme-primary">
-                  Clasificador Presupuestario
-                </span>
-              </div>
-              <h1 className="text-2xl font-bold text-theme-main tracking-tight mt-0.5">
-                Partidas Presupuestarias
-              </h1>
-              <p className="text-sm text-theme-muted">
-                Catálogo oficial de partidas presupuestarias por objeto del gasto para la formulación del POA.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 px-2 sm:px-4">
+      {/* 1. Cabecera Principal */}
+      <PartidasHeader
+        canManage={canManage}
+        onCreateNew={handleCreateNew}
+      />
 
-      {/* Indicadores Resumen (KPI Cards) */}
+      {/* 2. Indicadores Resumen (KPI Cards) */}
       <PartidasResumen stats={stats} />
 
-      {/* Filtros, Pestañas y Acciones */}
+      {/* 3. Filtros y Búsqueda (Buscador, Capítulo y Filtro de Estado Todas/Activas/Inactivas) */}
       <PartidasFilter
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
         searchTerm={search}
         onSearchChange={setSearch}
         selectedGrupo={selectedGrupo}
         onGrupoChange={setSelectedGrupo}
         gruposOpciones={gruposOpciones}
+        selectedEstado={activeTab}
+        onEstadoChange={setActiveTab}
         stats={stats}
         totalFiltrados={totalFiltrados}
         loading={loading}
-        canManage={canManage}
         onRefresh={refetch}
-        onCreateNew={handleCreateNew}
       />
 
-      {/* Tabla de Partidas */}
+      {/* 4. Tabla de Partidas con Paginación Centralizada */}
       <PartidasTable
         partidas={paginatedPartidas}
         loading={loading}
@@ -120,18 +98,17 @@ export default function PartidasPage() {
         onToggleEstado={handleToggleEstado}
       />
 
-      {/* Modal Crear / Editar (rendering-conditional-render: ternario) */}
-      {showModal ? (
+      {/* Modales: Crear / Editar y Detalle */}
+      {showModal && (
         <PartidaModal
           isOpen={showModal}
           partida={editingPartida}
           onClose={handleCloseModal}
           onSave={refetch}
         />
-      ) : null}
+      )}
 
-      {/* Modal Detalle Lectura Partida */}
-      {viewingPartida ? (
+      {viewingPartida && (
         <PartidaDetalleModal
           isOpen={Boolean(viewingPartida)}
           partida={viewingPartida}
@@ -142,7 +119,7 @@ export default function PartidasPage() {
             handleEdit(p);
           }}
         />
-      ) : null}
+      )}
     </div>
   );
 }

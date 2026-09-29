@@ -1,60 +1,50 @@
-import React from 'react';
-import { Eye, Edit3, Power, FileSpreadsheet } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Building2, Eye, Edit3, Power } from 'lucide-react';
 import { Pagination } from '../../../components/commons';
-import type { Partida } from '../types/partidas.types';
-import { getPartidaGrupo } from '../types/partidas.types';
+import type { Area, Programa } from '../types/organizacional.types';
+import { formatProgramaShort } from '../utils/organizacionalUtils';
 
-interface PartidasTableProps {
-  partidas: Partida[];
-  loading: boolean;
-  totalItems: number;
-  currentPage: number;
-  pageSize: number;
-  canManage?: boolean;
-  onPageChange: (page: number) => void;
-  onView: (partida: Partida) => void;
-  onEdit: (partida: Partida) => void;
-  onToggleEstado: (partida: Partida) => void;
+interface AreasListProps {
+  areas: Area[];
+  programas: Programa[];
+  onView: (area: Area) => void;
+  onEdit: (area: Area) => void;
+  onToggleEstado: (area: Area) => void;
 }
 
-export const PartidasTable: React.FC<PartidasTableProps> = ({
-  partidas,
-  loading,
-  totalItems,
-  currentPage,
-  pageSize,
-  canManage = false,
-  onPageChange,
+export const AreasList: React.FC<AreasListProps> = ({
+  areas,
+  programas,
   onView,
   onEdit,
   onToggleEstado,
 }) => {
-  if (loading && partidas.length === 0) {
-    return (
-      <div className="p-16 rounded-2xl border border-theme-border bg-theme-surface text-center text-theme-muted space-y-3 shadow-sm">
-        <div className="animate-spin inline-block w-7 h-7 border-2 border-theme-primary border-t-transparent rounded-full" />
-        <p className="text-xs font-semibold uppercase tracking-wider">
-          Cargando catálogo de partidas...
-        </p>
-      </div>
-    );
-  }
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
-  if (partidas.length === 0) {
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [areas.length]);
+
+  if (areas.length === 0) {
     return (
       <div className="p-12 rounded-2xl border border-dashed border-theme-border bg-theme-surface text-center text-theme-muted space-y-3">
         <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-700/60 flex items-center justify-center">
-          <FileSpreadsheet size={24} />
+          <Building2 size={24} />
         </div>
         <div>
-          <p className="text-sm font-semibold text-theme-main">No hay partidas presupuestarias que coincidan</p>
+          <p className="text-sm font-semibold text-theme-main">No hay gerencias o unidades que coincidan con la búsqueda</p>
           <p className="text-xs text-theme-muted mt-0.5">
-            Ajuste los filtros o presione "Nueva Partida" para incorporar un clasificador al catálogo.
+            Ajuste los filtros o presione "Nueva Gerencia / Unidad" para incorporar una gerencia o unidad a la estructura.
           </p>
         </div>
       </div>
     );
   }
+
+  const totalPages = Math.ceil(areas.length / pageSize);
+  const activePage = Math.min(currentPage, Math.max(1, totalPages));
+  const pagedAreas = areas.slice((activePage - 1) * pageSize, activePage * pageSize);
 
   return (
     <div className="rounded-2xl border border-theme-border bg-theme-surface shadow-sm overflow-hidden flex flex-col">
@@ -63,22 +53,23 @@ export const PartidasTable: React.FC<PartidasTableProps> = ({
           <thead className="bg-theme-base/80 border-b border-theme-border text-theme-muted uppercase tracking-wider font-semibold">
             <tr>
               <th className="py-3 px-4">Código</th>
-              <th className="py-3 px-4">Partida / Denominación</th>
-              <th className="py-3 px-4">Capítulo / Rubro</th>
-              <th className="py-3 px-4">Clase</th>
+              <th className="py-3 px-4">Gerencia / Unidad</th>
+              <th className="py-3 px-4">Tipo</th>
+              <th className="py-3 px-4">Programa</th>
+              <th className="py-3 px-4">Secciones</th>
               <th className="py-3 px-4">Estado</th>
               <th className="py-3 px-4 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-theme-border/50">
-            {partidas.map((partida) => {
-              const grupo = getPartidaGrupo(partida.codigo);
-              const isEgreso = (partida.clase || 'EGRESO').toUpperCase() === 'EGRESO';
-              const isActiva = partida.estado;
+            {pagedAreas.map((area) => {
+              const progObj = programas.find((p) => p.id === area.programa);
+              const progLabel = formatProgramaShort(progObj, area.programa_codigo, area.programa_nombre);
+              const isActiva = area.estado;
 
               return (
                 <tr
-                  key={partida.id}
+                  key={area.id}
                   className={`hover:bg-theme-base/50 transition-colors ${
                     !isActiva ? 'opacity-65 bg-theme-base/30' : ''
                   }`}
@@ -86,34 +77,39 @@ export const PartidasTable: React.FC<PartidasTableProps> = ({
                   {/* Código */}
                   <td className="py-3.5 px-4 font-mono font-bold whitespace-nowrap">
                     <span className="bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded-md text-[11px]">
-                      {partida.codigo}
+                      {area.codigo}
                     </span>
                   </td>
 
-                  {/* Denominación */}
-                  <td className="py-3.5 px-4 font-semibold text-theme-main min-w-[220px]">
+                  {/* Nombre */}
+                  <td className="py-3.5 px-4 font-semibold text-theme-main min-w-[200px]">
                     <div>
-                      <p className="leading-tight">{partida.nombre}</p>
-                      {partida.descripcion && (
+                      <p className="leading-tight">{area.nombre}</p>
+                      {area.descripcion && (
                         <p className="text-[10px] text-theme-muted mt-0.5 line-clamp-1">
-                          {partida.descripcion}
+                          {area.descripcion}
                         </p>
                       )}
                     </div>
                   </td>
 
-                  {/* Capítulo / Rubro */}
+                  {/* Tipo */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                      {grupo.nombre}
+                      {area.tipo === 'GERENCIA' ? 'Gerencia' : 'Unidad'}
                     </span>
                   </td>
 
-                  {/* Clase */}
+                  {/* Programa Badge: "Programa X", NO PURPLE */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 font-mono">
-                      {isEgreso ? 'Egreso' : 'Ingreso'}
+                      {progLabel}
                     </span>
+                  </td>
+
+                  {/* Secciones Conteo */}
+                  <td className="py-3.5 px-4 whitespace-nowrap font-mono text-[11px] text-theme-muted">
+                    {area.secciones_count ?? area.secciones?.length ?? 0}
                   </td>
 
                   {/* Estado */}
@@ -140,40 +136,36 @@ export const PartidasTable: React.FC<PartidasTableProps> = ({
                       {/* Ojito: Ver detalles */}
                       <button
                         type="button"
-                        onClick={() => onView(partida)}
+                        onClick={() => onView(area)}
                         className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        title="Ver detalles de la partida"
+                        title="Ver detalles del área"
                       >
                         <Eye size={15} />
                       </button>
 
                       {/* Lápiz: Editar */}
-                      {canManage && (
-                        <button
-                          type="button"
-                          onClick={() => onEdit(partida)}
-                          className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                          title="Editar partida"
-                        >
-                          <Edit3 size={15} />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => onEdit(area)}
+                        className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Editar área"
+                      >
+                        <Edit3 size={15} />
+                      </button>
 
                       {/* Botón de encendido / apagado */}
-                      {canManage && (
-                        <button
-                          type="button"
-                          onClick={() => onToggleEstado(partida)}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                            isActiva
-                              ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-                              : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                          }`}
-                          title={isActiva ? 'Desactivar partida' : 'Activar partida'}
-                        >
-                          <Power size={15} />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => onToggleEstado(area)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          isActiva
+                            ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                            : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                        }`}
+                        title={isActiva ? 'Desactivar área institucional' : 'Activar área institucional'}
+                      >
+                        <Power size={15} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -183,13 +175,13 @@ export const PartidasTable: React.FC<PartidasTableProps> = ({
         </table>
       </div>
 
-      {/* Paginación Estandarizada */}
+      {/* Paginación */}
       <Pagination
-        currentPage={currentPage}
-        totalItems={totalItems}
+        currentPage={activePage}
+        totalItems={areas.length}
         pageSize={pageSize}
-        onPageChange={onPageChange}
-        itemLabel="partidas presupuestarias"
+        onPageChange={setCurrentPage}
+        itemLabel="gerencias / unidades"
       />
     </div>
   );

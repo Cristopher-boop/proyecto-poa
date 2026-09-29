@@ -1,6 +1,7 @@
 export * from './types/partidas.types';
 export * from './api/partidasApi';
 export * from './hooks/usePartidas';
+export * from './components/PartidasHeader';
 export * from './components/PartidasResumen';
 export * from './components/PartidasFilter';
 export * from './components/PartidasTable';
