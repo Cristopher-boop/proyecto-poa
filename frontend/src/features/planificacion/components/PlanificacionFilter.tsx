@@ -35,9 +35,10 @@ export const PlanificacionFilter: React.FC<PlanificacionFilterProps> = ({
   isAprobadorOrPlanificador,
   onResetFilters,
 }) => {
+  const currentYearStr = String(new Date().getFullYear());
   const hasActiveFilters =
     Boolean(searchTerm) ||
-    filterGestion !== 'ALL' ||
+    filterGestion !== currentYearStr ||
     filterPrograma !== 'ALL' ||
     (isAprobadorOrPlanificador && filterArea !== 'ALL');
 
@@ -84,7 +85,7 @@ export const PlanificacionFilter: React.FC<PlanificacionFilterProps> = ({
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar por código, descripción o área..."
-            className="block w-full pl-9 pr-8 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:ring-2 focus:ring-theme-primary/40 focus:border-theme-primary transition-all placeholder:text-theme-muted"
+            className="block w-full pl-9 pr-8 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all placeholder:text-theme-muted"
           />
           {searchTerm && (
             <button

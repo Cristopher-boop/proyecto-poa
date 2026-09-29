@@ -156,16 +156,16 @@ export const Dropdown: React.FC<DropdownProps> = ({
             : isInvalid
             ? 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
             : selectedItem
-            ? 'border-theme-border bg-theme-surface hover:border-theme-primary'
-            : 'border-theme-border bg-theme-surface hover:border-theme-primary/70'
-        } ${isOpen ? 'ring-2 ring-theme-primary/30 border-theme-primary' : ''} ${triggerClassName}`}
+            ? 'border-theme-border bg-theme-surface hover:border-slate-400 dark:hover:border-slate-500'
+            : 'border-theme-border bg-theme-surface hover:border-slate-300 dark:hover:border-slate-600'
+        } ${isOpen ? 'ring-2 ring-slate-400/25 border-slate-400 dark:ring-slate-500/30 dark:border-slate-500' : ''} ${triggerClassName}`}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {icon && <span className="text-theme-muted shrink-0">{icon}</span>}
           {selectedItem ? (
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {selectedItem.badge && (
-                <span className="shrink-0 font-mono font-bold text-[11px] text-theme-primary bg-theme-base px-1.5 py-0.5 rounded border border-theme-border">
+                <span className="shrink-0 font-mono font-bold text-[11px] bg-slate-100 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">
                   {selectedItem.badge}
                 </span>
               )}
@@ -190,7 +190,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
         <ChevronDown
           size={16}
           className={`shrink-0 text-theme-muted transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-theme-primary' : ''
+            isOpen ? 'rotate-180 text-theme-main' : ''
           }`}
         />
       </button>
@@ -215,7 +215,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted"
+                  className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 text-theme-main placeholder:text-theme-muted"
                 />
                 {searchQuery && (
                   <button
@@ -262,18 +262,18 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         onClick={() => handleSelect(it)}
                         className={`w-full flex items-start gap-2.5 px-3 py-2 text-left transition-colors ${
                           isSelected
-                            ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
+                            ? 'bg-slate-100 dark:bg-slate-800/90'
                             : it.disabled
                             ? 'opacity-40 cursor-not-allowed'
-                            : 'hover:bg-theme-border/30'
+                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                         }`}
                       >
                         {it.badge && (
                           <span
                             className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
                               isSelected
-                                ? 'bg-theme-primary text-theme-primaryText'
-                                : 'bg-theme-base text-theme-primary border border-theme-border'
+                                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold'
+                                : 'bg-slate-100 text-slate-700 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                             }`}
                           >
                             {it.badge}
@@ -294,7 +294,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                           )}
                         </div>
                         {isSelected && (
-                          <Check size={14} className="shrink-0 text-theme-primary mt-0.5" />
+                          <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
                         )}
                       </button>
                     );
@@ -312,10 +312,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     onClick={() => handleSelect(it)}
                     className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 text-left transition-colors ${
                       isSelected
-                        ? 'bg-theme-primary/10 hover:bg-theme-primary/15'
+                        ? 'bg-slate-100 dark:bg-slate-800/90'
                         : it.disabled
                         ? 'opacity-40 cursor-not-allowed'
-                        : 'hover:bg-theme-border/30'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                     }`}
                   >
                     <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -323,8 +323,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         <span
                           className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
                             isSelected
-                              ? 'bg-theme-primary text-theme-primaryText'
-                              : 'bg-theme-base text-theme-primary border border-theme-border'
+                              ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold'
+                              : 'bg-slate-100 text-slate-700 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                           }`}
                         >
                           {it.badge}
@@ -346,7 +346,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                       </div>
                     </div>
                     {isSelected && (
-                      <Check size={14} className="shrink-0 text-theme-primary" />
+                      <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                     )}
                   </button>
                 );

@@ -122,11 +122,11 @@ export const AcpModal: React.FC<AcpModalProps> = ({
       title={acp ? 'Editar Acción a Corto Plazo' : 'Nueva Acción a Corto Plazo (POA)'}
       subtitle="Defina el objetivo anual vinculado a la Acción a Mediano Plazo del PEI"
       badge={
-        <span className="font-mono font-bold text-xs bg-theme-base px-2.5 py-1 rounded-lg border border-theme-border text-theme-primary">
+        <span className="font-mono font-bold text-xs bg-indigo-50 text-indigo-700 border border-indigo-200/90 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60 px-2.5 py-1 rounded-lg">
           {displayCode}
         </span>
       }
-      icon={<Target size={20} className="text-theme-primary" />}
+      icon={<Target size={20} className="text-indigo-600 dark:text-indigo-400" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -143,7 +143,7 @@ export const AcpModal: React.FC<AcpModalProps> = ({
         {/* Paso 1: Programa General */}
         <div>
           <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            1. Programa General <span className="text-theme-primary">*</span>
+            1. Programa General <span className="text-rose-500">*</span>
           </label>
           <Dropdown
             items={programaDropdownItems}
@@ -159,7 +159,7 @@ export const AcpModal: React.FC<AcpModalProps> = ({
         {/* Paso 2: Acción a Mediano Plazo */}
         <div>
           <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            2. Acción a Mediano Plazo (AMP del Programa) <span className="text-theme-primary">*</span>
+            2. Acción a Mediano Plazo (AMP del Programa) <span className="text-rose-500">*</span>
           </label>
           <Dropdown
             items={ampDropdownItems}

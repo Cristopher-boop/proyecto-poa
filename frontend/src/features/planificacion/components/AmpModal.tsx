@@ -76,11 +76,11 @@ export const AmpModal: React.FC<AmpModalProps> = ({
       title={amp ? 'Editar Acción a Mediano Plazo' : 'Nueva Acción a Mediano Plazo (PEI)'}
       subtitle="Defina el objetivo estratégico quinquenal del Plan Estratégico Institucional"
       badge={
-        <span className="font-mono font-bold text-xs bg-theme-base px-2.5 py-1 rounded-lg border border-theme-border text-theme-primary">
+        <span className="font-mono font-bold text-xs bg-violet-50 text-violet-700 border border-violet-200/90 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60 px-2.5 py-1 rounded-lg">
           {displayCode}
         </span>
       }
-      icon={<Compass size={20} className="text-theme-primary" />}
+      icon={<Compass size={20} className="text-violet-600 dark:text-violet-400" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -97,7 +97,7 @@ export const AmpModal: React.FC<AmpModalProps> = ({
         {/* Paso 1: Programa Institucional */}
         <div>
           <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            1. Programa Institucional <span className="text-theme-primary">*</span>
+            1. Programa Institucional <span className="text-rose-500">*</span>
           </label>
           <Dropdown
             items={programaDropdownItems}
@@ -114,7 +114,7 @@ export const AmpModal: React.FC<AmpModalProps> = ({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-theme-main mb-1.5">
-              Año Inicio Quinquenio <span className="text-theme-primary">*</span>
+              Año Inicio Quinquenio <span className="text-rose-500">*</span>
             </label>
             <input
               type="number"
@@ -126,7 +126,7 @@ export const AmpModal: React.FC<AmpModalProps> = ({
           </div>
           <div>
             <label className="block text-xs font-semibold text-theme-main mb-1.5">
-              Año Fin Quinquenio <span className="text-theme-primary">*</span>
+              Año Fin Quinquenio <span className="text-rose-500">*</span>
             </label>
             <input
               type="number"

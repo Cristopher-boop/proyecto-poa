@@ -26,7 +26,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3.5">
           {icon && (
-            <div className="w-12 h-12 rounded-2xl bg-theme-primary/10 text-theme-primary flex items-center justify-center shadow-sm shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 border border-brand-200 dark:bg-brand-900/40 dark:text-brand-200 dark:border-brand-600 flex items-center justify-center shadow-sm shrink-0">
               {icon}
             </div>
           )}

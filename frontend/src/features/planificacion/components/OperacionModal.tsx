@@ -162,11 +162,11 @@ export const OperacionModal: React.FC<OperacionModalProps> = ({
       title={operacion ? 'Editar Operación Institucional' : 'Nueva Operación por Área'}
       subtitle="Defina la articulación de la operación con el Programa Institucional y la Acción a Corto Plazo"
       badge={
-        <span className="font-mono font-bold text-xs bg-theme-base px-2.5 py-1 rounded-lg border border-theme-border text-theme-primary">
+        <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2.5 py-1 rounded-lg">
           {displayCode}
         </span>
       }
-      icon={<FileCheck2 size={20} className="text-theme-primary" />}
+      icon={<FileCheck2 size={20} className="text-blue-600 dark:text-blue-400" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -183,7 +183,7 @@ export const OperacionModal: React.FC<OperacionModalProps> = ({
         {/* Paso 1: Programa Institucional */}
         <div>
           <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            1. Programa Institucional <span className="text-theme-primary">*</span>
+            1. Programa Institucional <span className="text-rose-500">*</span>
           </label>
           <Dropdown
             items={programaDropdownItems}
@@ -202,7 +202,7 @@ export const OperacionModal: React.FC<OperacionModalProps> = ({
         {/* Paso 2: Acción a Corto Plazo (ACP) */}
         <div>
           <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            2. Acción a Corto Plazo (ACP - POA) <span className="text-theme-primary">*</span>
+            2. Acción a Corto Plazo (ACP - POA) <span className="text-rose-500">*</span>
           </label>
           <Dropdown
             items={acpDropdownItems}
@@ -228,7 +228,7 @@ export const OperacionModal: React.FC<OperacionModalProps> = ({
         {/* Paso 3: Área Responsable */}
         <div>
           <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            3. Área / Gerencia Responsable <span className="text-theme-primary">*</span>
+            3. Área / Gerencia Responsable <span className="text-rose-500">*</span>
           </label>
           <Dropdown
             items={areaDropdownItems}

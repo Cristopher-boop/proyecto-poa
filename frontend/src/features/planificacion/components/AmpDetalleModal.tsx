@@ -29,11 +29,11 @@ export const AmpDetalleModal: React.FC<AmpDetalleModalProps> = ({
       title="Detalle de Acción a Mediano Plazo (AMP)"
       subtitle="Objetivo Estratégico Quinquenal articulado al Plan Estratégico Institucional (PEI)"
       badge={
-        <span className="font-mono font-bold text-xs bg-theme-base px-2.5 py-1 rounded-lg border border-theme-border text-theme-primary">
+        <span className="font-mono font-bold text-xs bg-violet-50 text-violet-700 border border-violet-200/90 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60 px-2.5 py-1 rounded-lg">
           {amp.codigo}
         </span>
       }
-      icon={<Compass size={20} className="text-theme-primary" />}
+      icon={<Compass size={20} className="text-violet-600 dark:text-violet-400" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -62,7 +62,7 @@ export const AmpDetalleModal: React.FC<AmpDetalleModalProps> = ({
               Código AMP
             </span>
             <div className="flex items-center justify-between">
-              <span className="font-mono font-bold text-xs text-theme-primary bg-theme-base px-2 py-0.5 rounded border border-theme-border">
+              <span className="font-mono font-bold text-xs bg-violet-50 text-violet-700 border border-violet-200/90 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60 px-2 py-0.5 rounded">
                 {amp.codigo}
               </span>
               <span className="text-[10px] text-theme-muted">
@@ -113,7 +113,7 @@ export const AmpDetalleModal: React.FC<AmpDetalleModalProps> = ({
               Programa Institucional
             </span>
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-xs text-theme-primary bg-theme-base px-2 py-0.5 rounded border border-theme-border shrink-0">
+              <span className="font-mono font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 px-2 py-0.5 rounded shrink-0">
                 {amp.programa_codigo || 'P-01'}
               </span>
               <span className="text-xs font-semibold text-theme-main line-clamp-1">

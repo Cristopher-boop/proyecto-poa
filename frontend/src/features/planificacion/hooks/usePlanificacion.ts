@@ -42,7 +42,7 @@ export function usePlanificacion() {
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterGestion, setFilterGestion] = useState<string>('ALL');
+  const [filterGestion, setFilterGestion] = useState<string>(() => String(new Date().getFullYear()));
   const [filterPrograma, setFilterPrograma] = useState<string>('ALL');
   const [filterArea, setFilterArea] = useState<string>('ALL');
 
@@ -112,6 +112,18 @@ export function usePlanificacion() {
       setProgramas(progs || []);
       setAreas(ars || []);
       setGestiones(gests || []);
+
+      const currentYear = new Date().getFullYear();
+      const hasCurrentYear = (gests || []).some((g) => g.anio === currentYear);
+      setFilterGestion((prev) => {
+        if (prev && prev !== 'ALL' && (gests || []).some((g) => String(g.anio) === prev || String(g.id) === prev)) {
+          return prev;
+        }
+        if (hasCurrentYear) {
+          return String(currentYear);
+        }
+        return gests && gests.length > 0 ? String(gests[0].anio) : 'ALL';
+      });
 
       if (userAreaId && !isAprobador && !isPlanificador) {
         setFilterArea(String(userAreaId));
@@ -216,8 +228,16 @@ export function usePlanificacion() {
         (op.area_nombre && op.area_nombre.toLowerCase().includes(q)) ||
         (op.acp_codigo && op.acp_codigo.toLowerCase().includes(q));
 
+      const selectedGestionObj = gestiones.find(
+        (g) => String(g.anio) === filterGestion || String(g.id) === filterGestion
+      );
+      const targetAnio = selectedGestionObj ? selectedGestionObj.anio : Number(filterGestion);
+      const targetId = selectedGestionObj ? selectedGestionObj.id : null;
+
       const matchGestion =
         filterGestion === 'ALL' ||
+        (Boolean(targetAnio) && op.gestion_anio === targetAnio) ||
+        (Boolean(targetId) && op.gestion_id === targetId) ||
         String(op.gestion_id) === filterGestion ||
         String(op.gestion_anio) === filterGestion;
 
@@ -230,7 +250,7 @@ export function usePlanificacion() {
 
       return matchText && matchGestion && matchPrograma && matchArea;
     });
-  }, [operacionesList, searchTerm, filterGestion, filterPrograma, filterArea]);
+  }, [operacionesList, searchTerm, filterGestion, filterPrograma, filterArea, gestiones]);
 
   const filteredAcps = useMemo(() => {
     return acpList.filter((a) => {
@@ -241,8 +261,16 @@ export function usePlanificacion() {
         (a.descripcion && a.descripcion.toLowerCase().includes(q)) ||
         (a.amp_codigo && a.amp_codigo.toLowerCase().includes(q));
 
+      const selectedGestionObj = gestiones.find(
+        (g) => String(g.anio) === filterGestion || String(g.id) === filterGestion
+      );
+      const targetAnio = selectedGestionObj ? selectedGestionObj.anio : Number(filterGestion);
+      const targetId = selectedGestionObj ? selectedGestionObj.id : null;
+
       const matchGestion =
         filterGestion === 'ALL' ||
+        (Boolean(targetAnio) && a.gestion_anio === targetAnio) ||
+        (Boolean(targetId) && a.gestion === targetId) ||
         String(a.gestion) === filterGestion ||
         String(a.gestion_anio) === filterGestion;
 
@@ -252,7 +280,7 @@ export function usePlanificacion() {
 
       return matchText && matchGestion && matchPrograma;
     });
-  }, [acpList, searchTerm, filterGestion, filterPrograma]);
+  }, [acpList, searchTerm, filterGestion, filterPrograma, gestiones]);
 
   const filteredAmps = useMemo(() => {
     return ampList.filter((m) => {

@@ -110,7 +110,15 @@ export default function PlanificacionPage() {
 
   const handleResetFilters = () => {
     setSearchTerm('');
-    setFilterGestion('ALL');
+    const currentYear = new Date().getFullYear();
+    const hasCurrentYear = gestiones.some((g) => g.anio === currentYear);
+    if (hasCurrentYear) {
+      setFilterGestion(String(currentYear));
+    } else if (gestiones.length > 0) {
+      setFilterGestion(String(gestiones[0].anio));
+    } else {
+      setFilterGestion('ALL');
+    }
     setFilterPrograma('ALL');
     if (isAprobadorOrPlanificador) {
       setFilterArea('ALL');
@@ -123,9 +131,9 @@ export default function PlanificacionPage() {
       <PlanificacionHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        operacionesCount={operacionesList.length}
-        acpCount={acpList.length}
-        ampCount={ampList.length}
+        operacionesCount={filteredOperaciones.length}
+        acpCount={filteredAcps.length}
+        ampCount={filteredAmps.length}
         canCreateOp={canCreateOp}
         canManageAmpOrAcp={canManageAmpOrAcp}
         canReplicate={isAprobadorOrPlanificador}

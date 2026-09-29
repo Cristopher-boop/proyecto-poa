@@ -78,7 +78,7 @@ export const ComparativaView: React.FC<ComparativaViewProps> = ({
       <div className="p-5 rounded-2xl border border-theme-border bg-theme-surface shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-theme-border/60 pb-3">
           <div className="flex items-center gap-2">
-            <History className="text-theme-primary" size={18} />
+            <History className="text-theme-main" size={18} />
             <h3 className="font-bold text-sm text-theme-main">Matriz de Comparación Interanual POA</h3>
           </div>
           <span className="text-xs text-theme-muted">
@@ -103,7 +103,7 @@ export const ComparativaView: React.FC<ComparativaViewProps> = ({
 
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-theme-muted mb-1.5 flex items-center gap-1">
-              <Sparkles size={13} className="text-theme-primary" />
+              <Sparkles size={13} className="text-theme-muted" />
               2. Gestión Destino (Nueva Formulación)
             </label>
             <Dropdown
@@ -153,7 +153,7 @@ export const ComparativaView: React.FC<ComparativaViewProps> = ({
         <div className="space-y-3">
           <div className="p-3.5 rounded-xl border border-theme-border bg-theme-surface flex items-center justify-between shadow-sm">
             <span className="font-bold text-xs text-theme-main uppercase tracking-wider flex items-center gap-1.5">
-              <Calendar size={14} className="text-theme-primary" />
+              <Calendar size={14} className="text-theme-muted" />
               Gestión Base {compGestionBase} ({compOperacionesBase.length})
             </span>
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-theme-base border border-theme-border text-theme-muted">
@@ -169,9 +169,9 @@ export const ComparativaView: React.FC<ComparativaViewProps> = ({
               </div>
             ) : (
               compOperacionesBase.map((op) => (
-                <div key={op.id} className="p-3.5 rounded-xl border border-theme-border bg-theme-surface space-y-1.5 text-xs shadow-sm">
+                <div key={op.id} className="p-3.5 rounded-xl border border-theme-border bg-theme-surface space-y-1.5 text-xs shadow-sm hover:border-brand-300 dark:hover:border-brand-500/50 transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-theme-primary text-[11px]">
+                    <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded">
                       {op.codigo}
                     </span>
                     <span className="text-[10px] text-theme-muted font-medium truncate max-w-[200px]" title={op.area_nombre}>
@@ -190,11 +190,11 @@ export const ComparativaView: React.FC<ComparativaViewProps> = ({
         {/* Columna Destino */}
         <div className="space-y-3">
           <div className="p-3.5 rounded-xl border border-theme-border bg-theme-surface flex items-center justify-between shadow-sm">
-            <span className="font-bold text-xs text-theme-primary uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles size={14} />
+            <span className="font-bold text-xs text-theme-main uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles size={14} className="text-emerald-500" />
               Gestión Destino {compGestionDestino} ({compOperacionesDestino.length})
             </span>
-            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-theme-primary/10 text-theme-primary border border-theme-primary/20">
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               Nueva Planificación
             </span>
           </div>
@@ -209,9 +209,9 @@ export const ComparativaView: React.FC<ComparativaViewProps> = ({
               </div>
             ) : (
               compOperacionesDestino.map((op) => (
-                <div key={op.id} className="p-3.5 rounded-xl border border-theme-border bg-theme-surface space-y-1.5 text-xs shadow-sm">
+                <div key={op.id} className="p-3.5 rounded-xl border border-theme-border bg-theme-surface space-y-1.5 text-xs shadow-sm hover:border-brand-300 dark:hover:border-brand-500/50 transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-theme-primary text-[11px]">
+                    <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded">
                       {op.codigo}
                     </span>
                     <span className="text-[10px] text-theme-muted font-medium truncate max-w-[200px]" title={op.area_nombre}>

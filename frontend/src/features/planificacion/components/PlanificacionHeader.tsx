@@ -44,8 +44,6 @@ export const PlanificacionHeader: React.FC<PlanificacionHeaderProps> = ({
         icon={<Compass size={26} />}
         title="Planificación Estratégica Institucional"
         subtitle="Catálogo de Operaciones por Programa, Objetivos POA (ACP) y Planes Quinquenales (AMP)."
-        tag="SPO • Alineación Estratégica"
-        extraInfo="Estructura Oficial PEI / POA"
         actions={
           <>
             {activeTab === 'OPERACIONES' && canCreateOp && (
@@ -64,7 +62,7 @@ export const PlanificacionHeader: React.FC<PlanificacionHeaderProps> = ({
                 onClick={onOpenCreateAcp}
                 className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText font-semibold text-xs shadow-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <Plus size={15} /> Nueva ACP (POA)
+                <Plus size={15} /> Nueva ACP
               </button>
             )}
 
@@ -74,7 +72,7 @@ export const PlanificacionHeader: React.FC<PlanificacionHeaderProps> = ({
                 onClick={onOpenCreateAmp}
                 className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText font-semibold text-xs shadow-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <Plus size={15} /> Nueva AMP (PEI)
+                <Plus size={15} /> Nueva AMP
               </button>
             )}
 
@@ -106,8 +104,10 @@ export const PlanificacionHeader: React.FC<PlanificacionHeaderProps> = ({
           <FileCheck2 size={15} />
           <span>Operaciones por Área</span>
           <span
-            className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-              activeTab === 'OPERACIONES' ? 'bg-white/20 text-white' : 'bg-theme-border/60 text-theme-muted'
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+              activeTab === 'OPERACIONES'
+                ? 'bg-black/10 dark:bg-white/20 text-theme-primaryText'
+                : 'bg-slate-200/70 text-slate-700 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
             }`}
           >
             {operacionesCount}
@@ -124,10 +124,12 @@ export const PlanificacionHeader: React.FC<PlanificacionHeaderProps> = ({
           }`}
         >
           <Target size={15} />
-          <span>Acciones Corto Plazo (POA)</span>
+          <span>Acciones Corto Plazo</span>
           <span
-            className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-              activeTab === 'ACP' ? 'bg-white/20 text-white' : 'bg-theme-border/60 text-theme-muted'
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+              activeTab === 'ACP'
+                ? 'bg-black/10 dark:bg-white/20 text-theme-primaryText'
+                : 'bg-slate-200/70 text-slate-700 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
             }`}
           >
             {acpCount}
@@ -144,10 +146,12 @@ export const PlanificacionHeader: React.FC<PlanificacionHeaderProps> = ({
           }`}
         >
           <Compass size={15} />
-          <span>Acciones Mediano Plazo (PEI)</span>
+          <span>Acciones Mediano Plazo</span>
           <span
-            className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-              activeTab === 'AMP' ? 'bg-white/20 text-white' : 'bg-theme-border/60 text-theme-muted'
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+              activeTab === 'AMP'
+                ? 'bg-black/10 dark:bg-white/20 text-theme-primaryText'
+                : 'bg-slate-200/70 text-slate-700 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
             }`}
           >
             {ampCount}
@@ -165,7 +169,13 @@ export const PlanificacionHeader: React.FC<PlanificacionHeaderProps> = ({
         >
           <History size={15} />
           <span>Comparativa Interanual Gestiones</span>
-          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-theme-primary/10 text-theme-primary border border-theme-primary/20">
+          <span
+            className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold ${
+              activeTab === 'COMPARATIVA'
+                ? 'bg-black/10 dark:bg-white/20 text-theme-primaryText'
+                : 'bg-slate-200/70 text-slate-700 border border-slate-300/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+            }`}
+          >
             Multi-Gestión
           </span>
         </button>

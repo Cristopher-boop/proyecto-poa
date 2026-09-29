@@ -29,11 +29,11 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
       title="Detalle de la Operación"
       subtitle="Consulta técnica y articulación estratégica del Plan Operativo Anual (POA)"
       badge={
-        <span className="font-mono font-bold text-xs bg-theme-base px-2.5 py-1 rounded-lg border border-theme-border text-theme-primary">
+        <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2.5 py-1 rounded-lg">
           {operacion.codigo}
         </span>
       }
-      icon={<FileCheck2 size={20} className="text-theme-primary" />}
+      icon={<FileCheck2 size={20} className="text-blue-600 dark:text-blue-400" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -59,10 +59,10 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
             <span className="text-[10px] font-semibold uppercase text-theme-muted block mb-1">
-              Código de Operación
+               Código de Operación
             </span>
             <div className="flex items-center justify-between">
-              <span className="font-mono font-bold text-xs text-theme-primary bg-theme-base px-2 py-0.5 rounded border border-theme-border">
+              <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded">
                 {operacion.codigo}
               </span>
               <span className="text-[10px] text-theme-muted">
@@ -113,7 +113,7 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
               Programa Institucional
             </span>
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-xs text-theme-primary bg-theme-base px-2 py-0.5 rounded border border-theme-border shrink-0">
+              <span className="font-mono font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 px-2 py-0.5 rounded shrink-0">
                 {operacion.area_programa_codigo || operacion.acp_programa_codigo || 'P-01'}
               </span>
               <span className="text-xs font-semibold text-theme-main line-clamp-1">
@@ -148,7 +148,7 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
               Acción a Corto Plazo (ACP - POA)
             </span>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="font-mono font-bold text-xs text-theme-primary bg-theme-base px-2 py-0.5 rounded border border-theme-border">
+              <span className="font-mono font-bold text-xs bg-indigo-50 text-indigo-700 border border-indigo-200/90 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60 px-2 py-0.5 rounded">
                 {operacion.acp_codigo || 'ACP'}
               </span>
             </div>
@@ -163,7 +163,7 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
               Acción a Mediano Plazo (AMP - PEI)
             </span>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="font-mono font-bold text-xs text-theme-main bg-theme-base px-2 py-0.5 rounded border border-theme-border">
+              <span className="font-mono font-bold text-xs bg-violet-50 text-violet-700 border border-violet-200/90 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60 px-2 py-0.5 rounded">
                 {operacion.amp_codigo || 'AMP'}
               </span>
             </div>
