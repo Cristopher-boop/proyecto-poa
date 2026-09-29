@@ -4,14 +4,18 @@ from rest_framework.response import Response
 from django.db.models import Q
 from django.db import transaction
 
-from .models import MemoriaCalculo, DetallePresupuestoMemoria, TraspasoPresupuestario
+from .models import (
+    MemoriaCalculo, DetallePresupuestoMemoria, TraspasoPresupuestario,
+    ModificacionPresupuestaria, DetalleModificacion
+)
 from .serializers import (
     MemoriaCalculoSerializer,
     MemoriaCalculoListSerializer,
     DetallePresupuestoMemoriaSerializer,
     TraspasoSerializer,
+    ModificacionPresupuestariaSerializer,
 )
-from .services import MemoriaCalculoService
+from .services import MemoriaCalculoService, ModificacionPresupuestariaService
 from apps.presupuestos.models import Gestion
 
 class RolePermissionMixin:
@@ -52,7 +56,7 @@ class RolePermissionMixin:
         return True
 
 class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
-    queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area').prefetch_related('detalles__partida', 'participaciones__usuario').all().order_by('-created_at')
+    queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area', 'operacion').prefetch_related('detalles__partida', 'participaciones__usuario').all().order_by('-created_at')
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
 
@@ -302,3 +306,42 @@ class TraspasoViewSet(viewsets.ModelViewSet):
 
             if origen: recalcular_saldos_memoria(origen)
             if destino: recalcular_saldos_memoria(destino)
+
+
+class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
+    queryset = ModificacionPresupuestaria.objects.select_related(
+        'gestion', 'area', 'usuario_registro'
+    ).prefetch_related(
+        'detalles__memoria__seccion__area',
+        'detalles__memoria__detalles__partida'
+    ).all().order_by('-fecha', '-id')
+    serializer_class = ModificacionPresupuestariaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        gestion_id = self.request.query_params.get('gestion')
+        area_id = self.request.query_params.get('area')
+        search = self.request.query_params.get('search')
+
+        if gestion_id:
+            qs = qs.filter(gestion_id=gestion_id)
+        if area_id:
+            qs = qs.filter(area_id=area_id)
+        if search:
+            qs = qs.filter(
+                Q(codigo__icontains=search) |
+                Q(motivo__icontains=search) |
+                Q(area__nombre__icontains=search) |
+                Q(detalles__memoria__codigo__icontains=search)
+            ).distinct()
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        modificacion = ModificacionPresupuestariaService.registrar_modificacion(
+            data=request.data,
+            usuario=request.user
+        )
+        serializer = self.get_serializer(modificacion)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

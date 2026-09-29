@@ -66,6 +66,10 @@ export interface DetallePresupuestoMemoria {
   cantidad: number | string;
   precio_unitario: number | string;
   precio_total?: string;
+  total_programado?: string | number;
+  factor_calculo?: string | number;
+  mes_requerido?: string;
+  fuente_excel?: string;
   estado_ejecucion?: 'PENDIENTE' | 'EJECUTADO_PARCIAL' | 'COMPLETADO';
   monto_ejecutado?: string;
   monto_disponible?: string;
@@ -158,6 +162,49 @@ export interface Traspaso {
   usuario_registro_nombre?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface DetalleModificacionItem {
+  id?: number;
+  memoria: number;
+  memoria_codigo?: string;
+  partida_codigo?: string | null;
+  partida_nombre?: string | null;
+  tipo_movimiento: 'DISMINUCION' | 'INCREMENTO';
+  tipo_movimiento_display?: string;
+  monto: number | string;
+  created_at?: string;
+}
+
+export interface ModificacionPresupuestaria {
+  id: number;
+  codigo: string;
+  gestion: number;
+  gestion_anio?: number;
+  area: number;
+  area_codigo?: string;
+  area_nombre?: string;
+  tipo: 'TRASPASO_INTRA_AREA' | 'INCREMENTO' | 'DISMINUCION';
+  tipo_display?: string;
+  motivo: string;
+  total_monto: string | number;
+  estado: 'APROBADO' | 'ANULADO';
+  usuario_registro?: number | null;
+  usuario_registro_nombre?: string | null;
+  fecha: string;
+  created_at: string;
+  detalles: DetalleModificacionItem[];
+  origenes: DetalleModificacionItem[];
+  destinos: DetalleModificacionItem[];
+}
+
+export interface CrearModificacionPayload {
+  gestion_id: number;
+  area_id: number;
+  motivo: string;
+  tipo?: 'TRASPASO_INTRA_AREA' | 'INCREMENTO' | 'DISMINUCION';
+  origenes: Array<{ memoria_id: number; monto: number }>;
+  destinos: Array<{ memoria_id: number; monto: number }>;
 }
 
 export interface SaldoMemoria {
@@ -559,6 +606,26 @@ export async function createTraspaso(payload: {
   motivo: string;
 }): Promise<Traspaso> {
   const { data } = await api.post<Traspaso>('/api/v1/memorias/traspasos/', payload);
+  return data;
+}
+
+// ── Modificaciones Presupuestarias M:N ────────────────────────────────────
+export async function getModificaciones(params?: {
+  gestion?: number;
+  area?: number;
+  search?: string;
+}): Promise<ModificacionPresupuestaria[]> {
+  const { data } = await api.get<any>('/api/v1/memorias/modificaciones/', { params });
+  return unpackList<ModificacionPresupuestaria>(data);
+}
+
+export async function createModificacion(
+  payload: CrearModificacionPayload
+): Promise<ModificacionPresupuestaria> {
+  const { data } = await api.post<ModificacionPresupuestaria>(
+    '/api/v1/memorias/modificaciones/',
+    payload
+  );
   return data;
 }
 
