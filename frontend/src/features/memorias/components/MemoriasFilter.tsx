@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search, Filter, RefreshCw, Plus, Send, Layers, Edit3, Clock, CheckSquare, CheckCircle, XCircle } from 'lucide-react';
+import { Dropdown } from '../../../components/commons';
 
 interface MemoriasFilterProps {
   activeTab: string;
@@ -127,21 +128,22 @@ export const MemoriasFilter: React.FC<MemoriasFilterProps> = ({
 
           {/* Filtro Área */}
           {canGlobalView && (
-            <div className="relative flex-1 sm:max-w-xs">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter className="h-4 w-4 text-theme-muted" />
-              </div>
-              <select
-                className="block w-full pl-9 pr-8 py-2 bg-theme-base border border-theme-border rounded-lg text-theme-main text-sm focus:ring-2 focus:ring-theme-primary/50 focus:border-theme-primary appearance-none"
-                value={filtroArea}
-                onChange={(e) => setFiltroArea(e.target.value)}
-              >
-                <option value="todas">Todas las Áreas</option>
-                {areas.map(area => (
-                  <option key={area.id} value={area.id}>{area.nombre}</option>
-                ))}
-              </select>
-            </div>
+            <Dropdown
+              items={[
+                { id: 'todas', label: 'Todas las Áreas' },
+                ...areas.map((area: any) => ({
+                  id: String(area.id),
+                  label: area.nombre,
+                  badge: area.sigla || undefined,
+                })),
+              ]}
+              value={filtroArea}
+              onChange={(val) => setFiltroArea(String(val))}
+              placeholder="Todas las Áreas"
+              className="flex-1 sm:max-w-xs"
+              icon={<Filter className="h-3.5 w-3.5" />}
+              size="sm"
+            />
           )}
         </div>
         
@@ -156,15 +158,6 @@ export const MemoriasFilter: React.FC<MemoriasFilterProps> = ({
                <Send size={16} className="text-green-500" />
                <span>Enviar Borradores</span>
              </button>
-          )}
-          {canCreate && (
-            <button
-              onClick={onCreate}
-              className="flex-1 sm:flex-none btn-primary px-4 py-2 rounded-lg text-sm font-bold flex justify-center items-center gap-2 shadow-md shadow-indigo-500/20"
-            >
-              <Plus size={16} />
-              <span>Nueva Memoria</span>
-            </button>
           )}
           <button
             onClick={onRefresh}

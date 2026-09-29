@@ -12,7 +12,8 @@ import {
   aprobarMemoriaPlanificacion,
   aprobarMemoriaFinanzas,
   rechazarMemoria,
-  volverMemoriaBorrador
+  volverMemoriaBorrador,
+  deleteMemoria
 } from '../../../services/presupuestoService';
 
 export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any) => {
@@ -23,11 +24,13 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
     const confirm = await alertService.confirm({ title: 'Eliminar Memoria', text: '¿Desea eliminar esta memoria?' });
     if (!confirm) return;
     try {
-      // deleteMemoria(fichaMemoria.id)
+      await deleteMemoria(fichaMemoria.id);
       alertService.success('Eliminado', 'Memoria eliminada.');
       if (onActionSuccess) onActionSuccess();
       onClose();
-    } catch (e) {}
+    } catch (e) {
+      alertService.error('Error', 'No se pudo eliminar la memoria.');
+    }
   }
 
   const { user } = useAuth();
@@ -38,7 +41,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
   const isPlanificador = !isSuperuser && rolClean.includes('PLANIFIC');
   const isGerente = !isSuperuser && !isPlanificador && rolClean === 'GERENTE';
   const isElaborador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && rolClean === 'ELABORADOR';
-  const canCreate = isAprobador || isElaborador;
+  const canCreate = isAprobador || isElaborador || isGerente;
 
   const [fichaMemoria, setFichaMemoria] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -481,7 +484,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                 {/* 1. Acción de Borrador: Enviar a Gerencia / Eliminar */}
                 {fichaMemoria.estado === 'BORRADOR' && (
                   <>
-                    {!isGestionBloqueada && (isElaborador || isAprobador) && (
+                    {!isGestionBloqueada && (isElaborador || isAprobador || isGerente) && (
                       <button
                         onClick={() => {
                           const targetId = fichaMemoria.id;
@@ -493,7 +496,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                         <Trash2 size={14} /> Eliminar
                       </button>
                     )}
-                    {isElaborador && (
+                    {(isElaborador || isGerente || isAprobador) && (
                       <button
                         onClick={() => handleEnviarGerencia()}
                         className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm"
@@ -505,7 +508,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                 )}
 
                 {/* 2. Acción de Gerencia: Aprobar / Rechazar */}
-                {(fichaMemoria.estado === 'PENDIENTE_GERENCIA' || (fichaMemoria.estado === 'BORRADOR' && isGerente)) && (isGerente || isAprobador) && (
+                {(fichaMemoria.estado === 'PENDIENTE_GERENCIA' || (fichaMemoria.estado === 'BORRADOR' && (isGerente || isAprobador))) && (isGerente || isAprobador) && (
                   <>
                     <button
                       onClick={() => handleRechazar()}

@@ -62,15 +62,25 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
         return obj._cached_detalles_list
 
     def get_partida_codigo(self, obj):
-        detalles = self._get_detalles(obj)
-        return detalles[0].partida.codigo if detalles and detalles[0].partida else None
+        if not hasattr(obj, 'detalles'):
+            return None
+        detalles = obj.detalles.all()
+        if detalles:
+            return detalles[0].partida.codigo
+        return None
 
     def get_partida_nombre(self, obj):
-        detalles = self._get_detalles(obj)
-        return detalles[0].partida.nombre if detalles and detalles[0].partida else None
+        if not hasattr(obj, 'detalles'):
+            return None
+        detalles = obj.detalles.all()
+        if detalles:
+            return detalles[0].partida.nombre
+        return None
 
     def get_total_items(self, obj):
-        return len(self._get_detalles(obj))
+        if not hasattr(obj, 'detalles'):
+            return 0
+        return len(obj.detalles.all())
 
 class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
