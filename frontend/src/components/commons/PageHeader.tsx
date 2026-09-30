@@ -8,6 +8,7 @@ export interface PageHeaderProps {
   extraInfo?: string;
   actions?: React.ReactNode;
   className?: string;
+  children?: React.ReactNode;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
@@ -18,10 +19,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   extraInfo,
   actions,
   className = '',
+  children,
 }) => {
   return (
     <div
-      className={`rounded-2xl border border-theme-border bg-theme-surface p-5 sm:p-6 shadow-sm relative overflow-hidden ${className}`}
+      className={`rounded-2xl border border-theme-border bg-theme-surface p-5 sm:p-6 shadow-sm relative ${className}`}
     >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3.5">
@@ -47,12 +49,12 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
               </div>
             )}
 
-            <h1 className="text-xl sm:text-2xl font-display font-bold text-theme-main tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold font-display text-theme-main tracking-tight">
               {title}
             </h1>
 
             {subtitle && (
-              <p className="text-xs sm:text-sm text-theme-muted mt-0.5 leading-relaxed">
+              <p className="text-xs text-theme-muted mt-0.5 leading-relaxed">
                 {subtitle}
               </p>
             )}
@@ -65,6 +67,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
         )}
       </div>
+
+      {children && <div className="mt-4">{children}</div>}
     </div>
   );
 };
+

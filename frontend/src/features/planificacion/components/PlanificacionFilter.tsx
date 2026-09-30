@@ -44,10 +44,11 @@ export const PlanificacionFilter: React.FC<PlanificacionFilterProps> = ({
 
   // Gestiones items for Dropdown
   const gestionItems = useMemo((): DropdownItem[] => [
-    { id: 'ALL', label: 'Todas las Gestiones' },
+    { id: 'ALL', label: 'Todas las Gestiones', triggerLabel: 'Todas las Gestiones' },
     ...gestiones.map((g) => ({
       id: String(g.anio),
       label: `Gestión ${g.anio}`,
+      triggerLabel: `${g.anio}`,
       badge: g.estado_display || undefined,
     })),
   ], [gestiones]);
@@ -98,7 +99,7 @@ export const PlanificacionFilter: React.FC<PlanificacionFilterProps> = ({
           )}
         </div>
 
-        {/* Dropdown Institucional Gestión */}
+        {/* Dropdown Institucional Gestión (Filtro estándar) */}
         <div className="lg:col-span-2">
           <Dropdown
             items={gestionItems}
@@ -109,6 +110,7 @@ export const PlanificacionFilter: React.FC<PlanificacionFilterProps> = ({
             size="sm"
           />
         </div>
+
 
         {/* Dropdown Institucional Programa */}
         <div className={`relative ${isAprobadorOrPlanificador ? 'lg:col-span-3' : 'lg:col-span-5'}`}>

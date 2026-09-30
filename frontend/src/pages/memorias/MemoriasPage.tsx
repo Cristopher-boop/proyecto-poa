@@ -9,8 +9,8 @@ import { MemoriasFilter } from '../../features/memorias/components/MemoriasFilte
 import { MemoriasList } from '../../features/memorias/components/MemoriasList';
 import { MemoriaForm } from '../../features/memorias/components/MemoriaForm';
 import { MemoriaDetalleModal } from '../../features/memorias/components/MemoriaDetalleModal';
-import { BookOpen, Calendar, Plus } from 'lucide-react';
-import { Dropdown, PageHeader } from '../../components/commons';
+import { BookOpen, Plus } from 'lucide-react';
+import { Dropdown, PageHeader, GestionSelector } from '../../components/commons';
 
 export default function MemoriasPage() {
   const { user } = useAuth();
@@ -138,23 +138,11 @@ export default function MemoriasPage() {
         className="mb-6"
         actions={
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-theme-muted hidden sm:block" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-theme-muted hidden sm:inline-block">
-                Gestión:
-              </span>
-              <Dropdown
-                items={gestiones.map((g: any) => ({
-                  id: g.id,
-                  label: `Gestión ${g.anio} (${g.estado_display})`,
-                  badge: String(g.anio),
-                }))}
-                value={selectedGestionId}
-                onChange={(val) => setSelectedGestionId(Number(val))}
-                className="min-w-[210px]"
-                size="sm"
-              />
-            </div>
+            <GestionSelector
+              gestiones={gestiones}
+              selectedGestionId={selectedGestionId}
+              onSelectGestion={(id) => setSelectedGestionId(id)}
+            />
 
             {canCreate && (
               <button
@@ -168,16 +156,17 @@ export default function MemoriasPage() {
             )}
           </div>
         }
-      />
+      >
+        {isGestionBloqueada && (
+          <div className="p-3 bg-blue-50/70 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800 rounded-xl flex items-center gap-3 text-xs text-blue-800 dark:text-blue-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-blue-600 dark:text-blue-400"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>
+              <strong>Formulación de la Gestión {activeGestion?.anio} cerrada:</strong> Las memorias de cálculo están consolidadas para el presupuesto y no admiten modificaciones.
+            </span>
+          </div>
+        )}
+      </PageHeader>
 
-      {isGestionBloqueada && (
-        <div className="mb-4 p-3 bg-blue-50/70 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800 rounded-xl flex items-center gap-3 text-xs text-blue-800 dark:text-blue-300">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-blue-600 dark:text-blue-400"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          <span>
-            <strong>Formulación de la Gestión {activeGestion?.anio} cerrada:</strong> Las memorias de cálculo están consolidadas para el presupuesto y no admiten modificaciones.
-          </span>
-        </div>
-      )}
 
       <MemoriasFilter
         activeTab={activeTab}

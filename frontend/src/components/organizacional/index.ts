@@ -1,1 +1,0 @@
-export { ProgramasList, AreasList, SeccionesList } from '../../features/organizacional';

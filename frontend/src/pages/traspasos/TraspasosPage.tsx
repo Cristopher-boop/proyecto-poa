@@ -24,6 +24,7 @@ import {
   getTraspasos,
   createTraspaso,
 } from '../../services/presupuestoService';
+import { PageHeader, GestionSelector } from '../../components/commons';
 
 export default function TraspasosPage() {
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
@@ -254,61 +255,36 @@ export default function TraspasosPage() {
         </div>
       )}
 
-      {/* Cabecera Principal Tipo Carta */}
-      <div className="card p-6 border border-theme-border bg-theme-surface shadow-sm rounded-2xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-theme-primary/10 text-theme-primary flex items-center justify-center font-bold shrink-0 shadow-sm">
-              <ArrowRightLeft size={24} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold font-display text-theme-main tracking-tight">
-                  Modificaciones Presupuestarias
-                </h1>
-              </div>
-              <p className="text-xs text-theme-muted mt-0.5">
-                Reasignación de recursos financieros y saldos entre memorias de cálculo de una misma área organizacional
-              </p>
-            </div>
-          </div>
-
-          {/* Acciones e Indicador de Gestión */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-theme-base border border-theme-border rounded-xl px-3 py-2 shadow-sm">
-              <Calendar size={15} className="text-theme-muted" />
-              <span className="text-xs font-semibold text-theme-muted">Gestión:</span>
-              <select
-                value={selectedGestionId || ''}
-                onChange={(e) => setSelectedGestionId(Number(e.target.value))}
-                className="bg-transparent text-xs font-bold text-theme-main focus:outline-none"
-              >
-                {gestiones.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    Gestión {g.anio} — {g.estado.replace('_', ' ')}
-                  </option>
-                ))}
-              </select>
-            </div>
+      {/* Cabecera Principal Unificada */}
+      <PageHeader
+        icon={<ArrowRightLeft size={24} />}
+        title="Modificaciones Presupuestarias"
+        subtitle="Reasignación de recursos financieros y saldos entre memorias de cálculo de una misma área organizacional"
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <GestionSelector
+              gestiones={gestiones}
+              selectedGestionId={selectedGestionId}
+              onSelectGestion={(id) => setSelectedGestionId(id)}
+            />
 
             <button
               onClick={handleOpenModal}
               disabled={isGestionBloqueada || loading}
-              className={`btn-primary text-xs flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold shadow-md transition-all ${isGestionBloqueada ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'
-                }`}
+              className={`btn-primary text-xs flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-md transition-all ${
+                isGestionBloqueada ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'
+              }`}
               title={isGestionBloqueada ? 'Las modificaciones solo están permitidas en gestiones En Ejecución' : undefined}
             >
-              <Plus size={16} />
+              <Plus size={15} />
               <span>Nueva Modificación</span>
             </button>
           </div>
-        </div>
-
-
-
+        }
+      >
         {/* Advertencia si Gestión Bloqueada */}
         {isGestionBloqueada && activeGestion && (
-          <div className="mt-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex items-center gap-3 text-xs font-medium">
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex items-center gap-3 text-xs font-medium">
             <Lock size={18} className="shrink-0" />
             <div>
               <span className="font-bold">Gestión {activeGestion.anio} ({activeGestion.estado.replace('_', ' ')}): </span>
@@ -316,7 +292,8 @@ export default function TraspasosPage() {
             </div>
           </div>
         )}
-      </div>
+      </PageHeader>
+
 
       {/* Tarjetas KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

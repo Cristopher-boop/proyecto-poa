@@ -693,6 +693,8 @@ export default function CertificacionesPage() {
             </select>
           </div>
 
+
+
           {/* Selector de Área / Gerencia */}
           <div className="flex items-center gap-1.5 bg-theme-bg border border-theme-border rounded-xl px-3 py-1.5 text-xs">
             <Building2 size={14} className="text-theme-muted" />

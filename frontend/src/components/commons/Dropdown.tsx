@@ -4,6 +4,7 @@ import { ChevronDown, Search, Check, AlertCircle, X } from 'lucide-react';
 export interface DropdownItem {
   id: string | number;
   label: string;
+  triggerLabel?: string;
   badge?: string;
   sublabel?: string;
   group?: string;
@@ -28,6 +29,9 @@ export interface DropdownProps {
   icon?: React.ReactNode;
   maxHeight?: string;
   size?: 'sm' | 'md';
+  menuMinWidth?: string;
+  menuClassName?: string;
+  showBadgeInTrigger?: boolean;
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -47,6 +51,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
   icon,
   maxHeight = '260px',
   size = 'md',
+  menuMinWidth,
+  menuClassName = '',
+  showBadgeInTrigger = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,13 +171,13 @@ export const Dropdown: React.FC<DropdownProps> = ({
           {icon && <span className="text-theme-muted shrink-0">{icon}</span>}
           {selectedItem ? (
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {selectedItem.badge && (
+              {showBadgeInTrigger && selectedItem.badge && (
                 <span className="shrink-0 font-mono font-bold text-[11px] bg-slate-100 text-slate-900 border border-slate-300 dark:bg-slate-800 dark:text-white dark:border-slate-700 px-1.5 py-0.5 rounded">
                   {selectedItem.badge}
                 </span>
               )}
               <span className="flex-1 min-w-0 font-semibold text-theme-main line-clamp-1">
-                {selectedItem.label}
+                {selectedItem.triggerLabel || selectedItem.label}
               </span>
             </div>
           ) : (
@@ -198,8 +205,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
       {/* Menú Desplegable Flotante */}
       {isOpen && (
         <div
-          className="absolute left-0 right-0 z-50 mt-1.5 bg-theme-surface border border-theme-border rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100"
-          style={{ minWidth: '220px' }}
+          className={`absolute left-0 z-50 mt-1.5 bg-theme-surface border border-theme-border rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100 ${menuClassName}`}
+          style={{ minWidth: menuMinWidth || '100%' }}
         >
           {/* Barra de Búsqueda */}
           {isSearchEnabled && (

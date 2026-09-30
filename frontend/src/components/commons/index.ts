@@ -8,3 +8,4 @@ export * from './FilterPanel';
 export * from './Dropdown';
 export * from './PageHeader';
 export * from './Pagination';
+export * from './GestionSelector';

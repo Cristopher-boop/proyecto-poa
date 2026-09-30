@@ -14,6 +14,8 @@ import {
   TabItem,
   FilterPanel,
   Button,
+  PageHeader,
+  GestionSelector,
 } from '../../components/commons';
 import { formatMoney, formatPercent } from '../../utils/formatters';
 import { Gasto } from '../../services/presupuestoService';
@@ -100,66 +102,46 @@ export default function EjecucionPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-in fade-in duration-200">
-      {/* Cabecera Principal */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/30">
-            <TrendingDown size={28} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-theme-main tracking-tight">
-              Módulo de Ejecución Presupuestaria
-            </h1>
-            <p className="mt-0.5 text-xs text-theme-muted">
-              Control, registro y monitoreo del gasto ejecutado contra memorias de cálculo POA aprobadas.
-            </p>
-          </div>
-        </div>
+      {/* Cabecera Principal Unificada */}
+      <PageHeader
+        icon={<TrendingDown size={28} />}
+        title="Módulo de Ejecución Presupuestaria"
+        subtitle="Control, registro y monitoreo del gasto ejecutado contra memorias de cálculo POA aprobadas."
+        className="mb-6"
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <GestionSelector
+              gestiones={gestiones}
+              selectedGestionId={gestionActivaId}
+              onSelectGestion={(id) => setGestionActivaId(id)}
+            />
 
-        {/* Selector Global de Gestión Fiscal */}
-        <div className="flex flex-wrap items-center gap-2.5 bg-theme-surface p-2 rounded-2xl border border-theme-border shadow-sm">
-          <div className="flex items-center gap-2 px-2 py-1 text-xs">
-            <Calendar size={16} className="text-theme-muted" />
-            <span className="font-semibold uppercase tracking-wider text-theme-muted text-[11px]">
-              Gestión:
+            {canManage && (
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={isGestionBloqueada}
+                onClick={() => handleOpenCrear()}
+                icon={<Plus size={15} />}
+                className="shadow-md shadow-rose-600/20 font-bold"
+              >
+                Registrar Gasto
+              </Button>
+            )}
+          </div>
+        }
+      >
+        {/* Banner de Gestión Bloqueada */}
+        {isGestionBloqueada && (
+          <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3 text-xs text-amber-800 dark:text-amber-300">
+            <Lock size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              <strong>Gestión {gestionActiva?.anio} Finalizada:</strong> El ejercicio fiscal se encuentra cerrado y no se admiten nuevos registros o modificaciones de ejecución presupuestaria.
             </span>
-            <select
-              value={gestionActivaId || ''}
-              onChange={(e) => setGestionActivaId(Number(e.target.value))}
-              className="bg-theme-base font-bold text-xs px-2.5 py-1.5 rounded-xl border border-theme-border text-theme-main outline-none focus:border-theme-primary cursor-pointer"
-            >
-              {gestiones.map((g) => (
-                <option key={g.id} value={g.id}>
-                  Gestión {g.anio} ({g.estado_display})
-                </option>
-              ))}
-            </select>
           </div>
+        )}
+      </PageHeader>
 
-          {canManage && (
-            <Button
-              variant="danger"
-              size="md"
-              disabled={isGestionBloqueada}
-              onClick={() => handleOpenCrear()}
-              icon={<Plus size={15} />}
-              className="shadow-md shadow-rose-600/20 font-bold"
-            >
-              Registrar Gasto
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Banner de Gestión Bloqueada */}
-      {isGestionBloqueada && (
-        <div className="mb-6 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center gap-3 text-xs text-amber-800 dark:text-amber-300">
-          <Lock size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
-          <span>
-            <strong>Gestión {gestionActiva?.anio} Finalizada:</strong> El ejercicio fiscal se encuentra cerrado y no se admiten nuevos registros o modificaciones de ejecución presupuestaria.
-          </span>
-        </div>
-      )}
 
       {/* Panel de Filtros Avanzados - ARRIBA de las cards de totales (Persistente en todas las pestañas) */}
       <FilterPanel
