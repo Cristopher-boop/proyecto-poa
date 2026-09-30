@@ -48,7 +48,7 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
     <div className="rounded-2xl border border-theme-border bg-theme-surface shadow-sm overflow-hidden flex flex-col">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-theme-base/80 border-b border-theme-border text-theme-muted uppercase tracking-wider font-semibold">
+          <thead className="bg-theme-base/60 border-b border-theme-border text-theme-muted uppercase tracking-wider font-semibold">
             <tr>
               <th className="py-3 px-4">Programa</th>
               <th className="py-3 px-4">Descripción</th>
@@ -57,7 +57,7 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
               <th className="py-3 px-4 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-theme-border/50">
+          <tbody className="divide-y divide-theme-border">
             {pagedProgramas.map((prog) => {
               const isActivo = prog.estado;
               // Clean program display: "Programa X", NO BREAKDOWN!
@@ -66,7 +66,7 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
               return (
                 <tr
                   key={prog.id}
-                  className={`hover:bg-theme-base/50 transition-colors ${
+                  className={`hover:bg-theme-border/20 transition-colors ${
                     !isActivo ? 'opacity-65 bg-theme-base/30' : ''
                   }`}
                 >

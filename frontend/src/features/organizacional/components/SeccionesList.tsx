@@ -49,7 +49,7 @@ export const SeccionesList: React.FC<SeccionesListProps> = ({
     <div className="rounded-2xl border border-theme-border bg-theme-surface shadow-sm overflow-hidden flex flex-col">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-theme-base/80 border-b border-theme-border text-theme-muted uppercase tracking-wider font-semibold">
+          <thead className="bg-theme-base/60 border-b border-theme-border text-theme-muted uppercase tracking-wider font-semibold">
             <tr>
               <th className="py-3 px-4">Sección Operativa</th>
               <th className="py-3 px-4">Gerencia / Unidad Dependiente</th>
@@ -58,7 +58,7 @@ export const SeccionesList: React.FC<SeccionesListProps> = ({
               <th className="py-3 px-4 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-theme-border/50">
+          <tbody className="divide-y divide-theme-border">
             {pagedSecciones.map((sec) => {
               const parentArea = areas.find((a) => a.id === sec.area);
               const isActiva = sec.estado;
@@ -66,7 +66,7 @@ export const SeccionesList: React.FC<SeccionesListProps> = ({
               return (
                 <tr
                   key={sec.id}
-                  className={`hover:bg-theme-base/50 transition-colors ${
+                  className={`hover:bg-theme-border/20 transition-colors ${
                     !isActiva ? 'opacity-65 bg-theme-base/30' : ''
                   }`}
                 >
