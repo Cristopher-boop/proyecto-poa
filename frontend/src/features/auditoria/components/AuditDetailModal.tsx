@@ -86,7 +86,7 @@ export const AuditDetailModal: React.FC<AuditDetailModalProps> = ({ log, isOpen,
         {/* Cabecera del Servidor Público Responsable */}
         <div className="p-4 rounded-2xl bg-theme-surface-subtle border border-theme-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-theme-primary/10 text-theme-primary flex items-center justify-center font-bold text-base shrink-0 shadow-inner">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300 border border-blue-500/20 dark:border-blue-400/25 flex items-center justify-center font-bold text-base shrink-0 shadow-sm">
               {log.usuario_nombre ? log.usuario_nombre.substring(0, 2).toUpperCase() : 'SI'}
             </div>
             <div>

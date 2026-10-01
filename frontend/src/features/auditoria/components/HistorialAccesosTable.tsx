@@ -12,6 +12,23 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../../../services/authService';
 
+const getRoleBadgeStyle = (rol: string, isSuper?: boolean) => {
+  if (isSuper) {
+    return 'bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-500/30 dark:border-purple-400/30';
+  }
+  const r = (rol || '').toUpperCase();
+  if (r.includes('GERENTE') || r.includes('APROBADOR')) {
+    return 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/30 dark:border-amber-400/30';
+  }
+  if (r.includes('PLANIFIC')) {
+    return 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/30 dark:border-blue-400/30';
+  }
+  if (r.includes('ELABORADOR')) {
+    return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/30 dark:border-emerald-400/30';
+  }
+  return 'bg-theme-border/30 text-theme-main border-theme-border';
+};
+
 interface HistorialAccesosTableProps {
   usuarios: UserProfile[];
   loading: boolean;
@@ -107,14 +124,14 @@ export const HistorialAccesosTable: React.FC<HistorialAccesosTableProps> = ({ us
                   const d = row.last_login ? new Date(row.last_login) : null;
 
                   return (
-                    <tr key={row.id} className="hover:bg-theme-border/20 transition-colors">
+                    <tr key={row.id} className="hover:bg-theme-border/20 transition-colors group">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-theme-primary/10 text-theme-primary font-bold text-xs flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300 border border-blue-500/20 dark:border-blue-400/25 font-bold text-xs flex items-center justify-center shrink-0">
                             {fullName.substring(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-theme-main truncate text-xs">{fullName}</p>
+                            <p className="font-bold text-theme-main truncate text-xs group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{fullName}</p>
                             <span className="text-[11px] text-theme-muted font-mono block">@{row.username}</span>
                           </div>
                         </div>
@@ -132,7 +149,7 @@ export const HistorialAccesosTable: React.FC<HistorialAccesosTableProps> = ({ us
                       </td>
 
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-theme-border/30 text-theme-main border border-theme-border">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getRoleBadgeStyle(row.rol_nombre || '', row.is_superuser)}`}>
                           {row.is_superuser ? 'SUPERADMIN' : row.rol_nombre || 'USUARIO'}
                         </span>
                       </td>

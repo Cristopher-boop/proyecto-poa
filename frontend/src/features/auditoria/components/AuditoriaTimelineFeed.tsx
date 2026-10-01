@@ -135,8 +135,8 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
   return (
     <div className="space-y-4">
       {/* Panel de Filtros Operativos */}
-      <div className="card p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+      <div className="p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm space-y-3 relative z-30">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 relative z-30">
           {/* Buscador Textual */}
           <div className="lg:col-span-4 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" size={15} />
@@ -165,6 +165,7 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
               onChange={(val) => onModuloChange(String(val))}
               placeholder="Módulo: Todos"
               size="md"
+              searchable={false}
             />
           </div>
 
@@ -176,6 +177,7 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
               onChange={(val) => onActionFlagChange(String(val))}
               placeholder="Acción: Todas"
               size="md"
+              searchable={false}
             />
           </div>
 
@@ -187,7 +189,7 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
               onChange={(val) => onWorkerFilterChange(String(val))}
               placeholder="Servidor: Todos"
               size="md"
-              searchable={workerItems.length > 5}
+              searchable={false}
             />
           </div>
         </div>
@@ -200,7 +202,7 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
           {hasActiveFilters && (
             <button
               onClick={handleResetFilters}
-              className="text-theme-primary font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw size={12} />
               <span>Limpiar filtros</span>
@@ -266,12 +268,12 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
 
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-theme-primary/10 text-theme-primary font-bold text-xs flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300 border border-blue-500/20 dark:border-blue-400/25 font-bold text-xs flex items-center justify-center shrink-0">
                             {log.usuario_nombre ? log.usuario_nombre.substring(0, 2).toUpperCase() : 'SI'}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-theme-main truncate block text-xs group-hover:text-theme-primary transition-colors">
+                              <span className="font-bold text-theme-main truncate block text-xs group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                 {log.usuario_nombre}
                               </span>
                               <span className="text-[10px] text-theme-muted font-mono">@{log.usuario_username}</span>

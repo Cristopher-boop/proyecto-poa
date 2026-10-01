@@ -14,7 +14,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { WorkerWorkflowSummary } from '../types/auditoria.types';
-import { Dropdown, DropdownItem } from '../../../components/commons';
+import { Button, Dropdown, DropdownItem } from '../../../components/commons';
 
 interface FlujoTrabajadoresMatrixProps {
   trabajadores: WorkerWorkflowSummary[];
@@ -87,8 +87,8 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
   return (
     <div className="space-y-4">
       {/* Barra de Filtros de Trabajadores */}
-      <div className="card p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+      <div className="p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm relative z-30">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 relative z-30">
           <div className="sm:col-span-6 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" size={15} />
             <input
@@ -115,6 +115,7 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
               onChange={(val) => setSelectedRole(String(val))}
               placeholder="Rol: Todos"
               size="md"
+              searchable={false}
             />
           </div>
 
@@ -125,7 +126,7 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
               onChange={(val) => setSelectedArea(String(val))}
               placeholder="Área: Todas"
               size="md"
-              searchable={areaItems.length > 5}
+              searchable={false}
             />
           </div>
         </div>
@@ -179,12 +180,12 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
                   {/* Encabezado del Servidor */}
                   <div className="flex items-start justify-between gap-2.5 mb-3">
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded-xl bg-theme-primary/10 text-theme-primary font-bold text-xs flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300 border border-blue-500/20 dark:border-blue-400/25 font-bold text-xs flex items-center justify-center shrink-0">
                         {worker.nombre_completo.substring(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4
-                          className="text-xs sm:text-sm font-bold text-theme-main truncate group-hover:text-theme-primary transition-colors leading-tight"
+                          className="text-xs sm:text-sm font-bold text-theme-main truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight"
                           title={worker.nombre_completo}
                         >
                           {worker.nombre_completo}
@@ -216,9 +217,9 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
                     </p>
                   </div>
 
-                  {/* Métricas de Participación */}
+                  {/* Métricas de Participación (Bordes Azules en las 3 cajas) */}
                   <div className="grid grid-cols-3 gap-2 text-center mb-3.5">
-                    <div className="p-2 rounded-xl bg-theme-surface-subtle">
+                    <div className="p-2 rounded-xl bg-theme-surface-subtle border border-blue-500/30 dark:border-blue-400/25">
                       <span className="text-[10px] font-bold uppercase text-theme-muted block">Memorias</span>
                       <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
                         {worker.memorias_elaboradas + worker.memorias_revisadas + worker.memorias_aprobadas}
@@ -226,7 +227,7 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
                       <span className="text-[9px] text-theme-muted block">({worker.memorias_elaboradas} elab.)</span>
                     </div>
 
-                    <div className="p-2 rounded-xl bg-theme-surface-subtle">
+                    <div className="p-2 rounded-xl bg-theme-surface-subtle border border-blue-500/30 dark:border-blue-400/25">
                       <span className="text-[10px] font-bold uppercase text-theme-muted block">Gastos</span>
                       <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                         {worker.gastos_registrados}
@@ -236,16 +237,16 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
                       </span>
                     </div>
 
-                    <div className="p-2 rounded-xl bg-theme-surface-subtle">
+                    <div className="p-2 rounded-xl bg-theme-surface-subtle border border-blue-500/30 dark:border-blue-400/25">
                       <span className="text-[10px] font-bold uppercase text-theme-muted block">Bitácora</span>
                       <span className="text-xs font-bold text-theme-main">{worker.total_acciones}</span>
                       <span className="text-[9px] text-theme-muted block">acciones</span>
                     </div>
                   </div>
 
-                  {/* Última Acción Registrada */}
+                  {/* Última Acción Registrada (Borde Azul en la caja de último movimiento) */}
                   {hasRecentActivity && (
-                    <div className="mb-4 p-2.5 rounded-xl bg-theme-surface-subtle text-[11px]">
+                    <div className="mb-4 p-2.5 rounded-xl bg-theme-surface-subtle border border-blue-500/30 dark:border-blue-400/25 text-[11px]">
                       <span className="text-[10px] uppercase font-bold text-theme-muted flex items-center gap-1 mb-1">
                         <Clock size={11} />
                         Último movimiento
@@ -265,14 +266,16 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
                   )}
                 </div>
 
-                {/* Botón de Expediente */}
-                <button
+                {/* Botón de Expediente utilizando el componente Button del sistema */}
+                <Button
+                  variant="primary"
+                  size="md"
                   onClick={() => onOpenWorkerModal(worker.id)}
-                  className="w-full py-2 px-3 rounded-xl border border-theme-border text-xs font-semibold text-theme-main hover:bg-theme-primary hover:text-theme-primaryText dark:hover:text-white hover:border-theme-primary transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm group-hover:border-theme-primary/50"
+                  className="w-full flex items-center justify-center gap-1.5 cursor-pointer mt-1"
                 >
                   <span>Ver Expediente Operativo</span>
                   <ArrowRight size={13} />
-                </button>
+                </Button>
               </div>
             );
           })}

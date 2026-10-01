@@ -124,7 +124,7 @@ export const AuditoriaLogsTable: React.FC<AuditoriaLogsTableProps> = ({
       width: '240px',
       render: (row) => (
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-theme-primary/10 text-theme-primary font-bold text-xs flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300 border border-blue-500/20 dark:border-blue-400/25 font-bold text-xs flex items-center justify-center shrink-0">
             {row.usuario_nombre ? row.usuario_nombre.substring(0, 2).toUpperCase() : 'SI'}
           </div>
           <div className="min-w-0">
@@ -282,7 +282,7 @@ export const AuditoriaLogsTable: React.FC<AuditoriaLogsTableProps> = ({
           {hasActiveFilters && (
             <button
               onClick={handleResetFilters}
-              className="text-theme-primary font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw size={12} />
               <span>Limpiar filtros</span>

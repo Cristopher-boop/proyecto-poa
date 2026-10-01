@@ -58,16 +58,6 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
             </div>
 
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-md bg-theme-primary/10 text-theme-primary text-[10px] font-bold uppercase tracking-wider">
-                  Superadministración
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Registro Inmutable Activo
-                </span>
-              </div>
-
               <h1 className="text-xl sm:text-2xl font-bold font-display text-theme-main tracking-tight">
                 Auditoría & Trazabilidad Operativa
               </h1>
@@ -250,8 +240,8 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
                 onClick={() => onTimeRangeChange(p.id as any)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
                   timeRange === p.id
-                    ? 'bg-theme-primary/15 text-theme-primary border border-theme-primary/30 font-bold'
-                    : 'text-theme-muted hover:text-theme-main hover:bg-theme-surface border border-transparent'
+                    ? 'bg-blue-600 text-white font-bold shadow-sm'
+                    : 'text-theme-muted hover:text-theme-main hover:bg-theme-surface-subtle'
                 }`}
               >
                 {p.label}

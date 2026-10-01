@@ -14,6 +14,7 @@ import {
   Info,
 } from 'lucide-react';
 import { AuditLogEntry } from '../types/auditoria.types';
+import { Button } from '../../../components/commons';
 
 interface AuditoriaInspectorDrawerProps {
   log: AuditLogEntry | null;
@@ -139,7 +140,7 @@ export const AuditoriaInspectorDrawer: React.FC<AuditoriaInspectorDrawerProps> =
             {/* Tarjeta del Servidor Público */}
             <div className="p-4 rounded-xl bg-theme-surface-subtle border border-theme-border space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-theme-primary/15 text-theme-primary font-bold text-sm flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300 border border-blue-500/20 dark:border-blue-400/25 font-bold text-sm flex items-center justify-center shrink-0">
                   {log.usuario_nombre ? log.usuario_nombre.substring(0, 2).toUpperCase() : 'SI'}
                 </div>
                 <div className="min-w-0">
@@ -227,12 +228,9 @@ export const AuditoriaInspectorDrawer: React.FC<AuditoriaInspectorDrawerProps> =
 
           {/* Footer del Inspector */}
           <div className="p-4 border-t border-theme-border bg-theme-surface flex justify-end">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-xl border border-theme-border text-theme-main hover:bg-theme-surface-subtle transition-colors cursor-pointer"
-            >
+            <Button variant="secondary" onClick={onClose}>
               Cerrar Inspector
-            </button>
+            </Button>
           </div>
         </div>
       </div>
