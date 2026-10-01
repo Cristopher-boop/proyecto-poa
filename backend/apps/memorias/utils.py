@@ -30,15 +30,29 @@ def recalcular_saldos_memoria(memoria):
     # 2. Total ejecutado
     total_ejecutado_memoria = memoria.gastos.aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
 
-    # 3. Monto entrante = SUM(monto) de traspasos de entrada aprobados
-    monto_entrante = memoria.traspasos_entrada.filter(
+    # 3. Monto entrante = SUM(monto) de traspasos de entrada aprobados + incrementos de modificaciones
+    monto_entrante_traspasos = memoria.traspasos_entrada.filter(
         estado='APROBADO'
     ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
 
-    # 4. Monto saliente = SUM(monto) de traspasos de salida aprobados
-    monto_saliente = memoria.traspasos_salida.filter(
+    monto_entrante_modificaciones = memoria.detalles_modificacion.filter(
+        modificacion__estado='APROBADO',
+        tipo_movimiento='INCREMENTO'
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+
+    monto_entrante = monto_entrante_traspasos + monto_entrante_modificaciones
+
+    # 4. Monto saliente = SUM(monto) de traspasos de salida aprobados + disminuciones de modificaciones
+    monto_saliente_traspasos = memoria.traspasos_salida.filter(
         estado='APROBADO'
     ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+
+    monto_saliente_modificaciones = memoria.detalles_modificacion.filter(
+        modificacion__estado='APROBADO',
+        tipo_movimiento='DISMINUCION'
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+
+    monto_saliente = monto_saliente_traspasos + monto_saliente_modificaciones
 
     # 5. Saldo disponible global de la memoria
     saldo_disponible_memoria = (total_presupuestado_memoria + monto_entrante) - monto_saliente - total_ejecutado_memoria

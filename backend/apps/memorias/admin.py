@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria, TraspasoPresupuestario
+from .models import (
+    MemoriaCalculo, RegistroMemoriaUsuario, DetallePresupuestoMemoria,
+    TraspasoPresupuestario, ModificacionPresupuestaria, DetalleModificacion
+)
 
 class DetallePresupuestoInline(admin.TabularInline):
     model = DetallePresupuestoMemoria
@@ -7,6 +10,10 @@ class DetallePresupuestoInline(admin.TabularInline):
 
 class RegistroUsuarioInline(admin.TabularInline):
     model = RegistroMemoriaUsuario
+    extra = 1
+
+class DetalleModificacionInline(admin.TabularInline):
+    model = DetalleModificacion
     extra = 1
 
 @admin.register(MemoriaCalculo)
@@ -27,4 +34,12 @@ class TraspasoPresupuestarioAdmin(admin.ModelAdmin):
     list_display = ('id', 'memoria_origen', 'memoria_destino', 'monto', 'estado', 'usuario_registro', 'created_at')
     list_filter = ('estado', 'memoria_origen__seccion__area')
     search_fields = ('memoria_origen__codigo', 'memoria_destino__codigo', 'motivo')
+
+@admin.register(ModificacionPresupuestaria)
+class ModificacionPresupuestariaAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'gestion', 'area', 'tipo', 'total_monto', 'estado', 'usuario_registro', 'fecha')
+    list_filter = ('gestion', 'tipo', 'estado', 'area')
+    search_fields = ('codigo', 'motivo', 'area__nombre')
+    inlines = [DetalleModificacionInline]
+
 
