@@ -30,6 +30,8 @@ import {
   getModificaciones,
   createModificacion,
 } from '../../services/presupuestoService';
+import { PageHeader, GestionSelector } from '../../components/commons';
+import alertService from '../../utils/alerts';
 
 interface FilaItem {
   id: string;
@@ -163,7 +165,12 @@ export default function TraspasosPage() {
 
   function mostrarMensaje(type: 'success' | 'error', text: string) {
     setFeedbackMsg({ type, text });
-    setTimeout(() => setFeedbackMsg(null), 4500);
+    if (type === 'success') {
+      alertService.toast(text, 'success');
+    } else {
+      alertService.error('Traspasos', text);
+    }
+    setTimeout(() => setFeedbackMsg(null), 4000);
   }
 
   const activeGestion = useMemo(() => {
@@ -358,6 +365,14 @@ export default function TraspasosPage() {
       return;
     }
 
+    const confirm = await alertService.confirm({
+      title: 'Confirmar Traspaso',
+      text: `¿Desea transferir ${formatMoney(montoNum)} de ${memoriaOrigenSeleccionada?.codigo || 'Origen'} a ${memoriaDestinoSeleccionada?.codigo || 'Destino'}?`,
+      icon: 'question',
+      confirmButtonText: 'Sí, registrar traspaso',
+    });
+    if (!confirm) return;
+
     setActionLoading(true);
     try {
       await createModificacion({
@@ -409,52 +424,37 @@ export default function TraspasosPage() {
         </div>
       )}
 
-      {/* Encabezado del Módulo */}
-      <div className="card p-6 border border-theme-border bg-theme-surface shadow-sm">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <ArrowRightLeft className="text-theme-primary" size={24} />
-              <h1 className="text-xl font-bold text-theme-main font-display">Modificaciones Presupuestarias</h1>
-            </div>
-            <p className="text-xs text-theme-muted mt-1">
-              Traspasos compensados intra-área (1 a N, N a 1 o M a N) entre memorias de cálculo
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* Selector de Gestión */}
-            <div className="flex items-center gap-2 bg-theme-border/30 px-3 py-1.5 rounded-xl border border-theme-border">
-              <Calendar size={15} className="text-theme-muted" />
-              <select
-                value={selectedGestionId || ''}
-                onChange={(e) => setSelectedGestionId(Number(e.target.value))}
-                className="bg-transparent text-xs font-bold text-theme-main outline-none cursor-pointer"
-              >
-                {gestiones.map((g) => (
-                  <option key={g.id} value={g.id} className="bg-theme-surface text-theme-main">
-                    Gestión {g.anio} ({g.estado.replace('_', ' ')})
-                  </option>
-                ))}
-              </select>
-            </div>
+      {/* Cabecera Principal Unificada */}
+      <PageHeader
+        icon={<ArrowRightLeft size={24} />}
+        title="Modificaciones Presupuestarias"
+        subtitle="Reasignación de recursos financieros y saldos entre memorias de cálculo de una misma área organizacional"
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <GestionSelector
+              gestiones={gestiones}
+              selectedGestionId={selectedGestionId}
+              onSelectGestion={(id) => setSelectedGestionId(id)}
+            />
 
             {/* Botón Nueva Modificación */}
             <button
               onClick={handleOpenModal}
-              disabled={isGestionBloqueada}
-              className="btn-primary text-xs px-4 py-2 rounded-xl flex items-center gap-2 font-semibold shadow-sm shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isGestionBloqueada ? 'Solo habilitado en gestiones En Ejecución' : 'Registrar nueva modificación'}
+              disabled={isGestionBloqueada || loading}
+              className={`btn-primary text-xs flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-md transition-all ${
+                isGestionBloqueada ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'
+              }`}
+              title={isGestionBloqueada ? 'Las modificaciones solo están permitidas en gestiones En Ejecución' : undefined}
             >
-              <Plus size={16} />
-              <span>Nueva Modificación (M:N)</span>
+              <Plus size={15} />
+              <span>Nueva Modificación</span>
             </button>
           </div>
-        </div>
-
+        }
+      >
         {/* Advertencia si Gestión Bloqueada */}
         {isGestionBloqueada && activeGestion && (
-          <div className="mt-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex items-center gap-3 text-xs font-medium">
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex items-center gap-3 text-xs font-medium">
             <Lock size={18} className="shrink-0" />
             <div>
               <span className="font-bold">Gestión {activeGestion.anio} ({activeGestion.estado.replace('_', ' ')}): </span>
@@ -462,7 +462,8 @@ export default function TraspasosPage() {
             </div>
           </div>
         )}
-      </div>
+      </PageHeader>
+
 
       {/* Tarjetas KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

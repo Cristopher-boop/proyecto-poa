@@ -66,7 +66,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
       case 'PENDIENTE_GERENCIA':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/90 dark:text-amber-200 dark:border-amber-700 shadow-sm"><Send size={12} /> Pendiente Gerencia</span>;
       case 'PENDIENTE_PLANIFICACION':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-950/90 dark:text-indigo-200 dark:border-indigo-700 shadow-sm"><CheckCircle2 size={12} /> Pendiente PlanificaciÃ³n</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-950/90 dark:text-indigo-200 dark:border-indigo-700 shadow-sm"><CheckCircle2 size={12} /> Pendiente Planificación</span>;
       case 'APROBADO_GERENCIA':
       case 'APROBADO_PLANIFICACION':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/90 dark:text-blue-200 dark:border-blue-700 shadow-sm"><CheckCircle2 size={12} /> Pendiente Presupuestos</span>;
@@ -88,7 +88,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
       const fresca = await getMemoria(fichaMemoria.id);
       setFichaMemoria(fresca);
     } catch (err: any) {
-      alertService.error('Error', 'No se pudo enviar a revisiÃ³n.');
+      alertService.error('Error', 'No se pudo enviar a revisión.');
     } finally { setActionLoading(false); }
   }
 
@@ -108,7 +108,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
   }
 
   async function handleAprobarPlanificacion() {
-    const nota = await alertService.prompt({ title: 'Aprobar por PlanificaciÃ³n', text: 'Puede adjuntar una nota:' });
+    const nota = await alertService.prompt({ title: 'Aprobar por Planificación', text: 'Puede adjuntar una nota:' });
     if (nota === null) return;
     try {
       setActionLoading(true);
@@ -123,7 +123,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
   }
 
   async function handleAprobarFinanciero() {
-    const nota = await alertService.prompt({ title: 'AprobaciÃ³n Final', text: 'Puede adjuntar una nota:' });
+    const nota = await alertService.prompt({ title: 'Aprobación Final', text: 'Puede adjuntar una nota:' });
     if (nota === null) return;
     try {
       setActionLoading(true);
@@ -466,7 +466,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
             {/* Footer con Acciones Directas de Revisión */}
             <div className="p-4 border-t border-theme-border flex items-center justify-between">
               <div>
-                {!isGestionBloqueada && fichaMemoria.estado !== 'APROBADO_FINANZAS' && (isElaborador || isGerente || isPlanificador || isAprobador) && (
+                {!isGestionBloqueada && !fichaMemoria.estado.includes('APROBADO') && (isElaborador || isGerente || isPlanificador || isAprobador) && (
                   <button
                     onClick={() => {
                       const targetMem = fichaMemoria;
@@ -484,13 +484,9 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                 {/* 1. Acción de Borrador: Enviar a Gerencia / Eliminar */}
                 {fichaMemoria.estado === 'BORRADOR' && (
                   <>
-                    {!isGestionBloqueada && (isElaborador || isAprobador || isGerente) && (
+                    {!isGestionBloqueada && (isElaborador || isGerente || isSuperuser) && (
                       <button
-                        onClick={() => {
-                          const targetId = fichaMemoria.id;
-                          onClose();
-                          handleDelete();
-                        }}
+                        onClick={() => handleDelete()}
                         className="px-3 py-2 rounded-xl border border-rose-500/50 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1"
                       >
                         <Trash2 size={14} /> Eliminar

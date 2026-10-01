@@ -8,6 +8,7 @@ import AppShell from "./components/layout/AppShell";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import PresupuestosPage from "./pages/presupuestos/PresupuestosPage";
 import PartidasPage from "./pages/partidas/PartidasPage";
+import PartidasPageLegacy from "./pages/partidas/PartidasPageLegacy";
 import MemoriasPage from "./pages/memorias/MemoriasPage";
 import MemoriasPageLegacy from "./pages/memorias/MemoriasPageLegacy";
 import EjecucionPage from "./pages/ejecucion/EjecucionPage";
@@ -31,6 +32,7 @@ export default function App() {
                   <Route index element={<DashboardPage />} />
                   <Route path="presupuestos" element={<PresupuestosPage />} />
                   <Route path="partidas" element={<PartidasPage />} />
+                  <Route path="partidas-legacy" element={<PartidasPageLegacy />} />
                   <Route path="certificaciones" element={<CertificacionesPage />} />
                   <Route path="memorias" element={<MemoriasPage />} />
                   <Route path="memorias-legacy" element={<MemoriasPageLegacy />} />

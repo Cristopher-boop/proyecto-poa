@@ -190,7 +190,7 @@ export const GastoFormModal: React.FC<GastoFormModalProps> = ({
               />
             </div>
 
-            <div className="max-h-44 overflow-y-auto divide-y divide-theme-border/50 border border-theme-border/50 rounded-lg bg-theme-surface">
+            <div className="max-h-44 overflow-y-auto divide-y divide-theme-border border border-theme-border rounded-lg bg-theme-surface">
               {memoriasFiltradas.length === 0 ? (
                 <div className="py-6 text-center text-xs text-theme-muted">
                   No se encontraron memorias disponibles con saldo.

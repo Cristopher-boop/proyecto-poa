@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { MemoriaCalculo } from '../api/memoriasApi';
-import { Eye, Edit3, Trash2, Send, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Edit3, Trash2, Send, FileText } from 'lucide-react';
+import { Pagination } from '../../../components/commons';
 
 interface MemoriasListProps {
   memorias: MemoriaCalculo[];
   loading: boolean;
   canCreate: boolean;
+  isElaborador?: boolean;
   isGerente: boolean;
   isPlanificador: boolean;
   isAprobador: boolean;
+  isSuperuser?: boolean;
   onView: (id: number) => void;
   onEdit: (memoria: MemoriaCalculo) => void;
   onDelete: (id: number) => void;
@@ -19,9 +22,11 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
   memorias,
   loading,
   canCreate,
+  isElaborador = false,
   isGerente,
   isPlanificador,
   isAprobador,
+  isSuperuser = false,
   onView,
   onEdit,
   onDelete,
@@ -107,16 +112,61 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
                       {getEstadoBadge(memoria.estado)}
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: 1 }}>
-                        <button onClick={() => onView(memoria.id)} className="p-2 text-theme-muted hover:text-indigo-500 hover:bg-indigo-500/10 rounded-xl transition-colors" title="Ver Ficha Técnica y Acciones de Revisión">
-                          <Eye size={17} />
-                        </button>
-                        {(canCreate || memoria.estado === 'BORRADOR') && (
-                          <button onClick={() => onEdit(memoria)} className="p-2 text-theme-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-xl transition-colors" title="Editar">
-                            <Edit3 size={17} />
-                          </button>
-                        )}
-                      </div>
+                      {(() => {
+                        const isAprobada = Boolean(memoria.estado && memoria.estado.includes('APROBADO'));
+                        const canEditMemoria = !isAprobada && (isSuperuser || isAprobador || isGerente || isElaborador);
+                        const canDeleteMemoria = memoria.estado === 'BORRADOR' && (isSuperuser || isGerente || isElaborador);
+
+                        return (
+                          <div className="flex items-center justify-center gap-1">
+                            {/* Ojito - Ver Ficha Técnica para todos los roles */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onView(memoria.id);
+                              }}
+                              className="p-1.5 text-theme-muted hover:text-indigo-500 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                              title="Ver Ficha Técnica y Detalles"
+                              aria-label={`Ver detalle de ${memoria.codigo}`}
+                            >
+                              <Eye size={16} />
+                            </button>
+
+                            {/* Lápiz - Modificar solo si NO ha sido aprobada */}
+                            {canEditMemoria && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(memoria);
+                              }}
+                              className="p-1.5 text-theme-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
+                              title="Editar Memoria de Cálculo"
+                              aria-label={`Editar ${memoria.codigo}`}
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                          )}
+
+                          {/* Basurero - Eliminar solo si está en BORRADOR */}
+                          {canDeleteMemoria && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(memoria.id);
+                              }}
+                              className="p-1.5 text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                              title="Eliminar Memoria en Borrador"
+                              aria-label={`Eliminar ${memoria.codigo}`}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
                     </td>
                   </tr>
                 );
@@ -126,32 +176,13 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
         </table>
       </div>
       
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-theme-border bg-theme-base/40">
-          <span className="text-xs text-theme-muted font-medium">
-            Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, memorias.length)} de {memorias.length} resultados
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-              className="p-1 rounded-lg border border-theme-border bg-theme-surface text-theme-main disabled:opacity-50 transition-colors hover:bg-theme-border/20"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <span className="text-xs font-semibold px-2">
-              Página {currentPage} de {totalPages}
-            </span>
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className="p-1 rounded-lg border border-theme-border bg-theme-surface text-theme-main disabled:opacity-50 transition-colors hover:bg-theme-border/20"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalItems={memorias.length}
+        pageSize={itemsPerPage}
+        onPageChange={setCurrentPage}
+        itemLabel="resultados"
+      />
     </div>
   );
 };

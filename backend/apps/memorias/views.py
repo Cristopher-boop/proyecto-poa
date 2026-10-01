@@ -145,15 +145,23 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError({'non_field_errors': ['Tu rol no tiene permiso para editar memorias.']})
         if not self.check_area_permission(serializer.instance):
              raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para editar memorias de esta área.']})
+        if serializer.instance.estado in [
+            MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA,
+            MemoriaCalculo.EstadoMemoria.APROBADO_PLANIFICACION,
+            MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
+        ]:
+            raise serializers.ValidationError({'non_field_errors': ['No se puede modificar una memoria de cálculo que ya ha sido aprobada.']})
              
         memoria = MemoriaCalculoService.actualizar_memoria(serializer.instance, serializer.validated_data, self.request.data)
         serializer.instance = memoria
 
     def perform_destroy(self, instance):
-        if not self.check_role_permission(['APROBADOR', 'ELABORADOR', 'GERENTE']):
-            raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para eliminar memorias.']})
+        if not (self.request.user.is_superuser or self.check_role_permission(['GERENTE', 'ELABORADOR'])):
+            raise serializers.ValidationError({'non_field_errors': ['Solo el Elaborador, Gerente de área o Administrador pueden eliminar memorias de cálculo.']})
         if not self.check_area_permission(instance):
              raise serializers.ValidationError({'non_field_errors': ['No puedes eliminar memorias de otra área.']})
+        if instance.estado != MemoriaCalculo.EstadoMemoria.BORRADOR:
+            raise serializers.ValidationError({'non_field_errors': ['Solo se pueden eliminar memorias de cálculo que se encuentren en estado Borrador.']})
         
         MemoriaCalculoService.eliminar_memoria(instance)
 
