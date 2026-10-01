@@ -5,12 +5,16 @@ import {
   XCircle,
   X,
   Users,
+  Shield,
+  Building2,
+  RotateCcw,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react';
 import { UserProfile } from '../../../services/authService';
+import { Dropdown, DropdownItem } from '../../../components/commons';
 
 const getRoleBadgeStyle = (rol: string, isSuper?: boolean) => {
   if (isSuper) {
@@ -36,25 +40,66 @@ interface HistorialAccesosTableProps {
 
 export const HistorialAccesosTable: React.FC<HistorialAccesosTableProps> = ({ usuarios, loading }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState('TODOS');
+  const [selectedArea, setSelectedArea] = useState('TODAS');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
+  const roleItems: DropdownItem[] = useMemo(() => {
+    const set = new Set<string>();
+    usuarios.forEach((u) => {
+      if (u.is_superuser) set.add('SUPERADMINISTRADOR');
+      else if (u.rol_nombre) set.add(u.rol_nombre);
+    });
+    return [
+      { id: 'TODOS', label: 'Todos los Roles' },
+      ...Array.from(set).sort().map((r) => ({
+        id: r,
+        label: r,
+        triggerLabel: r.toUpperCase() === 'SUPERADMINISTRADOR' ? 'Superadmin' : r,
+      })),
+    ];
+  }, [usuarios]);
+
+  const areaItems: DropdownItem[] = useMemo(() => {
+    const set = new Set<string>();
+    usuarios.forEach((u) => {
+      if (u.area_nombre) set.add(u.area_nombre);
+    });
+    return [
+      { id: 'TODAS', label: 'Todas las Áreas' },
+      ...Array.from(set).sort().map((a) => ({
+        id: a,
+        label: a,
+        triggerLabel: a,
+      })),
+    ];
+  }, [usuarios]);
+
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return usuarios;
-    const term = searchTerm.toLowerCase().trim();
-    return usuarios.filter(
-      (u) =>
+    return usuarios.filter((u) => {
+      const term = searchTerm.toLowerCase().trim();
+      const matchSearch =
+        !term ||
         u.username.toLowerCase().includes(term) ||
         `${u.first_name} ${u.last_name}`.toLowerCase().includes(term) ||
         (u.rol_nombre || '').toLowerCase().includes(term) ||
         (u.area_nombre || '').toLowerCase().includes(term) ||
-        (u.cargo || '').toLowerCase().includes(term)
-    );
-  }, [usuarios, searchTerm]);
+        (u.cargo || '').toLowerCase().includes(term);
+
+      const matchRole =
+        selectedRole === 'TODOS' ||
+        (selectedRole === 'SUPERADMINISTRADOR' ? u.is_superuser : u.rol_nombre === selectedRole);
+
+      const matchArea = selectedArea === 'TODAS' || u.area_nombre === selectedArea;
+
+      return matchSearch && matchRole && matchArea;
+    });
+  }, [usuarios, searchTerm, selectedRole, selectedArea]);
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedRole, selectedArea]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = useMemo(() => {
@@ -64,29 +109,75 @@ export const HistorialAccesosTable: React.FC<HistorialAccesosTableProps> = ({ us
 
   return (
     <div className="space-y-4">
-      {/* Barra de Búsqueda */}
-      <div className="card p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="w-full sm:max-w-md relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" size={15} />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por usuario, servidor, rol o área..."
-            className="w-full pl-9 pr-8 py-2 text-xs bg-theme-surface border border-theme-border rounded-xl focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted transition-colors"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main cursor-pointer"
-            >
-              <X size={13} />
-            </button>
-          )}
+      {/* Barra de Filtros de Accesos */}
+      <div className="p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm relative z-30 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 relative z-30 items-center">
+          <div className="sm:col-span-6 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-theme-muted" />
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por usuario, servidor, rol o cargo..."
+              className="block w-full pl-9 pr-8 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all placeholder:text-theme-muted"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main p-0.5 rounded transition-colors cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="sm:col-span-3">
+            <Dropdown
+              items={roleItems}
+              value={selectedRole}
+              onChange={(val) => setSelectedRole(String(val))}
+              placeholder="Todos los Roles"
+              icon={<Shield className="h-3.5 w-3.5 text-theme-muted" />}
+              size="sm"
+              searchable={false}
+            />
+          </div>
+
+          <div className="sm:col-span-3">
+            <Dropdown
+              items={areaItems}
+              value={selectedArea}
+              onChange={(val) => setSelectedArea(String(val))}
+              placeholder="Todas las Áreas"
+              icon={<Building2 className="h-3.5 w-3.5 text-theme-muted" />}
+              size="sm"
+              searchable={areaItems.length > 5}
+              searchPlaceholder="Buscar área..."
+            />
+          </div>
         </div>
 
-        <div className="text-xs text-theme-muted self-end sm:self-center">
-          Servidores registrados: <strong className="text-theme-main">{filtered.length}</strong>
+        <div className="flex items-center justify-between text-xs text-theme-muted pt-2.5 border-t border-theme-border/60">
+          <span>
+            Servidores registrados: <strong>{filtered.length}</strong>
+          </span>
+          {(searchTerm || selectedRole !== 'TODOS' || selectedArea !== 'TODAS') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedRole('TODOS');
+                setSelectedArea('TODAS');
+              }}
+              className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw size={12} />
+              <span>Limpiar filtros</span>
+            </button>
+          )}
         </div>
       </div>
 

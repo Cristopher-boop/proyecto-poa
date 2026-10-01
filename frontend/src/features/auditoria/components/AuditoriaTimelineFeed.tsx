@@ -10,6 +10,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Layers,
+  Activity,
+  User,
 } from 'lucide-react';
 import { AuditLogEntry, WorkerWorkflowSummary } from '../types/auditoria.types';
 import { Dropdown, DropdownItem } from '../../../components/commons';
@@ -102,32 +105,32 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
   };
 
   const moduloItems: DropdownItem[] = useMemo(() => [
-    { id: 'TODOS', label: 'Todos los Módulos', triggerLabel: 'Módulo: Todos' },
-    { id: 'MEMORIAS', label: 'Memorias de Cálculo', triggerLabel: 'Módulo: Memorias' },
-    { id: 'EJECUCIÓN', label: 'Ejecución Presupuestaria (Gastos)', triggerLabel: 'Módulo: Gastos' },
-    { id: 'MODIFICACIONES', label: 'Modificaciones & Traspasos', triggerLabel: 'Módulo: Traspasos' },
-    { id: 'CERTIFICACIONES', label: 'Certificaciones POA', triggerLabel: 'Módulo: Certificaciones' },
-    { id: 'PRESUPUESTOS', label: 'Presupuestos & Techos', triggerLabel: 'Módulo: Presupuestos' },
-    { id: 'GESTIONES', label: 'Gestiones Fiscales', triggerLabel: 'Módulo: Gestiones' },
-    { id: 'AUTENTICACIÓN', label: 'Inicios de Sesión', triggerLabel: 'Módulo: Logins' },
-    { id: 'ORGANIZACIONAL', label: 'Estructura Organizacional', triggerLabel: 'Módulo: Estructura' },
-    { id: 'USUARIOS', label: 'Usuarios y Cuentas', triggerLabel: 'Módulo: Usuarios' },
+    { id: 'TODOS', label: 'Todos los Módulos' },
+    { id: 'MEMORIAS', label: 'Memorias de Cálculo', triggerLabel: 'Memorias' },
+    { id: 'EJECUCIÓN', label: 'Ejecución Presupuestaria (Gastos)', triggerLabel: 'Gastos' },
+    { id: 'MODIFICACIONES', label: 'Modificaciones & Traspasos', triggerLabel: 'Traspasos' },
+    { id: 'CERTIFICACIONES', label: 'Certificaciones POA', triggerLabel: 'Certificaciones' },
+    { id: 'PRESUPUESTOS', label: 'Presupuestos & Techos', triggerLabel: 'Presupuestos' },
+    { id: 'GESTIONES', label: 'Gestiones Fiscales', triggerLabel: 'Gestiones' },
+    { id: 'AUTENTICACIÓN', label: 'Inicios de Sesión', triggerLabel: 'Logins' },
+    { id: 'ORGANIZACIONAL', label: 'Estructura Organizacional', triggerLabel: 'Estructura' },
+    { id: 'USUARIOS', label: 'Usuarios y Cuentas', triggerLabel: 'Usuarios' },
   ], []);
 
   const actionItems: DropdownItem[] = useMemo(() => [
-    { id: 'TODOS', label: 'Todas las Acciones', triggerLabel: 'Acción: Todas' },
-    { id: '1', label: 'Creación (Adición)', triggerLabel: 'Acción: Creación' },
-    { id: '2', label: 'Modificación (Cambio)', triggerLabel: 'Acción: Modificación' },
-    { id: '3', label: 'Eliminación', triggerLabel: 'Acción: Eliminación' },
-    { id: 'LOGIN', label: 'Inicio de Sesión', triggerLabel: 'Acción: Sesión' },
+    { id: 'TODOS', label: 'Todas las Acciones' },
+    { id: '1', label: 'Creación (Adición)', triggerLabel: 'Creación' },
+    { id: '2', label: 'Modificación (Cambio)', triggerLabel: 'Modificación' },
+    { id: '3', label: 'Eliminación', triggerLabel: 'Eliminación' },
+    { id: 'LOGIN', label: 'Inicio de Sesión', triggerLabel: 'Sesión' },
   ], []);
 
   const workerItems: DropdownItem[] = useMemo(() => [
-    { id: 'TODOS', label: 'Todos los Servidores Públicos', triggerLabel: 'Servidor: Todos' },
+    { id: 'TODOS', label: 'Todos los Servidores Públicos', triggerLabel: 'Todos los Servidores' },
     ...trabajadores.map((t) => ({
       id: String(t.id),
       label: `${t.nombre_completo} (@${t.username})`,
-      triggerLabel: `Servidor: ${t.username}`,
+      triggerLabel: t.nombre_completo,
       sublabel: t.cargo || t.area,
     })),
   ], [trabajadores]);
@@ -136,23 +139,26 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
     <div className="space-y-4">
       {/* Panel de Filtros Operativos */}
       <div className="p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm space-y-3 relative z-30">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 relative z-30">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 relative z-30 items-center">
           {/* Buscador Textual */}
           <div className="lg:col-span-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" size={15} />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-theme-muted" />
+            </div>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar por código, usuario, objeto o detalle..."
-              className="w-full pl-9 pr-8 py-2 text-xs bg-theme-surface border border-theme-border rounded-xl focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted transition-colors"
+              className="block w-full pl-9 pr-8 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all placeholder:text-theme-muted"
             />
             {searchTerm && (
               <button
+                type="button"
                 onClick={() => onSearchChange('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main p-0.5 rounded transition-colors cursor-pointer"
               >
-                <X size={13} />
+                <X size={14} />
               </button>
             )}
           </div>
@@ -163,8 +169,9 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
               items={moduloItems}
               value={selectedModulo}
               onChange={(val) => onModuloChange(String(val))}
-              placeholder="Módulo: Todos"
-              size="md"
+              placeholder="Todos los Módulos"
+              icon={<Layers className="h-3.5 w-3.5 text-theme-muted" />}
+              size="sm"
               searchable={false}
             />
           </div>
@@ -175,8 +182,9 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
               items={actionItems}
               value={selectedActionFlag}
               onChange={(val) => onActionFlagChange(String(val))}
-              placeholder="Acción: Todas"
-              size="md"
+              placeholder="Todas las Acciones"
+              icon={<Activity className="h-3.5 w-3.5 text-theme-muted" />}
+              size="sm"
               searchable={false}
             />
           </div>
@@ -187,9 +195,11 @@ export const AuditoriaTimelineFeed: React.FC<AuditoriaTimelineFeedProps> = ({
               items={workerItems}
               value={selectedWorkerFilter}
               onChange={(val) => onWorkerFilterChange(String(val))}
-              placeholder="Servidor: Todos"
-              size="md"
-              searchable={false}
+              placeholder="Todos los Servidores"
+              icon={<User className="h-3.5 w-3.5 text-theme-muted" />}
+              size="sm"
+              searchable={workerItems.length > 5}
+              searchPlaceholder="Buscar servidor..."
             />
           </div>
         </div>

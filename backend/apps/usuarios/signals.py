@@ -5,24 +5,26 @@ from django.contrib.contenttypes.models import ContentType
 
 def get_system_user_id():
     from apps.usuarios.models import Usuario
-    user = Usuario.objects.filter(is_superuser=True).first()
-    return user.id if user else 1
+    user = Usuario.objects.filter(is_superuser=True).first() or Usuario.objects.first()
+    return user.id if user else None
 
 
 # --- MEMORIAS DE CÁLCULO ---
 @receiver(post_save, sender='memorias.MemoriaCalculo')
 def log_memoria_save(sender, instance, created, **kwargs):
     try:
-        action_flag = ADDITION if created else CHANGE
-        message = f"Memoria {instance.codigo} creada (Estado: {instance.get_estado_display()})" if created else f"Memoria {instance.codigo} actualizada (Estado: {instance.get_estado_display()})"
-        
         user_id = get_system_user_id()
-        # Intentar obtener el elaborador si existe
         if hasattr(instance, 'participaciones'):
             part = instance.participaciones.filter(tipo_participacion='ELABORADOR').first()
             if part and part.usuario_id:
                 user_id = part.usuario_id
-            
+
+        if not user_id:
+            return
+
+        action_flag = ADDITION if created else CHANGE
+        message = f"Memoria {instance.codigo} creada (Estado: {instance.get_estado_display()})" if created else f"Memoria {instance.codigo} actualizada (Estado: {instance.get_estado_display()})"
+
         LogEntry.objects.create(
             user_id=user_id,
             content_type_id=ContentType.objects.get_for_model(instance).id,
@@ -38,6 +40,9 @@ def log_memoria_save(sender, instance, created, **kwargs):
 def log_memoria_delete(sender, instance, **kwargs):
     try:
         user_id = get_system_user_id()
+        if not user_id:
+            return
+
         LogEntry.objects.create(
             user_id=user_id,
             content_type_id=ContentType.objects.get_for_model(instance).id,
@@ -54,12 +59,15 @@ def log_memoria_delete(sender, instance, **kwargs):
 @receiver(post_save, sender='ejecucion.Gasto')
 def log_gasto_save(sender, instance, created, **kwargs):
     try:
+        user_id = instance.usuario_registro_id or get_system_user_id()
+        if not user_id:
+            return
+
         action_flag = ADDITION if created else CHANGE
         comp = f" | Comp. N° {instance.comprobante_num}" if instance.comprobante_num else ""
         mem_code = instance.memoria.codigo if instance.memoria else "Sin Memoria"
         message = f"Registro de Gasto: Bs. {instance.monto_ejecutado:,.2f} en {mem_code}{comp}" if created else f"Gasto modificado: Bs. {instance.monto_ejecutado:,.2f} en {mem_code}"
-        user_id = instance.usuario_registro_id or get_system_user_id()
-        
+
         LogEntry.objects.create(
             user_id=user_id,
             content_type_id=ContentType.objects.get_for_model(instance).id,
@@ -74,8 +82,11 @@ def log_gasto_save(sender, instance, created, **kwargs):
 @receiver(post_delete, sender='ejecucion.Gasto')
 def log_gasto_delete(sender, instance, **kwargs):
     try:
-        mem_code = instance.memoria.codigo if instance.memoria else "Sin Memoria"
         user_id = instance.usuario_registro_id or get_system_user_id()
+        if not user_id:
+            return
+
+        mem_code = instance.memoria.codigo if instance.memoria else "Sin Memoria"
         LogEntry.objects.create(
             user_id=user_id,
             content_type_id=ContentType.objects.get_for_model(instance).id,
@@ -92,11 +103,14 @@ def log_gasto_delete(sender, instance, **kwargs):
 @receiver(post_save, sender='memorias.TraspasoPresupuestario')
 def log_traspaso_save(sender, instance, created, **kwargs):
     try:
+        user_id = instance.usuario_registro_id or get_system_user_id()
+        if not user_id:
+            return
+
         action_flag = ADDITION if created else CHANGE
         origen = instance.memoria_origen.codigo if instance.memoria_origen else "?"
         destino = instance.memoria_destino.codigo if instance.memoria_destino else "?"
-        user_id = instance.usuario_registro_id or get_system_user_id()
-        
+
         LogEntry.objects.create(
             user_id=user_id,
             content_type_id=ContentType.objects.get_for_model(instance).id,
@@ -113,10 +127,13 @@ def log_traspaso_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender='ejecucion.CertificacionPOA')
 def log_certificacion_save(sender, instance, created, **kwargs):
     try:
+        user_id = instance.creado_por_id or get_system_user_id()
+        if not user_id:
+            return
+
         action_flag = ADDITION if created else CHANGE
         area_nom = instance.area.nombre if instance.area else "Área Institucional"
-        user_id = instance.creado_por_id or get_system_user_id()
-        
+
         LogEntry.objects.create(
             user_id=user_id,
             content_type_id=ContentType.objects.get_for_model(instance).id,
@@ -133,8 +150,11 @@ def log_certificacion_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender='presupuestos.Gestion')
 def log_gestion_save(sender, instance, created, **kwargs):
     try:
-        action_flag = ADDITION if created else CHANGE
         user_id = get_system_user_id()
+        if not user_id:
+            return
+
+        action_flag = ADDITION if created else CHANGE
         LogEntry.objects.create(
             user_id=user_id,
             content_type_id=ContentType.objects.get_for_model(instance).id,

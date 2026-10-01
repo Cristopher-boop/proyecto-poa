@@ -226,8 +226,8 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
         {/* Filtro Rápido de Rango de Fechas (Solo visible en Bitácora) */}
         {activeTab === 'BITACORA' && (
           <div className="flex items-center gap-1 self-end sm:self-center shrink-0 text-xs">
-            <span className="text-[11px] font-semibold text-theme-muted mr-1 hidden lg:inline flex items-center gap-1">
-              <Calendar size={12} /> Periodo:
+            <span className="text-[11px] font-semibold text-theme-muted mr-1 flex items-center gap-1">
+              <Calendar size={13} /> Periodo:
             </span>
             {[
               { id: 'TODAS', label: 'Todo' },
@@ -238,9 +238,9 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
               <button
                 key={p.id}
                 onClick={() => onTimeRangeChange(p.id as any)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                   timeRange === p.id
-                    ? 'bg-blue-600 text-white font-bold shadow-sm'
+                    ? 'bg-theme-primary text-theme-primaryText dark:text-white font-bold shadow-sm'
                     : 'text-theme-muted hover:text-theme-main hover:bg-theme-surface-subtle'
                 }`}
               >

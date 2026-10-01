@@ -29,6 +29,7 @@ import { planificacionService } from '../../services/planificacionService';
 import { Operacion } from '../../types/planificacion';
 import { CertificacionPOA, CertificacionFormData } from '../../types/certificacion';
 import { certificacionService } from '../../services/certificacionService';
+import alertService from '../../utils/alerts';
 
 export default function CertificacionesPage() {
   const { user } = useAuth();
@@ -102,6 +103,13 @@ export default function CertificacionesPage() {
 
   const showFeedback = (type: 'success' | 'error' | 'info', text: string) => {
     setFeedbackMsg({ type, text });
+    if (type === 'success') {
+      alertService.success('Operación Exitosa', text);
+    } else if (type === 'error') {
+      alertService.error('Atención', text);
+    } else {
+      alertService.info('Información', text);
+    }
     setTimeout(() => setFeedbackMsg(null), 6000);
   };
 
@@ -379,7 +387,13 @@ export default function CertificacionesPage() {
   // ── Flujo: Enviar a Planificación (Gerente) ──────────────────────────────────
   const handleEnviarPlanificacion = async () => {
     if (!activeCertId) return;
-    if (!window.confirm('¿Desea enviar esta certificación a Planificación para su revisión y aprobación?')) return;
+    const confirmed = await alertService.confirm({
+      title: '¿Enviar a Planificación?',
+      text: '¿Desea enviar esta certificación a Planificación para su revisión y aprobación formal?',
+      confirmButtonText: 'Sí, enviar',
+      icon: 'question',
+    });
+    if (!confirmed) return;
 
     try {
       setActionLoading(true);
@@ -397,7 +411,13 @@ export default function CertificacionesPage() {
   // ── Flujo: Aprobar Certificación (Solo Planificador) ──────────────────────────
   const handleAprobar = async () => {
     if (!canApprove || !activeCertId) return;
-    if (!window.confirm('¿Está seguro de Aprobar formalmente esta Certificación POA? Se devolverá aprobada a la Gerencia.')) return;
+    const confirmed = await alertService.confirm({
+      title: '¿Aprobar Certificación POA?',
+      text: '¿Está seguro de Aprobar formalmente esta Certificación POA? Se devolverá aprobada a la Gerencia solicitante.',
+      confirmButtonText: 'Sí, aprobar',
+      icon: 'question',
+    });
+    if (!confirmed) return;
 
     try {
       setActionLoading(true);
@@ -417,7 +437,7 @@ export default function CertificacionesPage() {
   const handleConfirmarObservacion = async () => {
     if (!canApprove || !activeCertId) return;
     if (!textoObservacion.trim()) {
-      alert('Por favor ingrese el motivo u observación.');
+      alertService.error('Campo Requerido', 'Por favor ingrese el motivo u observación.');
       return;
     }
 
@@ -439,12 +459,18 @@ export default function CertificacionesPage() {
   // ── Eliminar Certificación ────────────────────────────────────────────────────
   const handleDelete = async () => {
     if (!canEdit || !activeCertId) return;
-    if (!window.confirm('¿Está seguro de eliminar esta certificación POA?')) return;
+    const confirmed = await alertService.confirm({
+      title: '¿Eliminar Certificación?',
+      text: 'Esta acción no se puede deshacer. ¿Está seguro de eliminar esta certificación POA?',
+      confirmButtonText: 'Sí, eliminar',
+      isDanger: true,
+    });
+    if (!confirmed) return;
 
     try {
       setActionLoading(true);
       await certificacionService.deleteCertificacion(activeCertId);
-      showFeedback('success', 'Certificación POA eliminada.');
+      showFeedback('success', 'Certificación POA eliminada exitosamente.');
       setActiveCertId(null);
       await fetchCertificaciones();
     } catch (err: any) {

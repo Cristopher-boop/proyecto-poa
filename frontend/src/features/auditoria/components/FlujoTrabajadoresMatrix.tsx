@@ -67,20 +67,20 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
   };
 
   const roleItems: DropdownItem[] = useMemo(() => [
-    { id: 'TODOS', label: 'Todos los Roles', triggerLabel: 'Rol: Todos' },
+    { id: 'TODOS', label: 'Todos los Roles' },
     ...roles.map((r) => ({
       id: r,
       label: r,
-      triggerLabel: `Rol: ${r.toUpperCase() === 'SUPERADMINISTRADOR' ? 'Superadmin' : r}`,
+      triggerLabel: r.toUpperCase() === 'SUPERADMINISTRADOR' ? 'Superadmin' : r,
     })),
   ], [roles]);
 
   const areaItems: DropdownItem[] = useMemo(() => [
-    { id: 'TODAS', label: 'Todas las Áreas', triggerLabel: 'Área: Todas' },
+    { id: 'TODAS', label: 'Todas las Áreas' },
     ...areas.map((a) => ({
       id: a,
       label: a,
-      triggerLabel: `Área: ${a}`,
+      triggerLabel: a,
     })),
   ], [areas]);
 
@@ -88,22 +88,25 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
     <div className="space-y-4">
       {/* Barra de Filtros de Trabajadores */}
       <div className="p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm relative z-30">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 relative z-30">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 relative z-30 items-center">
           <div className="sm:col-span-6 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" size={15} />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-theme-muted" />
+            </div>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por nombre, usuario, cargo o gerencia..."
-              className="w-full pl-9 pr-8 py-2 text-xs bg-theme-surface border border-theme-border rounded-xl focus:outline-none focus:border-theme-primary text-theme-main placeholder:text-theme-muted transition-colors"
+              className="block w-full pl-9 pr-8 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all placeholder:text-theme-muted"
             />
             {searchTerm && (
               <button
+                type="button"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-main p-0.5 rounded transition-colors cursor-pointer"
               >
-                <X size={13} />
+                <X size={14} />
               </button>
             )}
           </div>
@@ -113,8 +116,9 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
               items={roleItems}
               value={selectedRole}
               onChange={(val) => setSelectedRole(String(val))}
-              placeholder="Rol: Todos"
-              size="md"
+              placeholder="Todos los Roles"
+              icon={<Shield className="h-3.5 w-3.5 text-theme-muted" />}
+              size="sm"
               searchable={false}
             />
           </div>
@@ -124,9 +128,11 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
               items={areaItems}
               value={selectedArea}
               onChange={(val) => setSelectedArea(String(val))}
-              placeholder="Área: Todas"
-              size="md"
-              searchable={false}
+              placeholder="Todas las Áreas"
+              icon={<Building2 className="h-3.5 w-3.5 text-theme-muted" />}
+              size="sm"
+              searchable={areaItems.length > 5}
+              searchPlaceholder="Buscar área..."
             />
           </div>
         </div>

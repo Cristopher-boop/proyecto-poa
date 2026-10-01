@@ -25,6 +25,7 @@ import {
   createTraspaso,
 } from '../../services/presupuestoService';
 import { PageHeader, GestionSelector } from '../../components/commons';
+import alertService from '../../utils/alerts';
 
 export default function TraspasosPage() {
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
@@ -108,6 +109,11 @@ export default function TraspasosPage() {
 
   function mostrarMensaje(type: 'success' | 'error', text: string) {
     setFeedbackMsg({ type, text });
+    if (type === 'success') {
+      alertService.toast(text, 'success');
+    } else {
+      alertService.error('Traspasos', text);
+    }
     setTimeout(() => setFeedbackMsg(null), 4000);
   }
 
@@ -217,6 +223,14 @@ export default function TraspasosPage() {
       mostrarMensaje('error', `Monto excede el saldo disponible de origen (${formatMoney(disponibleOrigen)}).`);
       return;
     }
+
+    const confirm = await alertService.confirm({
+      title: 'Confirmar Traspaso',
+      text: `¿Desea transferir ${formatMoney(montoNum)} de ${memoriaOrigenSeleccionada?.codigo || 'Origen'} a ${memoriaDestinoSeleccionada?.codigo || 'Destino'}?`,
+      icon: 'question',
+      confirmButtonText: 'Sí, registrar traspaso',
+    });
+    if (!confirm) return;
 
     setActionLoading(true);
     try {

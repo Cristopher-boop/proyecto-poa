@@ -30,6 +30,7 @@ import {
 } from '../../../services/presupuestoService';
 import { useAuth } from '../../../hooks/useAuth';
 import { useGestion } from '../../../contexts/GestionContext';
+import alertService from '../../../utils/alerts';
 
 export const MESES: MesOption[] = [
   { value: 1, label: 'Enero' },
@@ -199,6 +200,11 @@ export function usePresupuestos() {
 
   const mostrarMensaje = (type: 'success' | 'error', text: string) => {
     setFeedbackMsg({ type, text });
+    if (type === 'success') {
+      alertService.toast(text, 'success');
+    } else {
+      alertService.error('Presupuestos', text);
+    }
     setTimeout(() => setFeedbackMsg(null), 4500);
   };
 
@@ -437,7 +443,16 @@ export function usePresupuestos() {
 
   // Acciones de Gestión
   const handleCerrarFormulacion = async () => {
-    if (!selectedGestionId || !confirm('¿Desea cerrar la formulación? Se consolidarán automáticamente los techos presupuestarios.')) return;
+    if (!selectedGestionId) return;
+    const confirm = await alertService.confirm({
+      title: 'Cerrar Formulación',
+      text: '¿Desea cerrar la formulación? Se consolidarán automáticamente los techos presupuestarios.',
+      icon: 'warning',
+      isDanger: true,
+      confirmButtonText: 'Sí, cerrar formulación',
+    });
+    if (!confirm) return;
+
     setActionLoading(true);
     try {
       const r = await cerrarFormulacionGestion(selectedGestionId);
@@ -452,7 +467,15 @@ export function usePresupuestos() {
   };
 
   const handlePasarEjecucion = async () => {
-    if (!selectedGestionId || !confirm('¿Pasar la gestión a estado EN EJECUCIÓN?')) return;
+    if (!selectedGestionId) return;
+    const confirm = await alertService.confirm({
+      title: 'Pasar a Ejecución',
+      text: '¿Pasar la gestión a estado EN EJECUCIÓN? Esta acción iniciará el control de partidas en fase operativa.',
+      icon: 'question',
+      confirmButtonText: 'Sí, pasar a ejecución',
+    });
+    if (!confirm) return;
+
     setActionLoading(true);
     try {
       const r = await pasarAEjecucionGestion(selectedGestionId);
@@ -460,14 +483,22 @@ export function usePresupuestos() {
       await refetchGestiones();
       await cargarBase();
     } catch (e: any) {
-      mostrarMensaje('error', e.response?.data?.error || 'Error.');
+      mostrarMensaje('error', e.response?.data?.error || 'Error al pasar a ejecución.');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleReabrir = async () => {
-    if (!selectedGestionId || !confirm('¿Reabrir la formulación de esta gestión?')) return;
+    if (!selectedGestionId) return;
+    const confirm = await alertService.confirm({
+      title: 'Reabrir Formulación',
+      text: '¿Reabrir la formulación de esta gestión? Se permitirán nuevamente ajustes a los presupuestos iniciales.',
+      icon: 'warning',
+      confirmButtonText: 'Sí, reabrir',
+    });
+    if (!confirm) return;
+
     setActionLoading(true);
     try {
       const r = await reabrirFormulacionGestion(selectedGestionId);
@@ -475,7 +506,7 @@ export function usePresupuestos() {
       await refetchGestiones();
       await cargarBase();
     } catch (e: any) {
-      mostrarMensaje('error', e.response?.data?.error || 'Error.');
+      mostrarMensaje('error', e.response?.data?.error || 'Error al reabrir formulación.');
     } finally {
       setActionLoading(false);
     }
@@ -483,13 +514,21 @@ export function usePresupuestos() {
 
   const handleConsolidar = async () => {
     if (!selectedGestionId) return;
+    const confirm = await alertService.confirm({
+      title: 'Consolidar Presupuestos',
+      text: '¿Desea consolidar y recalcular los techos presupuestarios de todas las áreas para esta gestión?',
+      icon: 'question',
+      confirmButtonText: 'Sí, consolidar',
+    });
+    if (!confirm) return;
+
     setActionLoading(true);
     try {
       const r = await consolidarPresupuestosGestion(selectedGestionId);
       mostrarMensaje('success', r.message);
       await cargarDatos(selectedGestionId);
     } catch (e: any) {
-      mostrarMensaje('error', e.response?.data?.error || 'Error.');
+      mostrarMensaje('error', e.response?.data?.error || 'Error al consolidar presupuestos.');
     } finally {
       setActionLoading(false);
     }
