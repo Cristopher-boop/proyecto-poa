@@ -30,6 +30,7 @@ import { Operacion } from '../../types/planificacion';
 import { CertificacionPOA, CertificacionFormData } from '../../types/certificacion';
 import { certificacionService } from '../../services/certificacionService';
 import alertService from '../../utils/alerts';
+import { GestionSelector } from '../../components/commons';
 
 export default function CertificacionesPage() {
   const { user } = useAuth();
@@ -703,21 +704,11 @@ export default function CertificacionesPage() {
         {/* Barra Fija de Filtros y Botones */}
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* Selector de Gestión */}
-          <div className="flex items-center gap-1.5 bg-theme-bg border border-theme-border rounded-xl px-3 py-1.5 text-xs">
-            <Calendar size={14} className="text-theme-muted" />
-            <span className="text-theme-muted font-medium">Gestión:</span>
-            <select
-              value={selectedGestionId || ''}
-              onChange={(e) => setSelectedGestionId(Number(e.target.value))}
-              className="bg-transparent font-bold text-theme-main focus:outline-none cursor-pointer"
-            >
-              {gestiones.map((g) => (
-                <option key={g.id} value={g.id} className="bg-theme-card text-theme-main">
-                  {g.anio}
-                </option>
-              ))}
-            </select>
-          </div>
+          <GestionSelector
+            gestiones={gestiones}
+            selectedGestionId={selectedGestionId}
+            onSelectGestion={(id) => setSelectedGestionId(id)}
+          />
 
 
 

@@ -6,6 +6,8 @@ export interface DropdownItem {
   label: string;
   triggerLabel?: string;
   badge?: string;
+  badgeClassName?: string;
+  badgePosition?: 'start' | 'end';
   sublabel?: string;
   group?: string;
   groupBadge?: string;
@@ -27,11 +29,14 @@ export interface DropdownProps {
   error?: boolean;
   emptyMessage?: string;
   icon?: React.ReactNode;
+  prefix?: React.ReactNode;
   maxHeight?: string;
   size?: 'sm' | 'md';
   menuMinWidth?: string;
   menuClassName?: string;
   showBadgeInTrigger?: boolean;
+  align?: 'left' | 'right';
+  badgePosition?: 'start' | 'end';
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -49,11 +54,14 @@ export const Dropdown: React.FC<DropdownProps> = ({
   error = false,
   emptyMessage = 'No se encontraron opciones',
   icon,
+  prefix,
   maxHeight = '260px',
   size = 'md',
   menuMinWidth,
   menuClassName = '',
   showBadgeInTrigger = false,
+  align = 'left',
+  badgePosition = 'start',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -141,6 +149,24 @@ export const Dropdown: React.FC<DropdownProps> = ({
   };
 
   const isInvalid = error || (required && !selectedItem);
+  const alignClass = align === 'right' ? 'right-0 left-auto' : 'left-0';
+
+  const renderItemBadge = (it: DropdownItem, isSelected: boolean) => {
+    if (!it.badge) return null;
+    return (
+      <span
+        className={`shrink-0 font-mono text-[10px] px-2 py-0.5 rounded-md font-semibold whitespace-nowrap transition-colors ${
+          it.badgeClassName
+            ? it.badgeClassName
+            : isSelected
+            ? 'bg-theme-primary/15 text-theme-primary border border-theme-primary/30 font-bold'
+            : 'bg-theme-border/40 text-theme-muted border border-theme-border/60'
+        }`}
+      >
+        {it.badge}
+      </span>
+    );
+  };
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
@@ -163,26 +189,32 @@ export const Dropdown: React.FC<DropdownProps> = ({
             : isInvalid
             ? 'border-amber-500/50 bg-amber-500/5 hover:border-amber-500'
             : selectedItem
-            ? 'border-theme-border bg-theme-surface hover:border-slate-400 dark:hover:border-slate-500'
-            : 'border-theme-border bg-theme-surface hover:border-slate-300 dark:hover:border-slate-600'
-        } ${isOpen ? 'ring-2 ring-slate-400/25 border-slate-400 dark:ring-slate-500/30 dark:border-slate-500' : ''} ${triggerClassName}`}
+            ? 'border-theme-border bg-theme-surface hover:bg-theme-border/20'
+            : 'border-theme-border bg-theme-surface hover:bg-theme-border/20'
+        } ${isOpen ? 'ring-2 ring-theme-primary/20 border-theme-primary' : ''} ${triggerClassName}`}
       >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {icon && <span className="text-theme-muted shrink-0">{icon}</span>}
+          {prefix && <span className="text-xs font-semibold text-theme-muted shrink-0 select-none">{prefix}</span>}
           {selectedItem ? (
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {showBadgeInTrigger && selectedItem.badge && (
-                <span className="shrink-0 font-mono font-bold text-[11px] bg-slate-100 text-slate-900 border border-slate-300 dark:bg-slate-800 dark:text-white dark:border-slate-700 px-1.5 py-0.5 rounded">
+                <span
+                  className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded ${
+                    selectedItem.badgeClassName ||
+                    'bg-theme-border/40 text-theme-main border border-theme-border'
+                  }`}
+                >
                   {selectedItem.badge}
                 </span>
               )}
-              <span className="flex-1 min-w-0 font-semibold text-theme-main line-clamp-1">
+              <span className="flex-1 min-w-0 font-semibold text-theme-main truncate">
                 {selectedItem.triggerLabel || selectedItem.label}
               </span>
             </div>
           ) : (
             <span
-              className={`flex items-center gap-1.5 line-clamp-1 ${
+              className={`flex items-center gap-1.5 truncate ${
                 isInvalid
                   ? 'text-amber-600 dark:text-amber-400 font-semibold'
                   : 'text-theme-muted'
@@ -195,9 +227,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
         </div>
 
         <ChevronDown
-          size={16}
+          size={15}
           className={`shrink-0 text-theme-muted transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-theme-main' : ''
+            isOpen ? 'rotate-180 text-theme-primary' : ''
           }`}
         />
       </button>
@@ -205,7 +237,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       {/* Menú Desplegable Flotante */}
       {isOpen && (
         <div
-          className={`absolute left-0 z-50 mt-1.5 bg-theme-surface border border-theme-border rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100 ${menuClassName}`}
+          className={`absolute ${alignClass} z-50 mt-1.5 bg-theme-surface border border-theme-border rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100 ${menuClassName}`}
           style={{ minWidth: menuMinWidth || '100%' }}
         >
           {/* Barra de Búsqueda */}
@@ -222,7 +254,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 text-theme-main placeholder:text-theme-muted"
+                  className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border border-theme-border bg-theme-base focus:outline-none focus:ring-1 focus:ring-theme-primary focus:border-theme-primary text-theme-main placeholder:text-theme-muted"
                 />
                 {searchQuery && (
                   <button
@@ -261,48 +293,44 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   {/* Items del Grupo */}
                   {g.items.map((it) => {
                     const isSelected = String(it.id) === String(value);
+                    const effectiveBadgePos = it.badgePosition || badgePosition;
                     return (
                       <button
                         key={it.id}
                         type="button"
                         disabled={it.disabled}
                         onClick={() => handleSelect(it)}
-                        className={`w-full flex items-start gap-2.5 px-3 py-2 text-left transition-colors ${
+                        className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-left transition-colors ${
                           isSelected
-                            ? 'bg-slate-100 dark:bg-slate-800/90'
+                            ? 'bg-theme-border/25 text-theme-main font-semibold'
                             : it.disabled
                             ? 'opacity-40 cursor-not-allowed'
-                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                            : 'hover:bg-theme-border/15 text-theme-main'
                         }`}
                       >
-                        {it.badge && (
-                          <span
-                            className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
-                              isSelected
-                                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold'
-                                : 'bg-slate-100 text-slate-900 border border-slate-300/80 dark:bg-slate-800 dark:text-white dark:border-slate-700'
-                            }`}
-                          >
-                            {it.badge}
-                          </span>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className={`text-xs leading-tight ${
-                              isSelected ? 'font-bold text-slate-900 dark:text-white' : 'text-theme-main'
-                            }`}
-                          >
-                            {it.label}
-                          </p>
-                          {it.sublabel && (
-                            <p className="text-[10px] text-theme-muted mt-0.5 line-clamp-1">
-                              {it.sublabel}
+                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                          {effectiveBadgePos === 'start' && renderItemBadge(it, isSelected)}
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`text-xs leading-tight whitespace-nowrap ${
+                                isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
+                              }`}
+                            >
+                              {it.label}
                             </p>
+                            {it.sublabel && (
+                              <p className="text-[10px] text-theme-muted mt-0.5 truncate">
+                                {it.sublabel}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {effectiveBadgePos === 'end' && renderItemBadge(it, isSelected)}
+                          {isSelected && (
+                            <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                           )}
                         </div>
-                        {isSelected && (
-                          <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-                        )}
                       </button>
                     );
                   })}
@@ -311,50 +339,44 @@ export const Dropdown: React.FC<DropdownProps> = ({
             ) : (
               filteredItems.map((it) => {
                 const isSelected = String(it.id) === String(value);
+                const effectiveBadgePos = it.badgePosition || badgePosition;
                 return (
                   <button
                     key={it.id}
                     type="button"
                     disabled={it.disabled}
                     onClick={() => handleSelect(it)}
-                    className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 text-left transition-colors ${
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-left transition-colors ${
                       isSelected
-                        ? 'bg-slate-100 dark:bg-slate-800/90'
+                        ? 'bg-theme-border/25 text-theme-main font-semibold'
                         : it.disabled
                         ? 'opacity-40 cursor-not-allowed'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                        : 'hover:bg-theme-border/15 text-theme-main'
                     }`}
                   >
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {it.badge && (
-                        <span
-                          className={`shrink-0 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md ${
-                            isSelected
-                              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold'
-                              : 'bg-slate-100 text-slate-900 border border-slate-300/80 dark:bg-slate-800 dark:text-white dark:border-slate-700'
-                          }`}
-                        >
-                          {it.badge}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      {effectiveBadgePos === 'start' && renderItemBadge(it, isSelected)}
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-xs leading-tight ${
-                            isSelected ? 'font-bold text-slate-900 dark:text-white' : 'text-theme-main'
+                          className={`text-xs leading-tight whitespace-nowrap ${
+                            isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
                           }`}
                         >
                           {it.label}
                         </p>
                         {it.sublabel && (
-                          <p className="text-[10px] text-theme-muted mt-0.5 line-clamp-1">
+                          <p className="text-[10px] text-theme-muted mt-0.5 truncate">
                             {it.sublabel}
                           </p>
                         )}
                       </div>
                     </div>
-                    {isSelected && (
-                      <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {effectiveBadgePos === 'end' && renderItemBadge(it, isSelected)}
+                      {isSelected && (
+                        <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      )}
+                    </div>
                   </button>
                 );
               })

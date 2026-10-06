@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Gestion,
   PresupuestoArea,
@@ -113,6 +114,9 @@ export function usePresupuestos() {
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [searchParams] = useSearchParams();
+  const urlAreaParam = searchParams.get('area');
 
   // View state
   const [viewMode, setViewMode] = useState<PresupuestoViewMode>('general');
@@ -420,6 +424,21 @@ export function usePresupuestos() {
       setDetalleLoading(false);
     }
   };
+
+  // Auto-seleccionar área si viene en la URL (?area=12 o ?area=GAA)
+  useEffect(() => {
+    if (urlAreaParam && selectedGestionId && presupuestosArea.length > 0) {
+      const target = presupuestosArea.find(
+        (p) =>
+          String(p.area) === urlAreaParam ||
+          String(p.id) === urlAreaParam ||
+          (p.area_codigo && p.area_codigo.toLowerCase() === urlAreaParam.toLowerCase())
+      );
+      if (target && selectedAreaId !== target.area) {
+        handleSelectArea(target.area);
+      }
+    }
+  }, [urlAreaParam, selectedGestionId, presupuestosArea]);
 
   const irAGeneral = () => {
     setViewMode('general');
