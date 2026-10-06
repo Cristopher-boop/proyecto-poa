@@ -1115,7 +1115,7 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {/* 1. Partida Presupuestaria */}
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-xs font-semibold uppercase text-theme-muted mb-1">
                       1. Partida Presupuestaria de Egreso *
                     </label>
@@ -1132,7 +1132,7 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
                   </div>
 
                   {/* 2. Operación POA */}
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-semibold uppercase text-theme-muted">
                         2. Operación POA Institucional *

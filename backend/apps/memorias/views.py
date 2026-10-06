@@ -177,12 +177,14 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
         if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
             return Response({'error': 'No tienes permisos para enviar memorias.'}, status=status.HTTP_403_FORBIDDEN)
         
-        qs = self.get_queryset() # Ya filtrado por usuario en get_queryset
+        qs = self.get_queryset()
         gestion_id = request.data.get('gestion') or request.query_params.get('gestion')
         seccion_id = request.data.get('seccion') or request.query_params.get('seccion')
+        area_id = request.data.get('area') or request.query_params.get('area')
         
         if gestion_id: qs = qs.filter(gestion_id=gestion_id)
         if seccion_id: qs = qs.filter(seccion_id=seccion_id)
+        if area_id and str(area_id) != 'todas': qs = qs.filter(seccion__area_id=area_id)
             
         total = MemoriaCalculoService.enviar_todas_gerencia(qs, request.user)
         if total == 0:

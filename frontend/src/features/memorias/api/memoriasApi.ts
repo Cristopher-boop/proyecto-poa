@@ -57,7 +57,7 @@ export const memoriasApi = {
     return response.data;
   },
 
-  enviarTodasGerencia: async (params?: { gestion?: number; seccion?: number }) => {
+  enviarTodasGerencia: async (params?: { gestion?: number; seccion?: number; area?: number }) => {
     const response = await api.post('/api/v1/memorias/memorias-calculo/enviar-todas-gerencia/', params);
     return response.data;
   },

@@ -11,6 +11,7 @@ import { MemoriaForm } from '../../features/memorias/components/MemoriaForm';
 import { MemoriaDetalleModal } from '../../features/memorias/components/MemoriaDetalleModal';
 import { BookOpen, Plus } from 'lucide-react';
 import { Dropdown, PageHeader, GestionSelector } from '../../components/commons';
+import { memoriasApi } from '../../features/memorias/api/memoriasApi';
 
 export default function MemoriasPage() {
   const { user } = useAuth();
@@ -69,6 +70,7 @@ export default function MemoriasPage() {
   
   const canCreate = isAprobador || isElaborador || isGerente;
   const canGlobalView = isAprobador || isPlanificador;
+  const canEnviarBorradores = isSuperuser || isGerente || isElaborador;
 
   // Inicializar la pestaña según el rol del usuario autenticado
   useEffect(() => {
@@ -123,8 +125,55 @@ export default function MemoriasPage() {
     }
   };
 
-  const handleEnviarTodas = () => {
-    // TODO: Implementar con memoriasApi.enviarTodasGerencia
+  const handleEnviarTodas = async () => {
+    if (!canEnviarBorradores) {
+      alertService.warning('Acceso denegado', 'No tienes permisos para enviar memorias de cálculo.');
+      return;
+    }
+
+    if (isGestionBloqueada) {
+      alertService.warning('Gestión Bloqueada', 'La formulación para la gestión seleccionada está finalizada.');
+      return;
+    }
+
+    const cantidadBorradores = conteos?.borrador || 0;
+    if (cantidadBorradores === 0) {
+      alertService.info('Sin borradores', 'No existen memorias de cálculo en estado Borrador para enviar.');
+      return;
+    }
+
+    const confirmed = await alertService.confirm({
+      title: '¿Enviar todos los borradores?',
+      text: `¿Está seguro de enviar ${
+        cantidadBorradores === 1
+          ? 'la memoria de cálculo en borrador'
+          : `las ${cantidadBorradores} memorias de cálculo en borrador`
+      } a revisión formal de Gerencia?`,
+      confirmButtonText: 'Sí, enviar borradores',
+      cancelButtonText: 'Cancelar',
+      icon: 'question',
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const payload: { gestion?: number; seccion?: number; area?: number } = {};
+      if (selectedGestionId) payload.gestion = selectedGestionId;
+      if (filtroArea && filtroArea !== 'todas') payload.area = Number(filtroArea);
+
+      await handleAction(
+        () => memoriasApi.enviarTodasGerencia(payload),
+        cantidadBorradores === 1
+          ? 'Memoria enviada a revisión de Gerencia exitosamente.'
+          : `Se enviaron ${cantidadBorradores} memorias a revisión de Gerencia exitosamente.`
+      );
+    } catch (err: any) {
+      console.error('Error al enviar borradores:', err);
+      alertService.error(
+        'Error al enviar',
+        err?.response?.data?.error || err?.response?.data?.message || 'No se pudieron enviar las memorias.'
+      );
+    }
   };
 
   return (
@@ -189,6 +238,8 @@ export default function MemoriasPage() {
         isSuperuser={isSuperuser}
         isAprobador={isAprobador}
         isPlanificador={isPlanificador}
+        canEnviarBorradores={canEnviarBorradores}
+        isGestionBloqueada={isGestionBloqueada}
       />
 
       <MemoriasList

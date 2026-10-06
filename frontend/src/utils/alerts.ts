@@ -100,6 +100,26 @@ export const alertService = {
   },
 
   /**
+   * Alerta de advertencia
+   */
+  warning: (title: string, text?: string) => {
+    const dark = isDark();
+    return Swal.fire({
+      icon: 'warning',
+      title,
+      text,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#F59E0B',
+      background: dark ? '#272B33' : '#FFFFFF',
+      color: dark ? '#FFFFFF' : '#0F172A',
+      customClass: {
+        popup: 'rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700',
+        confirmButton: 'rounded-xl px-4 py-2 text-sm font-semibold',
+      },
+    });
+  },
+
+  /**
    * Diálogo de entrada de texto / motivo
    */
   prompt: async (options: {

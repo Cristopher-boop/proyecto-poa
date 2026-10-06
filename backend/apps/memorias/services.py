@@ -183,7 +183,7 @@ class MemoriaCalculoService:
 
         if total_enviadas > 0:
             user_name = usuario.get_full_name() or usuario.username
-            area_str = usuario.seccion.area.nombre if usuario.seccion and usuario.seccion.area else "el área"
+            area_str = usuario.seccion.area.nombre if getattr(usuario, 'seccion', None) and getattr(usuario.seccion, 'area', None) else "el área"
             MemoriaCalculoService._notificar(
                 rol_nombre='GERENTE',
                 titulo=f"Paquete de Memorias Enviado ({total_enviadas})",
