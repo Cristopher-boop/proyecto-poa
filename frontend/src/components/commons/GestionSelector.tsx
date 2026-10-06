@@ -15,6 +15,7 @@ export interface GestionSelectorProps {
   onSelectGestion: (id: number) => void;
   label?: string;
   size?: 'sm' | 'md';
+  align?: 'left' | 'right';
   className?: string;
   dropdownClassName?: string;
   triggerClassName?: string;
@@ -27,41 +28,53 @@ export const GestionSelector: React.FC<GestionSelectorProps> = ({
   onSelectGestion,
   label = 'Gestión',
   size = 'sm',
+  align = 'right',
   className = '',
   dropdownClassName = '',
   triggerClassName = '',
   disabled = false,
 }) => {
+  const getBadgeStyle = (estado?: string) => {
+    switch (estado) {
+      case 'EN_EJECUCION':
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25';
+      case 'FORMULACION':
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25';
+      case 'CERRADO_FORMULACION':
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25';
+      case 'FINALIZADO':
+      default:
+        return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/25';
+    }
+  };
+
   const items = useMemo((): DropdownItem[] => {
     return gestiones.map((g) => ({
       id: g.id,
       label: `Gestión ${g.anio}`,
-      triggerLabel: `Gestión ${g.anio}`,
-      badge: g.estado_display || undefined,
-      sublabel: g.estado_display ? `Estado: ${g.estado_display}` : undefined,
+      triggerLabel: `${g.anio}`,
+      badge: g.estado_display || (g.estado ? g.estado.replace(/_/g, ' ') : undefined),
+      badgeClassName: getBadgeStyle(g.estado),
+      badgePosition: 'end',
     }));
   }, [gestiones]);
 
   return (
-    <div
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-theme-border bg-theme-base text-theme-main hover:bg-theme-border/20 transition-all shadow-sm shrink-0 ${className}`}
-    >
-      <Calendar size={14} className="text-theme-muted shrink-0" />
-      <span className="text-xs font-semibold text-theme-muted shrink-0 select-none">
-        {label}:
-      </span>
-      <Dropdown
-        items={items}
-        value={selectedGestionId}
-        onChange={(val) => onSelectGestion(Number(val))}
-        placeholder="Seleccionar..."
-        size={size}
-        disabled={disabled}
-        searchable={false}
-        menuMinWidth="210px"
-        className={dropdownClassName || 'w-auto'}
-        triggerClassName={`!border-0 !bg-transparent !p-0 font-bold text-xs text-theme-main !shadow-none !ring-0 hover:text-theme-primary cursor-pointer ${triggerClassName}`}
-      />
-    </div>
+    <Dropdown
+      items={items}
+      value={selectedGestionId}
+      onChange={(val) => onSelectGestion(Number(val))}
+      placeholder="Seleccionar..."
+      icon={<Calendar size={14} className="text-theme-muted shrink-0" />}
+      prefix={label ? <span className="text-xs font-semibold text-theme-muted select-none">{label}:</span> : undefined}
+      size={size}
+      disabled={disabled}
+      searchable={false}
+      align={align}
+      badgePosition="end"
+      menuMinWidth="270px"
+      className={`inline-block shrink-0 ${className} ${dropdownClassName}`}
+      triggerClassName={`!border-theme-border !bg-theme-base hover:!bg-theme-border/20 font-bold text-xs text-theme-main shadow-xs rounded-xl cursor-pointer ${triggerClassName}`}
+    />
   );
 };

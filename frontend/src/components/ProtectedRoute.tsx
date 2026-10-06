@@ -1,4 +1,4 @@
-﻿import { Navigate, Outlet, type To } from 'react-router-dom';
+import { Navigate, Outlet, type To } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
@@ -14,8 +14,8 @@ export default function ProtectedRoute({ redirectTo = '/login' }: ProtectedRoute
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 rounded-full border-4 border-[#19499C] border-t-transparent animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-theme-base">
+        <div className="w-8 h-8 rounded-full border-4 border-theme-primary border-t-transparent animate-spin" />
       </div>
     );
   }

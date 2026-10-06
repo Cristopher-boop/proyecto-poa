@@ -39,9 +39,9 @@ describe('Reglas de Negocio Presupuestario - POA', () => {
   });
 
   test('Validación de Traspaso Intra-Área: No permitir traspaso entre diferentes áreas', () => {
-    const areaOrigenId = 1; // GAA
-    const areaDestinoMismaAreaId = 1; // GAA
-    const areaDestinoDistintaAreaId = 2; // GO
+    const areaOrigenId: number = 1; // GAA
+    const areaDestinoMismaAreaId: number = 1; // GAA
+    const areaDestinoDistintaAreaId: number = 2; // GO
 
     const esValidoMismaArea = areaOrigenId === areaDestinoMismaAreaId;
     const esValidoDistintaArea = areaOrigenId === areaDestinoDistintaAreaId;

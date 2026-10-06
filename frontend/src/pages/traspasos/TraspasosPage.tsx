@@ -366,10 +366,10 @@ export default function TraspasosPage() {
     }
 
     const confirm = await alertService.confirm({
-      title: 'Confirmar Traspaso',
-      text: `¿Desea transferir ${formatMoney(montoNum)} de ${memoriaOrigenSeleccionada?.codigo || 'Origen'} a ${memoriaDestinoSeleccionada?.codigo || 'Destino'}?`,
+      title: 'Confirmar Modificación Presupuestaria',
+      text: `¿Desea registrar esta modificación presupuestaria por un importe compensado de ${formatMoney(totalCedido)} entre ${filasOrigen.length} memoria(s) cedente(s) y ${filasDestino.length} receptora(s)?`,
       icon: 'question',
-      confirmButtonText: 'Sí, registrar traspaso',
+      confirmButtonText: 'Sí, registrar modificación',
     });
     if (!confirm) return;
 
