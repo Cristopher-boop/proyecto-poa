@@ -12,6 +12,8 @@ interface MemoriasFilterProps {
   areas: any[];
   canCreate: boolean;
   canGlobalView: boolean;
+  canEnviarBorradores?: boolean;
+  isGestionBloqueada?: boolean;
   onRefresh: () => void;
   onCreate: () => void;
   onEnviarTodas: () => void;
@@ -35,6 +37,8 @@ export const MemoriasFilter: React.FC<MemoriasFilterProps> = ({
   areas,
   canCreate,
   canGlobalView,
+  canEnviarBorradores,
+  isGestionBloqueada = false,
   onRefresh,
   onCreate,
   onEnviarTodas,
@@ -84,7 +88,7 @@ export const MemoriasFilter: React.FC<MemoriasFilterProps> = ({
           </button>
         )}
 
-        {(isPlanificador || isSuperuser) && (
+        {(isPlanificador && !isSuperuser) && (
           <button
             onClick={() => setActiveTab('planificacion')}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'planificacion' ? 'border-indigo-500 text-indigo-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'}`}
@@ -93,7 +97,7 @@ export const MemoriasFilter: React.FC<MemoriasFilterProps> = ({
           </button>
         )}
 
-        {(isAprobador || isSuperuser) && (
+        {(isAprobador && !isSuperuser) && (
           <button
             onClick={() => setActiveTab('finanzas')}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === 'finanzas' ? 'border-blue-500 text-blue-600 font-bold' : 'border-transparent text-theme-muted hover:text-theme-main'}`}
@@ -156,15 +160,22 @@ export const MemoriasFilter: React.FC<MemoriasFilterProps> = ({
         
         {/* Acciones Generales */}
         <div className="flex gap-2 w-full sm:w-auto">
-          {canCreate && activeTab === 'borrador' && (
-             <button
-               onClick={onEnviarTodas}
-               disabled={actionLoading}
-               className="flex-1 sm:flex-none btn border border-theme-border hover:bg-theme-border/10 text-theme-main px-4 py-2 rounded-lg text-sm font-semibold flex justify-center items-center gap-2 disabled:opacity-50 transition-all"
-             >
-               <Send size={16} className="text-green-500" />
-               <span>Enviar Borradores</span>
-             </button>
+          {canEnviarBorradores && (activeTab === 'borrador' || (conteos.borrador > 0 && activeTab === 'todas')) && (
+            <button
+              onClick={onEnviarTodas}
+              disabled={actionLoading || isGestionBloqueada || conteos.borrador === 0}
+              className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              title={
+                isGestionBloqueada
+                  ? 'La formulación de esta gestión está cerrada'
+                  : conteos.borrador === 0
+                  ? 'No hay memorias de cálculo en borrador'
+                  : 'Enviar todos los borradores a revisión'
+              }
+            >
+              <Send size={15} className="shrink-0" />
+              <span>Enviar Borradores {conteos.borrador > 0 ? `(${conteos.borrador})` : ''}</span>
+            </button>
           )}
           <button
             onClick={onRefresh}

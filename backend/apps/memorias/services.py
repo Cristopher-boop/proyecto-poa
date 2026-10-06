@@ -93,6 +93,128 @@ class MemoriaCalculoService:
 
     @staticmethod
     @transaction.atomic
+    def duplicar_lote_gestion(gestion_origen_id, gestion_destino_id, usuario, memorias_ids=None, memorias_modificadas=None):
+        gestion_destino = Gestion.objects.filter(id=gestion_destino_id).first()
+        if not gestion_destino:
+            raise ValidationError('La gestión de destino no existe.')
+        if gestion_destino.estado != Gestion.EstadoGestion.FORMULACION:
+            raise ValidationError(f'No se pueden crear memorias en la Gestión {gestion_destino.anio} porque la formulación está {gestion_destino.get_estado_display().lower()}.')
+
+        anio_destino = gestion_destino.anio
+        prefix = f"MEM-{anio_destino}-"
+        existing = MemoriaCalculo.objects.filter(codigo__startswith=prefix).values_list('codigo', flat=True)
+        max_num = 0
+        for c in existing:
+            try:
+                num_str = c.split('-')[-1]
+                num_val = int(num_str)
+                if num_val > max_num:
+                    max_num = num_val
+            except (ValueError, IndexError):
+                pass
+
+        creadas = []
+
+        if memorias_modificadas and isinstance(memorias_modificadas, list):
+            for m_item in memorias_modificadas:
+                max_num += 1
+                cod = f"{prefix}{str(max_num).zfill(3)}"
+                sec_id = m_item.get('seccion_id') or m_item.get('seccion')
+                op_id = m_item.get('operacion_id') or m_item.get('operacion')
+                just = (m_item.get('justificacion') or '').strip().upper()
+                es_contratacion = bool(m_item.get('es_contratacion', False))
+
+                nueva_mem = MemoriaCalculo.objects.create(
+                    codigo=cod,
+                    gestion=gestion_destino,
+                    seccion_id=sec_id,
+                    operacion_id=op_id,
+                    justificacion=just,
+                    es_contratacion=es_contratacion,
+                    estado=MemoriaCalculo.EstadoMemoria.BORRADOR
+                )
+
+                detalles = m_item.get('detalles', [])
+                total = Decimal('0.0000')
+                for d in detalles:
+                    p_id = d.get('partida_id') or d.get('partida')
+                    cant = Decimal(str(d.get('cantidad', 1) or 1))
+                    pu = Decimal(str(d.get('precio_unitario', 0) or 0))
+                    desc = str(d.get('descripcion', '')).strip().upper()
+                    um = str(d.get('unidad_medida', 'UNIDAD')).strip().upper()
+                    if p_id:
+                        DetallePresupuestoMemoria.objects.create(
+                            memoria=nueva_mem,
+                            partida_id=p_id,
+                            descripcion=desc,
+                            unidad_medida=um,
+                            cantidad=cant,
+                            precio_unitario=pu
+                        )
+                        total += (cant * pu)
+
+                nueva_mem.total_presupuestado = total
+                nueva_mem.saldo_disponible = total
+                nueva_mem.save(update_fields=['total_presupuestado', 'saldo_disponible'])
+
+                if usuario and usuario.is_authenticated:
+                    RegistroMemoriaUsuario.objects.create(
+                        memoria=nueva_mem,
+                        usuario=usuario,
+                        tipo_participacion=RegistroMemoriaUsuario.TipoParticipacion.ELABORADOR
+                    )
+                creadas.append(nueva_mem)
+        else:
+            qs = MemoriaCalculo.objects.filter(gestion_id=gestion_origen_id).order_by('codigo', 'id')
+            if memorias_ids:
+                qs = qs.filter(id__in=memorias_ids)
+
+            is_admin_aprobador = usuario.is_superuser or (usuario.rol and usuario.rol.nombre.upper() in ['ADMINISTRADOR', 'APROBADOR'])
+            is_planificador = usuario.rol and 'PLANIFIC' in usuario.rol.nombre.upper()
+            if not (is_admin_aprobador or is_planificador):
+                if hasattr(usuario, 'seccion') and usuario.seccion and usuario.seccion.area_id:
+                    qs = qs.filter(seccion__area_id=usuario.seccion.area_id)
+
+            for mem_orig in qs.prefetch_related('detalles'):
+                max_num += 1
+                cod = f"{prefix}{str(max_num).zfill(3)}"
+                nueva_mem = MemoriaCalculo.objects.create(
+                    codigo=cod,
+                    gestion=gestion_destino,
+                    seccion=mem_orig.seccion,
+                    operacion=mem_orig.operacion,
+                    justificacion=mem_orig.justificacion,
+                    es_contratacion=mem_orig.es_contratacion,
+                    estado=MemoriaCalculo.EstadoMemoria.BORRADOR
+                )
+                total = Decimal('0.0000')
+                for d in mem_orig.detalles.all():
+                    DetallePresupuestoMemoria.objects.create(
+                        memoria=nueva_mem,
+                        partida_id=d.partida_id,
+                        descripcion=d.descripcion,
+                        unidad_medida=d.unidad_medida,
+                        cantidad=d.cantidad,
+                        precio_unitario=d.precio_unitario
+                    )
+                    total += (Decimal(str(d.cantidad or 0)) * Decimal(str(d.precio_unitario or 0)))
+
+                nueva_mem.total_presupuestado = total
+                nueva_mem.saldo_disponible = total
+                nueva_mem.save(update_fields=['total_presupuestado', 'saldo_disponible'])
+
+                if usuario and usuario.is_authenticated:
+                    RegistroMemoriaUsuario.objects.create(
+                        memoria=nueva_mem,
+                        usuario=usuario,
+                        tipo_participacion=RegistroMemoriaUsuario.TipoParticipacion.ELABORADOR
+                    )
+                creadas.append(nueva_mem)
+
+        return creadas
+
+    @staticmethod
+    @transaction.atomic
     def actualizar_memoria(memoria, data, request_data):
         # Evitar modificar memorias aprobadas en cualquiera de sus etapas
         estados_aprobados = [
@@ -183,7 +305,7 @@ class MemoriaCalculoService:
 
         if total_enviadas > 0:
             user_name = usuario.get_full_name() or usuario.username
-            area_str = usuario.seccion.area.nombre if usuario.seccion and usuario.seccion.area else "el área"
+            area_str = usuario.seccion.area.nombre if getattr(usuario, 'seccion', None) and getattr(usuario.seccion, 'area', None) else "el área"
             MemoriaCalculoService._notificar(
                 rol_nombre='GERENTE',
                 titulo=f"Paquete de Memorias Enviado ({total_enviadas})",

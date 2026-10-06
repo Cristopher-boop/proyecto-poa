@@ -9,8 +9,11 @@ import { MemoriasFilter } from '../../features/memorias/components/MemoriasFilte
 import { MemoriasList } from '../../features/memorias/components/MemoriasList';
 import { MemoriaForm } from '../../features/memorias/components/MemoriaForm';
 import { MemoriaDetalleModal } from '../../features/memorias/components/MemoriaDetalleModal';
-import { BookOpen, Plus } from 'lucide-react';
+import { MemoriaExcelDuplicatorModal } from '../../features/memorias/components/MemoriaExcelDuplicatorModal';
+import { CopiaGastosModal } from '../../features/memorias/components/CopiaGastosModal';
+import { BookOpen, Plus, Copy } from 'lucide-react';
 import { Dropdown, PageHeader, GestionSelector } from '../../components/commons';
+import { memoriasApi } from '../../features/memorias/api/memoriasApi';
 
 export default function MemoriasPage() {
   const { user } = useAuth();
@@ -22,6 +25,9 @@ export default function MemoriasPage() {
   // Modals state
   const [showForm, setShowForm] = useState(false);
   const [showDetalle, setShowDetalle] = useState(false);
+  const [showCopiaGastosModal, setShowCopiaGastosModal] = useState(false);
+  const [showEditorModal, setShowEditorModal] = useState(false);
+  const [selectedOrigenParaEditor, setSelectedOrigenParaEditor] = useState<number | undefined>(undefined);
   const [selectedMemoria, setSelectedMemoria] = useState<any>(null);
 
   const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
@@ -69,6 +75,7 @@ export default function MemoriasPage() {
   
   const canCreate = isAprobador || isElaborador || isGerente;
   const canGlobalView = isAprobador || isPlanificador;
+  const canEnviarBorradores = isSuperuser || isGerente || isElaborador;
 
   // Inicializar la pestaña según el rol del usuario autenticado
   useEffect(() => {
@@ -123,8 +130,55 @@ export default function MemoriasPage() {
     }
   };
 
-  const handleEnviarTodas = () => {
-    // TODO: Implementar con memoriasApi.enviarTodasGerencia
+  const handleEnviarTodas = async () => {
+    if (!canEnviarBorradores) {
+      alertService.warning('Acceso denegado', 'No tienes permisos para enviar memorias de cálculo.');
+      return;
+    }
+
+    if (isGestionBloqueada) {
+      alertService.warning('Gestión Bloqueada', 'La formulación para la gestión seleccionada está finalizada.');
+      return;
+    }
+
+    const cantidadBorradores = conteos?.borrador || 0;
+    if (cantidadBorradores === 0) {
+      alertService.info('Sin borradores', 'No existen memorias de cálculo en estado Borrador para enviar.');
+      return;
+    }
+
+    const confirmed = await alertService.confirm({
+      title: '¿Enviar todos los borradores?',
+      text: `¿Está seguro de enviar ${
+        cantidadBorradores === 1
+          ? 'la memoria de cálculo en borrador'
+          : `las ${cantidadBorradores} memorias de cálculo en borrador`
+      } a revisión formal de Gerencia?`,
+      confirmButtonText: 'Sí, enviar borradores',
+      cancelButtonText: 'Cancelar',
+      icon: 'question',
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const payload: { gestion?: number; seccion?: number; area?: number } = {};
+      if (selectedGestionId) payload.gestion = selectedGestionId;
+      if (filtroArea && filtroArea !== 'todas') payload.area = Number(filtroArea);
+
+      await handleAction(
+        () => memoriasApi.enviarTodasGerencia(payload),
+        cantidadBorradores === 1
+          ? 'Memoria enviada a revisión de Gerencia exitosamente.'
+          : `Se enviaron ${cantidadBorradores} memorias a revisión de Gerencia exitosamente.`
+      );
+    } catch (err: any) {
+      console.error('Error al enviar borradores:', err);
+      alertService.error(
+        'Error al enviar',
+        err?.response?.data?.error || err?.response?.data?.message || 'No se pudieron enviar las memorias.'
+      );
+    }
   };
 
   return (
@@ -145,14 +199,25 @@ export default function MemoriasPage() {
             />
 
             {canCreate && (
-              <button
-                type="button"
-                onClick={handleCreate}
-                disabled={isGestionBloqueada}
-                className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <Plus size={15} /> Formular Memoria
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowCopiaGastosModal(true)}
+                  disabled={isGestionBloqueada}
+                  className="px-3.5 py-2 rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
+                  title="Duplicar memorias de cálculo desde una gestión anterior"
+                >
+                  <Copy size={15} className="text-blue-600 dark:text-blue-400" /> Duplicar Memorias de Gestión Anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={isGestionBloqueada}
+                  className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Plus size={15} /> Formular Memoria
+                </button>
+              </>
             )}
           </div>
         }
@@ -189,6 +254,8 @@ export default function MemoriasPage() {
         isSuperuser={isSuperuser}
         isAprobador={isAprobador}
         isPlanificador={isPlanificador}
+        canEnviarBorradores={canEnviarBorradores}
+        isGestionBloqueada={isGestionBloqueada}
       />
 
       <MemoriasList
@@ -231,6 +298,39 @@ export default function MemoriasPage() {
             } else {
               refetch();
             }
+          }}
+        />
+      )}
+
+      {showCopiaGastosModal && (
+        <CopiaGastosModal
+          isOpen={showCopiaGastosModal}
+          onClose={() => setShowCopiaGastosModal(false)}
+          activeGestion={activeGestion}
+          gestiones={gestiones}
+          user={user}
+          currentAreaId={filtroArea !== 'todas' ? filtroArea : undefined}
+          onOpenEditor={(origenId) => {
+            setSelectedOrigenParaEditor(origenId);
+            setShowEditorModal(true);
+          }}
+          onSuccess={() => {
+            refetch();
+          }}
+        />
+      )}
+
+      {showEditorModal && (
+        <MemoriaExcelDuplicatorModal
+          isOpen={showEditorModal}
+          onClose={() => setShowEditorModal(false)}
+          activeGestion={activeGestion}
+          gestiones={gestiones}
+          user={user}
+          currentAreaId={filtroArea !== 'todas' ? filtroArea : undefined}
+          initialOrigenId={selectedOrigenParaEditor}
+          onSuccess={() => {
+            refetch();
           }}
         />
       )}

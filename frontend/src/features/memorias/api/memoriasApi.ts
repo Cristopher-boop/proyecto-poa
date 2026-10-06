@@ -57,7 +57,7 @@ export const memoriasApi = {
     return response.data;
   },
 
-  enviarTodasGerencia: async (params?: { gestion?: number; seccion?: number }) => {
+  enviarTodasGerencia: async (params?: { gestion?: number; seccion?: number; area?: number }) => {
     const response = await api.post('/api/v1/memorias/memorias-calculo/enviar-todas-gerencia/', params);
     return response.data;
   },
@@ -84,6 +84,23 @@ export const memoriasApi = {
 
   volverBorrador: async (id: number, motivo: string) => {
     const response = await api.post(`/api/v1/memorias/memorias-calculo/${id}/volver-borrador/`, { motivo });
+    return response.data;
+  },
+
+  getLibroGestion: async (gestionId: number, areaId?: string | number): Promise<MemoriaCalculo[]> => {
+    const params: any = { gestion: gestionId };
+    if (areaId && areaId !== 'todas') params.area = areaId;
+    const response = await api.get('/api/v1/memorias/memorias-calculo/libro-gestion/', { params });
+    return response.data;
+  },
+
+  duplicarMasivo: async (payload: {
+    gestion_origen: number;
+    gestion_destino: number;
+    memorias_ids?: number[];
+    memorias?: any[];
+  }): Promise<{ message: string; creadas: number; memorias: MemoriaCalculo[] }> => {
+    const response = await api.post('/api/v1/memorias/memorias-calculo/duplicar-masivo/', payload);
     return response.data;
   }
 };

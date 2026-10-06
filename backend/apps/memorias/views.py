@@ -56,7 +56,7 @@ class RolePermissionMixin:
         return True
 
 class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
-    queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area', 'operacion').prefetch_related('detalles__partida', 'participaciones__usuario').all().order_by('-created_at')
+    queryset = MemoriaCalculo.objects.select_related('gestion', 'seccion__area', 'operacion').prefetch_related('detalles__partida', 'participaciones__usuario').all().order_by('codigo', 'id')
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
 
@@ -177,12 +177,14 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
         if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
             return Response({'error': 'No tienes permisos para enviar memorias.'}, status=status.HTTP_403_FORBIDDEN)
         
-        qs = self.get_queryset() # Ya filtrado por usuario en get_queryset
+        qs = self.get_queryset()
         gestion_id = request.data.get('gestion') or request.query_params.get('gestion')
         seccion_id = request.data.get('seccion') or request.query_params.get('seccion')
+        area_id = request.data.get('area') or request.query_params.get('area')
         
         if gestion_id: qs = qs.filter(gestion_id=gestion_id)
         if seccion_id: qs = qs.filter(seccion_id=seccion_id)
+        if area_id and str(area_id) != 'todas': qs = qs.filter(seccion__area_id=area_id)
             
         total = MemoriaCalculoService.enviar_todas_gerencia(qs, request.user)
         if total == 0:
@@ -243,6 +245,55 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
             'monto_saliente': str(memoria.monto_saliente),
             'disponible': str(memoria.saldo_disponible),
         }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='libro-gestion')
+    def libro_gestion(self, request):
+        gestion_id = request.query_params.get('gestion')
+        if not gestion_id:
+            return Response({'error': 'Debe especificar el parámetro gestion.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        qs = self.get_queryset().filter(gestion_id=gestion_id).select_related(
+            'gestion', 'seccion__area', 'operacion'
+        ).prefetch_related('detalles__partida', 'participaciones__usuario').order_by('codigo', 'id')
+        
+        area_id = request.query_params.get('area')
+        if area_id and str(area_id) != 'todas':
+            qs = qs.filter(seccion__area_id=area_id)
+            
+        serializer = MemoriaCalculoSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='duplicar-masivo')
+    def duplicar_masivo(self, request):
+        if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
+            return Response({'error': 'No tienes permisos para formular o duplicar memorias.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        gestion_origen_id = request.data.get('gestion_origen')
+        gestion_destino_id = request.data.get('gestion_destino')
+        memorias_ids = request.data.get('memorias_ids')
+        memorias_modificadas = request.data.get('memorias')
+
+        if not gestion_origen_id or not gestion_destino_id:
+            return Response({'error': 'Debe especificar gestion_origen y gestion_destino.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            creadas = MemoriaCalculoService.duplicar_lote_gestion(
+                gestion_origen_id=gestion_origen_id,
+                gestion_destino_id=gestion_destino_id,
+                usuario=request.user,
+                memorias_ids=memorias_ids,
+                memorias_modificadas=memorias_modificadas
+            )
+            count = len(creadas)
+            return Response({
+                'message': f'Se generaron exitosamente {count} memoria(s) de cálculo en estado Borrador.',
+                'creadas': count,
+                'memorias': MemoriaCalculoListSerializer(creadas, many=True).data
+            }, status=status.HTTP_201_CREATED)
+        except serializers.ValidationError as e:
+            return Response({'error': e.detail if hasattr(e, 'detail') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class DetallePresupuestoMemoriaViewSet(viewsets.ModelViewSet):

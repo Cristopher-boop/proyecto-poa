@@ -168,8 +168,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
     );
   };
 
+  const isCustomDisplayOrWidth = className && /(\bw-\S+|\binline-block\b|\binline\b|\bw-auto\b)/.test(className);
+  const rootWidthClass = isCustomDisplayOrWidth ? '' : 'w-full';
+
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
+    <div className={`relative ${rootWidthClass} ${className}`.trim()} ref={containerRef}>
       {label && (
         <label className="block text-xs font-semibold uppercase tracking-wider text-theme-muted mb-1.5">
           {label} {required && <span className="text-rose-500">*</span>}
@@ -237,8 +240,13 @@ export const Dropdown: React.FC<DropdownProps> = ({
       {/* Menú Desplegable Flotante */}
       {isOpen && (
         <div
-          className={`absolute ${alignClass} z-50 mt-1.5 bg-theme-surface border border-theme-border rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100 ${menuClassName}`}
-          style={{ minWidth: menuMinWidth || '100%' }}
+          className={`absolute ${alignClass} z-50 mt-1.5 bg-theme-surface border border-theme-border rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100 ${
+            menuMinWidth ? '' : 'w-full'
+          } ${menuClassName}`}
+          style={{
+            minWidth: menuMinWidth || '100%',
+            maxWidth: menuMinWidth ? 'calc(100vw - 2rem)' : '100%',
+          }}
         >
           {/* Barra de Búsqueda */}
           {isSearchEnabled && (
@@ -270,7 +278,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
           )}
 
           {/* Lista de Opciones */}
-          <div className="overflow-y-auto divide-y divide-theme-border/30" style={{ maxHeight }}>
+          <div className="overflow-y-auto overflow-x-hidden divide-y divide-theme-border/30" style={{ maxHeight }}>
             {filteredItems.length === 0 ? (
               <div className="py-6 px-4 text-center text-theme-muted text-xs">
                 {emptyMessage}
@@ -300,7 +308,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         type="button"
                         disabled={it.disabled}
                         onClick={() => handleSelect(it)}
-                        className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-left transition-colors ${
+                        className={`w-full flex items-start justify-between gap-3 px-3 py-2 text-left transition-colors ${
                           isSelected
                             ? 'bg-theme-border/25 text-theme-main font-semibold'
                             : it.disabled
@@ -308,24 +316,28 @@ export const Dropdown: React.FC<DropdownProps> = ({
                             : 'hover:bg-theme-border/15 text-theme-main'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                          {effectiveBadgePos === 'start' && renderItemBadge(it, isSelected)}
+                        <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                          {effectiveBadgePos === 'start' && (
+                            <div className="pt-0.5 shrink-0">
+                              {renderItemBadge(it, isSelected)}
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <p
-                              className={`text-xs leading-tight whitespace-nowrap ${
+                              className={`text-xs leading-snug break-words ${
                                 isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
                               }`}
                             >
                               {it.label}
                             </p>
                             {it.sublabel && (
-                              <p className="text-[10px] text-theme-muted mt-0.5 truncate">
+                              <p className="text-[10px] text-theme-muted mt-0.5 break-words line-clamp-2">
                                 {it.sublabel}
                               </p>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 pt-0.5">
                           {effectiveBadgePos === 'end' && renderItemBadge(it, isSelected)}
                           {isSelected && (
                             <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -346,7 +358,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     type="button"
                     disabled={it.disabled}
                     onClick={() => handleSelect(it)}
-                    className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-left transition-colors ${
+                    className={`w-full flex items-start justify-between gap-3 px-3 py-2 text-left transition-colors ${
                       isSelected
                         ? 'bg-theme-border/25 text-theme-main font-semibold'
                         : it.disabled
@@ -354,24 +366,28 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         : 'hover:bg-theme-border/15 text-theme-main'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      {effectiveBadgePos === 'start' && renderItemBadge(it, isSelected)}
+                    <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                      {effectiveBadgePos === 'start' && (
+                        <div className="pt-0.5 shrink-0">
+                          {renderItemBadge(it, isSelected)}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-xs leading-tight whitespace-nowrap ${
+                          className={`text-xs leading-snug break-words ${
                             isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
                           }`}
                         >
                           {it.label}
                         </p>
                         {it.sublabel && (
-                          <p className="text-[10px] text-theme-muted mt-0.5 truncate">
+                          <p className="text-[10px] text-theme-muted mt-0.5 break-words line-clamp-2">
                             {it.sublabel}
                           </p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 pt-0.5">
                       {effectiveBadgePos === 'end' && renderItemBadge(it, isSelected)}
                       {isSelected && (
                         <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />

@@ -293,18 +293,10 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                         {fichaMemoria.operacion_codigo ? `POA: ${fichaMemoria.operacion_codigo}` : 'Sin Operación'}
                       </span>
                       <span className="text-xs text-theme-main line-clamp-1">
-                        {fichaMemoria.operacion_descripcion || (fichaMemoria.es_contratacion ? 'Contratación Institucional' : 'Gasto Corriente')}
+                        {fichaMemoria.operacion_descripcion || 'Gasto Operativo Institucional'}
                       </span>
                     </div>
                   </div>
-                </div>
-
-                {/* Modalidad Contrataciones */}
-                <div className="flex items-center gap-2 pt-1 border-t border-theme-border/60">
-                  <span className="text-xs font-semibold text-theme-muted">Modalidad de Adquisición:</span>
-                  <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border border-theme-border bg-theme-border/30 text-theme-main">
-                    {fichaMemoria.es_contratacion ? '✓ Aplica a Contrataciones' : 'Gasto Corriente Operativo'}
-                  </span>
                 </div>
               </div>
 
@@ -429,19 +421,15 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                   {/* 3. Planificación */}
                   <div className="p-2.5 rounded-xl bg-theme-base border border-theme-border text-center">
                     <span className="text-[10px] uppercase font-bold text-theme-muted block">3. Planificación (SPO)</span>
-                    <p className="font-semibold text-xs text-theme-main mt-0.5">Alineación Contratación</p>
-                    {fichaMemoria.es_contratacion && parseFloat(fichaMemoria.total_presupuesto || '0') >= 2000 ? (
-                      fichaMemoria.estado === 'RECHAZADO' && fichaMemoria.motivo_rechazo?.includes('[PLANIFICACI') ? (
-                        <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold">✕ Rechazado Planificación</span>
-                      ) : ['APROBADO_GERENCIA', 'APROBADO_PLANIFICACION', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) && fichaMemoria.estado !== 'PENDIENTE_PLANIFICACION' ? (
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Alineado</span>
-                      ) : fichaMemoria.estado === 'PENDIENTE_PLANIFICACION' ? (
-                        <span className="text-[10px] text-amber-600 font-medium">⏳ En Verificación</span>
-                      ) : (
-                        <span className="text-[10px] text-theme-muted font-medium">⏳ Por Validar</span>
-                      )
+                    <p className="font-semibold text-xs text-theme-main mt-0.5">Revisión Planificación</p>
+                    {fichaMemoria.estado === 'RECHAZADO' && fichaMemoria.motivo_rechazo?.includes('[PLANIFICACI') ? (
+                      <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold">✕ Rechazado Planificación</span>
+                    ) : ['APROBADO_GERENCIA', 'APROBADO_PLANIFICACION', 'APROBADO_FINANZAS'].includes(fichaMemoria.estado) && fichaMemoria.estado !== 'PENDIENTE_PLANIFICACION' ? (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Verificado</span>
+                    ) : fichaMemoria.estado === 'PENDIENTE_PLANIFICACION' ? (
+                      <span className="text-[10px] text-amber-600 font-medium">⏳ En Verificación</span>
                     ) : (
-                      <span className="text-[10px] text-theme-muted font-medium italic">— Omitido (&lt; 2.000 Bs)</span>
+                      <span className="text-[10px] text-theme-muted font-medium">⏳ Por Validar</span>
                     )}
                   </div>
 
