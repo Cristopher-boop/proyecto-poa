@@ -9,7 +9,9 @@ import { MemoriasFilter } from '../../features/memorias/components/MemoriasFilte
 import { MemoriasList } from '../../features/memorias/components/MemoriasList';
 import { MemoriaForm } from '../../features/memorias/components/MemoriaForm';
 import { MemoriaDetalleModal } from '../../features/memorias/components/MemoriaDetalleModal';
-import { BookOpen, Plus } from 'lucide-react';
+import { MemoriaExcelDuplicatorModal } from '../../features/memorias/components/MemoriaExcelDuplicatorModal';
+import { CopiaGastosModal } from '../../features/memorias/components/CopiaGastosModal';
+import { BookOpen, Plus, Copy } from 'lucide-react';
 import { Dropdown, PageHeader, GestionSelector } from '../../components/commons';
 import { memoriasApi } from '../../features/memorias/api/memoriasApi';
 
@@ -23,6 +25,9 @@ export default function MemoriasPage() {
   // Modals state
   const [showForm, setShowForm] = useState(false);
   const [showDetalle, setShowDetalle] = useState(false);
+  const [showCopiaGastosModal, setShowCopiaGastosModal] = useState(false);
+  const [showEditorModal, setShowEditorModal] = useState(false);
+  const [selectedOrigenParaEditor, setSelectedOrigenParaEditor] = useState<number | undefined>(undefined);
   const [selectedMemoria, setSelectedMemoria] = useState<any>(null);
 
   const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
@@ -194,14 +199,25 @@ export default function MemoriasPage() {
             />
 
             {canCreate && (
-              <button
-                type="button"
-                onClick={handleCreate}
-                disabled={isGestionBloqueada}
-                className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <Plus size={15} /> Formular Memoria
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowCopiaGastosModal(true)}
+                  disabled={isGestionBloqueada}
+                  className="px-3.5 py-2 rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
+                  title="Duplicar memorias de cálculo desde una gestión anterior"
+                >
+                  <Copy size={15} className="text-blue-600 dark:text-blue-400" /> Duplicar Memorias de Gestión Anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={isGestionBloqueada}
+                  className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Plus size={15} /> Formular Memoria
+                </button>
+              </>
             )}
           </div>
         }
@@ -282,6 +298,39 @@ export default function MemoriasPage() {
             } else {
               refetch();
             }
+          }}
+        />
+      )}
+
+      {showCopiaGastosModal && (
+        <CopiaGastosModal
+          isOpen={showCopiaGastosModal}
+          onClose={() => setShowCopiaGastosModal(false)}
+          activeGestion={activeGestion}
+          gestiones={gestiones}
+          user={user}
+          currentAreaId={filtroArea !== 'todas' ? filtroArea : undefined}
+          onOpenEditor={(origenId) => {
+            setSelectedOrigenParaEditor(origenId);
+            setShowEditorModal(true);
+          }}
+          onSuccess={() => {
+            refetch();
+          }}
+        />
+      )}
+
+      {showEditorModal && (
+        <MemoriaExcelDuplicatorModal
+          isOpen={showEditorModal}
+          onClose={() => setShowEditorModal(false)}
+          activeGestion={activeGestion}
+          gestiones={gestiones}
+          user={user}
+          currentAreaId={filtroArea !== 'todas' ? filtroArea : undefined}
+          initialOrigenId={selectedOrigenParaEditor}
+          onSuccess={() => {
+            refetch();
           }}
         />
       )}

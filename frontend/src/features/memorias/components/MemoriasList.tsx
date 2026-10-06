@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MemoriaCalculo } from '../api/memoriasApi';
-import { Eye, Edit3, Trash2, Send, FileText } from 'lucide-react';
+import { Eye, Edit3, Trash2, Send, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Pagination } from '../../../components/commons';
 
 interface MemoriasListProps {
@@ -18,6 +18,9 @@ interface MemoriasListProps {
   onEnviarGerencia?: (id: number) => void;
 }
 
+type SortField = 'codigo' | 'area' | 'partida' | 'items' | 'total';
+type SortDirection = 'asc' | 'desc';
+
 export const MemoriasList: React.FC<MemoriasListProps> = ({
   memorias,
   loading,
@@ -33,8 +36,65 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
   onEnviarGerencia
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>('codigo');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const itemsPerPage = 10;
-  
+
+  const sortedMemorias = useMemo(() => {
+    const list = Array.isArray(memorias) ? [...memorias] : [];
+    return list.sort((a: any, b: any) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'codigo': {
+          const codA = a.codigo || '';
+          const codB = b.codigo || '';
+          comparison = codA.localeCompare(codB, undefined, { numeric: true, sensitivity: 'base' }) || ((a.id || 0) - (b.id || 0));
+          break;
+        }
+        case 'area': {
+          const areaA = a.area_nombre || a.seccion_nombre || '';
+          const areaB = b.area_nombre || b.seccion_nombre || '';
+          comparison = areaA.localeCompare(areaB, undefined, { numeric: true, sensitivity: 'base' });
+          break;
+        }
+        case 'partida': {
+          const partA = a.partida_codigo || '';
+          const partB = b.partida_codigo || '';
+          comparison = partA.localeCompare(partB, undefined, { numeric: true, sensitivity: 'base' });
+          break;
+        }
+        case 'items': {
+          const itemsA = a.total_items ?? (a.detalles ? a.detalles.length : 0);
+          const itemsB = b.total_items ?? (b.detalles ? b.detalles.length : 0);
+          comparison = itemsA - itemsB;
+          break;
+        }
+        case 'total': {
+          const totA = parseFloat(String(a.total_presupuestado || a.total_presupuesto || '0')) || 0;
+          const totB = parseFloat(String(b.total_presupuestado || b.total_presupuesto || '0')) || 0;
+          comparison = totA - totB;
+          break;
+        }
+        default:
+          comparison = 0;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [memorias, sortField, sortDirection]);
+
+  const totalPages = Math.ceil(sortedMemorias.length / itemsPerPage);
+  const currentItems = sortedMemorias.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
   if (loading) {
     return (
       <div className="bg-theme-surface rounded-xl border border-theme-border p-8 flex justify-center items-center">
@@ -43,11 +103,33 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
     );
   }
 
-  const totalPages = Math.ceil(memorias.length / itemsPerPage);
-  const currentItems = memorias.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const handlePrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
-  const handleNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const renderSortHeader = (label: string, field: SortField, className = '') => {
+    const isActive = sortField === field;
+    return (
+      <th
+        onClick={() => handleSort(field)}
+        className={`py-3.5 px-4 cursor-pointer select-none group transition-colors hover:text-theme-main ${
+          isActive ? 'text-blue-600 dark:text-blue-400 font-bold' : ''
+        } ${className}`}
+        title={`Ordenar por ${label} (${isActive && sortDirection === 'asc' ? 'Descendente' : 'Ascendente'})`}
+      >
+        <div className={`flex items-center gap-1.5 ${className.includes('text-right') ? 'justify-end' : className.includes('text-center') ? 'justify-center' : ''}`}>
+          <span>{label}</span>
+          <span className={`transition-opacity ${isActive ? 'opacity-100' : 'opacity-30 group-hover:opacity-70'}`}>
+            {isActive ? (
+              sortDirection === 'asc' ? (
+                <ArrowUp size={14} className="text-blue-600 dark:text-blue-400" />
+              ) : (
+                <ArrowDown size={14} className="text-blue-600 dark:text-blue-400" />
+              )
+            ) : (
+              <ArrowUpDown size={13} className="text-theme-muted" />
+            )}
+          </span>
+        </div>
+      </th>
+    );
+  };
 
   return (
     <div className="bg-theme-surface rounded-xl border border-theme-border flex flex-col">
@@ -55,12 +137,12 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
         <table className="w-full text-left text-sm border-collapse">
           <thead>
             <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
-              <th className="py-3.5 px-4">Código</th>
-              <th className="py-3.5 px-4">Área</th>
-              <th className="py-3.5 px-4">Partida Presupuestaria</th>
+              {renderSortHeader('Código', 'codigo')}
+              {renderSortHeader('Área', 'area')}
+              {renderSortHeader('Partida Presupuestaria', 'partida')}
               <th className="py-3.5 px-4">Justificación</th>
-              <th className="py-3.5 px-4 text-center">Ítems</th>
-              <th className="py-3.5 px-4 text-right">Total Presupuestado</th>
+              {renderSortHeader('Ítems', 'items', 'text-center')}
+              {renderSortHeader('Total Presupuestado', 'total', 'text-right')}
               <th className="py-3.5 px-4 text-center">Estado</th>
               <th className="py-3.5 px-4 text-center">Acciones</th>
             </tr>

@@ -480,7 +480,6 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
       id: op.id,
       label: op.descripcion,
       badge: op.codigo,
-      sublabel: op.es_contratacion ? '✓ Modalidad: Contrataciones' : undefined,
     }));
   }, [secciones, formMemoria.seccionId, editingMemoria, user, operaciones, formMemoria.operacionId]);
 
@@ -1241,20 +1240,6 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
                     </div>
                   </div>
                 )}
-
-                {/* 3. Checkbox Contratación */}
-                <div className="flex items-center gap-2 pt-1 border-t border-theme-border/60">
-                  <input
-                    type="checkbox"
-                    id="chk-es-contratacion"
-                    checked={formMemoria.es_contratacion}
-                    onChange={(e) => setFormMemoria({ ...formMemoria, es_contratacion: e.target.checked })}
-                    className="w-4 h-4 rounded text-theme-primary focus:ring-theme-primary cursor-pointer"
-                  />
-                  <label htmlFor="chk-es-contratacion" className="text-xs font-semibold text-theme-main cursor-pointer select-none">
-                    Aplica a Contrataciones
-                  </label>
-                </div>
               </div>
 
               {/* PASO 2: Despliegue de Datos y Formulación Oficial (50% Tabla / 50% Justificación) */}
