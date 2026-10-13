@@ -42,13 +42,28 @@ export const certificacionService = {
     return response.data;
   },
 
-  enviarPlanificacion: async (id: number): Promise<{ status: string; estado: string }> => {
-    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/enviar-planificacion/`);
+  enviarRevision: async (id: number, data?: { es_contratacion?: boolean }): Promise<{ status: string; estado: string; es_contratacion?: boolean }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/enviar-revision/`, data || {});
     return response.data;
   },
 
-  aprobarCertificacion: async (id: number, observacion?: string): Promise<{ status: string; estado: string }> => {
-    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/aprobar/`, { observacion });
+  certificarPlanificacion: async (
+    id: number,
+    data?: {
+      codigo_certificacion?: string;
+      numero_oficio_solicitud?: string;
+      observacion?: string;
+      categoria_programatica_codigo?: string;
+      categoria_programatica?: string;
+      notas?: string;
+    }
+  ): Promise<{ status: string; estado: string; codigo_certificacion?: string; numero_oficio_solicitud?: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/certificar-planificacion/`, data || {});
+    return response.data;
+  },
+
+  aprobarPresupuestos: async (id: number, observacion?: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/aprobar-presupuestos/`, { observacion });
     return response.data;
   },
 
@@ -56,5 +71,14 @@ export const certificacionService = {
     const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/observar/`, { observacion });
     return response.data;
   },
-};
 
+  rechazarCertificacion: async (id: number, motivo: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/rechazar/`, { motivo });
+    return response.data;
+  },
+
+  cancelarCertificacion: async (id: number, motivo?: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/cancelar/`, { motivo });
+    return response.data;
+  },
+};

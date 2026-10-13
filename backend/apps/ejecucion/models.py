@@ -27,14 +27,19 @@ class Gasto(TimeStampedModel):
 
 class CertificacionPOA(TimeStampedModel):
     class EstadoCertificacion(models.TextChoices):
-        BORRADOR = 'BORRADOR', 'Borrador (Gerencia)'
-        PENDIENTE_PLANIFICACION = 'PENDIENTE_PLANIFICACION', 'Enviado a Planificación'
-        APROBADO = 'APROBADO', 'Aprobado por Planificación'
+        BORRADOR = 'BORRADOR', 'Borrador (Solicitud)'
+        PENDIENTE_PLANIFICACION = 'PENDIENTE_PLANIFICACION', 'En Revisión (Planificación)'
+        PENDIENTE_PRESUPUESTOS = 'PENDIENTE_PRESUPUESTOS', 'En Revisión (Presupuestos)'
+        APROBADO = 'APROBADO', 'Aprobado y Certificado'
         OBSERVADO = 'OBSERVADO', 'Observado / Devuelto'
-        ANULADO = 'ANULADO', 'Anulado'
+        RECHAZADO = 'RECHAZADO', 'Rechazado'
+        ANULADO = 'ANULADO', 'Cancelado / Anulado'
 
-    codigo_certificacion = models.CharField(max_length=100, verbose_name="Nº Certificación POA")
-    numero_oficio_solicitud = models.CharField(max_length=100, verbose_name="Nº Oficio de Solicitud")
+    codigo_certificacion = models.CharField(max_length=100, blank=True, default="", verbose_name="Nº Certificación POA")
+    numero_oficio_solicitud = models.CharField(max_length=100, blank=True, default="", verbose_name="Nº Oficio de Solicitud")
+    hoja_ruta = models.CharField(max_length=150, blank=True, default="", verbose_name="Hoja de Ruta / CITE")
+    es_contratacion = models.BooleanField(default=True, verbose_name="¿Pertenece a Contrataciones?")
+    
     gestion = models.ForeignKey(Gestion, on_delete=models.CASCADE, related_name='certificaciones_poa', verbose_name="Gestión")
     area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='certificaciones_poa', verbose_name="Unidad Solicitante / Área")
     fecha = models.DateField(verbose_name="Fecha de Emisión")
@@ -47,6 +52,9 @@ class CertificacionPOA(TimeStampedModel):
     memoria = models.ForeignKey(MemoriaCalculo, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_poa', verbose_name="Memoria de Cálculo")
     partida = models.ForeignKey(Partida, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_poa', verbose_name="Partida Presupuestaria")
     partida_literal = models.CharField(max_length=255, blank=True, null=True, verbose_name="Partida Presupuestaria (Texto)")
+    
+    categoria_programatica_codigo = models.CharField(max_length=50, blank=True, default="210.0.0", verbose_name="Código Categoría Programática")
+    categoria_programatica = models.CharField(max_length=255, blank=True, default="", verbose_name="Categoría Programática")
     
     monto_solicitado = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'), verbose_name="Monto Solicitado")
     concepto_gasto = models.TextField(blank=True, null=True, verbose_name="Concepto / Objeto del Gasto")
@@ -64,8 +72,12 @@ class CertificacionPOA(TimeStampedModel):
     elaborador_cargo = models.CharField(max_length=150, blank=True, default="", verbose_name="Elaborado por (Cargo)")
     
     observacion_planificacion = models.TextField(blank=True, null=True, verbose_name="Observación de Planificación")
+    observacion_presupuestos = models.TextField(blank=True, null=True, verbose_name="Observación de Presupuestos")
+    
     estado = models.CharField(max_length=30, choices=EstadoCertificacion.choices, default=EstadoCertificacion.BORRADOR, verbose_name="Estado")
     creado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_creadas', verbose_name="Creado por")
+    aprobado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_aprobadas', verbose_name="Aprobado por")
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Aprobación Final")
 
     class Meta:
         verbose_name = "Certificación POA"

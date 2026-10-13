@@ -41,10 +41,18 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     style = 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30';
     Icon = AlertCircle;
     defaultLabel = 'Rev. Planificación';
+  } else if (norm.includes('PENDIENTE_PRESUPUESTOS')) {
+    style = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30';
+    Icon = Clock;
+    defaultLabel = 'Rev. Presupuestos';
   } else if (norm.includes('APROBADO_GERENCIA') || norm.includes('APROBADO_PLANIFICACION')) {
     style = 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30';
     Icon = CheckCircle2;
     defaultLabel = 'Rev. Presupuestos';
+  } else if (norm.includes('OBSERVADO')) {
+    style = 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30';
+    Icon = AlertCircle;
+    defaultLabel = 'Observado';
   } else if (norm.includes('APROBADO') || norm.includes('APROBADO_FINANZAS')) {
     style = 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
     Icon = CheckCircle2;

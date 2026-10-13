@@ -20,10 +20,21 @@ export interface JerarquiaResumen {
   programas: { id: number; codigo: string; nombre: string }[];
 }
 
+export type EstadoCertificacion =
+  | 'BORRADOR'
+  | 'PENDIENTE_PLANIFICACION'
+  | 'PENDIENTE_PRESUPUESTOS'
+  | 'APROBADO'
+  | 'OBSERVADO'
+  | 'RECHAZADO'
+  | 'ANULADO';
+
 export interface CertificacionPOA {
   id: number;
   codigo_certificacion: string;
   numero_oficio_solicitud: string;
+  hoja_ruta: string;
+  es_contratacion: boolean;
   gestion: number;
   gestion_anio: number;
   area: number;
@@ -37,10 +48,15 @@ export interface CertificacionPOA {
   jerarquia_resumen: JerarquiaResumen;
   memoria?: number | null;
   memoria_codigo?: string | null;
+  memoria_saldo_disponible?: string | number;
+  memoria_total_presupuestado?: string | number;
+  memoria_justificacion?: string | null;
   partida?: number | null;
   partida_codigo?: string | null;
   partida_nombre?: string | null;
   partida_literal?: string | null;
+  categoria_programatica_codigo?: string;
+  categoria_programatica?: string;
   monto_solicitado: string | number;
   concepto_gasto?: string | null;
   notas: string;
@@ -49,10 +65,14 @@ export interface CertificacionPOA {
   elaborador_nombre: string;
   elaborador_cargo: string;
   observacion_planificacion?: string | null;
-  estado: 'BORRADOR' | 'PENDIENTE_PLANIFICACION' | 'APROBADO' | 'OBSERVADO' | 'ANULADO';
+  observacion_presupuestos?: string | null;
+  estado: EstadoCertificacion;
   estado_display: string;
   creado_por?: number | null;
   creado_por_nombre?: string | null;
+  aprobado_por?: number | null;
+  aprobado_por_nombre?: string | null;
+  fecha_aprobacion?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -68,8 +88,10 @@ export interface SiguienteCorrelativoResponse {
 }
 
 export interface CertificacionFormData {
-  codigo_certificacion: string;
-  numero_oficio_solicitud: string;
+  codigo_certificacion?: string;
+  numero_oficio_solicitud?: string;
+  hoja_ruta: string;
+  es_contratacion: boolean;
   gestion: number;
   area: number;
   fecha: string;
@@ -78,14 +100,16 @@ export interface CertificacionFormData {
   memoria?: number | null;
   partida?: number | null;
   partida_literal?: string;
-  monto_solicitado?: number | string;
+  categoria_programatica_codigo?: string;
+  categoria_programatica?: string;
+  monto_solicitado: number | string;
   concepto_gasto?: string;
-  notas: string;
-  solicitante_nombre: string;
-  solicitante_cargo: string;
-  elaborador_nombre: string;
-  elaborador_cargo: string;
+  notas?: string;
+  solicitante_nombre?: string;
+  solicitante_cargo?: string;
+  elaborador_nombre?: string;
+  elaborador_cargo?: string;
   observacion_planificacion?: string;
-  estado?: 'BORRADOR' | 'PENDIENTE_PLANIFICACION' | 'APROBADO' | 'OBSERVADO' | 'ANULADO';
+  observacion_presupuestos?: string;
+  estado?: EstadoCertificacion;
 }
-

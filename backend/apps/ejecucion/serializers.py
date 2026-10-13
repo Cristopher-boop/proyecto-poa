@@ -92,8 +92,12 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
     partida_codigo = serializers.CharField(source='partida.codigo', read_only=True, default=None)
     partida_nombre = serializers.CharField(source='partida.nombre', read_only=True, default=None)
     memoria_codigo = serializers.CharField(source='memoria.codigo', read_only=True, default=None)
+    memoria_saldo_disponible = serializers.DecimalField(source='memoria.saldo_disponible', max_digits=14, decimal_places=4, read_only=True, default=Decimal('0.0000'))
+    memoria_total_presupuestado = serializers.DecimalField(source='memoria.total_presupuestado', max_digits=14, decimal_places=4, read_only=True, default=Decimal('0.0000'))
+    memoria_justificacion = serializers.CharField(source='memoria.justificacion', read_only=True, default=None)
     
     creado_por_nombre = serializers.SerializerMethodField()
+    aprobado_por_nombre = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     
     operaciones_detalle = serializers.SerializerMethodField()
@@ -105,6 +109,8 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
             'id',
             'codigo_certificacion',
             'numero_oficio_solicitud',
+            'hoja_ruta',
+            'es_contratacion',
             'gestion',
             'gestion_anio',
             'area',
@@ -118,10 +124,15 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
             'jerarquia_resumen',
             'memoria',
             'memoria_codigo',
+            'memoria_saldo_disponible',
+            'memoria_total_presupuestado',
+            'memoria_justificacion',
             'partida',
             'partida_codigo',
             'partida_nombre',
             'partida_literal',
+            'categoria_programatica_codigo',
+            'categoria_programatica',
             'monto_solicitado',
             'concepto_gasto',
             'notas',
@@ -130,19 +141,54 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
             'elaborador_nombre',
             'elaborador_cargo',
             'observacion_planificacion',
+            'observacion_presupuestos',
             'estado',
             'estado_display',
             'creado_por',
             'creado_por_nombre',
+            'aprobado_por',
+            'aprobado_por_nombre',
+            'fecha_aprobacion',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'creado_por', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'creado_por', 'aprobado_por', 'fecha_aprobacion', 'created_at', 'updated_at']
 
     def get_creado_por_nombre(self, obj):
         if obj.creado_por:
             return obj.creado_por.get_full_name() or obj.creado_por.username
         return None
+
+    def get_aprobado_por_nombre(self, obj):
+        if obj.aprobado_por:
+            return obj.aprobado_por.get_full_name() or obj.aprobado_por.username
+        return None
+
+    def validate(self, data):
+        # 1. Validación de Hoja de Ruta / CITE / Razón
+        hoja_ruta = data.get('hoja_ruta', getattr(self.instance, 'hoja_ruta', ''))
+        if not hoja_ruta or not str(hoja_ruta).strip():
+            raise serializers.ValidationError({
+                'hoja_ruta': 'La Hoja de Ruta / CITE / Razón de la solicitud es obligatoria.'
+            })
+
+        # 2. Validación de Monto Solicitado
+        monto = data.get('monto_solicitado', getattr(self.instance, 'monto_solicitado', None))
+        if monto is not None and Decimal(str(monto)) <= Decimal('0.00'):
+            raise serializers.ValidationError({
+                'monto_solicitado': 'El monto solicitado debe ser mayor a 0.'
+            })
+
+        # 3. Validación de Memoria de Cálculo y Saldo Disponible
+        memoria = data.get('memoria', getattr(self.instance, 'memoria', None))
+        if memoria and monto is not None:
+            saldo_disp = Decimal(str(memoria.saldo_disponible or '0.00'))
+            if Decimal(str(monto)) > saldo_disp:
+                raise serializers.ValidationError({
+                    'monto_solicitado': f'El monto solicitado (Bs. {Decimal(str(monto)):,.2f}) excede el saldo disponible de la memoria de cálculo (Bs. {saldo_disp:,.2f}).'
+                })
+
+        return data
 
     def get_operaciones_detalle(self, obj):
         detalles = []
