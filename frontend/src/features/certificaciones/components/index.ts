@@ -7,3 +7,4 @@ export { CertificacionRechazarModal } from './CertificacionRechazarModal';
 export { CertificacionDetalleModal } from './CertificacionDetalleModal';
 export { BoletaCertificacionModal } from './BoletaCertificacionModal';
 export { CertificacionDocumentoOficial, formatFechaCertificacion } from './CertificacionDocumentoOficial';
+export { imprimirCertificacion, generarHtmlCertificacion } from '../utils/printCertificacion';

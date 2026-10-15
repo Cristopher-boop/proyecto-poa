@@ -26,6 +26,7 @@ class GastoSerializer(serializers.ModelSerializer):
             'comprobante_num',
             'observacion',
             'memoria',
+            'certificacion',
             'partida_id',
             'partida_codigo',
             'partida_nombre',
@@ -98,6 +99,7 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
     
     creado_por_nombre = serializers.SerializerMethodField()
     aprobado_por_nombre = serializers.SerializerMethodField()
+    desembolsado_por_nombre = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     
     operaciones_detalle = serializers.SerializerMethodField()
@@ -149,10 +151,23 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
             'aprobado_por',
             'aprobado_por_nombre',
             'fecha_aprobacion',
+            'desembolsado_por',
+            'desembolsado_por_nombre',
+            'fecha_desembolso',
+            'comprobante_pago',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'creado_por', 'aprobado_por', 'fecha_aprobacion', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id',
+            'creado_por',
+            'aprobado_por',
+            'fecha_aprobacion',
+            'desembolsado_por',
+            'fecha_desembolso',
+            'created_at',
+            'updated_at'
+        ]
 
     def get_creado_por_nombre(self, obj):
         if obj.creado_por:
@@ -162,6 +177,11 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
     def get_aprobado_por_nombre(self, obj):
         if obj.aprobado_por:
             return obj.aprobado_por.get_full_name() or obj.aprobado_por.username
+        return None
+
+    def get_desembolsado_por_nombre(self, obj):
+        if obj.desembolsado_por:
+            return obj.desembolsado_por.get_full_name() or obj.desembolsado_por.username
         return None
 
     def validate(self, data):

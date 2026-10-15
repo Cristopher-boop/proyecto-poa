@@ -4,11 +4,20 @@ import { CertificacionPOA } from '../../../types/certificacion';
 export interface ValoresEdicionDocumento {
   codigo_certificacion: string;
   numero_oficio_solicitud: string;
-  categoria_programatica_codigo?: string;
-  categoria_programatica?: string;
-  notas?: string;
-  elaborador_nombre?: string;
-  elaborador_cargo?: string;
+  categoria_programatica_codigo?: string | null;
+  categoria_programatica?: string | null;
+  notas?: string | null;
+  elaborador_nombre?: string | null;
+  elaborador_cargo?: string | null;
+  partida_codigo?: string | null;
+  partida_nombre?: string | null;
+  operacion_codigo?: string | null;
+  operacion_descripcion?: string | null;
+  amp_codigo?: string | null;
+  amp_descripcion?: string | null;
+  acp_codigo?: string | null;
+  acp_descripcion?: string | null;
+  programa_codigo?: string | null;
 }
 
 interface CertificacionDocumentoOficialProps {
@@ -19,9 +28,9 @@ interface CertificacionDocumentoOficialProps {
   printRef?: React.RefObject<HTMLDivElement>;
 }
 
-export function formatDiminutivoArea(areaCodigo?: string, areaNombre?: string): string {
-  const cod = (areaCodigo || '').toUpperCase().trim();
-  const nom = (areaNombre || '').toUpperCase().trim();
+export function formatDiminutivoArea(areaCodigo?: any, areaNombre?: any): string {
+  const cod = String(areaCodigo || '').toUpperCase().trim();
+  const nom = String(areaNombre || '').toUpperCase().trim();
 
   if (nom.includes('OPERACIONES') || cod.endsWith('-GO')) return 'OPS';
   if (nom.includes('INFORM') || cod.endsWith('-IF')) return 'IF';
@@ -38,31 +47,37 @@ export function formatDiminutivoArea(areaCodigo?: string, areaNombre?: string): 
   return cod.replace(/GERENCIA DE /i, '').replace(/GCIA\. /i, '').trim() || 'OPS';
 }
 
-export function cleanOficioSolicitud(oficio?: string, areaCodigo?: string, areaNombre?: string): string {
+export function cleanOficioSolicitud(oficio?: any, areaCodigo?: any, areaNombre?: any): string {
   if (!oficio) return '';
-  if (/GCIA\.P-\d+-/i.test(oficio)) {
+  const str = String(oficio);
+  if (/GCIA\.P-\d+-/i.test(str)) {
     const dim = formatDiminutivoArea(areaCodigo, areaNombre);
-    return oficio.replace(/GCIA\.P-\d+-[A-Z0-9]+\.EPTAM/i, `GCIA.${dim}.EPTAM`);
+    return str.replace(/GCIA\.P-\d+-[A-Z0-9]+\.EPTAM/i, `GCIA.${dim}.EPTAM`);
   }
-  return oficio;
+  return str;
 }
 
 export function getJerarquiaNumerica(
-  progCodigo?: string,
-  ampCodigo?: string,
-  acpCodigo?: string,
-  opCodigo?: string
+  progCodigo?: any,
+  ampCodigo?: any,
+  acpCodigo?: any,
+  opCodigo?: any
 ): { ampNum: string; acpNum: string; opNum: string } {
+  const progStr = String(progCodigo || '').trim();
+  const ampStr = String(ampCodigo || '').trim();
+  const acpStr = String(acpCodigo || '').trim();
+  const opStr = String(opCodigo || '').trim();
+
   // 1. Número de programa (ej: 4 o 1)
   let progNum = '4';
-  if (progCodigo) {
-    const clean = progCodigo.replace(/^P-?/, '').trim();
+  if (progStr) {
+    const clean = progStr.replace(/^P-?/, '').trim();
     if (clean.startsWith('1')) progNum = '1';
     else if (clean.startsWith('2')) progNum = '2';
     else if (clean.startsWith('4')) progNum = '4';
     else if (/^\d+/.test(clean)) progNum = clean.charAt(0);
-  } else if (ampCodigo && /AMP-P(\d+)/i.test(ampCodigo)) {
-    const match = ampCodigo.match(/AMP-P(\d+)/i);
+  } else if (ampStr && /AMP-P(\d+)/i.test(ampStr)) {
+    const match = ampStr.match(/AMP-P(\d+)/i);
     if (match) {
       const p = match[1];
       if (p.startsWith('1')) progNum = '1';
@@ -74,12 +89,12 @@ export function getJerarquiaNumerica(
 
   // 2. Número de AMP (ej: 4.1 o 1.1)
   let ampSub = '1';
-  if (ampCodigo) {
-    const match = ampCodigo.match(/(\d+)$/);
+  if (ampStr) {
+    const match = ampStr.match(/(\d+)$/);
     if (match) {
       ampSub = String(parseInt(match[1], 10) || 1);
-    } else if (ampCodigo.includes('.')) {
-      const parts = ampCodigo.split('.');
+    } else if (ampStr.includes('.')) {
+      const parts = ampStr.split('.');
       if (parts.length >= 2) ampSub = parts[1];
     }
   }
@@ -87,20 +102,20 @@ export function getJerarquiaNumerica(
 
   // 3. Número de ACP (ej: 4.1.1 o 1.1.1)
   let acpSub = '1';
-  if (acpCodigo && acpCodigo.includes('.')) {
-    const parts = acpCodigo.split('.');
+  if (acpStr && acpStr.includes('.')) {
+    const parts = acpStr.split('.');
     if (parts.length >= 3) acpSub = parts[2];
   }
   const acpNum = `${ampNum}.${acpSub}`;
 
   // 4. Número de Operación (ej: 4.1.1.4 o 1.1.1.3)
   let opSub = '4';
-  if (opCodigo) {
-    if (opCodigo.includes('.')) {
-      const parts = opCodigo.split('.');
+  if (opStr) {
+    if (opStr.includes('.')) {
+      const parts = opStr.split('.');
       if (parts.length >= 4) opSub = parts[3];
     } else {
-      const match = opCodigo.match(/(\d+)$/);
+      const match = opStr.match(/(\d+)$/);
       if (match) {
         opSub = String(parseInt(match[1], 10) || 1);
       }
@@ -111,8 +126,8 @@ export function getJerarquiaNumerica(
   return { ampNum, acpNum, opNum };
 }
 
-export function formatFechaCertificacion(fechaStr?: string): string {
-  if (!fechaStr) {
+export function formatFechaCertificacion(fechaStr?: any): string {
+  if (!fechaStr || typeof fechaStr !== 'string') {
     const now = new Date();
     const meses = [
       'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -151,18 +166,22 @@ export const CertificacionDocumentoOficial: React.FC<CertificacionDocumentoOfici
   const opDetalle = certificacion.operaciones_detalle?.[0];
 
   const rawProgCod =
+    valoresEdicion?.programa_codigo ||
     opDetalle?.programa_codigo ||
     certificacion.jerarquia_resumen?.programas?.[0]?.codigo ||
     '';
   const rawAmpCod =
+    valoresEdicion?.amp_codigo ||
     opDetalle?.amp_codigo ||
     certificacion.jerarquia_resumen?.amps?.[0]?.codigo ||
     '';
   const rawAcpCod =
+    valoresEdicion?.acp_codigo ||
     opDetalle?.acp_codigo ||
     certificacion.jerarquia_resumen?.acps?.[0]?.codigo ||
     '';
   const rawOpCod =
+    valoresEdicion?.operacion_codigo ||
     opDetalle?.codigo ||
     certificacion.jerarquia_resumen?.operaciones?.[0]?.codigo ||
     '';
@@ -175,22 +194,26 @@ export const CertificacionDocumentoOficial: React.FC<CertificacionDocumentoOfici
   );
 
   const ampDescripcion =
+    valoresEdicion?.amp_descripcion ||
     opDetalle?.amp_descripcion ||
     certificacion.jerarquia_resumen?.amps?.[0]?.descripcion ||
     'Incrementar mecanismos de control y eficiencia operacional a nivel Nacional.';
 
   const acpDescripcion =
+    valoresEdicion?.acp_descripcion ||
     opDetalle?.acp_descripcion ||
     certificacion.jerarquia_resumen?.acps?.[0]?.descripcion ||
     `Ejecutar las acciones estratégicas programadas para la gestión fiscal ${gestionAnio}.`;
 
   const operacionDescripcion =
+    valoresEdicion?.operacion_descripcion ||
     opDetalle?.descripcion ||
     certificacion.jerarquia_resumen?.operaciones?.[0]?.descripcion ||
     certificacion.concepto_gasto ||
     'Operación institucional programada en el Plan Operativo Anual.';
 
   const progCodigo =
+    valoresEdicion?.programa_codigo ||
     opDetalle?.programa_codigo ||
     certificacion.jerarquia_resumen?.programas?.[0]?.codigo ||
     '210.0.0';
@@ -199,31 +222,34 @@ export const CertificacionDocumentoOficial: React.FC<CertificacionDocumentoOfici
     certificacion.jerarquia_resumen?.programas?.[0]?.nombre ||
     'Programas de Producción y/o Servicios Institucionales EPTAM';
 
-  // Partida Presupuestaria
-  const partidaCodigo = certificacion.partida_codigo || '';
+  // Partida Presupuestaria reactiva
+  const partidaCodigo =
+    valoresEdicion?.partida_codigo !== undefined
+      ? valoresEdicion.partida_codigo
+      : certificacion.partida_codigo || '';
   const partidaNombre =
-    certificacion.partida_nombre ||
-    certificacion.partida_literal ||
-    'Partida de Gasto Presupuestario';
+    valoresEdicion?.partida_nombre !== undefined
+      ? valoresEdicion.partida_nombre
+      : certificacion.partida_nombre ||
+        certificacion.partida_literal ||
+        'Partida de Gasto Presupuestario';
   const partidaCompleta = partidaCodigo ? `${partidaCodigo} ${partidaNombre}` : partidaNombre;
 
   const catProgCodigo =
-    valoresEdicion?.categoria_programatica_codigo ??
-    certificacion.categoria_programatica_codigo ??
+    (valoresEdicion?.categoria_programatica_codigo ?? certificacion.categoria_programatica_codigo) ||
     progCodigo;
 
   const catProgNombre =
-    valoresEdicion?.categoria_programatica ??
-    certificacion.categoria_programatica ??
+    (valoresEdicion?.categoria_programatica ?? certificacion.categoria_programatica) ||
     progNombre;
 
   const notasDefault =
     `Notas: El presente documento da a conocer únicamente que la solicitud en mención se encuentra programada en alineación a la Acción de Mediano Plazo (PEE) y la Acción de Corto Plazo (POA) registrados en el Plan Operativo Anual ${gestionAnio}.\n\nLos aspectos presupuestarios y de contratación corresponden al área solicitante y se encuentran en el marco de las atribuciones y competencias de la Gerencia de Asuntos Administrativos EPTAM y sus instancias correspondientes según el D.S. Nº 0181 y normativa vigente relacionada.`;
 
   const notasValue =
-    valoresEdicion?.notas !== undefined
+    (valoresEdicion?.notas !== undefined && valoresEdicion.notas !== null
       ? valoresEdicion.notas
-      : certificacion.notas || notasDefault;
+      : certificacion.notas) || notasDefault;
 
   // Ajustar altura del textarea de notas para que nunca tenga scroll y baje dinámicamente
   useEffect(() => {
@@ -251,6 +277,7 @@ export const CertificacionDocumentoOficial: React.FC<CertificacionDocumentoOfici
   return (
     <div
       ref={printRef}
+      id="printable-certificacion"
       className="bg-white text-slate-900 border border-slate-300 dark:border-slate-700 shadow-lg rounded-2xl p-6 sm:p-10 max-w-3xl mx-auto font-sans text-xs print:p-0 print:border-none print:shadow-none print:text-black print:rounded-none"
     >
       {/* ── Encabezado Superior: Fecha y Versión ───────────────────────────── */}
@@ -322,15 +349,20 @@ export const CertificacionDocumentoOficial: React.FC<CertificacionDocumentoOfici
         </tbody>
       </table>
 
-      {/* ── Texto de Alineación POA ─────────────────────────────────────────── */}
-      <p className="text-[11px] text-slate-800 leading-relaxed mb-2 font-normal">
-        La solicitud se encuentra programada en el Plan Operativo Anual (POA) {gestionAnio} de
-        acuerdo al siguiente detalle:
-      </p>
-
       {/* ── Tabla 3: Alineación Estratégica Institucional ────────────────────── */}
       <table className="w-full border-collapse border border-slate-900 mb-3 text-xs">
         <tbody>
+          {/* Fila Encabezado: Texto de Alineación POA */}
+          <tr className="border-b border-slate-900">
+            <td
+              colSpan={3}
+              className="p-2 text-[11px] text-slate-900 leading-relaxed font-normal bg-white"
+            >
+              La solicitud se encuentra programada en el Plan Operativo Anual (POA) {gestionAnio} de
+              acuerdo al siguiente detalle:
+            </td>
+          </tr>
+
           {/* Fila 1: PEE */}
           <tr className="border-b border-slate-900">
             <td className="w-[14%] p-2 border-r border-slate-900 font-mono font-bold text-center align-middle text-slate-900">

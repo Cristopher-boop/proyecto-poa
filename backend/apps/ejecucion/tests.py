@@ -98,6 +98,7 @@ class CertificacionPOAWorkflowTests(TestCase):
         self.rol_planif = Rol.objects.create(nombre='PLANIFICADOR')
         self.rol_presup = Rol.objects.create(nombre='APROBADOR')
         self.rol_elaborador = Rol.objects.create(nombre='ELABORADOR')
+        self.rol_tesoreria = Rol.objects.create(nombre='TESORERÍA')
 
         self.programa = Programa.objects.create(codigo='P-01', nombre='Gestión Institucional')
         self.area = Area.objects.create(programa=self.programa, codigo='GI', nombre='Gerencia de Informática')
@@ -108,9 +109,14 @@ class CertificacionPOAWorkflowTests(TestCase):
         self.planif_user = Usuario.objects.create(username='planif', rol=self.rol_planif)
         self.presup_user = Usuario.objects.create(username='presup', rol=self.rol_presup)
         self.elaborador_user = Usuario.objects.create(username='elaborador', rol=self.rol_elaborador, seccion=self.seccion)
+        self.tesoreria_user = Usuario.objects.create(username='tesoreria', rol=self.rol_tesoreria)
 
         self.gestion = Gestion.objects.create(anio=2026, estado=Gestion.EstadoGestion.EN_EJECUCION)
         self.partida = Partida.objects.create(codigo='25200', nombre='Estudios e Investigaciones')
+        from apps.planificacion.models import AccionMedianoPlazo, AccionCortoPlazo, Operacion
+        self.amp = AccionMedianoPlazo.objects.create(programa=self.programa, codigo='AMP-1', descripcion='Modernización TI')
+        self.acp = AccionCortoPlazo.objects.create(accion_mediano_plazo=self.amp, gestion=self.gestion, codigo='ACP-1', descripcion='Sistemas')
+        self.operacion = Operacion.objects.create(accion_corto_plazo=self.acp, area=self.area, codigo='OP-01', descripcion='Mantenimiento y ciberseguridad')
         self.memoria = MemoriaCalculo.objects.create(
             codigo='MC-INF-001',
             gestion=self.gestion,
@@ -156,13 +162,46 @@ class CertificacionPOAWorkflowTests(TestCase):
         self.assertEqual(res_cert.status_code, 200)
         self.assertEqual(res_cert.data['estado'], 'PENDIENTE_PRESUPUESTOS')
 
-        # 4. Presupuestos da el okey financiero final
+        # 4. Presupuestos da el okey financiero y remite a Tesorería
         self.client.force_authenticate(user=self.presup_user)
         res_aprob = self.client.post(f'/api/v1/ejecucion/certificaciones/{cert_id}/aprobar-presupuestos/', {
             'observacion': 'Disponibilidad presupuestaria confirmada'
         })
         self.assertEqual(res_aprob.status_code, 200)
-        self.assertEqual(res_aprob.data['estado'], 'APROBADO')
+        self.assertEqual(res_aprob.data['estado'], 'PENDIENTE_TESORERIA')
+
+        # 5. Tesorería (Lic. Zaida) confirma desembolso (genera Gasto automático y liquida saldo)
+        self.client.force_authenticate(user=self.tesoreria_user)
+        res_desemb = self.client.post(f'/api/v1/ejecucion/certificaciones/{cert_id}/confirmar-desembolso/', {
+            'comprobante_pago': 'CP-2026-0099',
+            'observacion': 'Fondos transferidos'
+        })
+        self.assertEqual(res_desemb.status_code, 200)
+        self.assertEqual(res_desemb.data['estado'], 'APROBADO')
+        self.assertIsNotNone(res_desemb.data['fecha_desembolso'])
+
+        # Verificar que se generó el Gasto en automático vinculado a la certificación
+        self.assertTrue(Gasto.objects.filter(certificacion_id=cert_id).exists())
+
+    def test_presupuestos_devuelve_a_planificacion(self):
+        cert = CertificacionPOA.objects.create(
+            gestion=self.gestion,
+            area=self.area,
+            memoria=self.memoria,
+            fecha=date(2026, 4, 10),
+            hoja_ruta='HR-DEV-01',
+            monto_solicitado=Decimal('4000.00'),
+            concepto_gasto='Compra equipo',
+            estado=CertificacionPOA.EstadoCertificacion.PENDIENTE_PRESUPUESTOS,
+            creado_por=self.gerente_user
+        )
+        self.client.force_authenticate(user=self.presup_user)
+        res = self.client.post(f'/api/v1/ejecucion/certificaciones/{cert.id}/devolver-planificacion/', {
+            'motivo': 'Falta justificación en partida'
+        })
+        self.assertEqual(res.status_code, 200)
+        cert.refresh_from_db()
+        self.assertEqual(cert.estado, CertificacionPOA.EstadoCertificacion.PENDIENTE_PLANIFICACION)
 
     def test_flujo_con_correlativos_gerencia_y_global(self):
         # Solicitud de la gerencia con los 2 correlativos emitidos por Planificación
@@ -270,4 +309,35 @@ class CertificacionPOAWorkflowTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data['estado'], 'PENDIENTE_PRESUPUESTOS')
         self.assertFalse(res.data['es_contratacion'])
+
+    def test_certificar_planificacion_alinea_partida_y_operacion(self):
+        # Planificación puede corregir o alinear partida y operación
+        self.client.force_authenticate(user=self.gerente_user)
+        cert = CertificacionPOA.objects.create(
+            gestion=self.gestion,
+            area=self.area,
+            memoria=self.memoria,
+            fecha=date(2026, 4, 10),
+            hoja_ruta='HR-REV-03',
+            monto_solicitado=Decimal('1000.00'),
+            concepto_gasto='Compra con alineación requerida',
+            es_contratacion=True,
+            estado=CertificacionPOA.EstadoCertificacion.PENDIENTE_PLANIFICACION,
+            creado_por=self.gerente_user
+        )
+        self.client.force_authenticate(user=self.planif_user)
+        res = self.client.post(f'/api/v1/ejecucion/certificaciones/{cert.id}/certificar-planificacion/', {
+            'partida_id': self.partida.id,
+            'operacion_id': self.operacion.id,
+            'categoria_programatica_codigo': '210.1.1',
+            'categoria_programatica': 'PROGRAMA OPERATIVO',
+            'notas': 'Verificado y alineado por Planificación'
+        })
+        self.assertEqual(res.status_code, 200)
+        cert.refresh_from_db()
+        self.assertEqual(cert.partida_id, self.partida.id)
+        self.assertEqual(cert.partida_literal, self.partida.nombre)
+        self.assertTrue(cert.operaciones.filter(id=self.operacion.id).exists())
+        self.assertEqual(cert.estado, CertificacionPOA.EstadoCertificacion.PENDIENTE_PRESUPUESTOS)
+
 

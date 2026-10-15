@@ -24,6 +24,7 @@ export type EstadoCertificacion =
   | 'BORRADOR'
   | 'PENDIENTE_PLANIFICACION'
   | 'PENDIENTE_PRESUPUESTOS'
+  | 'PENDIENTE_TESORERIA'
   | 'APROBADO'
   | 'OBSERVADO'
   | 'RECHAZADO'
@@ -73,6 +74,10 @@ export interface CertificacionPOA {
   aprobado_por?: number | null;
   aprobado_por_nombre?: string | null;
   fecha_aprobacion?: string | null;
+  desembolsado_por?: number | null;
+  desembolsado_por_nombre?: string | null;
+  fecha_desembolso?: string | null;
+  comprobante_pago?: string;
   created_at: string;
   updated_at: string;
 }

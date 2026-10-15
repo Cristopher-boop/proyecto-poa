@@ -56,14 +56,21 @@ export const certificacionService = {
       categoria_programatica_codigo?: string;
       categoria_programatica?: string;
       notas?: string;
+      memoria_id?: number;
+      partida_id?: number;
+      operacion_id?: number;
     }
   ): Promise<{ status: string; estado: string; codigo_certificacion?: string; numero_oficio_solicitud?: string }> => {
     const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/certificar-planificacion/`, data || {});
     return response.data;
   },
 
-  aprobarPresupuestos: async (id: number, observacion?: string): Promise<{ status: string; estado: string }> => {
-    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/aprobar-presupuestos/`, { observacion });
+  aprobarPresupuestos: async (
+    id: number,
+    data?: { observacion?: string; memoria_id?: number; partida_id?: number } | string
+  ): Promise<{ status: string; estado: string }> => {
+    const payload = typeof data === 'string' ? { observacion: data } : (data || {});
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/aprobar-presupuestos/`, payload);
     return response.data;
   },
 
@@ -81,4 +88,18 @@ export const certificacionService = {
     const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/cancelar/`, { motivo });
     return response.data;
   },
+
+  devolverPlanificacion: async (id: number, motivo: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/devolver-planificacion/`, { motivo });
+    return response.data;
+  },
+
+  confirmarDesembolso: async (
+    id: number,
+    data?: { comprobante_pago?: string }
+  ): Promise<{ status: string; estado: string; gasto_id?: number; comprobante_pago?: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/confirmar-desembolso/`, data || {});
+    return response.data;
+  },
 };
+

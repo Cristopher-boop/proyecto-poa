@@ -117,11 +117,14 @@
   }
 
   #printable-memoria,
-  #printable-memoria * {
+  #printable-memoria *,
+  #printable-certificacion,
+  #printable-certificacion * {
     visibility: visible !important;
   }
 
-  #printable-memoria {
+  #printable-memoria,
+  #printable-certificacion {
     display: block !important;
     position: absolute !important;
     left: 0 !important;

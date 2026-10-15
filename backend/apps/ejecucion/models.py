@@ -15,6 +15,7 @@ class Gasto(TimeStampedModel):
     observacion = models.TextField(blank=True, null=True, verbose_name="Observación")
     memoria = models.ForeignKey(MemoriaCalculo, on_delete=models.CASCADE, related_name='gastos', verbose_name="Memoria de Cálculo")
     usuario_registro = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='gastos_registrados', verbose_name="Registrado por")
+    certificacion = models.ForeignKey('CertificacionPOA', on_delete=models.SET_NULL, null=True, blank=True, related_name='gastos', verbose_name="Certificación POA Origen")
 
     class Meta:
         verbose_name = "Gasto Ejecutado"
@@ -30,7 +31,8 @@ class CertificacionPOA(TimeStampedModel):
         BORRADOR = 'BORRADOR', 'Borrador (Solicitud)'
         PENDIENTE_PLANIFICACION = 'PENDIENTE_PLANIFICACION', 'En Revisión (Planificación)'
         PENDIENTE_PRESUPUESTOS = 'PENDIENTE_PRESUPUESTOS', 'En Revisión (Presupuestos)'
-        APROBADO = 'APROBADO', 'Aprobado y Certificado'
+        PENDIENTE_TESORERIA = 'PENDIENTE_TESORERIA', 'En Tesorería (Por Desembolsar)'
+        APROBADO = 'APROBADO', 'Aprobado y Pagado'
         OBSERVADO = 'OBSERVADO', 'Observado / Devuelto'
         RECHAZADO = 'RECHAZADO', 'Rechazado'
         ANULADO = 'ANULADO', 'Cancelado / Anulado'
@@ -78,6 +80,9 @@ class CertificacionPOA(TimeStampedModel):
     creado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_creadas', verbose_name="Creado por")
     aprobado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_aprobadas', verbose_name="Aprobado por")
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Aprobación Final")
+    desembolsado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificaciones_desembolsadas', verbose_name="Desembolsado por (Tesorería)")
+    fecha_desembolso = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Desembolso / Pago")
+    comprobante_pago = models.CharField(max_length=100, blank=True, default="", verbose_name="Nº Comprobante de Pago / Transacción")
 
     class Meta:
         verbose_name = "Certificación POA"

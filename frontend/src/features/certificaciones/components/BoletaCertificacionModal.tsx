@@ -3,24 +3,27 @@ import { Printer, ShieldCheck } from 'lucide-react';
 import { CertificacionPOA } from '../../../types/certificacion';
 import { Modal, Button } from '../../../components/commons';
 import { CertificacionDocumentoOficial } from './CertificacionDocumentoOficial';
+import { imprimirCertificacion } from '../utils/printCertificacion';
 
 interface BoletaCertificacionModalProps {
   isOpen: boolean;
   onClose: () => void;
   certificacion: CertificacionPOA | null;
+  canPrint?: boolean;
 }
 
 export const BoletaCertificacionModal: React.FC<BoletaCertificacionModalProps> = ({
   isOpen,
   onClose,
   certificacion,
+  canPrint = false,
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
 
   if (!certificacion) return null;
 
   const handlePrint = () => {
-    window.print();
+    imprimirCertificacion(certificacion);
   };
 
   return (
@@ -47,16 +50,18 @@ export const BoletaCertificacionModal: React.FC<BoletaCertificacionModalProps> =
             >
               Cerrar
             </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handlePrint}
-              icon={<Printer size={15} />}
-              size="sm"
-              className="font-bold shadow-md shadow-theme-primary/20"
-            >
-              Imprimir Boleta
-            </Button>
+            {canPrint && (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handlePrint}
+                icon={<Printer size={15} />}
+                size="sm"
+                className="font-bold shadow-md shadow-theme-primary/20"
+              >
+                Imprimir Boleta
+              </Button>
+            )}
           </div>
         </div>
 

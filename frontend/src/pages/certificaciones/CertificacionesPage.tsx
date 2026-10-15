@@ -37,8 +37,6 @@ import {
 } from '../../components/commons';
 import {
   CertificacionFormModal,
-  CertificacionPlanificacionModal,
-  CertificacionPresupuestosModal,
   CertificacionObservarModal,
   CertificacionRechazarModal,
   CertificacionDetalleModal,
@@ -59,15 +57,16 @@ export default function CertificacionesPage() {
     (rolClean.includes('APROBAD') ||
       rolClean.includes('PRESUPUEST') ||
       rolClean.includes('FINANZ'));
+  const isTesoreria = !isSuperAdmin && rolClean.includes('TESORER');
   const isGerente = !isSuperAdmin && rolClean.includes('GERENT');
   const isElaborador = !isSuperAdmin && rolClean.includes('ELABORAD');
   const isTrabajador =
     !isSuperAdmin &&
     (rolClean.includes('TRABAJAD') ||
-      (!isPlanificador && !isPresupuestos && !isGerente && !isElaborador));
+      (!isPlanificador && !isPresupuestos && !isTesoreria && !isGerente && !isElaborador));
 
   // Roles institucionales globales (pueden ver cualquier gerencia y cambiar filtros)
-  const isGlobalRole = isSuperAdmin || isPlanificador || isPresupuestos;
+  const isGlobalRole = isSuperAdmin || isPlanificador || isPresupuestos || isTesoreria;
 
   // Gerente y Admin pueden solicitar formalmente
   const canCreate = isSuperAdmin || isGerente;
@@ -75,10 +74,12 @@ export default function CertificacionesPage() {
   const canCertify = isSuperAdmin || isPlanificador;
   // Presupuestos otorga visto bueno final financiero
   const canApprove = isSuperAdmin || isPresupuestos;
+  // Tesorería confirma la salida de dinero (desembolso)
+  const canDisburse = isSuperAdmin || isTesoreria;
   // Gerente puede cancelar su propia solicitud si ya no requiere el gasto o ante observaciones
   const canCancelGerente = isSuperAdmin || isGerente;
-  // Permiso de impresión oficial: Todos pueden imprimir boleta cuando el certificado esté formalmente APROBADO
-  const canPrint = true;
+  // Permiso de impresión oficial: SOLO Planificación puede imprimir ("SOLO PLANIFICACION PUEDE IMPRIMIR, nadie mas")
+  const canPrint = isPlanificador;
 
   // Área del usuario (para Gerente, Trabajador y Elaborador)
   const userAreaId = user?.area_id || (user as any)?.seccion?.area_id || null;
@@ -98,16 +99,15 @@ export default function CertificacionesPage() {
   const defaultTab = useMemo(() => {
     if (isPlanificador) return 'PENDIENTE_PLANIFICACION';
     if (isPresupuestos) return 'PENDIENTE_PRESUPUESTOS';
+    if (isTesoreria) return 'PENDIENTE_TESORERIA';
     return 'TODAS';
-  }, [isPlanificador, isPresupuestos]);
+  }, [isPlanificador, isPresupuestos, isTesoreria]);
 
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Modales
   const [formModalOpen, setFormModalOpen] = useState<boolean>(false);
-  const [planifModalOpen, setPlanifModalOpen] = useState<boolean>(false);
-  const [presupModalOpen, setPresupModalOpen] = useState<boolean>(false);
   const [observarModalOpen, setObservarModalOpen] = useState<boolean>(false);
   const [rechazarModalOpen, setRechazarModalOpen] = useState<boolean>(false);
   const [modoRechazo, setModoRechazo] = useState<ModoRechazo>('rechazar_planificacion');
@@ -125,8 +125,10 @@ export default function CertificacionesPage() {
       setActiveTab('PENDIENTE_PLANIFICACION');
     } else if (isPresupuestos) {
       setActiveTab('PENDIENTE_PRESUPUESTOS');
+    } else if (isTesoreria) {
+      setActiveTab('PENDIENTE_TESORERIA');
     }
-  }, [isPlanificador, isPresupuestos]);
+  }, [isPlanificador, isPresupuestos, isTesoreria]);
 
   // ── 3. Carga Inicial de Áreas ─────────────────────────────────────
   useEffect(() => {
@@ -188,8 +190,12 @@ export default function CertificacionesPage() {
       borrador: list.filter((c) => c.estado === 'BORRADOR').length,
       pendiente_planificacion: list.filter((c) => c.estado === 'PENDIENTE_PLANIFICACION').length,
       pendiente_presupuestos: list.filter((c) => c.estado === 'PENDIENTE_PRESUPUESTOS').length,
+      pendiente_tesoreria: list.filter((c) => c.estado === 'PENDIENTE_TESORERIA').length,
       en_tramite: list.filter(
-        (c) => c.estado === 'PENDIENTE_PLANIFICACION' || c.estado === 'PENDIENTE_PRESUPUESTOS'
+        (c) =>
+          c.estado === 'PENDIENTE_PLANIFICACION' ||
+          c.estado === 'PENDIENTE_PRESUPUESTOS' ||
+          c.estado === 'PENDIENTE_TESORERIA'
       ).length,
       aprobado: list.filter((c) => c.estado === 'APROBADO').length,
       observado: list.filter((c) => c.estado === 'OBSERVADO').length,
@@ -227,21 +233,30 @@ export default function CertificacionesPage() {
     }
 
     if (isPlanificador) {
-      // Planificador: Solo ve Por Certificar, Aprobadas POA y Observadas (que unifica rechazadas)
+      // Planificador: Solo ve Por Certificar, Enviadas, Aprobadas POA y Observadas (que unifica rechazadas)
       return [
         { id: 'PENDIENTE_PLANIFICACION', label: 'Por Certificar', count: counts.pendiente_planificacion },
+        { id: 'PENDIENTE_PRESUPUESTOS', label: 'Enviadas', count: counts.pendiente_presupuestos },
         { id: 'APROBADO', label: 'Aprobadas POA', count: counts.aprobado },
         { id: 'OBSERVADO', label: 'Observadas', count: counts.observadas_o_rechazadas },
       ];
     }
 
     if (isPresupuestos) {
-      // Presupuestos: Su bandeja de trabajo es otorgar visto bueno financiero
+      // Presupuestos: Su bandeja de trabajo es el control financiero y seguimiento a Tesorería
       return [
-        { id: 'PENDIENTE_PRESUPUESTOS', label: 'Por Visto Bueno (Presupuestos)', count: counts.pendiente_presupuestos },
-        { id: 'APROBADO', label: 'Aprobadas POA', count: counts.aprobado },
-        { id: 'OBSERVADO', label: 'Observadas', count: counts.observado },
-        { id: 'RECHAZADO', label: 'Denegadas / Rechazadas', count: counts.rechazado },
+        { id: 'PENDIENTE_PRESUPUESTOS', label: 'Por Revisar', count: counts.pendiente_presupuestos },
+        { id: 'PENDIENTE_TESORERIA', label: 'En Tesorería', count: counts.pendiente_tesoreria },
+        { id: 'APROBADO', label: 'Revisadas y Pagadas', count: counts.aprobado },
+        { id: 'OBSERVADO', label: 'Observadas', count: counts.observadas_o_rechazadas },
+      ];
+    }
+
+    if (isTesoreria) {
+      // Tesorería (Lic. Zaida): Solo confirma desembolso de certificaciones aprobadas
+      return [
+        { id: 'PENDIENTE_TESORERIA', label: 'Por Desembolsar', count: counts.pendiente_tesoreria },
+        { id: 'APROBADO', label: 'Desembolsados', count: counts.aprobado },
         { id: 'TODAS', label: 'Todas las Solicitudes', count: counts.total },
       ];
     }
@@ -252,7 +267,8 @@ export default function CertificacionesPage() {
       { id: 'BORRADOR', label: 'Borrador', count: counts.borrador },
       { id: 'PENDIENTE_PLANIFICACION', label: 'En Planificación', count: counts.pendiente_planificacion },
       { id: 'PENDIENTE_PRESUPUESTOS', label: 'En Presupuestos', count: counts.pendiente_presupuestos },
-      { id: 'APROBADO', label: 'Aprobadas POA', count: counts.aprobado },
+      { id: 'PENDIENTE_TESORERIA', label: 'En Tesorería', count: counts.pendiente_tesoreria },
+      { id: 'APROBADO', label: 'Aprobadas / Pagadas', count: counts.aprobado },
       { id: 'OBSERVADO', label: 'Observadas', count: counts.observado },
       { id: 'RECHAZADO', label: 'Rechazadas / Canceladas', count: counts.rechazado_o_anulado },
     ];
@@ -262,6 +278,7 @@ export default function CertificacionesPage() {
     isGerente,
     isPlanificador,
     isPresupuestos,
+    isTesoreria,
     counts,
   ]);
 
@@ -271,11 +288,15 @@ export default function CertificacionesPage() {
       // Filtro por pestaña de estado
       if (activeTab !== 'TODAS') {
         if (activeTab === 'EN_TRAMITE') {
-          if (item.estado !== 'PENDIENTE_PLANIFICACION' && item.estado !== 'PENDIENTE_PRESUPUESTOS') {
+          if (
+            item.estado !== 'PENDIENTE_PLANIFICACION' &&
+            item.estado !== 'PENDIENTE_PRESUPUESTOS' &&
+            item.estado !== 'PENDIENTE_TESORERIA'
+          ) {
             return false;
           }
-        } else if (activeTab === 'OBSERVADO' && isPlanificador) {
-          // Para Planificador, 'OBSERVADO' unifica Observadas, Rechazadas y Anuladas
+        } else if (activeTab === 'OBSERVADO' && (isPlanificador || isPresupuestos)) {
+          // Para Planificador y Presupuestos, 'OBSERVADO' unifica Observadas, Rechazadas y Anuladas
           if (item.estado !== 'OBSERVADO' && item.estado !== 'RECHAZADO' && item.estado !== 'ANULADO') {
             return false;
           }
@@ -348,16 +369,21 @@ export default function CertificacionesPage() {
   // Abrir vista previa oficial y detalle de Certificación POA
   const handleOpenDetalle = async (item: CertificacionPOA) => {
     setSelectedCert(item);
-    try {
-      const nextNum = await certificacionService.getSiguienteCorrelativo(
-        item.gestion,
-        item.area
-      );
-      setSiguienteCorrelativoGlobal(nextNum.codigo_certificacion || '');
-      setSiguienteCorrelativoArea(nextNum.numero_oficio_solicitud || '');
-    } catch {
-      setSiguienteCorrelativoGlobal('');
-      setSiguienteCorrelativoArea('');
+    if (!item.codigo_certificacion && item.gestion && item.area) {
+      try {
+        const nextNum = await certificacionService.getSiguienteCorrelativo(
+          item.gestion,
+          item.area
+        );
+        setSiguienteCorrelativoGlobal(nextNum.codigo_certificacion || '');
+        setSiguienteCorrelativoArea(nextNum.numero_oficio_solicitud || '');
+      } catch {
+        setSiguienteCorrelativoGlobal('');
+        setSiguienteCorrelativoArea('');
+      }
+    } else {
+      setSiguienteCorrelativoGlobal(item.codigo_certificacion || '');
+      setSiguienteCorrelativoArea(item.numero_oficio_solicitud || '');
     }
     setDetalleModalOpen(true);
   };
@@ -370,12 +396,43 @@ export default function CertificacionesPage() {
     categoria_programatica_codigo?: string;
     categoria_programatica?: string;
     notas?: string;
+    memoria_id?: number;
+    partida_id?: number;
+    operacion_id?: number;
   }) => {
     if (!selectedCert) return;
     try {
-      await certificacionService.certificarPlanificacion(selectedCert.id, data);
+      const res = await certificacionService.certificarPlanificacion(selectedCert.id, data);
       alertService.toast(
-        'Certificación POA emitida exitosamente. Se notificó a la gerencia para recojo y se remitió a Presupuestos.',
+        'Ya se imprimió, puede pasar a recoger la certificación (remitida a Presupuestos).',
+        'success'
+      );
+      await fetchCertificaciones();
+
+      // Auto-abrir la boleta oficial para impresión inmediata por Planificación
+      const updatedCert: CertificacionPOA = {
+        ...selectedCert,
+        codigo_certificacion: res?.codigo_certificacion || data.codigo_certificacion || selectedCert.codigo_certificacion,
+        numero_oficio_solicitud: res?.numero_oficio_solicitud || data.numero_oficio_solicitud || selectedCert.numero_oficio_solicitud,
+        estado: 'PENDIENTE_PRESUPUESTOS',
+        estado_display: 'En Revisión (Presupuestos)',
+      };
+      setSelectedCert(updatedCert);
+      setBoletaModalOpen(true);
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  // Presupuestos otorga visto bueno final financiero
+  const handleAprobarPresupuestos = async (
+    data?: { observacion?: string; memoria_id?: number; partida_id?: number } | string
+  ) => {
+    if (!selectedCert) return;
+    try {
+      await certificacionService.aprobarPresupuestos(selectedCert.id, data);
+      alertService.toast(
+        'Visto bueno financiero otorgado. Solicitud remitida a Tesorería para confirmación de salida de dinero.',
         'success'
       );
       await fetchCertificaciones();
@@ -384,18 +441,47 @@ export default function CertificacionesPage() {
     }
   };
 
-  // Presupuestos otorga visto bueno final
-  const handleAprobarPresupuestos = async (observacion?: string) => {
+  // Presupuestos devuelve a Planificación para reajuste técnico
+  const handleDevolverPlanificacion = async (motivo: string) => {
     if (!selectedCert) return;
     try {
-      await certificacionService.aprobarPresupuestos(selectedCert.id, observacion);
+      await certificacionService.devolverPlanificacion(selectedCert.id, motivo);
       alertService.toast(
-        'Visto bueno financiero otorgado y certificación POA aprobada formalmente.',
-        'success'
+        'Certificación devuelta a Planificación para reajuste técnico.',
+        'info'
       );
       await fetchCertificaciones();
     } catch (err: any) {
       throw err;
+    }
+  };
+
+  // Tesorería (Lic. Zaida) confirma salida de dinero y registro automático de gasto
+  const handleConfirmarDesembolso = async (item: CertificacionPOA) => {
+    const montoStr = Number(item.monto_solicitado).toLocaleString('es-BO', { minimumFractionDigits: 2 });
+    const confirm = await alertService.confirm({
+      title: '¿Confirmar salida del dinero?',
+      text: `Tesorería (Lic. Zaida): Confirmar que el dinero ya salió por un monto de Bs. ${montoStr} para la Hoja de Ruta "${item.hoja_ruta}". Al confirmar, el sistema registrará automáticamente el Gasto Ejecutado en el presupuesto institucional.`,
+      confirmButtonText: 'Sí, el dinero ya salió',
+      cancelButtonText: 'Cancelar',
+      icon: 'question',
+    });
+    if (!confirm) return;
+
+    try {
+      const res = await certificacionService.confirmarDesembolso(item.id);
+      alertService.toast(
+        `¡Dinero desembolsado! Se registró automáticamente como Gasto con comprobante ${res.comprobante_pago || 'de desembolso'}.`,
+        'success'
+      );
+      await fetchCertificaciones();
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        err?.response?.data?.monto_solicitado?.[0] ||
+        'Error al confirmar el desembolso.';
+      alertService.toast(msg, 'error');
     }
   };
 
@@ -449,8 +535,6 @@ export default function CertificacionesPage() {
         );
       }
       setRechazarModalOpen(false);
-      setPlanifModalOpen(false);
-      setPresupModalOpen(false);
       setDetalleModalOpen(false);
       await fetchCertificaciones();
     } catch (err: any) {
@@ -518,7 +602,13 @@ export default function CertificacionesPage() {
               {row.hoja_ruta}
             </span>
           </div>
-          <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md bg-theme-primary/10 text-theme-primary border border-theme-primary/20">
+          <span
+            className={`inline-block px-2 py-0.5 text-[10px] font-extrabold rounded-md shadow-xs ${
+              row.es_contratacion
+                ? 'bg-amber-400 text-slate-950 border border-amber-500 font-bold'
+                : 'bg-theme-base text-theme-muted border border-theme-border font-medium'
+            }`}
+          >
             {row.es_contratacion ? 'Contratación POA' : 'Gasto Directo'}
           </span>
         </div>
@@ -532,15 +622,15 @@ export default function CertificacionesPage() {
           <span className="font-semibold text-theme-main block truncate" title={row.area_nombre}>
             {row.area_nombre}
           </span>
-          <span className="text-[11px] text-theme-muted font-mono">
-            {row.area_codigo} &bull; {row.fecha}
+          <span className="text-[11px] text-theme-muted font-sans">
+            {row.fecha}
           </span>
         </div>
       ),
     },
     {
-      header: 'Memoria POA (MC)',
-      minWidth: '150px',
+      header: 'Memoria POA',
+      minWidth: '140px',
       render: (row) => (
         <div className="flex items-center gap-1.5">
           <span className="px-2 py-0.5 rounded-md bg-theme-base border border-theme-border text-xs font-mono font-bold text-theme-main">
@@ -566,14 +656,14 @@ export default function CertificacionesPage() {
     },
     {
       header: 'Código Certificación',
-      minWidth: '180px',
+      minWidth: '170px',
       render: (row) => {
         if (!row.codigo_certificacion) {
           return <span className="text-xs text-theme-muted font-mono">-</span>;
         }
         return (
           <span
-            className="font-mono font-bold text-xs text-indigo-700 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 truncate inline-block"
+            className="font-mono font-bold text-xs text-theme-main bg-theme-base px-2.5 py-1 rounded-lg border border-theme-border truncate inline-block"
             title={row.codigo_certificacion}
           >
             {row.codigo_certificacion}
@@ -583,39 +673,52 @@ export default function CertificacionesPage() {
     },
     {
       header: 'Estado',
-      minWidth: '140px',
+      minWidth: '130px',
       align: 'center',
       render: (row) => {
         if (isPlanificador) {
           if (row.estado === 'PENDIENTE_PLANIFICACION') {
-            return (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                Revisar
-              </span>
-            );
+            return <StatusBadge status="PENDIENTE_PLANIFICACION" label="Revisar" />;
           }
-          if (row.estado === 'PENDIENTE_PRESUPUESTOS' || row.estado === 'APROBADO') {
-            return (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400" />
-                Revisado
-              </span>
-            );
+          if (row.estado === 'PENDIENTE_PRESUPUESTOS') {
+            return <StatusBadge status="PENDIENTE_GERENCIA" label="Enviada" />;
+          }
+          if (row.estado === 'PENDIENTE_TESORERIA') {
+            return <StatusBadge status="PENDIENTE_TESORERIA" label="En Tesorería" />;
+          }
+          if (row.estado === 'APROBADO') {
+            return <StatusBadge status="APROBADO" label="Revisado" />;
           }
           if (row.estado === 'OBSERVADO') {
-            return (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30">
-                Observado
-              </span>
-            );
+            return <StatusBadge status="OBSERVADO" label="Observado" />;
           }
           if (row.estado === 'RECHAZADO' || row.estado === 'ANULADO') {
-            return (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
-                Rechazado
-              </span>
-            );
+            return <StatusBadge status="RECHAZADO" label="Rechazado" />;
+          }
+        }
+        if (isPresupuestos) {
+          if (row.estado === 'PENDIENTE_PRESUPUESTOS') {
+            return <StatusBadge status="PENDIENTE_PRESUPUESTOS" label="Revisar" />;
+          }
+          if (row.estado === 'PENDIENTE_TESORERIA') {
+            return <StatusBadge status="PENDIENTE_TESORERIA" label="En Tesorería" />;
+          }
+          if (row.estado === 'APROBADO') {
+            return <StatusBadge status="APROBADO" label="Revisado" />;
+          }
+          if (row.estado === 'OBSERVADO') {
+            return <StatusBadge status="OBSERVADO" label="Observado" />;
+          }
+          if (row.estado === 'RECHAZADO' || row.estado === 'ANULADO') {
+            return <StatusBadge status="RECHAZADO" label="Rechazado" />;
+          }
+        }
+        if (isTesoreria) {
+          if (row.estado === 'PENDIENTE_TESORERIA') {
+            return <StatusBadge status="PENDIENTE_TESORERIA" label="Por Desembolsar" />;
+          }
+          if (row.estado === 'APROBADO') {
+            return <StatusBadge status="APROBADO" label="Desembolsado" />;
           }
         }
         return <StatusBadge status={row.estado} />;
@@ -623,13 +726,14 @@ export default function CertificacionesPage() {
     },
     {
       header: 'Acciones',
-      minWidth: '200px',
+      minWidth: '100px',
       align: 'right',
       render: (row) => {
         const isBorrador = row.estado === 'BORRADOR';
         const isObservado = row.estado === 'OBSERVADO';
         const isPendPlanif = row.estado === 'PENDIENTE_PLANIFICACION';
         const isPendPresup = row.estado === 'PENDIENTE_PRESUPUESTOS';
+        const isPendTesoreria = row.estado === 'PENDIENTE_TESORERIA';
         const isAprobado = row.estado === 'APROBADO';
         const isRechazado = row.estado === 'RECHAZADO' || row.estado === 'ANULADO';
 
@@ -690,10 +794,10 @@ export default function CertificacionesPage() {
                 <button
                   type="button"
                   onClick={() => handleOpenDetalle(row)}
-                  title="Revisar Certificación POA (Vista Previa Oficial)"
-                  className="p-1.5 rounded-lg text-theme-primary hover:bg-theme-primary/10 transition"
+                  title="Revisar Certificación POA (Panel de Control y Vista Previa)"
+                  className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-theme-base transition"
                 >
-                  <Eye size={16} />
+                  <Eye size={15} />
                 </button>
 
                 <button
@@ -705,7 +809,7 @@ export default function CertificacionesPage() {
                   title="Devolver con Observación a la Gerencia"
                   className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-theme-base transition"
                 >
-                  <AlertCircle size={16} />
+                  <AlertCircle size={15} />
                 </button>
 
                 <button
@@ -714,25 +818,21 @@ export default function CertificacionesPage() {
                   title="Rechazar Solicitud"
                   className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-theme-base transition"
                 >
-                  <XCircle size={16} />
+                  <XCircle size={15} />
                 </button>
               </>
             )}
 
-            {/* Acciones para Presupuestos en PENDIENTE_PRESUPUESTOS */}
+            {/* Acciones para Presupuestos en PENDIENTE_PRESUPUESTOS: exactamente los 3 botones de iconos */}
             {isPendPresup && canApprove && (
               <>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedCert(row);
-                    setPresupModalOpen(true);
-                  }}
-                  title="Otorgar Visto Bueno Financiero (Double Check)"
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs transition"
+                  onClick={() => handleOpenDetalle(row)}
+                  title="Revisar y Control Presupuestario"
+                  className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-theme-base transition"
                 >
-                  <Coins size={14} />
-                  <span>Visto Bueno</span>
+                  <Eye size={15} />
                 </button>
 
                 <button
@@ -758,7 +858,19 @@ export default function CertificacionesPage() {
               </>
             )}
 
-            {/* Si está APROBADO: botón para imprimir boleta oficial */}
+            {/* Acciones para Tesorería en PENDIENTE_TESORERIA: exactamente el botón simple para confirmar desembolso */}
+            {isPendTesoreria && canDisburse && (
+              <button
+                type="button"
+                onClick={() => handleConfirmarDesembolso(row)}
+                title="Confirmar salida de dinero (Registrar Gasto)"
+                className="p-1.5 rounded-lg text-teal-600 dark:text-teal-400 hover:bg-theme-base transition"
+              >
+                <Coins size={15} />
+              </button>
+            )}
+
+            {/* Si está APROBADO: botón para imprimir boleta oficial (salvo Presupuestos que NO puede imprimir) */}
             {isAprobado && canPrint && (
               <button
                 type="button"
@@ -773,8 +885,8 @@ export default function CertificacionesPage() {
               </button>
             )}
 
-            {/* Ver Detalle y Seguimiento (Disponible cuando no se muestran ya los 3 botones de Planificador) */}
-            {!(isPendPlanif && canCertify) && (
+            {/* Ver Detalle y Seguimiento (Disponible cuando no se muestran ya los botones de acción rápida) */}
+            {!(isPendPlanif && canCertify) && !(isPendPresup && canApprove) && !(isPendTesoreria && canDisburse) && (
               <button
                 type="button"
                 onClick={() => handleOpenDetalle(row)}
@@ -808,7 +920,7 @@ export default function CertificacionesPage() {
       <PageHeader
         icon={<FileText size={24} />}
         title="Certificaciones POA"
-        subtitle="Flujo institucional: solicitud por Gerencia, certificación técnica en Planificación y visto bueno financiero en Presupuestos."
+        subtitle="Flujo institucional: solicitud por Gerencia, certificación técnica en Planificación, visto bueno financiero en Presupuestos y confirmación de desembolso en Tesorería."
         tag="Ejecución Presupuestaria"
         actions={
           <div className="flex flex-wrap items-center gap-3">
@@ -882,41 +994,7 @@ export default function CertificacionesPage() {
         userCargo={user?.cargo || ''}
       />
 
-      {/* 2. Modal Panel Asistente Paso a Paso Planificación (Paso 2) */}
-      <CertificacionPlanificacionModal
-        isOpen={planifModalOpen}
-        onClose={() => setPlanifModalOpen(false)}
-        certificacion={selectedCert}
-        onCertificar={handleCertificarPlanificacion}
-        onObservar={() => {
-          setPlanifModalOpen(false);
-          setObservarModalOpen(true);
-        }}
-        onRechazar={() => {
-          setPlanifModalOpen(false);
-          if (selectedCert) handleOpenRechazoPlanif(selectedCert);
-        }}
-        siguienteCorrelativoGlobal={siguienteCorrelativoGlobal}
-        siguienteCorrelativoArea={siguienteCorrelativoArea}
-      />
-
-      {/* 3. Modal Panel Double Check Presupuestos (Paso 3) */}
-      <CertificacionPresupuestosModal
-        isOpen={presupModalOpen}
-        onClose={() => setPresupModalOpen(false)}
-        certificacion={selectedCert}
-        onAprobar={handleAprobarPresupuestos}
-        onObservar={() => {
-          setPresupModalOpen(false);
-          setObservarModalOpen(true);
-        }}
-        onRechazar={() => {
-          setPresupModalOpen(false);
-          if (selectedCert) handleOpenDenegarPresup(selectedCert);
-        }}
-      />
-
-      {/* 4. Modal Observar Solicitud */}
+      {/* 2. Modal Observar Solicitud */}
       <CertificacionObservarModal
         isOpen={observarModalOpen}
         onClose={() => setObservarModalOpen(false)}
@@ -945,19 +1023,24 @@ export default function CertificacionesPage() {
         modo={modoRechazo}
       />
 
-      {/* 6. Modal Detalle Completo con Vista Previa Oficial y Seguimiento */}
+      {/* 6. Modal Detalle Completo con Vista Previa Oficial y Panel de Control */}
       <CertificacionDetalleModal
         isOpen={detalleModalOpen}
         onClose={() => setDetalleModalOpen(false)}
         certificacion={selectedCert}
         canCertify={canCertify}
+        canApprove={canApprove}
         canCancel={canCancelGerente}
+        canPrint={canPrint}
         onCancelRequest={(cert) => {
           setDetalleModalOpen(false);
           handleOpenCancelarGerente(cert);
         }}
         onCertificar={handleCertificarPlanificacion}
+        onAprobarPresupuestos={handleAprobarPresupuestos}
+        onDevolverPlanificacion={handleDevolverPlanificacion}
         onObservar={handleConfirmObservacion}
+        onRechazar={handleConfirmRechazo}
         siguienteCorrelativoGlobal={siguienteCorrelativoGlobal}
         siguienteCorrelativoArea={siguienteCorrelativoArea}
       />
@@ -967,6 +1050,7 @@ export default function CertificacionesPage() {
         isOpen={boletaModalOpen}
         onClose={() => setBoletaModalOpen(false)}
         certificacion={selectedCert}
+        canPrint={canPrint}
       />
     </div>
   );

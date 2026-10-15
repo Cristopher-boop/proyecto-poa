@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Clock,
   Send,
@@ -8,6 +7,7 @@ import {
   FileText,
   Activity,
   Lock,
+  Coins,
 } from 'lucide-react';
 
 export interface StatusBadgeProps {
@@ -45,6 +45,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     style = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30';
     Icon = Clock;
     defaultLabel = 'Rev. Presupuestos';
+  } else if (norm.includes('PENDIENTE_TESORERIA') || norm.includes('TESORERIA')) {
+    style = 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30';
+    Icon = Coins;
+    defaultLabel = 'En Tesorería';
   } else if (norm.includes('APROBADO_GERENCIA') || norm.includes('APROBADO_PLANIFICACION')) {
     style = 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30';
     Icon = CheckCircle2;
