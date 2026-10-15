@@ -42,18 +42,63 @@ export const certificacionService = {
     return response.data;
   },
 
-  enviarPlanificacion: async (id: number): Promise<{ status: string; estado: string }> => {
-    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/enviar-planificacion/`);
+  enviarRevision: async (id: number, data?: { es_contratacion?: boolean }): Promise<{ status: string; estado: string; es_contratacion?: boolean }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/enviar-revision/`, data || {});
     return response.data;
   },
 
-  aprobarCertificacion: async (id: number, observacion?: string): Promise<{ status: string; estado: string }> => {
-    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/aprobar/`, { observacion });
+  certificarPlanificacion: async (
+    id: number,
+    data?: {
+      codigo_certificacion?: string;
+      numero_oficio_solicitud?: string;
+      observacion?: string;
+      categoria_programatica_codigo?: string;
+      categoria_programatica?: string;
+      notas?: string;
+      memoria_id?: number;
+      partida_id?: number;
+      operacion_id?: number;
+    }
+  ): Promise<{ status: string; estado: string; codigo_certificacion?: string; numero_oficio_solicitud?: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/certificar-planificacion/`, data || {});
+    return response.data;
+  },
+
+  aprobarPresupuestos: async (
+    id: number,
+    data?: { observacion?: string; memoria_id?: number; partida_id?: number } | string
+  ): Promise<{ status: string; estado: string }> => {
+    const payload = typeof data === 'string' ? { observacion: data } : (data || {});
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/aprobar-presupuestos/`, payload);
     return response.data;
   },
 
   observarCertificacion: async (id: number, observacion: string): Promise<{ status: string; estado: string }> => {
     const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/observar/`, { observacion });
+    return response.data;
+  },
+
+  rechazarCertificacion: async (id: number, motivo: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/rechazar/`, { motivo });
+    return response.data;
+  },
+
+  cancelarCertificacion: async (id: number, motivo?: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/cancelar/`, { motivo });
+    return response.data;
+  },
+
+  devolverPlanificacion: async (id: number, motivo: string): Promise<{ status: string; estado: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/devolver-planificacion/`, { motivo });
+    return response.data;
+  },
+
+  confirmarDesembolso: async (
+    id: number,
+    data?: { comprobante_pago?: string }
+  ): Promise<{ status: string; estado: string; gasto_id?: number; comprobante_pago?: string }> => {
+    const response = await api.post(`/api/v1/ejecucion/certificaciones/${id}/confirmar-desembolso/`, data || {});
     return response.data;
   },
 };

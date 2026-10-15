@@ -2,10 +2,19 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ejecucionApi } from '../api/ejecucionApi';
 import { Gasto, PresupuestoArea, MemoriaCalculo, ResumenEjecucion, Area } from '../../../services/presupuestoService';
 import { useGestion } from '../../../contexts/GestionContext';
+import { useAuth } from '../../../hooks/useAuth';
+import { FilterOption } from '../../../components/commons/FilterPanel';
 import alertService from '../../../utils/alerts';
 
 export function useEjecucion() {
-  const { gestionActiva, gestionActivaId, isGestionBloqueada } = useGestion();
+  const { user } = useAuth();
+  const { gestionActiva, gestionActivaId, isGestionBloqueada, loading: gestionLoading } = useGestion();
+
+  const rolName = (user?.rol_nombre || (user as any)?.rol?.nombre || '').toUpperCase().trim();
+  const rolClean = rolName.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const isSuperuser = Boolean(user?.is_superuser) || rolClean.includes('ADMIN');
+  const isGerente = !isSuperuser && !['ADMINISTRADOR', 'APROBADOR', 'PLANIFICACION', 'PRESUPUESTOS'].includes(rolClean);
+  const userAreaId = user?.area_id ? String(user.area_id) : null;
 
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -16,8 +25,11 @@ export function useEjecucion() {
   const [areas, setAreas] = useState<Area[]>([]);
 
   // Filtros
-  const [activeTab, setActiveTab] = useState<'gastos' | 'memorias'>('gastos');
-  const [filtroArea, setFiltroArea] = useState<string>('todas');
+  const [activeTab, setActiveTab] = useState<'solicitudes' | 'gastos' | 'memorias'>('solicitudes');
+  const [filtroArea, setFiltroArea] = useState<string>(() => {
+    if (isGerente && userAreaId) return userAreaId;
+    return 'todas';
+  });
   const [filtroPartida, setFiltroPartida] = useState<string>('todas');
   const [fechaDesde, setFechaDesde] = useState<string>('');
   const [fechaHasta, setFechaHasta] = useState<string>('');
@@ -27,9 +39,15 @@ export function useEjecucion() {
   const [montoMax, setMontoMax] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  useEffect(() => {
+    if (isGerente && userAreaId && filtroArea !== userAreaId) {
+      setFiltroArea(userAreaId);
+    }
+  }, [isGerente, userAreaId]);
+
   const resetFilters = useCallback(() => {
     setSearchTerm('');
-    setFiltroArea('todas');
+    setFiltroArea(isGerente && userAreaId ? userAreaId : 'todas');
     setFiltroPartida('todas');
     setFechaDesde('');
     setFechaHasta('');
@@ -37,12 +55,13 @@ export function useEjecucion() {
     setMesHasta(12);
     setMontoMin('');
     setMontoMax('');
-  }, []);
+  }, [isGerente, userAreaId]);
 
   const hasActiveFilters = useMemo(() => {
+    const areaIsActive = isGerente ? false : filtroArea !== 'todas';
     return Boolean(
       searchTerm.trim() ||
-      filtroArea !== 'todas' ||
+      areaIsActive ||
       filtroPartida !== 'todas' ||
       fechaDesde ||
       fechaHasta ||
@@ -53,6 +72,7 @@ export function useEjecucion() {
     );
   }, [
     searchTerm,
+    isGerente,
     filtroArea,
     filtroPartida,
     fechaDesde,
@@ -65,7 +85,9 @@ export function useEjecucion() {
 
   const fetchData = useCallback(async () => {
     if (!gestionActivaId) {
-      setLoading(false);
+      if (!gestionLoading) {
+        setLoading(false);
+      }
       return;
     }
 
@@ -148,6 +170,7 @@ export function useEjecucion() {
         return {
           memoriaId: m.id,
           codigo: m.codigo,
+          areaId: m.area_id ?? (m as any).area,
           areaNombre: m.area_nombre || '',
           seccionNombre: m.seccion_nombre || '',
           partidasString,
@@ -162,31 +185,82 @@ export function useEjecucion() {
       });
   }, [memorias, gastosByMemoria]);
 
-  // Lista consolidada de partidas presupuestarias únicas disponibles en esta gestión
-  const partidasDisponibles = useMemo(() => {
-    const map = new Map<string, string>();
+  // Lista consolidada de partidas presupuestarias y memorias de cálculo disponibles
+  const partidasDisponibles: FilterOption[] = useMemo(() => {
+    const partidasMap = new Map<string, string>();
+    const mcsMap = new Map<string, { justificacion: string; partidaInfo?: string }>();
+
+    const effectiveArea = isGerente && userAreaId ? userAreaId : filtroArea;
+
+    // 1. Partidas de Gastos
     gastos.forEach((g) => {
-      if (g.partida_codigo) {
-        map.set(g.partida_codigo, g.partida_nombre || g.partida_codigo);
+      const matchArea =
+        effectiveArea === 'todas' ||
+        String(g.area_id) === effectiveArea ||
+        g.area_nombre?.toLowerCase() === effectiveArea.toLowerCase();
+
+      if (matchArea && g.partida_codigo) {
+        partidasMap.set(g.partida_codigo, g.partida_nombre || g.partida_codigo);
       }
     });
+
+    // 2. Partidas y MCs de Memorias
     memorias.forEach((m) => {
-      if (m.partida_codigo) {
-        map.set(m.partida_codigo, m.partida_nombre || m.partida_codigo);
-      }
-      m.detalles?.forEach((d) => {
-        if (d.partida_codigo) {
-          map.set(d.partida_codigo, d.partida_nombre || d.partida_codigo);
+      const matchArea =
+        effectiveArea === 'todas' ||
+        String(m.area_id) === effectiveArea ||
+        (m as any).area === Number(effectiveArea) ||
+        m.area_nombre?.toLowerCase() === effectiveArea.toLowerCase();
+
+      if (matchArea) {
+        if (m.partida_codigo) {
+          partidasMap.set(m.partida_codigo, m.partida_nombre || m.partida_codigo);
         }
-      });
+        m.detalles?.forEach((d) => {
+          if (d.partida_codigo) {
+            partidasMap.set(d.partida_codigo, d.partida_nombre || d.partida_codigo);
+          }
+        });
+
+        if (m.codigo && ['APROBADO_FINANZAS', 'APROBADO_GERENCIA'].includes(m.estado || '')) {
+          const pInfo = m.partida_codigo
+            ? `Partida ${m.partida_codigo}${m.partida_nombre ? ` • ${m.partida_nombre}` : ''}`
+            : undefined;
+          mcsMap.set(m.codigo, {
+            justificacion: m.justificacion || '',
+            partidaInfo: pInfo,
+          });
+        }
+      }
     });
-    return Array.from(map.entries())
+
+    const partidaOpts: FilterOption[] = Array.from(partidasMap.entries())
       .map(([codigo, nombre]) => ({
         value: codigo,
-        label: `${codigo} - ${nombre}`,
+        label: nombre,
+        triggerLabel: `Partida ${codigo} - ${nombre}`,
+        badge: `Partida ${codigo}`,
+        badgeClassName: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/25 font-mono font-bold',
+        group: 'Partidas Presupuestarias',
+        groupBadge: 'PARTIDAS',
       }))
       .sort((a, b) => a.value.localeCompare(b.value));
-  }, [gastos, memorias]);
+
+    const mcOpts: FilterOption[] = Array.from(mcsMap.entries())
+      .map(([codigo, data]) => ({
+        value: `MC:${codigo}`,
+        label: data.justificacion || 'Memoria de cálculo institucional',
+        triggerLabel: `${codigo} - ${data.justificacion || 'Memoria de Cálculo'}`,
+        badge: codigo,
+        badgeClassName: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 font-mono font-bold',
+        group: 'Memorias de Cálculo (MCs)',
+        groupBadge: 'MC',
+        sublabel: data.partidaInfo,
+      }))
+      .sort((a, b) => a.value.localeCompare(b.value));
+
+    return [...partidaOpts, ...mcOpts];
+  }, [gastos, memorias, isGerente, userAreaId, filtroArea]);
 
   // Filtrado de gastos para la tabla principal
   const gastosFiltrados = useMemo(() => {
@@ -199,10 +273,16 @@ export function useEjecucion() {
         String(g.area_id) === filtroArea ||
         g.area_nombre?.toLowerCase() === filtroArea.toLowerCase();
 
-      // 2. Filtro por Partida Presupuestaria
-      const matchPartida =
-        filtroPartida === 'todas' ||
-        g.partida_codigo === filtroPartida;
+      // 2. Filtro por Partida Presupuestaria o MC
+      let matchPartida = true;
+      if (filtroPartida !== 'todas') {
+        if (filtroPartida.startsWith('MC:')) {
+          const mcCodigo = filtroPartida.replace('MC:', '').trim();
+          matchPartida = g.memoria_codigo === mcCodigo;
+        } else {
+          matchPartida = g.partida_codigo === filtroPartida;
+        }
+      }
 
       // 3. Filtro por Rango de Fechas / Meses (de la gestión activa)
       let matchFecha = true;
@@ -274,8 +354,21 @@ export function useEjecucion() {
       return totalInicialGlobal;
     }
 
-    // Si se especificó una partida:
+    // Si se especificó una partida o MC:
     if (filtroPartida !== 'todas') {
+      if (filtroPartida.startsWith('MC:')) {
+        const mcCodigo = filtroPartida.replace('MC:', '').trim();
+        const targetMem = memorias.find(
+          (m) =>
+            ['APROBADO_FINANZAS', 'APROBADO_GERENCIA'].includes(m.estado || '') &&
+            m.codigo === mcCodigo
+        );
+        if (targetMem) {
+          return parseFloat(targetMem.total_presupuesto || (targetMem as any).total_presupuestado || '0');
+        }
+        return 0;
+      }
+
       let sumaPartida = 0;
       memorias
         .filter((m) => ['APROBADO_FINANZAS', 'APROBADO_GERENCIA'].includes(m.estado || ''))
@@ -358,16 +451,20 @@ export function useEjecucion() {
     return Math.min(100, Math.round((totalGastadoFiltrado / totalInicialFiltrado) * 10000) / 100);
   }, [totalInicialFiltrado, totalGastadoFiltrado]);
 
-  // Memorias con saldo filtradas por área, partida y buscador general (los filtros avanzados de fechas/montos no aplican aquí)
+  // Memorias con saldo filtradas por área, partida/MC y buscador general (los filtros avanzados de fechas/montos no aplican aquí)
   const renglonesFiltrados = useMemo(() => {
     return renglonesDisponibles.filter((m) => {
       const matchArea =
         filtroArea === 'todas' ||
+        String(m.areaId) === filtroArea ||
+        m.areaNombre?.toLowerCase() === filtroArea.toLowerCase() ||
         m.areaNombre?.toLowerCase().includes(filtroArea.toLowerCase());
 
       const matchPartida =
         filtroPartida === 'todas' ||
-        m.partidasString?.includes(filtroPartida);
+        (filtroPartida.startsWith('MC:')
+          ? m.codigo === filtroPartida.replace('MC:', '').trim()
+          : m.partidasString?.includes(filtroPartida));
 
       const term = searchTerm.toLowerCase().trim();
       const matchSearch =
@@ -502,13 +599,15 @@ export function useEjecucion() {
     gestionActiva,
     gestionActivaId,
     isGestionBloqueada,
-    loading,
+    loading: loading || gestionLoading,
     actionLoading,
     gastos,
     gastosFiltrados,
     presupuestosArea,
     resumen,
     areas,
+    isGerente,
+    userAreaId,
     partidasDisponibles,
     renglonesDisponibles,
     renglonesFiltrados,

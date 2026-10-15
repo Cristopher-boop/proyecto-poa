@@ -17,6 +17,7 @@ class GestionViewSet(viewsets.ModelViewSet):
     queryset = Gestion.objects.all().order_by('-anio')
     serializer_class = GestionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def check_admin_permission(self):
         user = self.request.user

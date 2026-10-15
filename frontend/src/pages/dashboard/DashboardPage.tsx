@@ -68,7 +68,7 @@ function getAreaOrderWeight(code?: string): number {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { gestiones, gestionActivaId, gestionActiva, setGestionActivaId } = useGestion();
+  const { gestiones, gestionActivaId, gestionActiva, setGestionActivaId, loading: gestionLoading } = useGestion();
 
   const [presupuestos, setPresupuestos] = useState<PresupuestoArea[]>([]);
   const [memorias, setMemorias] = useState<MemoriaCalculo[]>([]);
@@ -109,8 +109,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (gestionActivaId) {
       cargarDatos(gestionActivaId);
+    } else if (!gestionLoading) {
+      setLoading(false);
     }
-  }, [gestionActivaId, cargarDatos]);
+  }, [gestionActivaId, gestionLoading, cargarDatos]);
 
   const formatMoney = useCallback((val: number | string) => {
     const num = typeof val === 'string' ? parseFloat(val) : val;
@@ -305,7 +307,7 @@ export default function DashboardPage() {
   const nombreMesDesde = MESES.find((m) => m.value === mesDesde)?.label || 'Enero';
   const nombreMesHasta = MESES.find((m) => m.value === mesHasta)?.label || 'Diciembre';
 
-  if (loading && presupuestos.length === 0) {
+  if ((loading || gestionLoading) && presupuestos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 space-y-3">
         <RefreshCw className="animate-spin text-theme-primary" size={32} />

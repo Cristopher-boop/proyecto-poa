@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   Calendar,
@@ -28,6 +28,16 @@ export const MESES_ANIO = [
 ];
 
 import { SelectOption } from './TabsFilter';
+import { Dropdown, DropdownItem } from './Dropdown';
+
+export interface FilterOption extends SelectOption {
+  group?: string;
+  groupBadge?: string;
+  badge?: string;
+  badgeClassName?: string;
+  triggerLabel?: string;
+  sublabel?: string;
+}
 
 export interface FilterPanelProps {
   // Buscador general (desacoplado de filtros específicos)
@@ -36,13 +46,14 @@ export interface FilterPanelProps {
   searchPlaceholder?: string;
 
   // Filtro de Área / Gerencia
-  areaOptions?: SelectOption[];
+  areaOptions?: FilterOption[];
   selectedArea?: string;
   onAreaChange?: (area: string) => void;
   areaPlaceholder?: string;
+  isGerente?: boolean;
 
   // Filtro de Partida Presupuestaria
-  partidaOptions?: SelectOption[];
+  partidaOptions?: FilterOption[];
   selectedPartida?: string;
   onPartidaChange?: (partida: string) => void;
   partidaPlaceholder?: string;
@@ -85,6 +96,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   selectedArea = 'todas',
   onAreaChange,
   areaPlaceholder = 'Todas las Áreas',
+  isGerente = false,
   partidaOptions,
   selectedPartida = 'todas',
   onPartidaChange,
@@ -123,14 +135,62 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     montoMin !== '' || montoMax !== '',
   ].filter(Boolean).length;
 
+  // Preparar opciones de Área para Dropdown
+  const areaDropdownItems = useMemo((): DropdownItem[] => {
+    if (!areaOptions) return [];
+    const items: DropdownItem[] = [];
+    if (!isGerente && areaPlaceholder) {
+      items.push({
+        id: 'todas',
+        label: areaPlaceholder,
+        triggerLabel: areaPlaceholder,
+      });
+    }
+    areaOptions.forEach((opt) => {
+      items.push({
+        id: opt.value,
+        label: opt.label,
+        triggerLabel: opt.triggerLabel || opt.label,
+        badge: opt.badge,
+        badgeClassName: opt.badgeClassName,
+      });
+    });
+    return items;
+  }, [areaOptions, isGerente, areaPlaceholder]);
+
+  // Preparar opciones de Partida / MC para Dropdown
+  const partidaDropdownItems = useMemo((): DropdownItem[] => {
+    if (!partidaOptions) return [];
+    const items: DropdownItem[] = [
+      {
+        id: 'todas',
+        label: partidaPlaceholder,
+        triggerLabel: partidaPlaceholder,
+      },
+    ];
+    partidaOptions.forEach((opt) => {
+      items.push({
+        id: opt.value,
+        label: opt.label,
+        triggerLabel: opt.triggerLabel || opt.label,
+        badge: opt.badge,
+        badgeClassName: opt.badgeClassName,
+        group: opt.group,
+        groupBadge: opt.groupBadge,
+        sublabel: opt.sublabel,
+      });
+    });
+    return items;
+  }, [partidaOptions, partidaPlaceholder]);
+
   return (
     <div className={`space-y-3 mb-6 ${className}`}>
       {/* Barra Principal de Filtros */}
-      <div className="flex flex-col lg:flex-row gap-2.5 justify-between items-stretch lg:items-center bg-theme-surface p-3 rounded-2xl border border-theme-border shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-2.5 justify-between items-stretch lg:items-center bg-theme-surface p-3 rounded-2xl border border-theme-border shadow-sm relative z-20">
         <div className="flex flex-1 flex-wrap gap-2.5 items-center">
           {/* Buscador General Desacoplado */}
           <div className="relative flex-1 min-w-[220px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted pointer-events-none" />
             <input
               type="text"
               value={searchTerm}
@@ -150,41 +210,43 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             )}
           </div>
 
-          {/* Selector de Área / Gerencia */}
+          {/* Selector de Área / Gerencia con Dropdown */}
           {areaOptions && onAreaChange && (
-            <div className="relative min-w-[180px] max-w-xs">
-              <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted pointer-events-none" />
-              <select
+            <div className="min-w-[180px] max-w-xs">
+              <Dropdown
+                items={areaDropdownItems}
                 value={selectedArea}
-                onChange={(e) => onAreaChange(e.target.value)}
-                className="w-full pl-9 pr-7 py-2 text-xs bg-theme-base border border-theme-border rounded-xl text-theme-main outline-none focus:ring-2 focus:ring-theme-primary/40 focus:border-theme-primary cursor-pointer truncate"
-              >
-                <option value="todas">{areaPlaceholder}</option>
-                {areaOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => onAreaChange(String(val))}
+                disabled={isGerente}
+                icon={<Building2 size={14} className="text-theme-muted" />}
+                placeholder={areaPlaceholder}
+                searchable={areaDropdownItems.length > 5}
+                searchPlaceholder="Buscar área..."
+                size="md"
+                className="w-full"
+                menuMinWidth="230px"
+              />
             </div>
           )}
 
-          {/* Selector de Partida Presupuestaria */}
+          {/* Selector de Partida Presupuestaria / MCs con Dropdown */}
           {partidaOptions && onPartidaChange && (
-            <div className="relative min-w-[180px] max-w-xs">
-              <Bookmark size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted pointer-events-none" />
-              <select
+            <div className="min-w-[240px] max-w-md flex-1">
+              <Dropdown
+                items={partidaDropdownItems}
                 value={selectedPartida}
-                onChange={(e) => onPartidaChange(e.target.value)}
-                className="w-full pl-9 pr-7 py-2 text-xs bg-theme-base border border-theme-border rounded-xl text-theme-main outline-none focus:ring-2 focus:ring-theme-primary/40 focus:border-theme-primary cursor-pointer truncate"
-              >
-                <option value="todas">{partidaPlaceholder}</option>
-                {partidaOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => onPartidaChange(String(val))}
+                icon={<Bookmark size={14} className="text-theme-muted" />}
+                placeholder={partidaPlaceholder}
+                searchable={true}
+                searchPlaceholder="Buscar partida o MC..."
+                size="md"
+                className="w-full"
+                menuMinWidth="380px"
+                maxHeight="320px"
+                showBadgeInTrigger={true}
+                badgePosition="start"
+              />
             </div>
           )}
 

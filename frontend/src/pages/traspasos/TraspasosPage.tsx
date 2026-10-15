@@ -23,7 +23,6 @@ import {
   MemoriaCalculo,
   Traspaso,
   ModificacionPresupuestaria,
-  getGestiones,
   getAreas,
   getMemorias,
   getTraspasos,
@@ -31,6 +30,7 @@ import {
   createModificacion,
 } from '../../services/presupuestoService';
 import { PageHeader, GestionSelector } from '../../components/commons';
+import { useGestion } from '../../contexts/GestionContext';
 import alertService from '../../utils/alerts';
 
 interface FilaItem {
@@ -40,8 +40,11 @@ interface FilaItem {
 }
 
 export default function TraspasosPage() {
-  const [gestiones, setGestiones] = useState<Gestion[]>([]);
-  const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
+  const {
+    gestiones,
+    gestionActivaId: selectedGestionId,
+    setGestionActivaId: setSelectedGestionId,
+  } = useGestion();
   const [areas, setAreas] = useState<Area[]>([]);
   const [modificaciones, setModificaciones] = useState<ModificacionPresupuestaria[]>([]);
   const [memorias, setMemorias] = useState<MemoriaCalculo[]>([]);
@@ -85,17 +88,11 @@ export default function TraspasosPage() {
   async function cargarBase() {
     setLoading(true);
     try {
-      const [gList, aList] = await Promise.all([getGestiones(), getAreas()]);
-      setGestiones(gList);
+      const aList = await getAreas();
       setAreas(aList);
-
-      if (gList.length > 0) {
-        const enEjecucionG = gList.find((g) => g.estado === 'EN_EJECUCION');
-        setSelectedGestionId(enEjecucionG ? enEjecucionG.id : gList[0].id);
-      }
     } catch (err) {
       console.error(err);
-      mostrarMensaje('error', 'Error al cargar gestiones y áreas.');
+      mostrarMensaje('error', 'Error al cargar áreas.');
     } finally {
       setLoading(false);
     }

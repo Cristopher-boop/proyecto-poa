@@ -17,6 +17,7 @@ def sembrar_usuarios_prueba():
         ('Gerente', 'Gestion y aprobacion a nivel de Area/Gerencia'),
         ('Elaborador', 'Formulacion de memorias de calculo de su Area'),
         ('Trabajador', 'Solo lectura de presupuestos y memorias de su Area'),
+        ('Tesorería', 'Confirmación de desembolso y salida de fondos para certificaciones POA'),
         ('Administrador', 'Acceso total y administracion'),
     ]
 
@@ -84,6 +85,16 @@ def sembrar_usuarios_prueba():
             'rol': roles_map.get('Aprobador'),
             'seccion': sec_adm,
             'cargo': 'Aprobador Presupuestario Final',
+        },
+        {
+            'username': 'SoyTesoreria',
+            'password': '12345678',
+            'first_name': 'Lic. Zaida',
+            'last_name': 'Tesorería',
+            'email': 'tesoreria@poa.local',
+            'rol': roles_map.get('Tesorería'),
+            'seccion': sec_adm,
+            'cargo': 'Encargada de Tesorería / Desembolsos',
         },
     ]
 

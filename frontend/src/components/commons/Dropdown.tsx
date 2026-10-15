@@ -126,19 +126,29 @@ export const Dropdown: React.FC<DropdownProps> = ({
   }, [items, searchQuery]);
 
   // Agrupamiento si los items definen `group`
-  const groupedItems = useMemo(() => {
+  const groupedData = useMemo(() => {
     const hasGroups = items.some((it) => !!it.group);
     if (!hasGroups) return null;
 
+    const ungrouped: DropdownItem[] = [];
     const map = new Map<string, { group: string; groupBadge?: string; items: DropdownItem[] }>();
+
     filteredItems.forEach((it) => {
-      const gName = it.group || 'Otras';
-      if (!map.has(gName)) {
-        map.set(gName, { group: gName, groupBadge: it.groupBadge, items: [] });
+      if (!it.group) {
+        ungrouped.push(it);
+      } else {
+        const gName = it.group;
+        if (!map.has(gName)) {
+          map.set(gName, { group: gName, groupBadge: it.groupBadge, items: [] });
+        }
+        map.get(gName)!.items.push(it);
       }
-      map.get(gName)!.items.push(it);
     });
-    return Array.from(map.values());
+
+    return {
+      ungrouped,
+      groups: Array.from(map.values()),
+    };
   }, [items, filteredItems]);
 
   const handleSelect = (item: DropdownItem) => {
@@ -283,71 +293,124 @@ export const Dropdown: React.FC<DropdownProps> = ({
               <div className="py-6 px-4 text-center text-theme-muted text-xs">
                 {emptyMessage}
               </div>
-            ) : groupedItems ? (
-              groupedItems.map((g, gIdx) => (
-                <div key={gIdx} className="border-b border-theme-border/40 last:border-0">
-                  {/* Encabezado del Grupo */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-theme-base/80 border-b border-theme-border/40 sticky top-0 z-[5]">
-                    {g.groupBadge && (
-                      <span className="font-mono text-[10px] font-bold text-theme-muted bg-theme-border/60 px-1 rounded">
-                        {g.groupBadge}
-                      </span>
-                    )}
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-theme-muted line-clamp-1">
-                      {g.group}
-                    </span>
-                  </div>
-
-                  {/* Items del Grupo */}
-                  {g.items.map((it) => {
-                    const isSelected = String(it.id) === String(value);
-                    const effectiveBadgePos = it.badgePosition || badgePosition;
-                    return (
-                      <button
-                        key={it.id}
-                        type="button"
-                        disabled={it.disabled}
-                        onClick={() => handleSelect(it)}
-                        className={`w-full flex items-start justify-between gap-3 px-3 py-2 text-left transition-colors ${
-                          isSelected
-                            ? 'bg-theme-border/25 text-theme-main font-semibold'
-                            : it.disabled
-                            ? 'opacity-40 cursor-not-allowed'
-                            : 'hover:bg-theme-border/15 text-theme-main'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                          {effectiveBadgePos === 'start' && (
-                            <div className="pt-0.5 shrink-0">
-                              {renderItemBadge(it, isSelected)}
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-xs leading-snug break-words ${
-                                isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
-                              }`}
-                            >
-                              {it.label}
-                            </p>
-                            {it.sublabel && (
-                              <p className="text-[10px] text-theme-muted mt-0.5 break-words line-clamp-2">
-                                {it.sublabel}
+            ) : groupedData ? (
+              <>
+                {groupedData.ungrouped.length > 0 && (
+                  <div className="border-b border-theme-border/40">
+                    {groupedData.ungrouped.map((it) => {
+                      const isSelected = String(it.id) === String(value);
+                      const effectiveBadgePos = it.badgePosition || badgePosition;
+                      return (
+                        <button
+                          key={it.id}
+                          type="button"
+                          disabled={it.disabled}
+                          onClick={() => handleSelect(it)}
+                          className={`w-full flex items-start justify-between gap-3 px-3 py-2 text-left transition-colors ${
+                            isSelected
+                              ? 'bg-theme-border/25 text-theme-main font-semibold'
+                              : it.disabled
+                              ? 'opacity-40 cursor-not-allowed'
+                              : 'hover:bg-theme-border/15 text-theme-main'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                            {effectiveBadgePos === 'start' && (
+                              <div className="pt-0.5 shrink-0">
+                                {renderItemBadge(it, isSelected)}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`text-xs leading-snug break-words ${
+                                  isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
+                                }`}
+                              >
+                                {it.label}
                               </p>
+                              {it.sublabel && (
+                                <p className="text-[10px] text-theme-muted mt-0.5 break-words line-clamp-2">
+                                  {it.sublabel}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                            {effectiveBadgePos === 'end' && renderItemBadge(it, isSelected)}
+                            {isSelected && (
+                              <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                             )}
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 pt-0.5">
-                          {effectiveBadgePos === 'end' && renderItemBadge(it, isSelected)}
-                          {isSelected && (
-                            <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {groupedData.groups.map((g, gIdx) => (
+                  <div key={gIdx} className="border-b border-theme-border/40 last:border-0">
+                    {/* Encabezado del Grupo */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border-b border-theme-border/40 select-none">
+                      {g.groupBadge && (
+                        <span className="font-mono text-[10px] font-bold text-theme-muted bg-theme-border/60 px-1 rounded">
+                          {g.groupBadge}
+                        </span>
+                      )}
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-theme-muted line-clamp-1">
+                        {g.group}
+                      </span>
+                    </div>
+
+                    {/* Items del Grupo */}
+                    {g.items.map((it) => {
+                      const isSelected = String(it.id) === String(value);
+                      const effectiveBadgePos = it.badgePosition || badgePosition;
+                      return (
+                        <button
+                          key={it.id}
+                          type="button"
+                          disabled={it.disabled}
+                          onClick={() => handleSelect(it)}
+                          className={`w-full flex items-start justify-between gap-3 px-3 py-2 text-left transition-colors ${
+                            isSelected
+                              ? 'bg-theme-border/25 text-theme-main font-semibold'
+                              : it.disabled
+                              ? 'opacity-40 cursor-not-allowed'
+                              : 'hover:bg-theme-border/15 text-theme-main'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                            {effectiveBadgePos === 'start' && (
+                              <div className="pt-0.5 shrink-0">
+                                {renderItemBadge(it, isSelected)}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`text-xs leading-snug break-words ${
+                                  isSelected ? 'font-bold text-theme-main' : 'text-theme-main'
+                                }`}
+                              >
+                                {it.label}
+                              </p>
+                              {it.sublabel && (
+                                <p className="text-[10px] text-theme-muted mt-0.5 break-words line-clamp-2">
+                                  {it.sublabel}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                            {effectiveBadgePos === 'end' && renderItemBadge(it, isSelected)}
+                            {isSelected && (
+                              <Check size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </>
             ) : (
               filteredItems.map((it) => {
                 const isSelected = String(it.id) === String(value);

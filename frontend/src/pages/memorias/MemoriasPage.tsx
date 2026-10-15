@@ -13,6 +13,7 @@ import { MemoriaExcelDuplicatorModal } from '../../features/memorias/components/
 import { CopiaGastosModal } from '../../features/memorias/components/CopiaGastosModal';
 import { BookOpen, Plus, Copy } from 'lucide-react';
 import { Dropdown, PageHeader, GestionSelector } from '../../components/commons';
+import { useGestion } from '../../contexts/GestionContext';
 import { memoriasApi } from '../../features/memorias/api/memoriasApi';
 
 export default function MemoriasPage() {
@@ -30,31 +31,26 @@ export default function MemoriasPage() {
   const [selectedOrigenParaEditor, setSelectedOrigenParaEditor] = useState<number | undefined>(undefined);
   const [selectedMemoria, setSelectedMemoria] = useState<any>(null);
 
-  const [selectedGestionId, setSelectedGestionId] = useState<number | null>(null);
-  const [gestiones, setGestiones] = useState<any[]>([]);
+  const {
+    gestiones,
+    gestionActivaId: selectedGestionId,
+    gestionActiva: activeGestion,
+    setGestionActivaId: setSelectedGestionId,
+    isGestionBloqueada,
+  } = useGestion();
   const [areas, setAreas] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [gList, aList] = await Promise.all([
-          getGestiones(),
-          getAreas()
-        ]);
-        setGestiones(gList);
+        const aList = await getAreas();
         setAreas(aList);
-        if (gList.length > 0) {
-          setSelectedGestionId(gList[0].id);
-        }
       } catch (err) {
         console.error(err);
       }
     };
     fetchData();
   }, []);
-
-  const activeGestion = gestiones.find(g => g.id === selectedGestionId);
-  const isGestionBloqueada = activeGestion?.estado === 'FINALIZADO';
   const seccionId = 'todas';
 
   const { memorias, conteos, loading, actionLoading, refetch, handleAction } = useMemorias(

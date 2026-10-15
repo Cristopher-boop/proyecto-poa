@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, ChevronDown, LogOut, User, Moon, Sun, CheckCheck } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useGestion } from "../../contexts/GestionContext";
 import { notificacionService } from "../../services/notificacionService";
 import { Notificacion } from "../../types/notificacion";
 
@@ -13,6 +14,7 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const { user, logout } = useAuth();
+  const { gestionActiva } = useGestion();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
@@ -82,7 +84,9 @@ export default function Navbar() {
         {/* Indicador de gestión */}
         <div className="hidden md:flex items-center gap-2 rounded-lg border border-theme-border bg-theme-base px-3 py-1.5 transition-colors">
           <span className="h-2 w-2 rounded-full bg-theme-primary ring-2 ring-theme-primary/30" />
-          <span className="text-sm font-medium text-theme-main">Gestión 2026</span>
+          <span className="text-sm font-medium text-theme-main">
+            {gestionActiva ? `Gestión ${gestionActiva.anio}` : 'Gestión'}
+          </span>
         </div>
 
         {/* Toggle Dark Mode */}

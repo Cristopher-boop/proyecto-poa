@@ -28,7 +28,15 @@ export default function Sidebar() {
   const location = useLocation();
 
   const { user } = useAuth();
-  const isAdmin = user?.is_superuser || user?.rol_nombre?.toUpperCase() === 'ADMINISTRADOR';
+  const rol = user?.rol_nombre?.toUpperCase() || '';
+  const rolClean = rol.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const isAdmin = Boolean(user?.is_superuser) || rolClean.includes('ADMIN');
+  const isPlanificador = rolClean.includes('PLANIF');
+  const isPresupuestos = rolClean.includes('PRESUP') || rolClean.includes('APROB') || rolClean.includes('FINAN');
+  const isTesoreria = rolClean.includes('TESOR');
+
+  // Certificaciones POA solo visible para Planificación, Presupuestos y Tesorería (para los demás roles la gestión es desde Ejecuciones)
+  const showCertificacionesMenu = isAdmin || isPlanificador || isPresupuestos || isTesoreria;
 
   // Si colapsamos, cerramos los menús desplegables
   useEffect(() => {
@@ -174,10 +182,12 @@ export default function Sidebar() {
           {/* Submenú Gastos */}
           {!collapsed && openMenus.gastos && (
             <div className="mt-1 space-y-1 overflow-hidden">
-              <button onClick={() => navigate('/certificaciones')} className={subItemClass(isActive('/certificaciones'))}>
-                <FileText size={15} className="shrink-0" />
-                <span>Certificación POA</span>
-              </button>
+              {showCertificacionesMenu && (
+                <button onClick={() => navigate('/certificaciones')} className={subItemClass(isActive('/certificaciones'))}>
+                  <FileText size={15} className="shrink-0" />
+                  <span>Certificación POA</span>
+                </button>
+              )}
               <button onClick={() => navigate('/ejecucion')} className={subItemClass(isActive('/ejecucion'))}>
                 <TrendingDown size={15} className="shrink-0" />
                 <span>Ejecuciones</span>

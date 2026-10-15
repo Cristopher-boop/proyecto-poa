@@ -32,6 +32,8 @@ export interface DataTableProps<T> {
   tableClassName?: string;
   layout?: 'auto' | 'fixed';
   minWidth?: string;
+  renderExpandedRow?: (row: T, index: number) => React.ReactNode;
+  isRowExpanded?: (row: T, index: number) => boolean;
 }
 
 export function DataTable<T>({
@@ -47,6 +49,8 @@ export function DataTable<T>({
   tableClassName = '',
   layout,
   minWidth,
+  renderExpandedRow,
+  isRowExpanded,
 }: DataTableProps<T>) {
   const alignClasses = {
     left: 'text-left',
@@ -115,39 +119,48 @@ export function DataTable<T>({
             ) : (
               data.map((row, rowIdx) => {
                 const isClickable = Boolean(onRowClick);
+                const isExpanded = Boolean(isRowExpanded && isRowExpanded(row, rowIdx));
                 return (
-                  <tr
-                    key={keyExtractor(row, rowIdx)}
-                    onClick={() => onRowClick && onRowClick(row)}
-                    className={`transition-colors duration-150 ${
-                      isClickable
-                        ? 'cursor-pointer hover:bg-theme-border/25 active:bg-theme-border/35'
-                        : 'hover:bg-theme-border/15'
-                    }`}
-                  >
-                    {columns.map((col, colIdx) => {
-                      let cellContent: React.ReactNode = null;
-                      if (col.render) {
-                        cellContent = col.render(row, rowIdx);
-                      } else if (col.accessor) {
-                        if (typeof col.accessor === 'function') {
-                          cellContent = col.accessor(row);
-                        } else {
-                          cellContent = row[col.accessor] as unknown as React.ReactNode;
+                  <React.Fragment key={keyExtractor(row, rowIdx)}>
+                    <tr
+                      onClick={() => onRowClick && onRowClick(row)}
+                      className={`transition-colors duration-150 ${
+                        isClickable
+                          ? 'cursor-pointer hover:bg-theme-border/25 active:bg-theme-border/35'
+                          : 'hover:bg-theme-border/15'
+                      }`}
+                    >
+                      {columns.map((col, colIdx) => {
+                        let cellContent: React.ReactNode = null;
+                        if (col.render) {
+                          cellContent = col.render(row, rowIdx);
+                        } else if (col.accessor) {
+                          if (typeof col.accessor === 'function') {
+                            cellContent = col.accessor(row);
+                          } else {
+                            cellContent = row[col.accessor] as unknown as React.ReactNode;
+                          }
                         }
-                      }
 
-                      return (
-                        <td
-                          key={colIdx}
-                          style={getColStyle(col)}
-                          className={`py-3.5 px-4 ${alignClasses[col.align || 'left']} ${col.className || ''}`}
-                        >
-                          {cellContent}
+                        return (
+                          <td
+                            key={colIdx}
+                            style={getColStyle(col)}
+                            className={`py-3.5 px-4 ${alignClasses[col.align || 'left']} ${col.className || ''}`}
+                          >
+                            {cellContent}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    {isExpanded && renderExpandedRow && (
+                      <tr className="bg-theme-base/30 border-b border-theme-border">
+                        <td colSpan={columns.length} className="p-3 sm:p-4">
+                          {renderExpandedRow(row, rowIdx)}
                         </td>
-                      );
-                    })}
-                  </tr>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })
             )}
