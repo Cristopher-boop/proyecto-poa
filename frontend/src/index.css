@@ -27,6 +27,31 @@
     --theme-primary-text: #FFFFFF;
   }
 
+  /* Laboratorio UX/UI: Esquema de prueba con colores invertidos */
+  /* Modo Claro: Azul en acentos y letras sobre blanco para evitar pérdida de contraste del amarillo */
+  .ux-ui-lab {
+    --theme-primary: #19499C;
+    --theme-primary-hover: #143A7D;
+    --theme-primary-text: #FFFFFF;
+    --lab-accent-text: #19499C;
+    --lab-accent-bg: #EFF4FC;
+    --lab-accent-border: #AECAEF;
+    --lab-accent-badge: #19499C;
+    --lab-accent-badge-bg: #EFF4FC;
+  }
+
+  /* Modo Oscuro: Amarillo en letras y acentos para evitar que el azul oscuro se pierda en la oscuridad */
+  .dark .ux-ui-lab {
+    --theme-primary: #FFCD05;
+    --theme-primary-hover: #E5B800;
+    --theme-primary-text: #1E2736;
+    --lab-accent-text: #FFCD05;
+    --lab-accent-bg: rgba(255, 205, 5, 0.12);
+    --lab-accent-border: rgba(255, 205, 5, 0.35);
+    --lab-accent-badge: #FFDD5C;
+    --lab-accent-badge-bg: rgba(255, 205, 5, 0.15);
+  }
+
   html { @apply antialiased; }
   html.dark { color-scheme: dark; }
   html.light { color-scheme: light; }

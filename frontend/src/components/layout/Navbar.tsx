@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, LogOut, User, Moon, Sun, CheckCheck } from "lucide-react";
+import { Bell, ChevronDown, LogOut, User, Moon, Sun, CheckCheck, PanelLeft, PanelLeftClose } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useGestion } from "../../contexts/GestionContext";
+import { useSidebar } from "../../contexts/SidebarContext";
 import { notificacionService } from "../../services/notificacionService";
 import { Notificacion } from "../../types/notificacion";
 
@@ -15,6 +16,7 @@ export default function Navbar() {
 
   const { user, logout } = useAuth();
   const { gestionActiva } = useGestion();
+  const { collapsed, toggleSidebar } = useSidebar();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
@@ -74,10 +76,26 @@ export default function Navbar() {
   }
 
   return (
-    <header className="h-16 sticky top-0 z-20 bg-theme-surface/95 backdrop-blur border-b border-theme-border flex items-center justify-between px-6 shadow-sm transition-colors duration-200">
-      <div>
-        <p className="text-xs font-medium text-theme-muted">Sistema POA</p>
-        <h1 className="text-base font-semibold text-theme-main">Panel principal</h1>
+    <header className="h-16 sticky top-0 z-20 bg-theme-surface/95 backdrop-blur border-b border-theme-border flex items-center justify-between px-4 sm:px-6 shadow-sm transition-colors duration-200">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className={`p-2 rounded-xl transition-all duration-150 flex items-center justify-center ${
+            collapsed
+              ? "bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20 ring-1 ring-theme-primary/30"
+              : "text-theme-muted hover:text-theme-main hover:bg-theme-border/50"
+          }`}
+          title={collapsed ? "Abrir menú lateral (Ctrl+B)" : "Colapsar menú lateral (Ctrl+B)"}
+          aria-label={collapsed ? "Abrir menú lateral" : "Colapsar menú lateral"}
+        >
+          {collapsed ? <PanelLeft size={19} /> : <PanelLeftClose size={19} />}
+        </button>
+
+        <div>
+          <p className="text-xs font-medium text-theme-muted">Sistema POA</p>
+          <h1 className="text-base font-semibold text-theme-main">Panel principal</h1>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
