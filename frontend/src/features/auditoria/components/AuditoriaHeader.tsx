@@ -17,7 +17,7 @@ export const AuditoriaHeader: React.FC<AuditoriaHeaderProps> = ({
 }) => {
   return (
     <PageHeader
-      icon={<ShieldCheck size={28} className="text-brand-500" />}
+      icon={<ShieldCheck size={28} className="text-theme-primary" />}
       title="Auditoría Integral y Trazabilidad Operativa"
       subtitle="Supervisión institucional, bitácora de eventos y flujo de trabajo por servidor público"
       tag="Superadministración"
