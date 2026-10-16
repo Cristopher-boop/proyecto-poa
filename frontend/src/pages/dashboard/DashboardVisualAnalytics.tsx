@@ -79,11 +79,11 @@ export const DashboardVisualAnalytics: React.FC<DashboardVisualAnalyticsProps> =
     return () => observer.disconnect();
   }, [theme]);
 
-  // Colores dinámicos adaptados al tema según instrucciones del usuario:
-  // Modo Claro: Barras Amarillas (#F59E0B) y Línea Azul (#2563EB)
-  // Modo Oscuro: Barras Azules (#2563EB) y Línea Amarilla (#F59E0B)
-  const colorBarra = isDark ? '#2563EB' : '#F59E0B';
-  const colorLinea = isDark ? '#F59E0B' : '#2563EB';
+  // Colores dinámicos adaptados al nuevo tema:
+  // Modo Claro: Barras Azules institucionales (#19499C) de alto contraste sobre fondo claro
+  // Modo Oscuro: Barras Amarillas vibrantes (#FFCD05) de alto contraste sobre fondo oscuro
+  const colorBarra = isDark ? '#FFCD05' : '#19499C';
+  const colorLinea = isDark ? '#38BDF8' : '#F59E0B';
   const colorGrid = isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.06)';
   const colorTextoEje = isDark ? '#94A3B8' : '#64748B';
   const cursorFill = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)';

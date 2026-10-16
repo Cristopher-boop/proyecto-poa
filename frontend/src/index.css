@@ -10,9 +10,9 @@
     --border: #E2E8F0;
     --text-main: #0F172A;
     --text-muted: #64748B;
-    --theme-primary: #FFCD05;
-    --theme-primary-hover: #CCAC2D;
-    --theme-primary-text: #33312A;
+    --theme-primary: #19499C;
+    --theme-primary-hover: #143A7D;
+    --theme-primary-text: #FFFFFF;
   }
 
   .dark {
@@ -22,6 +22,42 @@
     --border: #263E69;
     --text-main: #FFFFFF;
     --text-muted: #AECAEF;
+    --theme-primary: #FFCD05;
+    --theme-primary-hover: #E5B800;
+    --theme-primary-text: #1E2736;
+  }
+
+  /* Laboratorio UX/UI y Esquema Histórico de Comparación */
+  .ux-ui-lab {
+    --theme-primary: #19499C;
+    --theme-primary-hover: #143A7D;
+    --theme-primary-text: #FFFFFF;
+    --lab-accent-text: #19499C;
+    --lab-accent-bg: #EFF4FC;
+    --lab-accent-border: #AECAEF;
+    --lab-accent-badge: #19499C;
+    --lab-accent-badge-bg: #EFF4FC;
+  }
+
+  .dark .ux-ui-lab {
+    --theme-primary: #FFCD05;
+    --theme-primary-hover: #E5B800;
+    --theme-primary-text: #1E2736;
+    --lab-accent-text: #FFCD05;
+    --lab-accent-bg: rgba(255, 205, 5, 0.12);
+    --lab-accent-border: rgba(255, 205, 5, 0.35);
+    --lab-accent-badge: #FFDD5C;
+    --lab-accent-badge-bg: rgba(255, 205, 5, 0.15);
+  }
+
+  /* Comparativa en vivo: Permite simular el esquema anterior en el laboratorio */
+  .theme-legacy {
+    --theme-primary: #FFCD05;
+    --theme-primary-hover: #CCAC2D;
+    --theme-primary-text: #33312A;
+  }
+
+  .dark .theme-legacy {
     --theme-primary: #19499C;
     --theme-primary-hover: #4A7FCC;
     --theme-primary-text: #FFFFFF;

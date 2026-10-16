@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { GestionProvider } from "./contexts/GestionContext";
+import { SidebarProvider } from "./contexts/SidebarContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
@@ -16,8 +17,8 @@ import PlanificacionPage from "./pages/planificacion/PlanificacionPage";
 import OrganizacionalPage from "./pages/organizacional/OrganizacionalPage";
 import LogsPage from "./pages/logs/LogsPage";
 import TraspasosPage from "./pages/traspasos/TraspasosPage";
-
 import CertificacionesPage from "./pages/certificaciones/CertificacionesPage";
+import UxUiLabPage from "./pages/ux/UxUiLabPage";
 
 export default function App() {
   return (
@@ -25,7 +26,8 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <GestionProvider>
-            <Routes>
+            <SidebarProvider>
+              <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/" element={<AppShell />}>
@@ -41,13 +43,15 @@ export default function App() {
                   <Route path="planificacion" element={<PlanificacionPage />} />
                   <Route path="organizacional" element={<OrganizacionalPage />} />
                   <Route path="logs" element={<LogsPage />} />
+                  <Route path="ux-ui" element={<UxUiLabPage />} />
                 </Route>
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </GestionProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
-  );
+          </SidebarProvider>
+        </GestionProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  </ThemeProvider>
+);
 }

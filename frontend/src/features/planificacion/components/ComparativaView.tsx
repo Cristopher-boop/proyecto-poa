@@ -169,7 +169,7 @@ export const ComparativaView: React.FC<ComparativaViewProps> = ({
               </div>
             ) : (
               compOperacionesBase.map((op) => (
-                <div key={op.id} className="p-3.5 rounded-xl border border-theme-border bg-theme-surface space-y-1.5 text-xs shadow-sm hover:border-brand-300 dark:hover:border-brand-500/50 transition-all">
+                <div key={op.id} className="p-3.5 rounded-xl border border-theme-border bg-theme-surface space-y-1.5 text-xs shadow-sm hover:border-theme-primary/50 transition-all">
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded">
                       {op.codigo}
@@ -209,7 +209,7 @@ export const ComparativaView: React.FC<ComparativaViewProps> = ({
               </div>
             ) : (
               compOperacionesDestino.map((op) => (
-                <div key={op.id} className="p-3.5 rounded-xl border border-theme-border bg-theme-surface space-y-1.5 text-xs shadow-sm hover:border-brand-300 dark:hover:border-brand-500/50 transition-all">
+                <div key={op.id} className="p-3.5 rounded-xl border border-theme-border bg-theme-surface space-y-1.5 text-xs shadow-sm hover:border-theme-primary/50 transition-all">
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded">
                       {op.codigo}

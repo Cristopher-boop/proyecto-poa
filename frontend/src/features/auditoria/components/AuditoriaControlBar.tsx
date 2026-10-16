@@ -53,7 +53,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
       <div className="card p-5 sm:p-6 bg-theme-surface border border-theme-border rounded-2xl shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 border border-brand-200 dark:bg-brand-900/40 dark:text-brand-200 dark:border-brand-600 flex items-center justify-center shadow-sm shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-theme-primary/10 text-theme-primary border border-theme-primary/25 flex items-center justify-center shadow-sm shrink-0">
               <ShieldCheck size={26} />
             </div>
 

@@ -20,7 +20,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
   if (operaciones.length === 0) {
     return (
       <div className="p-12 rounded-2xl border border-dashed border-theme-border bg-theme-surface text-center text-theme-muted space-y-3">
-        <div className="w-12 h-12 mx-auto rounded-2xl bg-brand-50 text-brand-500 border border-brand-200 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-700/60 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto rounded-2xl bg-theme-primary/10 text-theme-primary border border-theme-primary/25 flex items-center justify-center">
           <FileCheck2 size={24} />
         </div>
         <div>
@@ -49,7 +49,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
           return (
             <div
               key={op.id}
-              className={`p-4 rounded-2xl border border-theme-border bg-theme-surface hover:border-brand-300 dark:hover:border-brand-500/50 hover:shadow-md transition-all flex flex-col justify-between gap-3 shadow-sm ${
+              className={`p-4 rounded-2xl border border-theme-border bg-theme-surface hover:border-theme-primary/50 hover:shadow-md transition-all flex flex-col justify-between gap-3 shadow-sm ${
                 !isActiva ? 'opacity-65 bg-theme-base/40' : ''
               }`}
             >
