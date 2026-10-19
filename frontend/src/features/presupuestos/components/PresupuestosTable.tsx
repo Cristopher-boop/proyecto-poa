@@ -5,6 +5,7 @@ import {
   Printer,
   ChevronRight,
   ChevronDown,
+  Edit,
 } from 'lucide-react';
 import {
   PresupuestoAreaCalculado,
@@ -25,6 +26,8 @@ interface PresupuestosTableProps {
   formatMoney: (val: string | number) => string;
   nombreMesDesde: string;
   nombreMesHasta: string;
+  isAprobador?: boolean;
+  onAjustarTecho?: (p: PresupuestoAreaCalculado) => void;
 }
 
 export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
@@ -39,6 +42,8 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
   formatMoney,
   nombreMesDesde,
   nombreMesHasta,
+  isAprobador = false,
+  onAjustarTecho,
 }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 10;
@@ -139,13 +144,18 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
                       title={`Ingresar directamente a la sección de ${p.area_nombre}`}
                     >
                       <td className="py-3.5 px-4 min-w-[200px]">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-1.5 py-0.5 rounded">
                             {p.area_codigo}
                           </span>
                           <span className="font-bold text-theme-main text-xs group-hover:text-theme-primary transition-colors">
                             {p.area_nombre}
                           </span>
+                          {p.techo_reducido && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" title="Techo reducido: área en proceso de reajuste de memorias">
+                              Recorte de Techo
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-right font-medium text-theme-main">
@@ -171,9 +181,25 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <span className="text-[11px] text-theme-primary font-semibold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                          Ver Sección <ChevronRight size={13} />
-                        </span>
+                        <div className="flex items-center justify-end gap-2">
+                          {isAprobador && onAjustarTecho && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAjustarTecho(p);
+                              }}
+                              className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20 transition-all flex items-center gap-1 cursor-pointer"
+                              title={`Ajustar o reducir techo de ${p.area_nombre}`}
+                            >
+                              <Edit size={12} />
+                              Ajustar Techo
+                            </button>
+                          )}
+                          <span className="text-[11px] text-theme-primary font-semibold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                            Ver Sección <ChevronRight size={13} />
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   ))

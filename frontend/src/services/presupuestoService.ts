@@ -5,6 +5,7 @@ export interface Gestion {
   anio: number;
   estado: 'FORMULACION' | 'CERRADO_FORMULACION' | 'EN_EJECUCION' | 'FINALIZADO';
   estado_display: string;
+  techo_general?: string | number;
   fecha_cierre: string | null;
   total_memorias: number;
   total_presupuesto_inicial: string;
@@ -40,6 +41,9 @@ export interface PresupuestoArea {
   porcentaje_ejecucion: number;
   total_memorias_aprobadas: number;
   estado: 'ABIERTO' | 'CERRADO';
+  techo_reducido?: boolean;
+  motivo_reduccion?: string | null;
+  fecha_reduccion?: string | null;
 }
 
 export interface GastoItemDetalleResumen {
@@ -105,6 +109,7 @@ export interface MemoriaCalculo {
   es_contratacion?: boolean;
   estado: 'BORRADOR' | 'PENDIENTE_GERENCIA' | 'APROBADO_GERENCIA' | 'PENDIENTE_PLANIFICACION' | 'APROBADO_PLANIFICACION' | 'APROBADO_FINANZAS' | 'RECHAZADO';
   estado_display: string;
+  excluida_por_techo?: boolean;
   fecha_aprobacion: string | null;
   partida_id?: number | null;
   partida_codigo?: string | null;
@@ -644,3 +649,132 @@ export async function getDetallesPresupuesto(params?: {
   const { data } = await api.get<any>('/api/v1/memorias/detalles-presupuesto/', { params });
   return unpackList<DetallePresupuestoMemoria>(data);
 }
+
+// ── Reajuste y Recorte de Techos Presupuestarios (Flujo Lic. Acha / Pase Directo) ──
+export interface MemoriaEstadoTecho {
+  id: number;
+  codigo: string;
+  justificacion: string;
+  total_presupuestado: string;
+  estado: string;
+  excluida_por_techo: boolean;
+  operacion_codigo?: string | null;
+  operacion_descripcion?: string | null;
+}
+
+export interface EstadoTechoArea {
+  area_id: number;
+  area_nombre: string;
+  area_codigo: string;
+  gestion_id: number;
+  gestion_anio: number;
+  techo_asignado: string;
+  total_formulado: string;
+  total_incluido: string;
+  total_excluido: string;
+  diferencia: string;
+  deficit_recorte: string;
+  techo_reducido: boolean;
+  requiere_ajuste: boolean;
+  puede_pase_directo: boolean;
+  motivo_reduccion: string;
+  fecha_reduccion: string | null;
+  memorias: MemoriaEstadoTecho[];
+}
+
+export async function ajustarTechoArea(
+  id: number,
+  payload: { monto_inicial: number | string; motivo_reduccion?: string }
+): Promise<{
+  message: string;
+  presupuesto: PresupuestoArea;
+  total_formulado: string;
+  diferencia: string;
+  techo_reducido: boolean;
+}> {
+  const { data } = await api.post(`/api/v1/presupuestos/techos-area/${id}/ajustar-techo/`, payload);
+  return data;
+}
+
+export async function getEstadoTechoArea(params: {
+  gestion: number;
+  area?: number | string;
+}): Promise<EstadoTechoArea> {
+  const { data } = await api.get<EstadoTechoArea>('/api/v1/memorias/memorias-calculo/estado-techo-area/', { params });
+  return data;
+}
+
+export async function toggleExclusionTecho(
+  id: number,
+  excluida?: boolean
+): Promise<{ message: string; memoria: MemoriaCalculo; estado_area: EstadoTechoArea }> {
+  const { data } = await api.post(`/api/v1/memorias/memorias-calculo/${id}/toggle-exclusion-techo/`, { excluida });
+  return data;
+}
+
+export async function enviarReajusteTecho(payload: {
+  gestion: number;
+  area: number;
+  memorias_seleccionadas: number[];
+  nota?: string;
+}): Promise<{
+  aprobadas_count: number;
+  excluidas_count: number;
+  total_aprobado: string;
+  nuevo_techo: string;
+  mensaje: string;
+}> {
+  const { data } = await api.post('/api/v1/memorias/memorias-calculo/enviar-reajuste-techo/', payload);
+  return data;
+}
+
+export interface AreaInfoConfiguracion {
+  id: number;
+  codigo: string;
+  nombre: string;
+  programa_id?: number | null;
+  programa_codigo?: string | null;
+  programa_nombre?: string | null;
+}
+
+export interface SiguienteAnioResponse {
+  siguiente_anio: number;
+  ultimo_anio: number | null;
+  areas: AreaInfoConfiguracion[];
+}
+
+export async function getSiguienteAnioGestion(): Promise<SiguienteAnioResponse> {
+  const { data } = await api.get<SiguienteAnioResponse>('/api/v1/presupuestos/gestiones/siguiente-anio/');
+  return data;
+}
+
+export async function crearGestionConTechos(payload: {
+  anio: number;
+  techo_general: number | string;
+  distribucion: { area_id: number; monto_inicial: number | string }[];
+}): Promise<{
+  message: string;
+  gestion: Gestion;
+  total_distribuido: string;
+  techo_general: string;
+}> {
+  const { data } = await api.post('/api/v1/presupuestos/gestiones/crear-con-techos/', payload);
+  return data;
+}
+
+export async function asignarTechosGestion(
+  gestionId: number,
+  payload: {
+    techo_general: number | string;
+    distribucion: { area_id: number; monto_inicial: number | string }[];
+  }
+): Promise<{
+  message: string;
+  gestion: Gestion;
+  total_distribuido: string;
+}> {
+  const { data } = await api.post(`/api/v1/presupuestos/gestiones/${gestionId}/asignar-techos/`, payload);
+  return data;
+}
+
+

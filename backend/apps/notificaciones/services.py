@@ -30,8 +30,8 @@ def notificar_rol(rol_nombre, titulo, mensaje, tipo=Notificacion.TipoNotificacio
     
     if 'PLANIFIC' in clean_name:
         filtro_rol = filtro_rol | Q(rol__nombre__icontains='planific')
-    elif 'APROBAD' in clean_name:
-        filtro_rol = filtro_rol | Q(rol__nombre__icontains='aprob') | Q(rol__nombre__icontains='admin') | Q(is_superuser=True)
+    elif 'APROBAD' in clean_name or 'PRESUPUEST' in clean_name:
+        filtro_rol = filtro_rol | Q(rol__nombre__icontains='presupuest') | Q(rol__nombre__icontains='aprob') | Q(rol__nombre__icontains='admin') | Q(is_superuser=True)
     elif 'GERENT' in clean_name:
         filtro_rol = filtro_rol | Q(rol__nombre__icontains='geren')
     elif 'ELABORAD' in clean_name:

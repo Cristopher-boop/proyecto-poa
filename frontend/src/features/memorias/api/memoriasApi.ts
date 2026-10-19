@@ -14,6 +14,7 @@ export interface MemoriaCalculo {
   motivo_rechazo: string;
   es_contratacion: boolean;
   estado: string;
+  excluida_por_techo?: boolean;
   fecha_aprobacion: string | null;
   total_presupuestado: string;
   total_ejecutado: string;
@@ -101,6 +102,26 @@ export const memoriasApi = {
     memorias?: any[];
   }): Promise<{ message: string; creadas: number; memorias: MemoriaCalculo[] }> => {
     const response = await api.post('/api/v1/memorias/memorias-calculo/duplicar-masivo/', payload);
+    return response.data;
+  },
+
+  getEstadoTechoArea: async (params: { gestion: number; area?: number | string }) => {
+    const response = await api.get('/api/v1/memorias/memorias-calculo/estado-techo-area/', { params });
+    return response.data;
+  },
+
+  toggleExclusionTecho: async (id: number, excluida?: boolean) => {
+    const response = await api.post(`/api/v1/memorias/memorias-calculo/${id}/toggle-exclusion-techo/`, { excluida });
+    return response.data;
+  },
+
+  enviarReajusteTecho: async (payload: {
+    gestion: number;
+    area: number;
+    memorias_seleccionadas: number[];
+    nota?: string;
+  }) => {
+    const response = await api.post('/api/v1/memorias/memorias-calculo/enviar-reajuste-techo/', payload);
     return response.data;
   }
 };

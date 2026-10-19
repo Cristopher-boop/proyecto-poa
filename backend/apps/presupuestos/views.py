@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
-from django.db.models import Sum, Q, F
+from django.db.models import Sum, Q, F, Max
 from decimal import Decimal
 
 from .models import Gestion, Partida, PresupuestoArea
@@ -23,7 +23,225 @@ class GestionViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_superuser: return True
         rol = user.rol.nombre.upper() if user.rol else ''
-        return rol in ['ADMINISTRADOR', 'APROBADOR']
+        return rol in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']
+
+    def perform_create(self, serializer):
+        gestion = serializer.save()
+        areas_activas = Area.objects.filter(estado=True)
+        presupuestos = [
+            PresupuestoArea(
+                gestion=gestion,
+                area=area,
+                monto_inicial=Decimal('0.00'),
+                monto_actual=Decimal('0.00'),
+                estado=PresupuestoArea.EstadoPresupuesto.ABIERTO,
+            )
+            for area in areas_activas
+        ]
+        if presupuestos:
+            PresupuestoArea.objects.bulk_create(presupuestos)
+
+    @action(detail=False, methods=['get'], url_path='siguiente-anio')
+    def siguiente_anio(self, request):
+        max_anio = Gestion.objects.aggregate(m=Max('anio'))['m']
+        if max_anio:
+            siguiente = max_anio + 1
+        else:
+            siguiente = timezone.now().year + 1
+
+        areas_activas = Area.objects.filter(estado=True).order_by('codigo')
+        areas_data = [
+            {
+                'id': a.id,
+                'codigo': a.codigo,
+                'nombre': a.nombre,
+                'programa_id': getattr(a, 'programa_id', None),
+                'programa_codigo': a.programa.codigo if getattr(a, 'programa', None) else None,
+                'programa_nombre': a.programa.nombre if getattr(a, 'programa', None) else None,
+            }
+            for a in areas_activas
+        ]
+
+        return Response({
+            'siguiente_anio': siguiente,
+            'ultimo_anio': max_anio,
+            'areas': areas_data,
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='crear-con-techos')
+    def crear_con_techos(self, request):
+        if not self.check_admin_permission():
+            return Response({'error': 'Solo la Lic. Acha / Administrador de presupuestos puede crear gestiones y fijar techos institucionales.'}, status=status.HTTP_403_FORBIDDEN)
+
+        max_anio = Gestion.objects.aggregate(m=Max('anio'))['m']
+        siguiente_esperado = (max_anio + 1) if max_anio else (timezone.now().year + 1)
+
+        anio = request.data.get('anio')
+        if not anio:
+            anio = siguiente_esperado
+        else:
+            try:
+                anio = int(anio)
+            except (ValueError, TypeError):
+                return Response({'error': 'Año inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if max_anio and anio != siguiente_esperado:
+            return Response({'error': f'El año de la nueva gestión debe ser estrictamente la siguiente ({siguiente_esperado}).'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if Gestion.objects.filter(anio=anio).exists():
+            return Response({'error': f'La Gestión {anio} ya existe en el sistema.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        techo_general_raw = request.data.get('techo_general')
+        try:
+            techo_general = Decimal(str(techo_general_raw or '0.00'))
+            if techo_general <= Decimal('0.00'):
+                return Response({'error': 'Debe ingresar un Techo Presupuestario General del POA mayor a 0.'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({'error': 'El Techo General debe ser un monto numérico válido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        distribucion = request.data.get('distribucion', [])
+        if not isinstance(distribucion, list) or not distribucion:
+            return Response({'error': 'Debe asignar el techo presupuestario para cada una de las gerencias activas.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        areas_activas = list(Area.objects.filter(estado=True))
+        areas_activas_ids = {a.id for a in areas_activas}
+
+        dist_dict = {}
+        for item in distribucion:
+            area_id = item.get('area_id')
+            monto_raw = item.get('monto_inicial', 0)
+            try:
+                monto = Decimal(str(monto_raw or '0.00'))
+                if monto < Decimal('0.00'):
+                    return Response({'error': f'El monto del área {area_id} no puede ser negativo.'}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception:
+                return Response({'error': f'Monto inválido para el área {area_id}.'}, status=status.HTTP_400_BAD_REQUEST)
+            if area_id in areas_activas_ids:
+                dist_dict[area_id] = monto
+
+        # Validar que obligadamente se asignen todas las áreas activas
+        faltantes = areas_activas_ids - set(dist_dict.keys())
+        if faltantes:
+            areas_faltantes_nombres = [a.nombre for a in areas_activas if a.id in faltantes]
+            return Response({
+                'error': f'Obligatoriamente debe asignar el techo presupuestario para todas las gerencias. Falta asignar: {", ".join(areas_faltantes_nombres[:5])}.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        total_distribuido = sum(dist_dict.values())
+        if total_distribuido > techo_general:
+            exceso = total_distribuido - techo_general
+            return Response({
+                'error': f'La suma de techos por gerencias (Bs. {total_distribuido:,.2f}) supera el Techo General del POA (Bs. {techo_general:,.2f}) por Bs. {exceso:,.2f}. Ajuste los montos para no sobrepasar el techo global.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            gestion = Gestion.objects.create(
+                anio=anio,
+                estado=Gestion.EstadoGestion.FORMULACION,
+                techo_general=techo_general,
+            )
+
+            nuevos_presupuestos = [
+                PresupuestoArea(
+                    gestion=gestion,
+                    area=area,
+                    monto_inicial=dist_dict[area.id],
+                    monto_actual=dist_dict[area.id],
+                    estado=PresupuestoArea.EstadoPresupuesto.ABIERTO,
+                )
+                for area in areas_activas
+            ]
+            PresupuestoArea.objects.bulk_create(nuevos_presupuestos)
+
+        return Response({
+            'message': f'Gestión {gestion.anio} habilitada exitosamente para formulación con Techo General de Bs. {techo_general:,.2f} y techos asignados a {len(nuevos_presupuestos)} gerencias.',
+            'gestion': GestionSerializer(gestion).data,
+            'total_distribuido': str(total_distribuido),
+            'techo_general': str(techo_general),
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='asignar-techos')
+    def asignar_techos(self, request, pk=None):
+        if not self.check_admin_permission():
+            return Response({'error': 'Solo la Lic. Acha / Administrador de presupuestos puede fijar o reasignar techos.'}, status=status.HTTP_403_FORBIDDEN)
+
+        gestion = self.get_object()
+        if gestion.estado not in [Gestion.EstadoGestion.FORMULACION, Gestion.EstadoGestion.CERRADO_FORMULACION]:
+            return Response({'error': 'Solo se pueden asignar techos en fase de Formulación.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        techo_general_raw = request.data.get('techo_general')
+        try:
+            techo_general = Decimal(str(techo_general_raw or '0.00'))
+            if techo_general <= Decimal('0.00'):
+                return Response({'error': 'Debe ingresar un Techo Presupuestario General del POA mayor a 0.'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({'error': 'El Techo General debe ser un monto numérico válido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        distribucion = request.data.get('distribucion', [])
+        if not isinstance(distribucion, list) or not distribucion:
+            return Response({'error': 'Debe enviar la distribución de techos por gerencia.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        areas_activas = list(Area.objects.filter(estado=True))
+        areas_activas_ids = {a.id for a in areas_activas}
+
+        dist_dict = {}
+        for item in distribucion:
+            area_id = item.get('area_id')
+            monto_raw = item.get('monto_inicial', 0)
+            try:
+                monto = Decimal(str(monto_raw or '0.00'))
+                if monto < Decimal('0.00'):
+                    return Response({'error': f'El monto del área {area_id} no puede ser negativo.'}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception:
+                return Response({'error': f'Monto inválido para el área {area_id}.'}, status=status.HTTP_400_BAD_REQUEST)
+            if area_id in areas_activas_ids:
+                dist_dict[area_id] = monto
+
+        # Validar que obligadamente se asignen todas las áreas activas
+        faltantes = areas_activas_ids - set(dist_dict.keys())
+        if faltantes:
+            areas_faltantes_nombres = [a.nombre for a in areas_activas if a.id in faltantes]
+            return Response({
+                'error': f'Obligatoriamente debe asignar el techo presupuestario para todas las gerencias. Falta asignar: {", ".join(areas_faltantes_nombres[:5])}.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        total_distribuido = sum(dist_dict.values())
+        if total_distribuido > techo_general:
+            exceso = total_distribuido - techo_general
+            return Response({
+                'error': f'La suma de techos por gerencias (Bs. {total_distribuido:,.2f}) supera el Techo General del POA (Bs. {techo_general:,.2f}) por Bs. {exceso:,.2f}. Ajuste los montos para no sobrepasar el techo global.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        user_name = request.user.get_full_name() or request.user.username
+        with transaction.atomic():
+            gestion.techo_general = techo_general
+            gestion.save(update_fields=['techo_general'])
+
+            for area in areas_activas:
+                nuevo_monto = dist_dict[area.id]
+                presupuesto, created = PresupuestoArea.objects.get_or_create(
+                    gestion=gestion,
+                    area=area,
+                    defaults={
+                        'monto_inicial': nuevo_monto,
+                        'monto_actual': nuevo_monto,
+                        'estado': PresupuestoArea.EstadoPresupuesto.ABIERTO,
+                    }
+                )
+                if not created:
+                    if nuevo_monto < presupuesto.monto_inicial:
+                        presupuesto.techo_reducido = True
+                        presupuesto.motivo_reduccion = f"Reajuste de Techos POA por {user_name}"
+                        presupuesto.fecha_reduccion = timezone.now()
+                    presupuesto.monto_inicial = nuevo_monto
+                    presupuesto.monto_actual = nuevo_monto
+                    presupuesto.save()
+
+        return Response({
+            'message': f'Techos de la Gestión {gestion.anio} actualizados exitosamente (Techo General: Bs. {techo_general:,.2f}).',
+            'gestion': GestionSerializer(gestion).data,
+            'total_distribuido': str(total_distribuido),
+        }, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='cerrar-formulacion')
     def cerrar_formulacion(self, request, pk=None):
@@ -90,7 +308,7 @@ class GestionViewSet(viewsets.ModelViewSet):
         gestion.estado = Gestion.EstadoGestion.EN_EJECUCION
         gestion.save()
         return Response({
-            'message': f'La Gestión {gestion.anio} ahora se encuentra En Ejecución.',
+            'message': f'La Gestión {gestion.anio} ahora se encuentra En Ejecución. Se ha habilitado la ejecución presupuestaria y registro de gastos.',
             'gestion': GestionSerializer(gestion).data
         }, status=status.HTTP_200_OK)
 
@@ -164,7 +382,7 @@ class PartidaViewSet(viewsets.ModelViewSet):
             return True
         rol = user.rol.nombre.upper() if user.rol else ''
         rol_clean = rol.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
-        return rol_clean in ['ADMINISTRADOR', 'APROBADOR']
+        return rol_clean in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']
 
     def create(self, request, *args, **kwargs):
         if not self.check_manage_permission():
@@ -248,10 +466,30 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
         gestion_anio = self.request.query_params.get('anio')
         area_id = self.request.query_params.get('area')
 
+        if gestion_anio and not gestion_id:
+            g = Gestion.objects.filter(anio=gestion_anio).first()
+            if g:
+                gestion_id = g.id
+
         if gestion_id:
+            gestion = Gestion.objects.filter(id=gestion_id).first()
+            if gestion:
+                areas_activas = Area.objects.filter(estado=True)
+                existentes = set(PresupuestoArea.objects.filter(gestion=gestion).values_list('area_id', flat=True))
+                faltantes = [
+                    PresupuestoArea(
+                        gestion=gestion,
+                        area=a,
+                        monto_inicial=Decimal('0.00'),
+                        monto_actual=Decimal('0.00'),
+                        estado=PresupuestoArea.EstadoPresupuesto.ABIERTO,
+                    )
+                    for a in areas_activas if a.id not in existentes
+                ]
+                if faltantes:
+                    PresupuestoArea.objects.bulk_create(faltantes)
             qs = qs.filter(gestion_id=gestion_id)
-        if gestion_anio:
-            qs = qs.filter(gestion__anio=gestion_anio)
+
         if area_id:
             qs = qs.filter(area_id=area_id)
         return qs
@@ -271,6 +509,21 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
 
         if not gestion:
             return Response({'error': 'No se encontró la gestión solicitada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        areas_activas = Area.objects.filter(estado=True)
+        existentes = set(PresupuestoArea.objects.filter(gestion=gestion).values_list('area_id', flat=True))
+        faltantes = [
+            PresupuestoArea(
+                gestion=gestion,
+                area=a,
+                monto_inicial=Decimal('0.00'),
+                monto_actual=Decimal('0.00'),
+                estado=PresupuestoArea.EstadoPresupuesto.ABIERTO,
+            )
+            for a in areas_activas if a.id not in existentes
+        ]
+        if faltantes:
+            PresupuestoArea.objects.bulk_create(faltantes)
 
         presupuestos = PresupuestoArea.objects.filter(gestion=gestion).select_related('area')
         total_inicial = presupuestos.aggregate(total=Sum('monto_inicial'))['total'] or Decimal('0.00')
@@ -484,4 +737,85 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
             ),
             'secciones': secciones_data,
         })
+
+    @action(detail=True, methods=['post', 'patch'], url_path='ajustar-techo')
+    def ajustar_techo(self, request, pk=None):
+        user = request.user
+        rol = user.rol.nombre.upper() if user.rol else ''
+        rol_clean = rol.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        if not (user.is_superuser or rol_clean in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']):
+            return Response({'error': 'Solo Presupuestos (Lic. Acha) o Administrador pueden fijar o ajustar los techos presupuestarios.'}, status=status.HTTP_403_FORBIDDEN)
+
+        presupuesto = self.get_object()
+        nuevo_monto_raw = request.data.get('monto_inicial')
+        motivo = request.data.get('motivo_reduccion') or request.data.get('motivo') or ''
+
+        if nuevo_monto_raw is None:
+            return Response({'error': 'Debe especificar el nuevo monto inicial (techo).'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            nuevo_techo = Decimal(str(nuevo_monto_raw)).quantize(Decimal('0.01'))
+            if nuevo_techo < Decimal('0.00'):
+                return Response({'error': 'El techo presupuestario no puede ser negativo.'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({'error': 'El monto proporcionado es inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            memorias_vigentes = MemoriaCalculo.objects.filter(
+                gestion=presupuesto.gestion,
+                seccion__area=presupuesto.area,
+            ).exclude(
+                estado=MemoriaCalculo.EstadoMemoria.RECHAZADO
+            ).exclude(
+                excluida_por_techo=True
+            )
+
+            total_formulado = memorias_vigentes.aggregate(
+                total=Sum('total_presupuestado')
+            )['total'] or Decimal('0.00')
+
+            gastos_area = Gasto.objects.filter(
+                memoria__gestion=presupuesto.gestion,
+                memoria__seccion__area=presupuesto.area
+            ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
+
+            monto_disponible = max(Decimal('0.00'), nuevo_techo - gastos_area)
+
+            es_reduccion = nuevo_techo < total_formulado
+            presupuesto.monto_inicial = nuevo_techo
+            presupuesto.monto_actual = monto_disponible
+            presupuesto.techo_reducido = es_reduccion
+            presupuesto.motivo_reduccion = motivo if motivo else ("Reducción de techo presupuestario" if es_reduccion else None)
+            if es_reduccion:
+                presupuesto.fecha_reduccion = timezone.now()
+            else:
+                presupuesto.fecha_reduccion = None
+            presupuesto.save()
+
+            diferencia = nuevo_techo - total_formulado
+
+            if es_reduccion:
+                try:
+                    from apps.notificaciones.services import crear_notificacion
+                    from apps.usuarios.models import Usuario
+                    usuarios_area = Usuario.objects.filter(seccion__area=presupuesto.area, is_active=True)
+                    deficit = abs(diferencia)
+                    for u in usuarios_area:
+                        crear_notificacion(
+                            usuario_destino=u,
+                            usuario_origen=user,
+                            titulo=f"⚠️ ALERTA: Techo Reducido ({presupuesto.area.codigo})",
+                            mensaje=f"Presupuestos (Lic. Acha) redujo el techo presupuestario a Bs. {nuevo_techo:,.2f}. Su área tiene formulado Bs. {total_formulado:,.2f}. Debe recortar -Bs. {deficit:,.2f} en sus Memorias de Cálculo para acceder al Pase Directo." + (f" Motivo: {motivo}" if motivo else ""),
+                            enlace="/memorias"
+                        )
+                except Exception as notif_err:
+                    print("Error notificando reducción de techo:", notif_err)
+
+        return Response({
+            'message': f'Techo presupuestario de {presupuesto.area.nombre} actualizado a Bs. {nuevo_techo:,.2f}.' + (' Se activó la Alerta de Ajuste por recorte de techo.' if es_reduccion else ''),
+            'presupuesto': PresupuestoAreaSerializer(presupuesto).data,
+            'total_formulado': str(total_formulado),
+            'diferencia': str(diferencia),
+            'techo_reducido': es_reduccion,
+        }, status=status.HTTP_200_OK)
 

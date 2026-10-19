@@ -17,7 +17,7 @@ import alertService from '../../../utils/alerts';
 export function usePlanificacion() {
   const { user } = useAuth();
   const rolName = user?.rol_nombre?.toUpperCase() || '';
-  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'ADMINISTRADOR';
+  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'PRESUPUESTOS' || rolName === 'ADMINISTRADOR';
   const isGerente = rolName === 'GERENTE';
   const isElaborador = rolName === 'ELABORADOR';
   const isPlanificador = rolName === 'PLANIFICADOR';

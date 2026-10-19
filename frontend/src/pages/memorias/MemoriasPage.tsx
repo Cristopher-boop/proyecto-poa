@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
-import { getGestiones, getAreas, deleteMemoria } from '../../services/presupuestoService';
+import {
+  getGestiones,
+  getAreas,
+  deleteMemoria,
+  getEstadoTechoArea,
+  toggleExclusionTecho,
+  enviarReajusteTecho,
+  EstadoTechoArea,
+} from '../../services/presupuestoService';
 import alertService from '../../utils/alerts';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,6 +19,7 @@ import { MemoriaForm } from '../../features/memorias/components/MemoriaForm';
 import { MemoriaDetalleModal } from '../../features/memorias/components/MemoriaDetalleModal';
 import { MemoriaExcelDuplicatorModal } from '../../features/memorias/components/MemoriaExcelDuplicatorModal';
 import { CopiaGastosModal } from '../../features/memorias/components/CopiaGastosModal';
+import { AlertaRecorteTecho } from '../../features/memorias/components/AlertaRecorteTecho';
 import { BookOpen, Plus, Copy } from 'lucide-react';
 import { Dropdown, PageHeader, GestionSelector } from '../../components/commons';
 import { useGestion } from '../../contexts/GestionContext';
@@ -64,7 +73,7 @@ export default function MemoriasPage() {
   const rolName = (user?.rol_nombre || (user as any)?.rol?.nombre || '').toUpperCase().trim();
   const rolClean = rolName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const isSuperuser = !!user?.is_superuser;
-  const isAprobador = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'ADMINISTRADOR';
+  const isAprobador = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'PRESUPUESTOS' || rolClean === 'ADMINISTRADOR';
   const isPlanificador = !isSuperuser && rolClean.includes('PLANIFIC');
   const isGerente = !isSuperuser && !isPlanificador && rolClean === 'GERENTE';
   const isElaborador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && rolClean === 'ELABORADOR';
@@ -72,6 +81,123 @@ export default function MemoriasPage() {
   const canCreate = isAprobador || isElaborador || isGerente;
   const canGlobalView = isAprobador || isPlanificador;
   const canEnviarBorradores = isSuperuser || isGerente || isElaborador;
+
+  // Estado para el flujo de recorte de techo presupuestario (Lic. Acha)
+  const [estadoTecho, setEstadoTecho] = useState<EstadoTechoArea | null>(null);
+  const [enviandoReajuste, setEnviandoReajuste] = useState(false);
+
+  const resolvedAreaId = (filtroArea && filtroArea !== 'todas')
+    ? Number(filtroArea)
+    : (user?.area_id ? Number(user.area_id) : undefined);
+
+  const cargarEstadoTecho = useCallback(async () => {
+    if (!selectedGestionId) {
+      setEstadoTecho(null);
+      return;
+    }
+    // Si tiene vista global institucional y está viendo todas las áreas, no se muestra alerta individual
+    if (canGlobalView && (!filtroArea || filtroArea === 'todas')) {
+      setEstadoTecho(null);
+      return;
+    }
+
+    try {
+      const params: { gestion: number; area?: number } = { gestion: selectedGestionId };
+      if (resolvedAreaId) {
+        params.area = resolvedAreaId;
+      }
+      const data = await getEstadoTechoArea(params);
+      setEstadoTecho(data);
+    } catch (err: any) {
+      setEstadoTecho(null);
+    }
+  }, [selectedGestionId, resolvedAreaId, canGlobalView, filtroArea]);
+
+  useEffect(() => {
+    cargarEstadoTecho();
+  }, [cargarEstadoTecho]);
+
+  const isRecorteTechoActive = Boolean(
+    estadoTecho && (estadoTecho.techo_reducido || estadoTecho.requiere_ajuste)
+  );
+
+  const handleToggleExclusion = async (memoriaId: number, excluida: boolean) => {
+    try {
+      const res = await toggleExclusionTecho(memoriaId, excluida);
+      alertService.toast(
+        excluida ? 'Memoria excluida del POA (No enviar)' : 'Memoria re-incluida en el POA',
+        'info'
+      );
+      if (res.estado_area) {
+        setEstadoTecho(res.estado_area);
+      } else {
+        await cargarEstadoTecho();
+      }
+      refetch();
+    } catch (error: any) {
+      console.error('Error al cambiar inclusión de memoria:', error);
+      alertService.error('Error', error?.response?.data?.error || 'No se pudo actualizar el estado de la memoria.');
+    }
+  };
+
+  const handleEnviarPaseDirecto = async () => {
+    if (!estadoTecho || !selectedGestionId) return;
+    const areaId = estadoTecho.area_id || resolvedAreaId;
+    if (!areaId) return;
+
+    if (!estadoTecho.puede_pase_directo) {
+      const deficitFormatted = new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(Number(estadoTecho.deficit_recorte || 0));
+      alertService.warning(
+        'Meta de recorte pendiente',
+        `El total formulado supera el nuevo techo presupuestario asignado. Aún debe recortar o excluir memorias por al menos -${deficitFormatted} para habilitar el Pase Directo.`
+      );
+      return;
+    }
+
+    const memoriasIncluidasIds = (estadoTecho.memorias || [])
+      .filter((m) => !m.excluida_por_techo)
+      .map((m) => m.id);
+
+    if (memoriasIncluidasIds.length === 0) {
+      alertService.warning('Sin memorias', 'Debe incluir al menos una memoria de cálculo en el POA.');
+      return;
+    }
+
+    const confirmed = await alertService.confirm({
+      title: '¿Confirmar Envío de Adecuación con Pase Directo?',
+      text: `Se regularizarán y aprobaran directamente ${memoriasIncluidasIds.length} memorias de cálculo hacia Presupuestos/Finanzas, adecuándose al nuevo techo presupuestario. Las memorias desmarcadas quedarán en borrador como excluidas. ¿Desea proceder?`,
+      confirmButtonText: 'Sí, enviar con Pase Directo',
+      cancelButtonText: 'Cancelar',
+      icon: 'question',
+    });
+
+    if (!confirmed) return;
+
+    try {
+      setEnviandoReajuste(true);
+      const res = await enviarReajusteTecho({
+        gestion: selectedGestionId,
+        area: areaId,
+        memorias_seleccionadas: memoriasIncluidasIds,
+        nota: 'Adecuación presupuestaria por recorte de techo (Pase Directo)',
+      });
+
+      alertService.success(
+        'Adecuación Aprobada Directamente',
+        res.mensaje || 'Se han aprobado directamente las memorias de cálculo cumpliendo el nuevo techo presupuestario.'
+      );
+      await cargarEstadoTecho();
+      refetch();
+    } catch (error: any) {
+      console.error('Error en pase directo:', error);
+      alertService.error(
+        'Error al enviar adecuación',
+        error?.response?.data?.error || error?.response?.data?.message || 'Ocurrió un error al enviar la adecuación.'
+      );
+    } finally {
+      setEnviandoReajuste(false);
+    }
+  };
 
   // Inicializar la pestaña según el rol del usuario autenticado
   useEffect(() => {
@@ -120,6 +246,7 @@ export default function MemoriasPage() {
       await deleteMemoria(id);
       alertService.success('Eliminado', 'La memoria de cálculo ha sido eliminada con éxito.');
       refetch();
+      cargarEstadoTecho();
     } catch (error: any) {
       console.error(error);
       alertService.error('Error', error?.response?.data?.detail || 'No se pudo eliminar la memoria de cálculo.');
@@ -195,25 +322,32 @@ export default function MemoriasPage() {
             />
 
             {canCreate && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowCopiaGastosModal(true)}
-                  disabled={isGestionBloqueada}
-                  className="px-3.5 py-2 rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
-                  title="Duplicar memorias de cálculo desde una gestión anterior"
-                >
-                  <Copy size={15} className="text-blue-600 dark:text-blue-400" /> Duplicar Memorias de Gestión Anterior
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreate}
-                  disabled={isGestionBloqueada}
-                  className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <Plus size={15} /> Formular Memoria
-                </button>
-              </>
+              isRecorteTechoActive ? (
+                <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-bold shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                  <span>Adecuación de Techo Activa — Formulación Bloqueada</span>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowCopiaGastosModal(true)}
+                    disabled={isGestionBloqueada}
+                    className="px-3.5 py-2 rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
+                    title="Duplicar memorias de cálculo desde una gestión anterior"
+                  >
+                    <Copy size={15} className="text-blue-600 dark:text-blue-400" /> Duplicar Memorias de Gestión Anterior
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreate}
+                    disabled={isGestionBloqueada}
+                    className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Plus size={15} /> Formular Memoria
+                  </button>
+                </>
+              )
             )}
           </div>
         }
@@ -228,6 +362,14 @@ export default function MemoriasPage() {
         )}
       </PageHeader>
 
+      {/* Alerta Obligatoria de Recorte de Techo si está activa */}
+      {isRecorteTechoActive && estadoTecho && (
+        <AlertaRecorteTecho
+          estadoTecho={estadoTecho}
+          onEnviarPaseDirecto={handleEnviarPaseDirecto}
+          actionLoading={enviandoReajuste}
+        />
+      )}
 
       <MemoriasFilter
         activeTab={activeTab}
@@ -237,7 +379,7 @@ export default function MemoriasPage() {
         filtroArea={filtroArea}
         setFiltroArea={setFiltroArea}
         areas={areas}
-        canCreate={canCreate}
+        canCreate={canCreate && !isRecorteTechoActive}
         canGlobalView={canGlobalView}
         onRefresh={refetch}
         onCreate={handleCreate}
@@ -257,12 +399,14 @@ export default function MemoriasPage() {
       <MemoriasList
         memorias={memorias}
         loading={loading}
-        canCreate={canCreate}
+        canCreate={canCreate && !isRecorteTechoActive}
         isElaborador={isElaborador}
         isGerente={isGerente}
         isPlanificador={isPlanificador}
         isAprobador={isAprobador}
         isSuperuser={isSuperuser}
+        isRecorteTechoActive={isRecorteTechoActive}
+        onToggleExclusion={handleToggleExclusion}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -271,10 +415,12 @@ export default function MemoriasPage() {
       {showForm && (
         <MemoriaForm
           memoria={selectedMemoria}
+          isRecorteTechoActive={isRecorteTechoActive}
           onClose={() => setShowForm(false)}
           onSaved={(savedId: number) => {
             setShowForm(false);
             refetch();
+            cargarEstadoTecho();
             if (savedId) {
               setSelectedMemoria({ id: savedId });
               setShowDetalle(true);
@@ -293,6 +439,7 @@ export default function MemoriasPage() {
               setShowForm(true);
             } else {
               refetch();
+              cargarEstadoTecho();
             }
           }}
         />
@@ -312,6 +459,7 @@ export default function MemoriasPage() {
           }}
           onSuccess={() => {
             refetch();
+            cargarEstadoTecho();
           }}
         />
       )}
@@ -327,6 +475,7 @@ export default function MemoriasPage() {
           initialOrigenId={selectedOrigenParaEditor}
           onSuccess={() => {
             refetch();
+            cargarEstadoTecho();
           }}
         />
       )}

@@ -15,9 +15,10 @@ import {
   PresupuestosFilter,
   PresupuestosTable,
   PresupuestoSectionView,
-  NuevaGestionModal,
+  NuevaGestionConTechosModal,
   ReporteGeneralModal,
   ReportePartidasModal,
+  AjustarTechoModal,
 } from '../../features/presupuestos';
 import { ResumenCards, ResumenCardItem } from '../../components/commons/ResumenCards';
 
@@ -96,9 +97,14 @@ export default function PresupuestosPage() {
     handleReabrir,
     handleConsolidar,
     handleCrearGestion,
+    recargarDatos,
+    refetchGestiones,
     formatMoney,
     getBadgeEstado,
   } = usePresupuestos();
+
+  const [areaParaAjustar, setAreaParaAjustar] = React.useState<any>(null);
+  const [gestionAEditarTechos, setGestionAEditarTechos] = React.useState<any>(null);
 
   // ResumenCards configuration
   const resumenCardsItems: ResumenCardItem[] = useMemo(() => {
@@ -185,11 +191,17 @@ export default function PresupuestosPage() {
           setSelectedGestionId(id);
           irAGeneral();
         }}
-        onConsolidar={handleConsolidar}
         onCerrarFormulacion={handleCerrarFormulacion}
         onReabrir={handleReabrir}
         onPasarEjecucion={handlePasarEjecucion}
-        onOpenNuevaGestion={() => setShowModalGestion(true)}
+        onOpenNuevaGestion={() => {
+          setGestionAEditarTechos(null);
+          setShowModalGestion(true);
+        }}
+        onAsignarTechosPOA={() => {
+          setGestionAEditarTechos(activeGestion);
+          setShowModalGestion(true);
+        }}
       />
 
       {/* VISTA 1: DASHBOARD + TABLA CONSOLIDADA */}
@@ -227,6 +239,8 @@ export default function PresupuestosPage() {
             formatMoney={formatMoney}
             nombreMesDesde={nombreMesDesde}
             nombreMesHasta={nombreMesHasta}
+            isAprobador={isAprobador}
+            onAjustarTecho={(p) => setAreaParaAjustar(p)}
           />
         </div>
       )}
@@ -385,14 +399,20 @@ export default function PresupuestosPage() {
         </div>
       )}
 
-      {/* MODAL NUEVA GESTIÓN */}
-      <NuevaGestionModal
+      {/* MODAL APERTURA DE GESTIÓN Y ASIGNACIÓN DE TECHOS POA (LIC. ACHA) */}
+      <NuevaGestionConTechosModal
         isOpen={showModalGestion}
-        onClose={() => setShowModalGestion(false)}
-        nuevoAnio={nuevoAnio}
-        onNuevoAnioChange={setNuevoAnio}
-        onSubmit={handleCrearGestion}
-        actionLoading={actionLoading}
+        onClose={() => {
+          setShowModalGestion(false);
+          setGestionAEditarTechos(null);
+        }}
+        gestionParaEditar={gestionAEditarTechos}
+        gestionesExistentes={gestiones}
+        onSuccess={async (nuevaGestionId) => {
+          await refetchGestiones();
+          setSelectedGestionId(nuevaGestionId);
+          recargarDatos();
+        }}
       />
 
       {/* MODAL DE REPORTE OFICIAL DEL DASHBOARD (GERENCIAS / PROGRAMAS) */}
@@ -436,6 +456,16 @@ export default function PresupuestosPage() {
         hayFiltroMeses={hayFiltroMeses}
         formatMoney={formatMoney}
       />
+
+      {/* MODAL PARA FIJAR / AJUSTAR TECHO PRESUPUESTARIO (LIC. ACHA / APROBADOR) */}
+      {areaParaAjustar && (
+        <AjustarTechoModal
+          isOpen={!!areaParaAjustar}
+          onClose={() => setAreaParaAjustar(null)}
+          presupuesto={areaParaAjustar}
+          onSuccess={recargarDatos}
+        />
+      )}
     </div>
   );
 }

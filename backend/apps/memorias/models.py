@@ -31,6 +31,7 @@ class MemoriaCalculo(TimeStampedModel):
     motivo_rechazo = models.TextField(null=True, blank=True, verbose_name="Motivo de Aceptación / Rechazo / Observación")
     es_contratacion = models.BooleanField(default=False, verbose_name="¿Corresponde a Contrataciones?")
     estado = models.CharField(max_length=30, choices=EstadoMemoria.choices, default=EstadoMemoria.BORRADOR, verbose_name="Estado")
+    excluida_por_techo = models.BooleanField(default=False, verbose_name="¿Excluida por recorte de techo?")
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Aprobación")
 
     # Campos almacenados de saldo (actualizados automáticamente en cada movimiento)
