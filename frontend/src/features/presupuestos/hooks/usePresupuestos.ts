@@ -93,7 +93,7 @@ function getAreaOrderWeight(code?: string): number {
 export function usePresupuestos() {
   const { user } = useAuth();
   const rolName = user?.rol_nombre?.toUpperCase() || '';
-  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'ADMINISTRADOR';
+  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'PRESUPUESTOS' || rolName === 'ADMINISTRADOR';
 
   // Global Gestion context
   const {
@@ -503,10 +503,10 @@ export function usePresupuestos() {
   const handlePasarEjecucion = async () => {
     if (!selectedGestionId) return;
     const confirm = await alertService.confirm({
-      title: 'Pasar a Ejecución',
-      text: '¿Pasar la gestión a estado EN EJECUCIÓN? Esta acción iniciará el control de partidas en fase operativa.',
+      title: 'Habilitar Ejecución de Gastos',
+      text: '¿Desea habilitar la ejecución de gastos para esta gestión? A partir de este momento se iniciará la fase operativa y el registro activo de certificaciones presupuestarias.',
       icon: 'question',
-      confirmButtonText: 'Sí, pasar a ejecución',
+      confirmButtonText: 'Sí, habilitar ejecución',
     });
     if (!confirm) return;
 

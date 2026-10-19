@@ -23,7 +23,7 @@ class GestionViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_superuser: return True
         rol = user.rol.nombre.upper() if user.rol else ''
-        return rol in ['ADMINISTRADOR', 'APROBADOR']
+        return rol in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']
 
     def perform_create(self, serializer):
         gestion = serializer.save()
@@ -154,7 +154,7 @@ class GestionViewSet(viewsets.ModelViewSet):
             PresupuestoArea.objects.bulk_create(nuevos_presupuestos)
 
         return Response({
-            'message': f'Gestión {gestion.anio} creada exitosamente con Techo General de Bs. {techo_general:,.2f} y techos asignados a {len(nuevos_presupuestos)} gerencias.',
+            'message': f'Gestión {gestion.anio} habilitada exitosamente para formulación con Techo General de Bs. {techo_general:,.2f} y techos asignados a {len(nuevos_presupuestos)} gerencias.',
             'gestion': GestionSerializer(gestion).data,
             'total_distribuido': str(total_distribuido),
             'techo_general': str(techo_general),
@@ -308,7 +308,7 @@ class GestionViewSet(viewsets.ModelViewSet):
         gestion.estado = Gestion.EstadoGestion.EN_EJECUCION
         gestion.save()
         return Response({
-            'message': f'La Gestión {gestion.anio} ahora se encuentra En Ejecución.',
+            'message': f'La Gestión {gestion.anio} ahora se encuentra En Ejecución. Se ha habilitado la ejecución presupuestaria y registro de gastos.',
             'gestion': GestionSerializer(gestion).data
         }, status=status.HTTP_200_OK)
 
@@ -382,7 +382,7 @@ class PartidaViewSet(viewsets.ModelViewSet):
             return True
         rol = user.rol.nombre.upper() if user.rol else ''
         rol_clean = rol.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
-        return rol_clean in ['ADMINISTRADOR', 'APROBADOR']
+        return rol_clean in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']
 
     def create(self, request, *args, **kwargs):
         if not self.check_manage_permission():
@@ -743,8 +743,8 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
         user = request.user
         rol = user.rol.nombre.upper() if user.rol else ''
         rol_clean = rol.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
-        if not (user.is_superuser or rol_clean in ['ADMINISTRADOR', 'APROBADOR']):
-            return Response({'error': 'Solo el Aprobador (Lic. Acha) o Administrador pueden fijar o ajustar los techos presupuestarios.'}, status=status.HTTP_403_FORBIDDEN)
+        if not (user.is_superuser or rol_clean in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']):
+            return Response({'error': 'Solo Presupuestos (Lic. Acha) o Administrador pueden fijar o ajustar los techos presupuestarios.'}, status=status.HTTP_403_FORBIDDEN)
 
         presupuesto = self.get_object()
         nuevo_monto_raw = request.data.get('monto_inicial')

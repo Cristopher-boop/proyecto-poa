@@ -27,7 +27,11 @@ class RolePermissionMixin:
         rol = user.rol.nombre.upper()
         rol_clean = rol.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
         allowed_clean = [r.upper().replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U') for r in allowed_roles]
-        if 'APROBADOR' in allowed_clean and rol_clean == 'ADMINISTRADOR': return True
+        if 'APROBADOR' in allowed_clean and 'PRESUPUESTOS' not in allowed_clean:
+            allowed_clean.append('PRESUPUESTOS')
+        if 'PRESUPUESTOS' in allowed_clean and 'APROBADOR' not in allowed_clean:
+            allowed_clean.append('APROBADOR')
+        if ('APROBADOR' in allowed_clean or 'PRESUPUESTOS' in allowed_clean) and rol_clean in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']: return True
         return rol_clean in allowed_clean or rol in allowed_roles or any(a in rol_clean for a in allowed_clean)
 
     def check_area_permission(self, memoria):
@@ -73,7 +77,7 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
         
         rol_nombre = user.rol.nombre.upper() if user.rol else ''
         rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
-        is_admin_aprobador = user.is_superuser or rol_clean in ['ADMINISTRADOR', 'APROBADOR']
+        is_admin_aprobador = user.is_superuser or rol_clean in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']
         is_planificador = 'PLANIFIC' in rol_clean
         
         if not (is_admin_aprobador or is_planificador):

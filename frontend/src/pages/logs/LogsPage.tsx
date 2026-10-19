@@ -14,7 +14,7 @@ import {
 export default function LogsPage() {
   const { user } = useAuth();
   const rolName = user?.rol_nombre?.toUpperCase() || '';
-  const isAdmin = Boolean(user?.is_superuser || rolName === 'ADMINISTRADOR' || rolName === 'APROBADOR');
+  const isAdmin = Boolean(user?.is_superuser || rolName === 'ADMINISTRADOR' || rolName === 'PRESUPUESTOS' || rolName === 'APROBADOR');
 
   const {
     activeTab,

@@ -12,6 +12,29 @@ from .serializers import UsuarioSerializer, RegistroUsuarioSerializer, LogEntryS
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
+        raw_username = attrs.get('username', '')
+        if isinstance(raw_username, str) and raw_username.strip():
+            cleaned = raw_username.strip().lower()
+            # 1. Búsqueda directa exacta
+            target = Usuario.objects.filter(username=cleaned).first()
+            if not target:
+                # 2. Si viene sin separador (ej. elabgaa, gergaa, trabgaa), probar con prefijo 'rol_sigla'
+                for prefix in ('elab', 'ger', 'trab'):
+                    if cleaned.startswith(prefix) and not cleaned.startswith(f"{prefix}_"):
+                        candidate = f"{prefix}_{cleaned[len(prefix):]}"
+                        target = Usuario.objects.filter(username=candidate).first()
+                        if target:
+                            break
+            if not target:
+                # 3. Si viene con separador, probar sin separador
+                no_sep = cleaned.replace('_', '').replace('-', '')
+                target = Usuario.objects.filter(username=no_sep).first()
+
+            if target:
+                attrs['username'] = target.username
+            else:
+                attrs['username'] = cleaned
+
         data = super().validate(attrs)
         user = self.user
         
@@ -72,7 +95,7 @@ from apps.presupuestos.models import Gestion, PresupuestoArea
 
 def check_admin_permission(user):
     return user.is_authenticated and (
-        user.is_superuser or (user.rol and user.rol.nombre.upper() in ['ADMINISTRADOR', 'APROBADOR'])
+        user.is_superuser or (user.rol and user.rol.nombre.upper() in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS'])
     )
 
 

@@ -64,9 +64,9 @@ export const PresupuestosHeader: React.FC<PresupuestosHeaderProps> = ({
                   onClick={onAsignarTechosPOA}
                   disabled={actionLoading}
                   className="shadow-xs font-semibold"
-                  title="Fijar el Techo General del POA y distribuir a las gerencias"
+                  title="Ajustar el Techo General del POA y reasignar a las gerencias"
                 >
-                  Asignar Techos POA
+                  Ajustar Techos POA
                 </Button>
               )}
               <Button
@@ -75,6 +75,7 @@ export const PresupuestosHeader: React.FC<PresupuestosHeaderProps> = ({
                 icon={<Lock size={14} />}
                 onClick={onCerrarFormulacion}
                 disabled={actionLoading}
+                title="Cerrar la etapa de formulación y consolidar los techos"
               >
                 Cerrar Formulación
               </Button>
@@ -89,8 +90,9 @@ export const PresupuestosHeader: React.FC<PresupuestosHeaderProps> = ({
                 icon={<Unlock size={14} />}
                 onClick={onReabrir}
                 disabled={actionLoading}
+                title="Reabrir la etapa de formulación para admitir ajustes de techos"
               >
-                Reabrir
+                Reabrir Formulación
               </Button>
               <Button
                 variant="primary"
@@ -98,8 +100,9 @@ export const PresupuestosHeader: React.FC<PresupuestosHeaderProps> = ({
                 icon={<Play size={14} />}
                 onClick={onPasarEjecucion}
                 disabled={actionLoading}
+                title="Iniciar la fase operativa y control de ejecución presupuestaria"
               >
-                Pasar a Ejecución
+                Habilitar Ejecución de Gastos
               </Button>
             </>
           )}
@@ -111,8 +114,9 @@ export const PresupuestosHeader: React.FC<PresupuestosHeaderProps> = ({
               icon={<Plus size={15} />}
               onClick={onOpenNuevaGestion}
               className="shadow-sm font-semibold"
+              title={`Habilitar la formulación del POA para la siguiente Gestión ${gestiones && gestiones.length > 0 ? Math.max(...gestiones.map((g) => g.anio)) + 1 : new Date().getFullYear() + 1}`}
             >
-              Nueva Gestión
+              Habilitar Formulación POA {gestiones && gestiones.length > 0 ? Math.max(...gestiones.map((g) => g.anio)) + 1 : new Date().getFullYear() + 1}
             </Button>
           )}
         </div>

@@ -13,8 +13,11 @@ from .serializers import (
 
 def get_user_role(user):
     if user.is_superuser:
+        return 'ADMINISTRADOR'
+    rol = user.rol.nombre.upper() if user.rol else ''
+    if rol == 'PRESUPUESTOS':
         return 'APROBADOR'
-    return user.rol.nombre.upper() if user.rol else ''
+    return rol
 
 
 class AccionMedianoPlazoViewSet(viewsets.ModelViewSet):

@@ -73,7 +73,7 @@ export default function MemoriasPage() {
   const rolName = (user?.rol_nombre || (user as any)?.rol?.nombre || '').toUpperCase().trim();
   const rolClean = rolName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const isSuperuser = !!user?.is_superuser;
-  const isAprobador = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'ADMINISTRADOR';
+  const isAprobador = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'PRESUPUESTOS' || rolClean === 'ADMINISTRADOR';
   const isPlanificador = !isSuperuser && rolClean.includes('PLANIFIC');
   const isGerente = !isSuperuser && !isPlanificador && rolClean === 'GERENTE';
   const isElaborador = !isSuperuser && !isAprobador && !isPlanificador && !isGerente && rolClean === 'ELABORADOR';

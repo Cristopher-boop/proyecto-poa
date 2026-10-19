@@ -187,7 +187,7 @@ export const NuevaGestionConTechosModal: React.FC<NuevaGestionConTechosModalProp
           techo_general: techoGeneralNum,
           distribucion: distribucionPayload,
         });
-        alertService.success('Gestión Creada', res.message);
+        alertService.success('Formulación Habilitada', res.message);
         onSuccess(res.gestion.id);
         onClose();
       }
@@ -208,10 +208,14 @@ export const NuevaGestionConTechosModal: React.FC<NuevaGestionConTechosModalProp
       onClose={onClose}
       title={
         isEditing
-          ? `Asignación de Techos — Gestión ${anio}`
-          : `Apertura de Gestión ${anio} & Techos POA`
+          ? `Ajustar Techos POA — Gestión ${anio}`
+          : `Habilitar Formulación POA — Gestión ${anio}`
       }
-      subtitle="Fije el Techo Presupuestario General y asigne el monto para cada Gerencia."
+      subtitle={
+        isEditing
+          ? 'Modifique el Techo Presupuestario General y redistribuya los techos para cada Gerencia.'
+          : `Fije el Techo Presupuestario General y asigne los techos por Gerencia para habilitar la formulación del POA ${anio}.`
+      }
       icon={<WalletCards className="w-5 h-5 text-theme-primary" />}
       size="lg"
     >
@@ -374,7 +378,7 @@ export const NuevaGestionConTechosModal: React.FC<NuevaGestionConTechosModalProp
                   La suma excede el techo general. Reduzca montos.
                 </span>
               ) : (
-                'Los montos asignados definirán el límite de formulación de cada gerencia.'
+                `Los techos asignados definirán el límite de formulación de cada gerencia para la Gestión ${anio}.`
               )}
             </span>
 
@@ -390,7 +394,7 @@ export const NuevaGestionConTechosModal: React.FC<NuevaGestionConTechosModalProp
                 disabled={actionLoading || esExcedente || techoGeneralNum <= 0}
                 className="font-bold shadow-sm"
               >
-                {isEditing ? 'Guardar Techos' : `Crear Gestión ${anio} y Fijar Techos`}
+                {isEditing ? 'Guardar Techos' : `Habilitar Formulación y Fijar Techos`}
                 <ArrowRight size={13} />
               </Button>
             </div>

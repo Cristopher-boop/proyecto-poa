@@ -45,7 +45,7 @@ export default function EjecucionPage() {
   const isSuperuser = Boolean(user?.is_superuser) || rolClean.includes('ADMIN');
   const isGerente = !isSuperuser && rolClean.includes('GERENT');
   const canSolicitar = isSuperuser || isGerente;
-  const canManage = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'ADMINISTRADOR';
+  const canManage = isSuperuser || rolClean === 'APROBADOR' || rolClean === 'PRESUPUESTOS' || rolClean === 'ADMINISTRADOR';
 
   const {
     loading,

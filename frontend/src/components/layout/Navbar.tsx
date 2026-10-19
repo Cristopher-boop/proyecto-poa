@@ -99,11 +99,14 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Indicador de gestión */}
-        <div className="hidden md:flex items-center gap-2 rounded-lg border border-theme-border bg-theme-base px-3 py-1.5 transition-colors">
-          <span className="h-2 w-2 rounded-full bg-theme-primary ring-2 ring-theme-primary/30" />
+        {/* Indicador de gestión actual */}
+        <div
+          className="hidden md:flex items-center gap-2 rounded-lg border border-theme-border bg-theme-base px-3 py-1.5 transition-colors shadow-xs"
+          title={`Ejercicio fiscal en curso — Año calendario actual ${new Date().getFullYear()}`}
+        >
+          <span className="h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30" />
           <span className="text-sm font-medium text-theme-main">
-            {gestionActiva ? `Gestión ${gestionActiva.anio}` : 'Gestión'}
+            Gestión Actual: {new Date().getFullYear()}
           </span>
         </div>
 

@@ -74,11 +74,11 @@ def reset():
         admin = Usuario.objects.create_superuser(
             username='admin',
             email='admin@poa.com',
-            password='admin',
+            password='1234',
             first_name='Super',
             last_name='Administrador'
         )
-        print(f"  [OK] Usuario '{admin.username}' creado (Contrasena: 'admin').")
+        print(f"  [OK] Usuario '{admin.username}' creado (Contraseña: '1234').")
     except Exception as e:
         print(f"  [!] Error al crear superusuario: {e}")
 
@@ -157,13 +157,13 @@ def reset():
         print(f"  [!] Error al actualizar justificaciones 2027: {e}")
         return
 
-    print("  [*] Usuarios de prueba por Rol (SoyAprobador, SoyGerenteI, SoyElaboradorI, SoyTrabajadorI)...")
+    print("  [*] Perfiles institucionales para TODAS las gerencias y roles globales (1234)...")
     try:
-        from seed_test_users import sembrar_usuarios_prueba
-        sembrar_usuarios_prueba()
-        print("  [OK] Usuarios de prueba sembrados.")
+        from seed_usuarios_gerencias import ejecutar_seed
+        ejecutar_seed()
+        print("  [OK] Perfiles de gerencias y roles globales sembrados.")
     except Exception as e:
-        print(f"  [!] Error en seed_test_users: {e}")
+        print(f"  [!] Error al poblar perfiles: {e}")
 
     print("  [*] Ejecución de gastos oficiales 2026 desde Excel...")
     try:
@@ -201,9 +201,12 @@ def reset():
     except Exception as e:
         print(f"  [!] No se pudo generar el resumen: {e}")
 
-    print("\n  Credenciales de acceso:")
-    print("    Usuario   : admin")
-    print("    Contrasena: admin")
+    print("\n  Credenciales de acceso unificadas (Contraseña general: '1234'):")
+    print("    - Superadmin : admin")
+    print("    - Presupuesto: presupuestos")
+    print("    - Planificac.: planificacion")
+    print("    - Tesorería  : tesoreria")
+    print("    - Gerencias  : elab_<sigla>, ger_<sigla>, trab_<sigla> (ej. elab_gaa, ger_cij)")
     print("=" * 60)
 
 
