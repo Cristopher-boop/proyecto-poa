@@ -19,11 +19,11 @@ interface PresupuestosHeaderProps {
   isAprobador: boolean;
   actionLoading: boolean;
   onSelectGestion: (id: number) => void;
-  onConsolidar: () => void;
   onCerrarFormulacion: () => void;
   onReabrir: () => void;
   onPasarEjecucion: () => void;
   onOpenNuevaGestion: () => void;
+  onAsignarTechosPOA?: () => void;
 }
 
 export const PresupuestosHeader: React.FC<PresupuestosHeaderProps> = ({
@@ -33,11 +33,11 @@ export const PresupuestosHeader: React.FC<PresupuestosHeaderProps> = ({
   isAprobador,
   actionLoading,
   onSelectGestion,
-  onConsolidar,
   onCerrarFormulacion,
   onReabrir,
   onPasarEjecucion,
   onOpenNuevaGestion,
+  onAsignarTechosPOA,
 }) => {
   return (
     <PageHeader
@@ -56,15 +56,19 @@ export const PresupuestosHeader: React.FC<PresupuestosHeaderProps> = ({
           {/* Acciones de ciclo de vida de la gestión */}
           {isAprobador && activeGestion?.estado === 'FORMULACION' && (
             <>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={<RefreshCw size={14} />}
-                onClick={onConsolidar}
-                disabled={actionLoading}
-              >
-                Consolidar
-              </Button>
+              {onAsignarTechosPOA && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<WalletCards size={14} />}
+                  onClick={onAsignarTechosPOA}
+                  disabled={actionLoading}
+                  className="shadow-xs font-semibold"
+                  title="Fijar el Techo General del POA y distribuir a las gerencias"
+                >
+                  Asignar Techos POA
+                </Button>
+              )}
               <Button
                 variant="danger"
                 size="sm"

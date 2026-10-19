@@ -21,6 +21,7 @@ class GestionSerializer(serializers.ModelSerializer):
             'anio',
             'estado',
             'estado_display',
+            'techo_general',
             'fecha_cierre',
             'total_memorias',
             'total_presupuesto_inicial',
@@ -89,6 +90,9 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
             'porcentaje_ejecucion',
             'total_memorias_aprobadas',
             'estado',
+            'techo_reducido',
+            'motivo_reduccion',
+            'fecha_reduccion',
             'created_at',
             'updated_at',
         ]

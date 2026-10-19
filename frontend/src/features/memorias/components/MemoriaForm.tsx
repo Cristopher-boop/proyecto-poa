@@ -55,7 +55,7 @@ import { planificacionService } from '../../../services/planificacionService';
 import { Operacion, AccionCortoPlazo } from '../../../types/planificacion';
 import { Dropdown, DropdownItem } from '../../../components/commons';
 
-export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
+export const MemoriaForm = ({ memoria, onClose, onSaved, isRecorteTechoActive = false }: any) => {
   
   const [searchParams] = useSearchParams();
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
@@ -1136,18 +1136,21 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
                       <label className="block text-xs font-semibold uppercase text-theme-muted">
                         2. Operación POA Institucional *
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => setShowQuickOperacion(!showQuickOperacion)}
-                        className="text-[11px] font-semibold text-theme-primary hover:underline flex items-center gap-1"
-                      >
-                        <Plus size={12} /> {showQuickOperacion ? 'Ocultar' : 'Nueva Operación'}
-                      </button>
+                      {!isRecorteTechoActive && (
+                        <button
+                          type="button"
+                          onClick={() => setShowQuickOperacion(!showQuickOperacion)}
+                          className="text-[11px] font-semibold text-theme-primary hover:underline flex items-center gap-1"
+                        >
+                          <Plus size={12} /> {showQuickOperacion ? 'Ocultar' : 'Nueva Operación'}
+                        </button>
+                      )}
                     </div>
 
                     <Dropdown
                       items={operacionDropdownItems}
                       value={formMemoria.operacionId}
+                      disabled={isRecorteTechoActive}
                       onChange={(val) => {
                         const op = operaciones.find((o) => o.id === Number(val));
                         setFormMemoria({
@@ -1163,6 +1166,12 @@ export const MemoriaForm = ({ memoria, onClose, onSaved }: any) => {
                       maxHeight="250px"
                       emptyMessage="No existen operaciones disponibles para su área."
                     />
+                    {isRecorteTechoActive && (
+                      <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 mt-1.5 flex items-center gap-1">
+                        <Lock size={12} className="shrink-0" />
+                        Operación POA bloqueada durante el reajuste por recorte de techo.
+                      </p>
+                    )}
                   </div>
                 </div>
 

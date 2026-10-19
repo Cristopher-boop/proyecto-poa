@@ -39,8 +39,15 @@ class MemoriaCalculoService:
     @transaction.atomic
     def crear_memoria(data, request_data, usuario):
         gestion = data.get('gestion')
+        seccion = data.get('seccion')
         if gestion and gestion.estado != Gestion.EstadoGestion.FORMULACION:
             raise ValidationError(f'No se pueden crear memorias en la Gestión {gestion.anio} porque la formulación está {gestion.get_estado_display().lower()}.')
+
+        if gestion and seccion:
+            from apps.presupuestos.models import PresupuestoArea
+            pres = PresupuestoArea.objects.filter(gestion=gestion, area=seccion.area).first()
+            if pres and pres.techo_reducido:
+                raise ValidationError('No se permite crear nuevas memorias de cálculo mientras el área se encuentre en proceso de reajuste por recorte de techo presupuestario. Solo puede modificar o excluir memorias existentes.')
         
         # Generar código automático seguro sin colisión
         if not data.get('codigo'):
@@ -216,19 +223,35 @@ class MemoriaCalculoService:
     @staticmethod
     @transaction.atomic
     def actualizar_memoria(memoria, data, request_data):
-        # Evitar modificar memorias aprobadas en cualquiera de sus etapas
+        from apps.presupuestos.models import PresupuestoArea
+        presupuesto = PresupuestoArea.objects.filter(
+            gestion=memoria.gestion,
+            area=memoria.seccion.area
+        ).first()
+        en_reajuste_techo = bool(presupuesto and presupuesto.techo_reducido)
+
+        # Regla estricta: durante reajuste por recorte de techo NO se permite cambiar la Operación POA
+        if en_reajuste_techo:
+            nueva_op = data.get('operacion')
+            if 'operacion' in data and nueva_op is not None and nueva_op != memoria.operacion:
+                raise ValidationError({'operacion': ['No está permitido cambiar la Operación POA durante el reajuste por recorte de techo presupuestario. Solo puede ajustar los ítems de gasto o excluir memorias.']})
+
+        # Evitar modificar memorias aprobadas en cualquiera de sus etapas (salvo si el área está en reajuste por recorte de techo)
         estados_aprobados = [
             MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA,
             MemoriaCalculo.EstadoMemoria.APROBADO_PLANIFICACION,
             MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
         ]
-        if memoria.estado in estados_aprobados and 'estado' not in data:
+        if memoria.estado in estados_aprobados and 'estado' not in data and not en_reajuste_techo:
             raise ValidationError('No se puede modificar una memoria de cálculo que ya ha sido aprobada.')
         if memoria.gestion.estado not in [Gestion.EstadoGestion.FORMULACION, Gestion.EstadoGestion.EN_EJECUCION] and 'estado' not in data:
             raise ValidationError(f'No se puede editar la memoria de la Gestión {memoria.gestion.anio} porque la gestión está {memoria.gestion.get_estado_display().lower()}.')
             
         for key, value in data.items():
             setattr(memoria, key, value)
+
+        if 'excluida_por_techo' in request_data:
+            memoria.excluida_por_techo = bool(request_data['excluida_por_techo'])
             
         # Actualizar detalles si vienen en el request
         if 'detalles' in request_data:
@@ -543,6 +566,180 @@ class MemoriaCalculoService:
             )
 
         return memoria
+
+    @staticmethod
+    def obtener_estado_techo_area(gestion_id, area_id):
+        from apps.presupuestos.models import PresupuestoArea, Gestion
+        from apps.organizacional.models import Area
+        from django.db.models import Sum
+
+        try:
+            gestion = Gestion.objects.get(id=gestion_id)
+        except Gestion.DoesNotExist:
+            raise ValidationError('Gestión no encontrada.')
+
+        try:
+            area = Area.objects.get(id=area_id)
+        except Area.DoesNotExist:
+            raise ValidationError('Área no encontrada.')
+
+        presupuesto = PresupuestoArea.objects.filter(gestion=gestion, area=area).first()
+        techo_asignado = presupuesto.monto_inicial if presupuesto else Decimal('0.00')
+
+        memorias_qs = MemoriaCalculo.objects.filter(
+            gestion=gestion,
+            seccion__area=area
+        ).exclude(estado=MemoriaCalculo.EstadoMemoria.RECHAZADO).order_by('codigo', 'id')
+
+        total_formulado = memorias_qs.aggregate(t=Sum('total_presupuestado'))['t'] or Decimal('0.00')
+        memorias_incluidas = memorias_qs.filter(excluida_por_techo=False)
+        total_incluido = memorias_incluidas.aggregate(t=Sum('total_presupuestado'))['t'] or Decimal('0.00')
+        total_excluido = total_formulado - total_incluido
+
+        # Diferencia respecto al techo con las memorias incluidas: si es negativo, hay déficit a recortar
+        diferencia = techo_asignado - total_incluido
+        techo_reducido = bool(presupuesto and presupuesto.techo_reducido)
+        requiere_ajuste = bool(techo_reducido or (techo_asignado > Decimal('0.00') and diferencia < Decimal('0.00')))
+        puede_pase_directo = bool(requiere_ajuste and total_incluido <= techo_asignado and total_incluido > Decimal('0.00'))
+
+        memorias_data = []
+        for m in memorias_qs:
+            memorias_data.append({
+                'id': m.id,
+                'codigo': m.codigo,
+                'justificacion': m.justificacion,
+                'total_presupuestado': str(m.total_presupuestado),
+                'estado': m.estado,
+                'excluida_por_techo': m.excluida_por_techo,
+                'operacion_codigo': m.operacion.codigo if m.operacion else None,
+                'operacion_descripcion': m.operacion.descripcion if m.operacion else None,
+            })
+
+        return {
+            'area_id': area.id,
+            'area_nombre': area.nombre,
+            'area_codigo': area.codigo,
+            'gestion_id': gestion.id,
+            'gestion_anio': gestion.anio,
+            'techo_asignado': str(techo_asignado),
+            'total_formulado': str(total_formulado),
+            'total_incluido': str(total_incluido),
+            'total_excluido': str(total_excluido),
+            'diferencia': str(diferencia),
+            'deficit_recorte': str(abs(diferencia)) if diferencia < Decimal('0.00') else '0.00',
+            'techo_reducido': techo_reducido,
+            'requiere_ajuste': requiere_ajuste,
+            'puede_pase_directo': puede_pase_directo,
+            'motivo_reduccion': presupuesto.motivo_reduccion if presupuesto else '',
+            'fecha_reduccion': presupuesto.fecha_reduccion.isoformat() if (presupuesto and presupuesto.fecha_reduccion) else None,
+            'memorias': memorias_data,
+        }
+
+    @staticmethod
+    @transaction.atomic
+    def toggle_exclusion_techo(memoria_id, usuario, excluida=None):
+        try:
+            memoria = MemoriaCalculo.objects.get(id=memoria_id)
+        except MemoriaCalculo.DoesNotExist:
+            raise ValidationError('Memoria de cálculo no encontrada.')
+
+        if excluida is None:
+            memoria.excluida_por_techo = not memoria.excluida_por_techo
+        else:
+            memoria.excluida_por_techo = bool(excluida)
+
+        memoria.save(update_fields=['excluida_por_techo'])
+        return memoria
+
+    @staticmethod
+    @transaction.atomic
+    def enviar_reajuste_techo(gestion_id, area_id, memorias_seleccionadas_ids, usuario, nota=''):
+        from apps.presupuestos.models import PresupuestoArea, Gestion
+        from apps.organizacional.models import Area
+        from apps.ejecucion.models import Gasto
+        from django.db.models import Sum
+
+        try:
+            gestion = Gestion.objects.get(id=gestion_id)
+        except Gestion.DoesNotExist:
+            raise ValidationError('Gestión no encontrada.')
+
+        try:
+            area = Area.objects.get(id=area_id)
+        except Area.DoesNotExist:
+            raise ValidationError('Área no encontrada.')
+
+        presupuesto = PresupuestoArea.objects.filter(gestion=gestion, area=area).first()
+        if not presupuesto:
+            raise ValidationError('No existe presupuesto registrado para esta área y gestión.')
+
+        memorias_qs = MemoriaCalculo.objects.filter(
+            gestion=gestion,
+            seccion__area=area
+        ).exclude(estado=MemoriaCalculo.EstadoMemoria.RECHAZADO)
+
+        if not memorias_seleccionadas_ids:
+            raise ValidationError('Debe seleccionar al menos una memoria de cálculo para incluir en el POA.')
+
+        seleccionadas = list(memorias_qs.filter(id__in=memorias_seleccionadas_ids))
+        if not seleccionadas:
+            raise ValidationError('No se encontraron memorias válidas en la selección.')
+
+        total_seleccionado = sum((m.total_presupuestado or Decimal('0.00')) for m in seleccionadas)
+
+        if total_seleccionado > presupuesto.monto_inicial:
+            exceso = total_seleccionado - presupuesto.monto_inicial
+            raise ValidationError(f'El total seleccionado (Bs. {total_seleccionado:,.2f}) excede el nuevo techo de Bs. {presupuesto.monto_inicial:,.2f}. Debe recortar al menos -Bs. {exceso:,.2f}.')
+
+        user_name = usuario.get_full_name() or usuario.username
+        # PASE DIRECTO: Aprobado formalmente sin pasar por revisiones intermedias
+        for mem in seleccionadas:
+            mem.estado = MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS
+            mem.excluida_por_techo = False
+            mem.fecha_aprobacion = timezone.now()
+            mem.motivo_rechazo = nota or f'Aprobado con PASE DIRECTO por adecuación al recorte de techo presupuestario (por {user_name}).'
+            mem.save()
+
+            if usuario and usuario.is_authenticated:
+                RegistroMemoriaUsuario.objects.get_or_create(
+                    memoria=mem,
+                    usuario=usuario,
+                    tipo_participacion=RegistroMemoriaUsuario.TipoParticipacion.REVISOR
+                )
+
+        # Memorias no enviadas quedan excluidas en borrador
+        excluidas = list(memorias_qs.exclude(id__in=memorias_seleccionadas_ids))
+        for mem in excluidas:
+            mem.excluida_por_techo = True
+            mem.estado = MemoriaCalculo.EstadoMemoria.BORRADOR
+            mem.motivo_rechazo = f'Excluida del POA por la gerencia ({user_name}) para adecuarse al recorte de techo presupuestario.'
+            mem.save()
+
+        # Regularizar PresupuestoArea
+        presupuesto.techo_reducido = False
+        gastos_area = Gasto.objects.filter(
+            memoria__gestion=gestion,
+            memoria__seccion__area=area
+        ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
+        presupuesto.monto_actual = max(Decimal('0.00'), total_seleccionado - gastos_area)
+        presupuesto.save()
+
+        # Notificar a Lic. Acha (Aprobador)
+        MemoriaCalculoService._notificar(
+            rol_nombre='APROBADOR',
+            titulo=f"Adecuación Completada (Pase Directo): {area.nombre}",
+            mensaje=f"{user_name} ha enviado la adecuación por recorte de techo para {area.nombre}. {len(seleccionadas)} memorias aprobadas formalmente con PASE DIRECTO (Bs. {total_seleccionado:,.2f}) y {len(excluidas)} memoria(s) excluida(s).",
+            enlace=f"/presupuestos?area={area.id}",
+            usuario_origen=usuario
+        )
+
+        return {
+            'aprobadas_count': len(seleccionadas),
+            'excluidas_count': len(excluidas),
+            'total_aprobado': str(total_seleccionado),
+            'nuevo_techo': str(presupuesto.monto_inicial),
+            'mensaje': f'Adecuación presupuestaria completada con PASE DIRECTO: {len(seleccionadas)} memoria(s) aprobada(s) formalmente por Bs. {total_seleccionado:,.2f}.',
+        }
 
 
 class ModificacionPresupuestariaService:

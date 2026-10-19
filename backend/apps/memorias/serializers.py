@@ -47,7 +47,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
         model = MemoriaCalculo
         fields = [
             'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_id', 'area_codigo', 'area_nombre', 'operacion', 'operacion_codigo',
-            'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'fecha_aprobacion',
+            'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'excluida_por_techo', 'fecha_aprobacion',
             'total_presupuestado', 'total_ejecutado', 'monto_entrante', 'monto_saliente', 'saldo_disponible',
             'participantes', 'detalles', 'partida_codigo', 'partida_nombre', 'total_items', 'created_at', 'updated_at'
         ]
@@ -97,7 +97,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
         model = MemoriaCalculo
         fields = [
             'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_id', 'area_codigo', 'area_nombre', 'operacion', 'operacion_codigo',
-            'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'fecha_aprobacion',
+            'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'excluida_por_techo', 'fecha_aprobacion',
             'total_presupuestado', 'total_ejecutado', 'monto_entrante', 'monto_saliente', 'saldo_disponible',
             'partida_codigo', 'partida_nombre', 'total_items',
             'created_at', 'updated_at'

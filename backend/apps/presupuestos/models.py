@@ -12,6 +12,7 @@ class Gestion(TimeStampedModel):
 
     anio = models.PositiveIntegerField(unique=True, verbose_name="Año de Gestión")
     estado = models.CharField(max_length=25, choices=EstadoGestion.choices, default=EstadoGestion.FORMULACION, verbose_name="Estado")
+    techo_general = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'), verbose_name="Techo General POA")
     fecha_cierre = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Cierre de Formulación")
 
     class Meta:
@@ -50,6 +51,9 @@ class PresupuestoArea(TimeStampedModel):
     monto_inicial = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), verbose_name="Monto Inicial")
     monto_actual = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), verbose_name="Monto Actual (Disponible)")
     estado = models.CharField(max_length=20, choices=EstadoPresupuesto.choices, default=EstadoPresupuesto.ABIERTO, verbose_name="Estado")
+    techo_reducido = models.BooleanField(default=False, verbose_name="¿Techo Reducido por Aprobador?")
+    motivo_reduccion = models.TextField(blank=True, null=True, verbose_name="Motivo del Recorte de Techo")
+    fecha_reduccion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Reducción")
 
     class Meta:
         verbose_name = "Presupuesto de Área"

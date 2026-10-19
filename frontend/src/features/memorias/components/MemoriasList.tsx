@@ -12,6 +12,8 @@ interface MemoriasListProps {
   isPlanificador: boolean;
   isAprobador: boolean;
   isSuperuser?: boolean;
+  isRecorteTechoActive?: boolean;
+  onToggleExclusion?: (id: number, excluida: boolean) => void;
   onView: (id: number) => void;
   onEdit: (memoria: MemoriaCalculo) => void;
   onDelete: (id: number) => void;
@@ -30,6 +32,8 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
   isPlanificador,
   isAprobador,
   isSuperuser = false,
+  isRecorteTechoActive = false,
+  onToggleExclusion,
   onView,
   onEdit,
   onDelete,
@@ -137,6 +141,9 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
         <table className="w-full text-left text-sm border-collapse">
           <thead>
             <tr className="border-b border-theme-border bg-theme-base/60 text-xs font-semibold uppercase tracking-wider text-theme-muted">
+              {isRecorteTechoActive && (
+                <th className="py-3.5 px-4 text-center">Incluir en POA</th>
+              )}
               {renderSortHeader('Código', 'codigo')}
               {renderSortHeader('Área', 'area')}
               {renderSortHeader('Partida Presupuestaria', 'partida')}
@@ -150,7 +157,7 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
           <tbody className="divide-y divide-theme-border">
             {currentItems.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center text-theme-muted">
+                <td colSpan={isRecorteTechoActive ? 9 : 8} className="py-12 text-center text-theme-muted">
                   <FileText size={36} className="mx-auto mb-2 opacity-40" />
                   <p className="font-medium">No se encontraron memorias en esta bandeja.</p>
                 </td>
@@ -161,7 +168,10 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
                 const total = parseFloat(String(memoria.total_presupuestado || memoria.total_presupuesto || '0'));
                 const formatMoney = (val: any) => new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(Number(val) || 0);
 
-                const getEstadoBadge = (estado: string) => {
+                const getEstadoBadge = (estado: string, excluida = false) => {
+                  if (excluida) {
+                    return <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-md text-[10px] font-bold">Excluida del POA</span>;
+                  }
                   const est = estado || '';
                   if (est.includes('BORRADOR')) return <span className="px-2 py-0.5 bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20 rounded-md text-[10px] font-bold">Borrador</span>;
                   if (est.includes('GERENCIA')) return <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-md text-[10px] font-bold">Rev. Gerencia</span>;
@@ -172,7 +182,31 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
                 };
 
                 return (
-                  <tr key={memoria.id} className="transition-all duration-500 hover:bg-theme-border/20">
+                  <tr
+                    key={memoria.id}
+                    className={`transition-all duration-300 hover:bg-theme-border/20 ${
+                      memoria.excluida_por_techo ? 'opacity-60 bg-amber-500/5' : ''
+                    }`}
+                  >
+                    {isRecorteTechoActive && (
+                      <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={!memoria.excluida_por_techo}
+                            onChange={(e) => {
+                              if (onToggleExclusion) {
+                                onToggleExclusion(memoria.id, !e.target.checked);
+                              }
+                            }}
+                            className="w-4 h-4 text-theme-primary rounded border-theme-border focus:ring-theme-primary cursor-pointer"
+                          />
+                          <span className={`text-[10px] font-bold ${!memoria.excluida_por_techo ? 'text-emerald-600 dark:text-emerald-400' : 'text-theme-muted'}`}>
+                            {!memoria.excluida_por_techo ? 'Incluida' : 'No enviar'}
+                          </span>
+                        </label>
+                      </td>
+                    )}
                     <td className="py-3.5 px-4 font-mono font-bold text-xs text-theme-main">{memoria.codigo}</td>
                     <td className="py-3.5 px-4">
                       <p className="font-semibold text-theme-main text-xs">{memoria.area_nombre || memoria.seccion_nombre}</p>
@@ -191,13 +225,13 @@ export const MemoriasList: React.FC<MemoriasListProps> = ({
                     </td>
                     <td className="py-3.5 px-4 text-right font-bold text-theme-main text-xs">{formatMoney(total)}</td>
                     <td className="py-3.5 px-4 text-center">
-                      {getEstadoBadge(memoria.estado)}
+                      {getEstadoBadge(memoria.estado, memoria.excluida_por_techo)}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       {(() => {
                         const isAprobada = Boolean(memoria.estado && memoria.estado.includes('APROBADO'));
-                        const canEditMemoria = !isAprobada && (isSuperuser || isAprobador || isGerente || isElaborador);
-                        const canDeleteMemoria = memoria.estado === 'BORRADOR' && (isSuperuser || isGerente || isElaborador);
+                        const canEditMemoria = (isRecorteTechoActive || !isAprobada) && (isSuperuser || isAprobador || isGerente || isElaborador);
+                        const canDeleteMemoria = memoria.estado === 'BORRADOR' && !isRecorteTechoActive && (isSuperuser || isGerente || isElaborador);
 
                         return (
                           <div className="flex items-center justify-center gap-1">

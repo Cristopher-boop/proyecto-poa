@@ -107,6 +107,21 @@ export function usePresupuestos() {
   const gestiones = contextGestiones.length > 0 ? contextGestiones : localGestiones;
 
   const [selectedGestionId, setSelectedGestionId] = useState<number | null>(gestionActivaId);
+
+  // Mantener sincronizado selectedGestionId con el contexto global
+  useEffect(() => {
+    if (gestionActivaId && selectedGestionId !== gestionActivaId) {
+      setSelectedGestionId(gestionActivaId);
+    }
+  }, [gestionActivaId]);
+
+  const handleSetSelectedGestionId = useCallback((id: number | null) => {
+    setSelectedGestionId(id);
+    if (id) {
+      setGestionActivaId(id);
+    }
+  }, [setGestionActivaId]);
+
   const [resumen, setResumen] = useState<ResumenGestion | null>(null);
   const [presupuestosArea, setPresupuestosArea] = useState<PresupuestoArea[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
@@ -174,11 +189,11 @@ export function usePresupuestos() {
       setAreas(aList);
       if (gList.length > 0 && !selectedGestionId) {
         const pref =
+          (gestionActivaId && gList.find((g) => g.id === gestionActivaId)) ||
           gList.find((g) => g.estado === 'EN_EJECUCION') ||
           gList.find((g) => g.estado === 'FORMULACION') ||
           gList[0];
-        setSelectedGestionId(pref.id);
-        setGestionActivaId(pref.id);
+        handleSetSelectedGestionId(pref.id);
       }
     } catch {
       mostrarMensaje('error', 'Error cargando gestiones iniciales.');
@@ -767,7 +782,7 @@ export function usePresupuestos() {
     // Gestiones & Selection
     gestiones,
     selectedGestionId,
-    setSelectedGestionId,
+    setSelectedGestionId: handleSetSelectedGestionId,
     activeGestion,
     loading,
     actionLoading,
@@ -847,6 +862,8 @@ export function usePresupuestos() {
     handleReabrir,
     handleConsolidar,
     handleCrearGestion,
+    recargarDatos: () => selectedGestionId && cargarDatos(selectedGestionId),
+    refetchGestiones,
     // Formatters
     formatMoney,
     getBadgeEstado,

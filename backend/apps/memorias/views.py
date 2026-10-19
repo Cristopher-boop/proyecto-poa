@@ -122,8 +122,15 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
         if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
             raise serializers.ValidationError({'non_field_errors': ['Tu rol no tiene permiso para crear memorias.']})
         seccion = serializer.validated_data.get('seccion')
+        gestion = serializer.validated_data.get('gestion')
         if seccion and not self.check_area_permission(type('obj', (object,), {'seccion': seccion})):
             raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para crear memorias en otra área.']})
+
+        if gestion and seccion:
+            from apps.presupuestos.models import PresupuestoArea
+            pres = PresupuestoArea.objects.filter(gestion=gestion, area=seccion.area).first()
+            if pres and pres.techo_reducido:
+                raise serializers.ValidationError({'non_field_errors': ['No está permitido crear nuevas memorias de cálculo mientras el área se encuentre en proceso de reajuste por recorte de techo presupuestario. Solo puede modificar o excluir memorias existentes.']})
         
         memoria = MemoriaCalculoService.crear_memoria(serializer.validated_data, self.request.data, self.request.user)
         serializer.instance = memoria
@@ -145,13 +152,27 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError({'non_field_errors': ['Tu rol no tiene permiso para editar memorias.']})
         if not self.check_area_permission(serializer.instance):
              raise serializers.ValidationError({'non_field_errors': ['No tienes permiso para editar memorias de esta área.']})
+
+        from apps.presupuestos.models import PresupuestoArea
+        presupuesto = PresupuestoArea.objects.filter(
+            gestion=serializer.instance.gestion,
+            area=serializer.instance.seccion.area
+        ).first()
+        en_reajuste_techo = bool(presupuesto and presupuesto.techo_reducido)
+
+        if en_reajuste_techo:
+            nueva_op = serializer.validated_data.get('operacion')
+            if 'operacion' in serializer.validated_data and nueva_op is not None and nueva_op != serializer.instance.operacion:
+                raise serializers.ValidationError({'operacion': ['No está permitido cambiar la Operación POA durante el reajuste por recorte de techo presupuestario. Solo puede ajustar los ítems de gasto o excluir memorias.']})
+
         if serializer.instance.estado in [
             MemoriaCalculo.EstadoMemoria.APROBADO_GERENCIA,
             MemoriaCalculo.EstadoMemoria.APROBADO_PLANIFICACION,
             MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
         ]:
-            raise serializers.ValidationError({'non_field_errors': ['No se puede modificar una memoria de cálculo que ya ha sido aprobada.']})
-             
+            if not en_reajuste_techo:
+                raise serializers.ValidationError({'non_field_errors': ['No se puede modificar una memoria de cálculo que ya ha sido aprobada.']})
+              
         memoria = MemoriaCalculoService.actualizar_memoria(serializer.instance, serializer.validated_data, self.request.data)
         serializer.instance = memoria
 
@@ -294,6 +315,86 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
             return Response({'error': e.detail if hasattr(e, 'detail') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='estado-techo-area')
+    def estado_techo_area(self, request):
+        gestion_id = request.query_params.get('gestion')
+        area_id = request.query_params.get('area')
+        if not gestion_id:
+            gestion_anio = request.query_params.get('anio')
+            if gestion_anio:
+                g = Gestion.objects.filter(anio=gestion_anio).first()
+                if g: gestion_id = g.id
+
+        if not gestion_id:
+            return Response({'error': 'Debe especificar el parámetro gestion.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Si no se envía área, obtener el área del usuario autenticado
+        if not area_id or str(area_id) == 'todas':
+            if hasattr(request.user, 'seccion') and request.user.seccion:
+                area_id = request.user.seccion.area_id
+            elif hasattr(request.user, 'area_id') and request.user.area_id:
+                area_id = request.user.area_id
+
+        if not area_id:
+            return Response({'error': 'Debe especificar el área o pertenecer a una unidad/gerencia.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            data = MemoriaCalculoService.obtener_estado_techo_area(gestion_id, area_id)
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post', 'patch'], url_path='toggle-exclusion-techo')
+    def toggle_exclusion_techo(self, request, pk=None):
+        if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
+            return Response({'error': 'No tienes permisos para modificar memorias.'}, status=status.HTTP_403_FORBIDDEN)
+        memoria = self.get_object()
+        if not self.check_area_permission(memoria):
+            return Response({'error': 'No tienes permiso sobre esta área.'}, status=status.HTTP_403_FORBIDDEN)
+
+        excluida = request.data.get('excluida')
+        try:
+            mem = MemoriaCalculoService.toggle_exclusion_techo(memoria.id, request.user, excluida)
+            estado_area = MemoriaCalculoService.obtener_estado_techo_area(mem.gestion_id, mem.seccion.area_id)
+            return Response({
+                'message': f'Memoria {mem.codigo} {"excluida del POA" if mem.excluida_por_techo else "incluida en el POA"} exitosamente.',
+                'memoria': MemoriaCalculoSerializer(mem, context={'request': request}).data,
+                'estado_area': estado_area,
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='enviar-reajuste-techo')
+    def enviar_reajuste_techo(self, request):
+        if not self.check_role_permission(['APROBADOR', 'GERENTE', 'ELABORADOR']):
+            return Response({'error': 'No tienes permisos para enviar la adecuación de techo.'}, status=status.HTTP_403_FORBIDDEN)
+
+        gestion_id = request.data.get('gestion') or request.query_params.get('gestion')
+        area_id = request.data.get('area') or request.query_params.get('area')
+        memorias_seleccionadas = request.data.get('memorias_seleccionadas', [])
+        nota = request.data.get('nota', '')
+
+        if not gestion_id or not area_id:
+            return Response({'error': 'Debe especificar gestion y area.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        dummy_mem = type('obj', (object,), {'seccion': type('sec', (object,), {'area_id': int(area_id)})()})()
+        if not self.check_area_permission(dummy_mem):
+            return Response({'error': 'No tienes permisos para gestionar adecuaciones de esta gerencia/área.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            res = MemoriaCalculoService.enviar_reajuste_techo(
+                gestion_id=int(gestion_id),
+                area_id=int(area_id),
+                memorias_seleccionadas_ids=[int(x) for x in memorias_seleccionadas],
+                usuario=request.user,
+                nota=nota
+            )
+            return Response(res, status=status.HTTP_200_OK)
+        except serializers.ValidationError as e:
+            return Response({'error': e.detail if hasattr(e, 'detail') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DetallePresupuestoMemoriaViewSet(viewsets.ModelViewSet):
