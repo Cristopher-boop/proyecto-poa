@@ -34,11 +34,11 @@ class GastoViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         rol_nombre = user.rol.nombre.upper() if user.rol else ''
-        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
-        is_gerente = rol_nombre == 'GERENTE'
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_global_role = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER'])
 
-        # Trabajadores y Elaboradores solo ven gastos de su propia área
-        if not (is_admin_aprobador or is_gerente):
+        # Trabajadores, Elaboradores y Gerentes solo ven gastos de su propia área
+        if not is_global_role:
             if user.seccion and user.seccion.area_id:
                 qs = qs.filter(memoria__seccion__area_id=user.seccion.area_id)
             else:
@@ -69,9 +69,10 @@ class GastoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         rol_nombre = user.rol.nombre.upper() if user.rol else ''
-        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
-        if not is_admin_aprobador:
-            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede registrar ejecuciones presupuestarias.']})
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_admin_presupuestos = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'TESORER'])
+        if not is_admin_presupuestos:
+            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Presupuestos / Tesorería / Administrador puede registrar ejecuciones presupuestarias.']})
 
         gasto = GastoService.registrar_gasto(serializer.validated_data, user)
         serializer.instance = gasto
@@ -79,9 +80,10 @@ class GastoViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         user = self.request.user
         rol_nombre = user.rol.nombre.upper() if user.rol else ''
-        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
-        if not is_admin_aprobador:
-            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede editar ejecuciones presupuestarias.']})
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_admin_presupuestos = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'TESORER'])
+        if not is_admin_presupuestos:
+            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Presupuestos / Tesorería / Administrador puede editar ejecuciones presupuestarias.']})
 
         gasto = GastoService.actualizar_gasto(serializer.instance, serializer.validated_data)
         serializer.instance = gasto
@@ -89,9 +91,10 @@ class GastoViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         user = self.request.user
         rol_nombre = user.rol.nombre.upper() if user.rol else ''
-        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
-        if not is_admin_aprobador:
-            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Aprobador / Administrador puede anular o eliminar ejecuciones presupuestarias.']})
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_admin_presupuestos = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'TESORER'])
+        if not is_admin_presupuestos:
+            raise serializers.ValidationError({'non_field_errors': ['Solo el rol Presupuestos / Tesorería / Administrador puede anular o eliminar ejecuciones presupuestarias.']})
 
         GastoService.eliminar_gasto(instance)
 
@@ -126,10 +129,10 @@ class GastoViewSet(viewsets.ModelViewSet):
         areas = Area.objects.filter(estado=True)
         user = request.user
         rol_nombre = user.rol.nombre.upper() if user.rol and user.is_authenticated else ''
-        is_admin_aprobador = user.is_superuser or rol_nombre in ['ADMINISTRADOR', 'APROBADOR']
-        is_gerente = rol_nombre == 'GERENTE'
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_global_role = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER'])
 
-        if not (is_admin_aprobador or is_gerente) and user.is_authenticated and user.seccion:
+        if not is_global_role and user.is_authenticated and user.seccion:
             areas = areas.filter(id=user.seccion.area_id)
 
         por_area = []
@@ -156,7 +159,7 @@ class GastoViewSet(viewsets.ModelViewSet):
         # We can join with detalles, but we might multiply the monto_ejecutado if there are multiple detalles.
         # Let's get the mapping Memoria -> Partida by fetching the first detail of each Memoria that has gastos.
         qs_gastos = Gasto.objects.filter(memoria__gestion=gestion)
-        if not (is_admin_aprobador or is_gerente) and user.is_authenticated and user.seccion:
+        if not is_global_role and user.is_authenticated and user.seccion:
             qs_gastos = qs_gastos.filter(memoria__seccion__area_id=user.seccion.area_id)
 
         # Get total gasto per Memoria

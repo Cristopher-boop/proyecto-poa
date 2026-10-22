@@ -38,7 +38,7 @@ class RolePermissionMixin:
         user = self.request.user
         if not user or not user.is_authenticated:
             return False
-        if user.is_superuser or self.check_role_permission(['ADMINISTRADOR', 'APROBADOR', 'PLANIFICACION']): 
+        if user.is_superuser or self.check_role_permission(['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS', 'PLANIFICACION', 'TESORERIA']): 
             return True
         user_area_id = None
         if hasattr(user, 'seccion') and user.seccion:
@@ -77,10 +77,9 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
         
         rol_nombre = user.rol.nombre.upper() if user.rol else ''
         rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
-        is_admin_aprobador = user.is_superuser or rol_clean in ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS']
-        is_planificador = 'PLANIFIC' in rol_clean
+        is_global_role = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER'])
         
-        if not (is_admin_aprobador or is_planificador):
+        if not is_global_role:
             if user.seccion and user.seccion.area_id:
                 qs = qs.filter(seccion__area_id=user.seccion.area_id)
             else:
@@ -474,10 +473,11 @@ class TraspasoViewSet(viewsets.ModelViewSet):
 
 class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
     queryset = ModificacionPresupuestaria.objects.select_related(
-        'gestion', 'area', 'usuario_registro'
+        'gestion', 'area', 'usuario_registro', 'aprobado_por'
     ).prefetch_related(
         'detalles__memoria__seccion__area',
-        'detalles__memoria__detalles__partida'
+        'detalles__memoria__detalles__partida',
+        'detalles__partida'
     ).all().order_by('-fecha', '-id')
     serializer_class = ModificacionPresupuestariaSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -485,19 +485,35 @@ class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        user = self.request.user
+        rol_nombre = user.rol.nombre.upper() if (user and user.rol) else ''
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_global_role = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER'])
+
+        # Solo roles de área (Gerente, Elaborador, Trabajador) se restringen a su área asignada
+        if not is_global_role:
+            if hasattr(user, 'seccion') and user.seccion and user.seccion.area_id:
+                qs = qs.filter(area_id=user.seccion.area_id)
+            else:
+                qs = qs.none()
+
         gestion_id = self.request.query_params.get('gestion')
         area_id = self.request.query_params.get('area')
+        estado = self.request.query_params.get('estado')
         search = self.request.query_params.get('search')
 
         if gestion_id:
             qs = qs.filter(gestion_id=gestion_id)
         if area_id:
             qs = qs.filter(area_id=area_id)
+        if estado:
+            qs = qs.filter(estado=estado)
         if search:
             qs = qs.filter(
                 Q(codigo__icontains=search) |
                 Q(motivo__icontains=search) |
                 Q(area__nombre__icontains=search) |
+                Q(detalles__partida__codigo__icontains=search) |
                 Q(detalles__memoria__codigo__icontains=search)
             ).distinct()
         return qs
@@ -509,3 +525,34 @@ class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(modificacion)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='aprobar')
+    def aprobar(self, request, pk=None):
+        modificacion = self.get_object()
+        observacion = request.data.get('observacion', '')
+        modificacion_aprobada = ModificacionPresupuestariaService.aprobar_modificacion(
+            modificacion=modificacion,
+            usuario=request.user,
+            observacion=observacion
+        )
+        return Response(self.get_serializer(modificacion_aprobada).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='aprobar-lote')
+    def aprobar_lote(self, request):
+        modificacion_ids = request.data.get('modificacion_ids', [])
+        resultado = ModificacionPresupuestariaService.aprobar_lote(
+            modificacion_ids=modificacion_ids,
+            usuario=request.user
+        )
+        return Response(resultado, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='rechazar')
+    def rechazar(self, request, pk=None):
+        modificacion = self.get_object()
+        motivo = request.data.get('motivo', '')
+        modificacion_rechazada = ModificacionPresupuestariaService.rechazar_modificacion(
+            modificacion=modificacion,
+            usuario=request.user,
+            motivo=motivo
+        )
+        return Response(self.get_serializer(modificacion_rechazada).data, status=status.HTTP_200_OK)

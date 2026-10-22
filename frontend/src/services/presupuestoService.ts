@@ -193,9 +193,14 @@ export interface ModificacionPresupuestaria {
   tipo_display?: string;
   motivo: string;
   total_monto: string | number;
-  estado: 'APROBADO' | 'ANULADO';
+  estado: 'PENDIENTE_PRESUPUESTOS' | 'APROBADO' | 'RECHAZADO' | 'ANULADO';
+  estado_display?: string;
   usuario_registro?: number | null;
   usuario_registro_nombre?: string | null;
+  aprobado_por?: number | null;
+  aprobado_por_nombre?: string | null;
+  fecha_aprobacion?: string | null;
+  motivo_rechazo?: string | null;
   fecha: string;
   created_at: string;
   detalles: DetalleModificacionItem[];
@@ -206,10 +211,10 @@ export interface ModificacionPresupuestaria {
 export interface CrearModificacionPayload {
   gestion_id: number;
   area_id: number;
-  motivo: string;
+    motivo: string;
   tipo?: 'TRASPASO_INTRA_AREA' | 'INCREMENTO' | 'DISMINUCION';
-  origenes: Array<{ memoria_id: number; monto: number }>;
-  destinos: Array<{ memoria_id: number; monto: number }>;
+  origenes: Array<{ memoria_id: number; monto: number; partida_id?: number }>;
+  destinos: Array<{ memoria_id: number; monto: number; partida_id?: number }>;
 }
 
 export interface SaldoMemoria {
@@ -629,6 +634,47 @@ export async function createModificacion(
 ): Promise<ModificacionPresupuestaria> {
   const { data } = await api.post<ModificacionPresupuestaria>(
     '/api/v1/memorias/modificaciones/',
+    payload
+  );
+  return data;
+}
+
+export async function aprobarModificacion(
+  id: number,
+  payload?: { observacion?: string }
+): Promise<ModificacionPresupuestaria> {
+  const { data } = await api.post<ModificacionPresupuestaria>(
+    `/api/v1/memorias/modificaciones/${id}/aprobar/`,
+    payload || {}
+  );
+  return data;
+}
+
+export async function aprobarLoteModificaciones(
+  modificacionIds: number[]
+): Promise<{
+  aprobadas_count: number;
+  total_monto: string;
+  codigos: string[];
+  mensaje: string;
+}> {
+  const { data } = await api.post<{
+    aprobadas_count: number;
+    total_monto: string;
+    codigos: string[];
+    mensaje: string;
+  }>('/api/v1/memorias/modificaciones/aprobar-lote/', {
+    modificacion_ids: modificacionIds,
+  });
+  return data;
+}
+
+export async function rechazarModificacion(
+  id: number,
+  payload: { motivo: string }
+): Promise<ModificacionPresupuestaria> {
+  const { data } = await api.post<ModificacionPresupuestaria>(
+    `/api/v1/memorias/modificaciones/${id}/rechazar/`,
     payload
   );
   return data;

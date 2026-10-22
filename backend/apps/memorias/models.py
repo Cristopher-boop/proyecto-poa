@@ -112,7 +112,9 @@ class ModificacionPresupuestaria(TimeStampedModel):
         DISMINUCION = 'DISMINUCION', 'Disminución Presupuestaria'
 
     class EstadoModificacion(models.TextChoices):
+        PENDIENTE_PRESUPUESTOS = 'PENDIENTE_PRESUPUESTOS', 'En Espera (Presupuestos)'
         APROBADO = 'APROBADO', 'Aprobado'
+        RECHAZADO = 'RECHAZADO', 'Rechazado'
         ANULADO = 'ANULADO', 'Anulado'
 
     codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
@@ -121,15 +123,25 @@ class ModificacionPresupuestaria(TimeStampedModel):
     tipo = models.CharField(max_length=30, choices=TipoModificacion.choices, default=TipoModificacion.TRASPASO_INTRA_AREA, verbose_name="Tipo")
     motivo = models.TextField(verbose_name="Motivo / Justificación")
     total_monto = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'), verbose_name="Monto Compensado")
-    estado = models.CharField(max_length=20, choices=EstadoModificacion.choices, default=EstadoModificacion.APROBADO, verbose_name="Estado")
+    estado = models.CharField(max_length=30, choices=EstadoModificacion.choices, default=EstadoModificacion.PENDIENTE_PRESUPUESTOS, verbose_name="Estado")
     usuario_registro = models.ForeignKey(
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='modificaciones_registradas',
-        verbose_name="Usuario Registro"
+        verbose_name="Usuario Solicitante"
     )
+    aprobado_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='modificaciones_aprobadas',
+        verbose_name="Aprobado por (Presupuestos)"
+    )
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Aprobación")
+    motivo_rechazo = models.TextField(null=True, blank=True, verbose_name="Motivo de Rechazo / Observación")
     fecha = models.DateTimeField(default=timezone.now, verbose_name="Fecha")
 
     class Meta:
@@ -138,7 +150,7 @@ class ModificacionPresupuestaria(TimeStampedModel):
         ordering = ['-fecha', '-id']
 
     def __str__(self):
-        return f"{self.codigo} - {self.area.codigo} ({self.total_monto} Bs)"
+        return f"{self.codigo} - {self.area.codigo} ({self.total_monto} Bs) [{self.estado}]"
 
 
 class DetalleModificacion(TimeStampedModel):
@@ -157,6 +169,14 @@ class DetalleModificacion(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name='detalles_modificacion',
         verbose_name="Memoria de Cálculo"
+    )
+    partida = models.ForeignKey(
+        Partida,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='detalles_modificacion',
+        verbose_name="Partida Presupuestaria"
     )
     tipo_movimiento = models.CharField(
         max_length=20,

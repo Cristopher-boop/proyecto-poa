@@ -38,7 +38,7 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
     area_id = serializers.IntegerField(source='seccion.area_id', read_only=True)
     area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
-    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True)
+    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True, default=None)
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
     total_items = serializers.SerializerMethodField()
@@ -88,7 +88,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     area_id = serializers.IntegerField(source='seccion.area_id', read_only=True)
     area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
-    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True)
+    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True, default=None)
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
     total_items = serializers.SerializerMethodField()
@@ -137,15 +137,19 @@ class DetalleModificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleModificacion
         fields = [
-            'id', 'memoria', 'memoria_codigo', 'partida_codigo', 'partida_nombre',
+            'id', 'memoria', 'memoria_codigo', 'partida', 'partida_codigo', 'partida_nombre',
             'tipo_movimiento', 'tipo_movimiento_display', 'monto', 'created_at'
         ]
 
     def get_partida_codigo(self, obj):
+        if obj.partida:
+            return obj.partida.codigo
         primero = obj.memoria.detalles.first()
         return primero.partida.codigo if primero and primero.partida else None
 
     def get_partida_nombre(self, obj):
+        if obj.partida:
+            return obj.partida.nombre
         primero = obj.memoria.detalles.first()
         return primero.partida.nombre if primero and primero.partida else None
 
@@ -156,7 +160,9 @@ class ModificacionPresupuestariaSerializer(serializers.ModelSerializer):
     area_codigo = serializers.CharField(source='area.codigo', read_only=True)
     gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
     usuario_registro_nombre = serializers.SerializerMethodField()
+    aprobado_por_nombre = serializers.SerializerMethodField()
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     origenes = serializers.SerializerMethodField()
     destinos = serializers.SerializerMethodField()
 
@@ -164,15 +170,22 @@ class ModificacionPresupuestariaSerializer(serializers.ModelSerializer):
         model = ModificacionPresupuestaria
         fields = [
             'id', 'codigo', 'gestion', 'gestion_anio', 'area', 'area_codigo', 'area_nombre',
-            'tipo', 'tipo_display', 'motivo', 'total_monto', 'estado',
-            'usuario_registro', 'usuario_registro_nombre', 'fecha', 'created_at',
+            'tipo', 'tipo_display', 'motivo', 'total_monto', 'estado', 'estado_display',
+            'usuario_registro', 'usuario_registro_nombre',
+            'aprobado_por', 'aprobado_por_nombre', 'fecha_aprobacion', 'motivo_rechazo',
+            'fecha', 'created_at',
             'detalles', 'origenes', 'destinos'
         ]
-        read_only_fields = ['codigo', 'total_monto', 'estado', 'usuario_registro', 'fecha']
+        read_only_fields = ['codigo', 'total_monto', 'estado', 'usuario_registro', 'aprobado_por', 'fecha_aprobacion', 'fecha']
 
     def get_usuario_registro_nombre(self, obj):
         if obj.usuario_registro:
             return obj.usuario_registro.get_full_name() or obj.usuario_registro.username
+        return None
+
+    def get_aprobado_por_nombre(self, obj):
+        if obj.aprobado_por:
+            return obj.aprobado_por.get_full_name() or obj.aprobado_por.username
         return None
 
     def get_origenes(self, obj):
@@ -182,4 +195,3 @@ class ModificacionPresupuestariaSerializer(serializers.ModelSerializer):
     def get_destinos(self, obj):
         detalles = [d for d in obj.detalles.all() if d.tipo_movimiento == 'INCREMENTO']
         return DetalleModificacionSerializer(detalles, many=True).data
-
