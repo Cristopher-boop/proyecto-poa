@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronDown,
   Edit,
+  Lock,
 } from 'lucide-react';
 import {
   PresupuestoAreaCalculado,
@@ -28,6 +29,8 @@ interface PresupuestosTableProps {
   nombreMesHasta: string;
   isAprobador?: boolean;
   onAjustarTecho?: (p: PresupuestoAreaCalculado) => void;
+  userAreaId?: number | null;
+  isGlobalRole?: boolean;
 }
 
 export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
@@ -44,6 +47,8 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
   nombreMesHasta,
   isAprobador = false,
   onAjustarTecho,
+  userAreaId = null,
+  isGlobalRole = false,
 }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 10;
@@ -136,73 +141,105 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  pagedGerencias.map((p) => (
-                    <tr
-                      key={p.id}
-                      onClick={() => onSelectArea(p.area)}
-                      className="hover:bg-theme-border/20 transition-colors cursor-pointer group"
-                      title={`Ingresar directamente a la sección de ${p.area_nombre}`}
-                    >
-                      <td className="py-3.5 px-4 min-w-[200px]">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-1.5 py-0.5 rounded">
-                            {p.area_codigo}
-                          </span>
-                          <span className="font-bold text-theme-main text-xs group-hover:text-theme-primary transition-colors">
-                            {p.area_nombre}
-                          </span>
-                          {p.techo_reducido && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" title="Techo reducido: área en proceso de reajuste de memorias">
-                              Recorte de Techo
+                  pagedGerencias.map((p) => {
+                    const isMyArea = userAreaId !== null && Number(p.area) === Number(userAreaId);
+                    const canAccessDetail = isGlobalRole || isMyArea;
+
+                    return (
+                      <tr
+                        key={p.id}
+                        onClick={() => {
+                          if (canAccessDetail) {
+                            onSelectArea(p.area);
+                          }
+                        }}
+                        className={`transition-colors ${
+                          canAccessDetail
+                            ? 'hover:bg-theme-border/20 cursor-pointer group'
+                            : 'hover:bg-theme-border/10 cursor-default'
+                        }`}
+                        title={
+                          canAccessDetail
+                            ? `Ingresar directamente a la sección de ${p.area_nombre}`
+                            : `Panel informativo: el detalle de MCs y partidas está reservado para ${p.area_nombre}`
+                        }
+                      >
+                        <td className="py-3.5 px-4 min-w-[200px]">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-1.5 py-0.5 rounded">
+                              {p.area_codigo}
                             </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-medium text-theme-main">
-                        {formatMoney(p.monto_inicial)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-rose-600 dark:text-rose-400 font-semibold">
-                        {formatMoney(p.monto_ejecutado_periodo)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                        {formatMoney(p.monto_disponible_periodo)}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                            p.porcentaje_ejecucion_periodo > 80
-                              ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                              : p.porcentaje_ejecucion_periodo > 50
-                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                              : 'bg-theme-border text-theme-main'
-                          }`}
-                        >
-                          {p.porcentaje_ejecucion_periodo}%
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
-                          {isAprobador && onAjustarTecho && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onAjustarTecho(p);
-                              }}
-                              className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20 transition-all flex items-center gap-1 cursor-pointer"
-                              title={`Ajustar o reducir techo de ${p.area_nombre}`}
-                            >
-                              <Edit size={12} />
-                              Ajustar Techo
-                            </button>
-                          )}
-                          <span className="text-[11px] text-theme-primary font-semibold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                            Ver Sección <ChevronRight size={13} />
+                            <span className="font-bold text-theme-main text-xs group-hover:text-theme-primary transition-colors">
+                              {p.area_nombre}
+                            </span>
+                            {isMyArea && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                Tu Área
+                              </span>
+                            )}
+                            {p.techo_reducido && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" title="Techo reducido: área en proceso de reajuste de memorias">
+                                Recorte de Techo
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-medium text-theme-main">
+                          {formatMoney(p.monto_inicial)}
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-rose-600 dark:text-rose-400 font-semibold">
+                          {formatMoney(p.monto_ejecutado_periodo)}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatMoney(p.monto_disponible_periodo)}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                              p.porcentaje_ejecucion_periodo > 80
+                                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                : p.porcentaje_ejecucion_periodo > 50
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                : 'bg-theme-border text-theme-main'
+                            }`}
+                          >
+                            {p.porcentaje_ejecucion_periodo}%
                           </span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
+                            {isAprobador && onAjustarTecho && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onAjustarTecho(p);
+                                }}
+                                className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20 transition-all flex items-center gap-1 cursor-pointer"
+                                title={`Ajustar o reducir techo de ${p.area_nombre}`}
+                              >
+                                <Edit size={12} />
+                                Ajustar Techo
+                              </button>
+                            )}
+                            {canAccessDetail ? (
+                              <span className="text-[11px] text-theme-primary font-semibold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                                Ver Sección <ChevronRight size={13} />
+                              </span>
+                            ) : (
+                              <span
+                                className="text-[11px] text-theme-muted font-medium inline-flex items-center gap-1 opacity-75"
+                                title="Panel informativo: el detalle de MCs y partidas está reservado para esta gerencia"
+                              >
+                                <Lock size={12} className="text-theme-muted/70" />
+                                Detalle reservado
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -232,6 +269,7 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
                 </th>
                 <th className="py-3 px-4 text-right">Disponible</th>
                 <th className="py-3 px-4 text-center">Avance</th>
+                <th className="py-3 px-4 text-right">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-theme-border">
@@ -285,43 +323,81 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
                             {prog.porcentaje_ejecucion}%
                           </span>
                         </td>
+                        <td className="py-4 px-4 text-right"></td>
                       </tr>
 
                       {/* Desglose de Áreas dentro del Programa */}
                       {isExpanded &&
-                        prog.areas.map((p) => (
-                          <tr
-                            key={`prog-area-${p.id}`}
-                            onClick={() => onSelectArea(p.area)}
-                            className="bg-theme-surface hover:bg-theme-border/20 transition-colors cursor-pointer group"
-                            title={`Ingresar directamente a la sección de ${p.area_nombre}`}
-                          >
-                            <td className="py-3 px-4 pl-10">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-1.5 py-0.5 rounded">
-                                  {p.area_codigo}
+                        prog.areas.map((p) => {
+                          const isMyArea = userAreaId !== null && Number(p.area) === Number(userAreaId);
+                          const canAccessDetail = isGlobalRole || isMyArea;
+
+                          return (
+                            <tr
+                              key={`prog-area-${p.id}`}
+                              onClick={() => {
+                                if (canAccessDetail) {
+                                  onSelectArea(p.area);
+                                }
+                              }}
+                              className={`transition-colors ${
+                                canAccessDetail
+                                  ? 'bg-theme-surface hover:bg-theme-border/20 cursor-pointer group'
+                                  : 'bg-theme-surface hover:bg-theme-border/10 cursor-default'
+                              }`}
+                              title={
+                                canAccessDetail
+                                  ? `Ingresar directamente a la sección de ${p.area_nombre}`
+                                  : `Panel informativo: el detalle de MCs y partidas está reservado para ${p.area_nombre}`
+                              }
+                            >
+                              <td className="py-3 px-4 pl-10">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-1.5 py-0.5 rounded">
+                                    {p.area_codigo}
+                                  </span>
+                                  <span className="text-theme-main text-xs group-hover:text-theme-primary transition-colors">
+                                    {p.area_nombre}
+                                  </span>
+                                  {isMyArea && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                      Tu Área
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-right text-theme-muted font-medium">
+                                {formatMoney(p.monto_inicial)}
+                              </td>
+                              <td className="py-3 px-4 text-right text-rose-600/90 dark:text-rose-400 font-medium">
+                                {formatMoney(p.monto_ejecutado_periodo)}
+                              </td>
+                              <td className="py-3 px-4 text-right text-emerald-600 dark:text-emerald-400 font-bold">
+                                {formatMoney(p.monto_disponible_periodo)}
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                <span className="text-[11px] font-bold text-theme-muted">
+                                  {p.porcentaje_ejecucion_periodo}%
                                 </span>
-                                <span className="text-theme-main text-xs group-hover:text-theme-primary transition-colors">
-                                  {p.area_nombre}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-right text-theme-muted font-medium">
-                              {formatMoney(p.monto_inicial)}
-                            </td>
-                            <td className="py-3 px-4 text-right text-rose-600/90 dark:text-rose-400 font-medium">
-                              {formatMoney(p.monto_ejecutado_periodo)}
-                            </td>
-                            <td className="py-3 px-4 text-right text-emerald-600 dark:text-emerald-400 font-bold">
-                              {formatMoney(p.monto_disponible_periodo)}
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <span className="text-[11px] font-bold text-theme-muted">
-                                {p.porcentaje_ejecucion_periodo}%
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td className="py-3 px-4 text-right whitespace-nowrap">
+                                {canAccessDetail ? (
+                                  <span className="text-[11px] text-theme-primary font-semibold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                                    Ver Sección <ChevronRight size={13} />
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="text-[11px] text-theme-muted font-medium inline-flex items-center gap-1 opacity-75"
+                                    title="Panel informativo: el detalle de MCs y partidas está reservado para esta gerencia"
+                                  >
+                                    <Lock size={12} className="text-theme-muted/70" />
+                                    Detalle reservado
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </React.Fragment>
                   );
                 })

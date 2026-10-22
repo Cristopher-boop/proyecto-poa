@@ -44,6 +44,7 @@ export interface PresupuestoArea {
   techo_reducido?: boolean;
   motivo_reduccion?: string | null;
   fecha_reduccion?: string | null;
+  gastos_mensuales?: Record<number | string, number>;
 }
 
 export interface GastoItemDetalleResumen {

@@ -69,6 +69,7 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
     monto_ejecutado = serializers.SerializerMethodField()
     porcentaje_ejecucion = serializers.SerializerMethodField()
     total_memorias_aprobadas = serializers.SerializerMethodField()
+    gastos_mensuales = serializers.SerializerMethodField()
 
     class Meta:
         model = PresupuestoArea
@@ -89,6 +90,7 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
             'monto_ejecutado',
             'porcentaje_ejecucion',
             'total_memorias_aprobadas',
+            'gastos_mensuales',
             'estado',
             'techo_reducido',
             'motivo_reduccion',
@@ -98,6 +100,12 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
         ]
 
     def get_monto_ejecutado(self, obj):
+        gastos_map = self.context.get('gastos_map')
+        if gastos_map is not None:
+            data = gastos_map.get(obj.area_id)
+            if data:
+                return str(data['total'])
+            return '0.00'
         gastos = Gasto.objects.filter(
             memoria__seccion__area=obj.area,
             memoria__gestion=obj.gestion
@@ -107,12 +115,27 @@ class PresupuestoAreaSerializer(serializers.ModelSerializer):
     def get_porcentaje_ejecucion(self, obj):
         if not obj.monto_inicial or obj.monto_inicial == Decimal('0.00'):
             return 0.0
-        gastos = Gasto.objects.filter(
+        monto_ejec = Decimal(str(self.get_monto_ejecutado(obj)))
+        porcentaje = (monto_ejec / obj.monto_inicial) * Decimal('100.0')
+        return round(float(porcentaje), 2)
+
+    def get_gastos_mensuales(self, obj):
+        gastos_map = self.context.get('gastos_map')
+        if gastos_map is not None:
+            data = gastos_map.get(obj.area_id)
+            if data:
+                return data['meses']
+            return {m: 0.0 for m in range(1, 13)}
+        meses = {m: 0.0 for m in range(1, 13)}
+        qs = Gasto.objects.filter(
             memoria__seccion__area=obj.area,
             memoria__gestion=obj.gestion
-        ).aggregate(total=Sum('monto_ejecutado'))['total'] or Decimal('0.00')
-        porcentaje = (gastos / obj.monto_inicial) * Decimal('100.0')
-        return round(float(porcentaje), 2)
+        ).values('fecha_gasto', 'monto_ejecutado')
+        for g in qs:
+            f = g['fecha_gasto']
+            if f:
+                meses[f.month] += float(g['monto_ejecutado'] or 0)
+        return meses
 
     def get_total_memorias_aprobadas(self, obj):
         return MemoriaCalculo.objects.filter(

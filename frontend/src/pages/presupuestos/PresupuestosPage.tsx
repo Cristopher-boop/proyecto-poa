@@ -25,6 +25,8 @@ import { ResumenCards, ResumenCardItem } from '../../components/commons/ResumenC
 export default function PresupuestosPage() {
   const {
     isAprobador,
+    isGlobalRole,
+    userAreaId,
     gestiones,
     selectedGestionId,
     setSelectedGestionId,
@@ -240,6 +242,8 @@ export default function PresupuestosPage() {
             nombreMesDesde={nombreMesDesde}
             nombreMesHasta={nombreMesHasta}
             isAprobador={isAprobador}
+            isGlobalRole={isGlobalRole}
+            userAreaId={userAreaId}
             onAjustarTecho={(p) => setAreaParaAjustar(p)}
           />
         </div>

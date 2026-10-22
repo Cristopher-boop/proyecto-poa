@@ -92,8 +92,11 @@ function getAreaOrderWeight(code?: string): number {
 
 export function usePresupuestos() {
   const { user } = useAuth();
-  const rolName = user?.rol_nombre?.toUpperCase() || '';
-  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'PRESUPUESTOS' || rolName === 'ADMINISTRADOR';
+  const rolName = (user?.rol_nombre || (user as any)?.rol?.nombre || '').toUpperCase().trim();
+  const rolClean = rolName.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const isAprobador = Boolean(user?.is_superuser) || ['ADMINISTRADOR', 'APROBADOR', 'PRESUPUESTOS', 'ADMIN'].includes(rolClean);
+  const isGlobalRole = Boolean(user?.is_superuser) || ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER'].some((k) => rolClean.includes(k));
+  const userAreaId = user?.area_id ?? (user as any)?.seccion?.area_id ?? (user as any)?.area?.id ?? null;
 
   // Global Gestion context
   const {
@@ -292,7 +295,26 @@ export function usePresupuestos() {
 
     const computedList = list.map((p) => {
       const inicial = parseFloat(p.monto_inicial || '0');
-      const ejecutadoPeriodo = gastosPorAreaPeriodo[p.area] || 0;
+      let ejecutadoPeriodo = 0;
+
+      // Prioridad 1: Desglose mensual consolidado en el techo
+      if (p.gastos_mensuales && Object.keys(p.gastos_mensuales).length > 0) {
+        for (let m = mesDesde; m <= mesHasta; m++) {
+          const val = (p.gastos_mensuales as any)[m] ?? (p.gastos_mensuales as any)[String(m)] ?? 0;
+          ejecutadoPeriodo += Number(val || 0);
+        }
+      } else if (mesDesde === 1 && mesHasta === 12) {
+        // Si no hay filtro de mes, tomar el total ejecutado consolidado del área
+        ejecutadoPeriodo = parseFloat(p.monto_ejecutado || '0');
+      } else {
+        ejecutadoPeriodo = gastosPorAreaPeriodo[p.area] || 0;
+      }
+
+      // Si el cliente tiene gastos individuales cacheados con valor superior, priorizarlos
+      if ((gastosPorAreaPeriodo[p.area] || 0) > ejecutadoPeriodo) {
+        ejecutadoPeriodo = gastosPorAreaPeriodo[p.area];
+      }
+
       const disponiblePeriodo = Math.max(0, inicial - ejecutadoPeriodo);
       const porcentajePeriodo =
         inicial > 0 ? Math.round((ejecutadoPeriodo / inicial) * 10000) / 100 : 0;
@@ -416,6 +438,14 @@ export function usePresupuestos() {
   // Selección directa a Sección al hacer click en una fila de Área/Gerencia
   const handleSelectArea = async (areaId: number) => {
     if (!selectedGestionId) return;
+
+    // Validación estricta: roles no globales solo pueden acceder al detalle de su propia área
+    const canAccessArea = isGlobalRole || (userAreaId !== null && Number(userAreaId) === Number(areaId));
+    if (!canAccessArea) {
+      mostrarMensaje('error', 'El desglose de memorias de cálculo y partidas de esta gerencia está reservado.');
+      return;
+    }
+
     setSelectedAreaId(areaId);
     setDetalleLoading(true);
     setViewMode('seccion');
@@ -450,10 +480,13 @@ export function usePresupuestos() {
           (p.area_codigo && p.area_codigo.toLowerCase() === urlAreaParam.toLowerCase())
       );
       if (target && selectedAreaId !== target.area) {
-        handleSelectArea(target.area);
+        const canAccess = isGlobalRole || (userAreaId !== null && Number(userAreaId) === Number(target.area));
+        if (canAccess) {
+          handleSelectArea(target.area);
+        }
       }
     }
-  }, [urlAreaParam, selectedGestionId, presupuestosArea]);
+  }, [urlAreaParam, selectedGestionId, presupuestosArea, isGlobalRole, userAreaId]);
 
   const irAGeneral = () => {
     setViewMode('general');
@@ -779,6 +812,8 @@ export function usePresupuestos() {
   return {
     // Auth & Permissions
     isAprobador,
+    isGlobalRole,
+    userAreaId,
     // Gestiones & Selection
     gestiones,
     selectedGestionId,

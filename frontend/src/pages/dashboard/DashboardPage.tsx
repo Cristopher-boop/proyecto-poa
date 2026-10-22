@@ -153,7 +153,23 @@ export default function DashboardPage() {
 
     const computedList = list.map((p) => {
       const inicial = parseFloat(p.monto_inicial || '0');
-      const ejecutadoPeriodo = gastosPorAreaPeriodo[p.area] || 0;
+      let ejecutadoPeriodo = 0;
+
+      if (p.gastos_mensuales && Object.keys(p.gastos_mensuales).length > 0) {
+        for (let m = mesDesde; m <= mesHasta; m++) {
+          const val = (p.gastos_mensuales as any)[m] ?? (p.gastos_mensuales as any)[String(m)] ?? 0;
+          ejecutadoPeriodo += Number(val || 0);
+        }
+      } else if (mesDesde === 1 && mesHasta === 12) {
+        ejecutadoPeriodo = parseFloat(p.monto_ejecutado || '0');
+      } else {
+        ejecutadoPeriodo = gastosPorAreaPeriodo[p.area] || 0;
+      }
+
+      if ((gastosPorAreaPeriodo[p.area] || 0) > ejecutadoPeriodo) {
+        ejecutadoPeriodo = gastosPorAreaPeriodo[p.area];
+      }
+
       const disponiblePeriodo = Math.max(0, inicial - ejecutadoPeriodo);
       const porcentajePeriodo =
         inicial > 0 ? Math.round((ejecutadoPeriodo / inicial) * 10000) / 100 : 0;

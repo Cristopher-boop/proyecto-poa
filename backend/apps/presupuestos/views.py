@@ -460,6 +460,41 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        gestion_id = self.request.query_params.get('gestion')
+        gestion_anio = self.request.query_params.get('anio')
+
+        g_filter = {}
+        if gestion_id:
+            g_filter['memoria__gestion_id'] = gestion_id
+        elif gestion_anio:
+            g_filter['memoria__gestion__anio'] = gestion_anio
+
+        if g_filter:
+            qs = Gasto.objects.filter(**g_filter).values(
+                'memoria__seccion__area_id',
+                'fecha_gasto',
+                'monto_ejecutado'
+            )
+            gastos_map = {}
+            for row in qs:
+                a_id = row['memoria__seccion__area_id']
+                if not a_id:
+                    continue
+                if a_id not in gastos_map:
+                    gastos_map[a_id] = {
+                        'total': Decimal('0.00'),
+                        'meses': {m: 0.0 for m in range(1, 13)}
+                    }
+                monto = row['monto_ejecutado'] or Decimal('0.00')
+                gastos_map[a_id]['total'] += monto
+                fecha = row['fecha_gasto']
+                if fecha:
+                    gastos_map[a_id]['meses'][fecha.month] += float(monto)
+            context['gastos_map'] = gastos_map
+        return context
+
     def get_queryset(self):
         qs = super().get_queryset()
         gestion_id = self.request.query_params.get('gestion')
@@ -564,6 +599,28 @@ class PresupuestoAreaViewSet(viewsets.ModelViewSet):
 
         if not gestion or not area:
             return Response({'error': 'Gestión o Área no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Control de acceso estricto a detalles:
+        # Los roles de área (Gerente, Elaborador, Trabajador) solo pueden ver el desglose de su propia área.
+        user = request.user
+        rol_nombre = user.rol.nombre.upper() if (user and user.rol) else ''
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_global_role = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER'])
+
+        if not is_global_role:
+            user_area_id = None
+            if hasattr(user, 'seccion') and user.seccion:
+                user_area_id = user.seccion.area_id
+            elif hasattr(user, 'area') and user.area:
+                user_area_id = user.area.id
+            elif hasattr(user, 'area_id') and user.area_id:
+                user_area_id = user.area_id
+
+            if not user_area_id or str(user_area_id) != str(area.id):
+                return Response(
+                    {'error': 'Acceso denegado: El desglose detallado de memorias de cálculo y partidas está reservado exclusivamente para la propia gerencia.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         # Presupuesto del área
         presupuesto = PresupuestoArea.objects.filter(gestion=gestion, area=area).first()
