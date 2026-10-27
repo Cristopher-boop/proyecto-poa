@@ -5,6 +5,7 @@ import {
   ModificacionPresupuestaria,
   CrearModificacionPayload,
   Traspaso,
+  Partida,
 } from '../../../services/presupuestoService';
 
 function unpackList<T>(data: any): T[] {
@@ -18,6 +19,7 @@ export const modificacionesApi = {
     gestion?: number;
     area?: number;
     search?: string;
+    estado?: string;
   }): Promise<ModificacionPresupuestaria[]> => {
     const { data } = await api.get<any>('/api/v1/memorias/modificaciones/', { params });
     return unpackList<ModificacionPresupuestaria>(data);
@@ -28,6 +30,28 @@ export const modificacionesApi = {
   ): Promise<ModificacionPresupuestaria> => {
     const { data } = await api.post<ModificacionPresupuestaria>(
       '/api/v1/memorias/modificaciones/',
+      payload
+    );
+    return data;
+  },
+
+  aceptarGerencia: async (
+    id: number,
+    payload?: { nota?: string }
+  ): Promise<ModificacionPresupuestaria> => {
+    const { data } = await api.post<ModificacionPresupuestaria>(
+      `/api/v1/memorias/modificaciones/${id}/aceptar-gerencia/`,
+      payload || {}
+    );
+    return data;
+  },
+
+  rechazarGerencia: async (
+    id: number,
+    payload: { motivo: string }
+  ): Promise<ModificacionPresupuestaria> => {
+    const { data } = await api.post<ModificacionPresupuestaria>(
+      `/api/v1/memorias/modificaciones/${id}/rechazar-gerencia/`,
       payload
     );
     return data;
@@ -79,9 +103,22 @@ export const modificacionesApi = {
     area?: number;
     seccion?: number;
     estado?: string;
+    para_modificacion?: boolean | string;
+    para_traspaso?: boolean | string;
   }): Promise<MemoriaCalculo[]> => {
-    const { data } = await api.get<any>('/api/v1/memorias/memorias-calculo/', { params });
+    const queryParams = { ...params, para_modificacion: true };
+    const { data } = await api.get<any>('/api/v1/memorias/memorias-calculo/', { params: queryParams });
     return unpackList<MemoriaCalculo>(data);
+  },
+
+  getPartidas: async (): Promise<Partida[]> => {
+    const { data } = await api.get<any>('/api/v1/presupuestos/partidas/');
+    return unpackList<Partida>(data);
+  },
+
+  getOperaciones: async (params?: { area?: number; gestion?: number }): Promise<any[]> => {
+    const { data } = await api.get<any>('/api/v1/planificacion/operaciones/', { params });
+    return unpackList<any>(data);
   },
 
   getAreas: async (): Promise<Area[]> => {

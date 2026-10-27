@@ -12,6 +12,7 @@ import {
   Check,
   X,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { ModificacionPresupuestaria } from '../../../services/presupuestoService';
 import { Modal, Button, StatusBadge } from '../../../components/commons';
@@ -21,8 +22,10 @@ interface ModificacionDetalleModalProps {
   onClose: () => void;
   modificacion: ModificacionPresupuestaria | null;
   canAprobar?: boolean;
+  canAceptarGerencia?: boolean;
   actionLoading?: boolean;
   onAprobar?: (mod: ModificacionPresupuestaria) => void;
+  onAceptarGerencia?: (mod: ModificacionPresupuestaria) => void;
   onRechazar?: (mod: ModificacionPresupuestaria) => void;
 }
 
@@ -31,8 +34,10 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
   onClose,
   modificacion,
   canAprobar = false,
+  canAceptarGerencia = false,
   actionLoading = false,
   onAprobar,
+  onAceptarGerencia,
   onRechazar,
 }) => {
   if (!modificacion) return null;
@@ -42,7 +47,9 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
     return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', minimumFractionDigits: 2 }).format(num || 0);
   };
 
-  const isPending = modificacion.estado === 'PENDIENTE_PRESUPUESTOS';
+  const isPendingPresupuestos = modificacion.estado === 'PENDIENTE_PRESUPUESTOS';
+  const isPendingGerencia = modificacion.estado === 'PENDIENTE_GERENCIA_CEDENTE';
+  const isInterArea = modificacion.tipo === 'TRASPASO_INTER_AREA' || !!modificacion.es_inter_area;
 
   return (
     <Modal
@@ -54,7 +61,9 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
           <StatusBadge
             status={modificacion.estado}
             label={
-              modificacion.estado === 'PENDIENTE_PRESUPUESTOS'
+              modificacion.estado === 'PENDIENTE_GERENCIA_CEDENTE'
+                ? 'En Espera (Gerencia Cedente)'
+                : modificacion.estado === 'PENDIENTE_PRESUPUESTOS'
                 ? 'En Espera (Presupuestos)'
                 : modificacion.estado_display || modificacion.estado
             }
@@ -62,7 +71,11 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
           />
         </div>
       }
-      subtitle={`Traspaso intra-área compensado • Gestión ${modificacion.gestion_anio || 'Actual'}`}
+      subtitle={
+        isInterArea
+          ? `Solicitud Inter-Gerencias por Fuerza Mayor • Gestión ${modificacion.gestion_anio || 'Actual'}`
+          : `Traspaso intra-área compensado • Gestión ${modificacion.gestion_anio || 'Actual'}`
+      }
       icon={<ArrowRightLeft className="text-theme-primary" size={24} />}
       size="3xl"
       footer={
@@ -79,7 +92,33 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
               Cerrar
             </Button>
 
-            {canAprobar && isPending && (
+            {/* Acciones de Gerencia Cedente */}
+            {isPendingGerencia && canAceptarGerencia && (
+              <>
+                <Button
+                  variant="danger"
+                  onClick={() => onRechazar && onRechazar(modificacion)}
+                  disabled={actionLoading}
+                  icon={<X size={15} />}
+                >
+                  Rechazar Petición
+                </Button>
+
+                <Button
+                  variant="primary"
+                  onClick={() => onAceptarGerencia && onAceptarGerencia(modificacion)}
+                  disabled={actionLoading}
+                  loading={actionLoading}
+                  icon={<Check size={15} />}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                >
+                  Aceptar Petición (Pasar a Presupuestos)
+                </Button>
+              </>
+            )}
+
+            {/* Acciones de Presupuestos */}
+            {canAprobar && isPendingPresupuestos && (
               <>
                 <Button
                   variant="danger"
@@ -107,6 +146,20 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
       }
     >
       <div className="space-y-6">
+        {/* Banner si es Inter-Áreas */}
+        {isInterArea && (
+          <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-900 dark:text-indigo-200 text-xs flex items-start gap-3">
+            <Building2 size={18} className="shrink-0 text-indigo-600 dark:text-indigo-400 mt-0.5" />
+            <div>
+              <p className="font-bold">Flujo Inter-Gerencias por Fuerza Mayor</p>
+              <p className="text-[11px] opacity-90 mt-0.5">
+                La unidad solicitante <strong>({modificacion.area_nombre})</strong> requiere presupuesto de la Gerencia Cedente{' '}
+                <strong>({modificacion.area_cedente_nombre || 'Área Cedente'})</strong>. Requiere consentimiento previo de la gerencia cedente antes de la aprobación final de Presupuestos.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Tarjetas Superiores de Información */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           {/* Tarjeta Área y Solicitante */}
@@ -120,6 +173,11 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
               <p className="text-[11px] text-theme-muted flex items-center gap-1">
                 <UserCheck size={12} className="text-theme-primary" />
                 <span>Solicitado por: <strong>{modificacion.usuario_registro_nombre}</strong></span>
+              </p>
+            )}
+            {isInterArea && modificacion.area_cedente_nombre && (
+              <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">
+                Cede: <strong>{modificacion.area_cedente_nombre}</strong>
               </p>
             )}
           </div>
@@ -166,6 +224,13 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
                   </p>
                 )}
               </div>
+            ) : modificacion.estado === 'PENDIENTE_GERENCIA_CEDENTE' ? (
+              <div>
+                <p className="font-bold text-indigo-600 dark:text-indigo-400">En Espera de Gerencia Cedente</p>
+                <p className="text-[11px] text-theme-muted mt-0.5">
+                  Bandeja de {modificacion.area_cedente_nombre || 'Gerencia Cedente'}
+                </p>
+              </div>
             ) : (
               <div>
                 <p className="font-bold text-amber-600">En Espera de Visto Bueno</p>
@@ -176,6 +241,26 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
             )}
           </div>
         </div>
+
+        {/* Dictamen de la Gerencia Cedente en caso Inter-Área */}
+        {isInterArea && modificacion.aceptado_por_gerencia_nombre && (
+          <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs space-y-1">
+            <span className="font-bold uppercase tracking-wider text-[10px] text-indigo-700 dark:text-indigo-400 block">
+              Visto Bueno de la Gerencia Cedente ({modificacion.area_cedente_nombre}):
+            </span>
+            <p className="text-theme-main font-medium">
+              Autorizado por <strong>{modificacion.aceptado_por_gerencia_nombre}</strong> el{' '}
+              {modificacion.fecha_aceptacion_gerencia
+                ? new Date(modificacion.fecha_aceptacion_gerencia).toLocaleString('es-BO')
+                : 'N/A'}
+            </p>
+            {modificacion.nota_gerencia_cedente && (
+              <p className="text-theme-muted italic mt-1">
+                Nota: "{modificacion.nota_gerencia_cedente}"
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Motivo de Rechazo si aplica */}
         {modificacion.estado === 'RECHAZADO' && modificacion.motivo_rechazo && (
@@ -222,7 +307,7 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
                         {orig.partida_nombre ? `- ${orig.partida_nombre}` : ''}
                       </p>
                       <p className="text-[11px] text-theme-muted font-mono mt-0.5">
-                        Memoria de Cálculo: <strong className="text-theme-main">{orig.memoria_codigo}</strong>
+                        Memoria de Cálculo: <strong className="text-theme-main">{orig.memoria_codigo || 'N/A'}</strong>
                       </p>
                     </div>
 
@@ -259,12 +344,28 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
                     className="p-3 rounded-lg bg-theme-surface border border-emerald-500/15 shadow-sm flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
-                      <p className="font-mono font-bold text-theme-main text-xs">
-                        Partida {dest.partida_codigo || 'S/P'}{' '}
-                        {dest.partida_nombre ? `- ${dest.partida_nombre}` : ''}
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-mono font-bold text-theme-main text-xs">
+                          Partida {dest.partida_codigo || 'S/P'}{' '}
+                          {dest.partida_nombre ? `- ${dest.partida_nombre}` : ''}
+                        </p>
+                        {dest.es_nueva_partida && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                            <Sparkles size={11} />
+                            Partida creada durante la ejecución (sin detalles)
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[11px] text-theme-muted font-mono mt-0.5">
-                        Memoria de Cálculo: <strong className="text-theme-main">{dest.memoria_codigo}</strong>
+                        {dest.es_nueva_partida ? (
+                          <span className="text-purple-600 dark:text-purple-400 font-sans">
+                            Asignación directa en ejecución • Sin desglose inicial
+                          </span>
+                        ) : (
+                          <>
+                            Memoria de Cálculo: <strong className="text-theme-main">{dest.memoria_codigo}</strong>
+                          </>
+                        )}
                       </p>
                     </div>
 

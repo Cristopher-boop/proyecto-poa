@@ -89,13 +89,17 @@ export const SolicitudGastoModal: React.FC<SolicitudGastoModalProps> = ({
     setErrorMsg(null);
   }, [initialData, isOpen, userAreaId, areas, preselectedMemoriaId]);
 
-  // Cargar operaciones POA
+  // Cargar operaciones POA acotadas a la Gestión
   useEffect(() => {
     if (!isOpen) return;
     let isMounted = true;
     setLoadingOps(true);
+    const params: Record<string, any> = {};
+    if (gestionId) params.gestion = gestionId;
+    if (gestionAnio) params.gestion_anio = gestionAnio;
+
     planificacionService
-      .getOperaciones()
+      .getOperaciones(params)
       .then((ops) => {
         if (!isMounted) return;
         setTodasOperaciones(Array.isArray(ops) ? ops : []);
@@ -110,7 +114,7 @@ export const SolicitudGastoModal: React.FC<SolicitudGastoModalProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [isOpen]);
+  }, [isOpen, gestionId, gestionAnio]);
 
   // Cargar memorias de cálculo del área y gestión seleccionadas
   useEffect(() => {
@@ -138,8 +142,12 @@ export const SolicitudGastoModal: React.FC<SolicitudGastoModalProps> = ({
   // ── 4. Operaciones filtradas del Área ─────────────────────────────────────────
   const operacionesDelArea = useMemo(() => {
     if (!areaId) return [];
-    return todasOperaciones.filter((op) => op.area === areaId && op.estado);
-  }, [todasOperaciones, areaId]);
+    return todasOperaciones.filter((op) => {
+      if (gestionId && op.gestion_id && Number(op.gestion_id) !== Number(gestionId)) return false;
+      if (gestionAnio && op.gestion_anio && Number(op.gestion_anio) !== Number(gestionAnio)) return false;
+      return op.area === areaId && op.estado;
+    });
+  }, [todasOperaciones, areaId, gestionId, gestionAnio]);
 
   // Regla: En caso de que el área tenga solo una operación, se auto-selecciona automáticamente
   useEffect(() => {

@@ -47,13 +47,13 @@ class MemoriaCalculoSerializer(serializers.ModelSerializer):
         model = MemoriaCalculo
         fields = [
             'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_id', 'area_codigo', 'area_nombre', 'operacion', 'operacion_codigo',
-            'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'excluida_por_techo', 'fecha_aprobacion',
+            'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'excluida_por_techo', 'creada_en_ejecucion', 'fecha_aprobacion',
             'total_presupuestado', 'total_ejecutado', 'monto_entrante', 'monto_saliente', 'saldo_disponible',
             'participantes', 'detalles', 'partida_codigo', 'partida_nombre', 'total_items', 'created_at', 'updated_at'
         ]
         read_only_fields = [
             'estado', 'fecha_aprobacion', 'total_presupuestado', 'total_ejecutado',
-            'monto_entrante', 'monto_saliente', 'saldo_disponible', 'codigo'
+            'monto_entrante', 'monto_saliente', 'saldo_disponible', 'codigo', 'creada_en_ejecucion'
         ]
 
     def _get_detalles(self, obj):
@@ -97,7 +97,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
         model = MemoriaCalculo
         fields = [
             'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_id', 'area_codigo', 'area_nombre', 'operacion', 'operacion_codigo',
-            'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'excluida_por_techo', 'fecha_aprobacion',
+            'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'excluida_por_techo', 'creada_en_ejecucion', 'fecha_aprobacion',
             'total_presupuestado', 'total_ejecutado', 'monto_entrante', 'monto_saliente', 'saldo_disponible',
             'partida_codigo', 'partida_nombre', 'total_items',
             'created_at', 'updated_at'
@@ -129,64 +129,98 @@ TraspasoSerializer = TraspasoPresupuestarioSerializer
 
 
 class DetalleModificacionSerializer(serializers.ModelSerializer):
-    memoria_codigo = serializers.CharField(source='memoria.codigo', read_only=True)
+    memoria_codigo = serializers.SerializerMethodField()
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
+    operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True, default=None)
+    operacion_id = serializers.IntegerField(source='operacion.id', read_only=True, default=None)
     tipo_movimiento_display = serializers.CharField(source='get_tipo_movimiento_display', read_only=True)
 
     class Meta:
         model = DetalleModificacion
         fields = [
             'id', 'memoria', 'memoria_codigo', 'partida', 'partida_codigo', 'partida_nombre',
+            'es_nueva_partida', 'operacion', 'operacion_id', 'operacion_codigo',
             'tipo_movimiento', 'tipo_movimiento_display', 'monto', 'created_at'
         ]
+
+    def get_memoria_codigo(self, obj):
+        if obj.memoria:
+            return obj.memoria.codigo
+        if obj.es_nueva_partida:
+            return "Nueva Partida en Ejecución"
+        return "S/M"
 
     def get_partida_codigo(self, obj):
         if obj.partida:
             return obj.partida.codigo
-        primero = obj.memoria.detalles.first()
-        return primero.partida.codigo if primero and primero.partida else None
+        if obj.memoria:
+            primero = obj.memoria.detalles.first()
+            return primero.partida.codigo if primero and primero.partida else None
+        return None
 
     def get_partida_nombre(self, obj):
         if obj.partida:
             return obj.partida.nombre
-        primero = obj.memoria.detalles.first()
-        return primero.partida.nombre if primero and primero.partida else None
+        if obj.memoria:
+            primero = obj.memoria.detalles.first()
+            return primero.partida.nombre if primero and primero.partida else None
+        return None
 
 
 class ModificacionPresupuestariaSerializer(serializers.ModelSerializer):
     detalles = DetalleModificacionSerializer(many=True, read_only=True)
     area_nombre = serializers.CharField(source='area.nombre', read_only=True)
     area_codigo = serializers.CharField(source='area.codigo', read_only=True)
+    area_cedente_nombre = serializers.CharField(source='area_cedente.nombre', read_only=True, default=None)
+    area_cedente_codigo = serializers.CharField(source='area_cedente.codigo', read_only=True, default=None)
     gestion_anio = serializers.IntegerField(source='gestion.anio', read_only=True)
     usuario_registro_nombre = serializers.SerializerMethodField()
+    aceptado_por_gerencia_nombre = serializers.SerializerMethodField()
     aprobado_por_nombre = serializers.SerializerMethodField()
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    es_inter_area = serializers.SerializerMethodField()
     origenes = serializers.SerializerMethodField()
     destinos = serializers.SerializerMethodField()
 
     class Meta:
         model = ModificacionPresupuestaria
         fields = [
-            'id', 'codigo', 'gestion', 'gestion_anio', 'area', 'area_codigo', 'area_nombre',
-            'tipo', 'tipo_display', 'motivo', 'total_monto', 'estado', 'estado_display',
+            'id', 'codigo', 'gestion', 'gestion_anio',
+            'area', 'area_codigo', 'area_nombre',
+            'area_cedente', 'area_cedente_codigo', 'area_cedente_nombre',
+            'tipo', 'tipo_display', 'es_inter_area',
+            'motivo', 'total_monto', 'estado', 'estado_display',
             'usuario_registro', 'usuario_registro_nombre',
+            'aceptado_por_gerencia', 'aceptado_por_gerencia_nombre', 'fecha_aceptacion_gerencia', 'nota_gerencia_cedente',
             'aprobado_por', 'aprobado_por_nombre', 'fecha_aprobacion', 'motivo_rechazo',
             'fecha', 'created_at',
             'detalles', 'origenes', 'destinos'
         ]
-        read_only_fields = ['codigo', 'total_monto', 'estado', 'usuario_registro', 'aprobado_por', 'fecha_aprobacion', 'fecha']
+        read_only_fields = [
+            'codigo', 'total_monto', 'estado', 'usuario_registro',
+            'aceptado_por_gerencia', 'fecha_aceptacion_gerencia',
+            'aprobado_por', 'fecha_aprobacion', 'fecha'
+        ]
 
     def get_usuario_registro_nombre(self, obj):
         if obj.usuario_registro:
             return obj.usuario_registro.get_full_name() or obj.usuario_registro.username
         return None
 
+    def get_aceptado_por_gerencia_nombre(self, obj):
+        if obj.aceptado_por_gerencia:
+            return obj.aceptado_por_gerencia.get_full_name() or obj.aceptado_por_gerencia.username
+        return None
+
     def get_aprobado_por_nombre(self, obj):
         if obj.aprobado_por:
             return obj.aprobado_por.get_full_name() or obj.aprobado_por.username
         return None
+
+    def get_es_inter_area(self, obj):
+        return obj.tipo == ModificacionPresupuestaria.TipoModificacion.TRASPASO_INTER_AREA
 
     def get_origenes(self, obj):
         detalles = [d for d in obj.detalles.all() if d.tipo_movimiento == 'DISMINUCION']

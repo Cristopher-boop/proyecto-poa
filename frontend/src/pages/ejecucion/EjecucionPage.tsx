@@ -6,6 +6,7 @@ import {
   GastosTable,
   MemoriasSaldoTable,
   GastoFormModal,
+  GastoDetalleModal,
   SolicitudesGastoTable,
   SolicitudGastoModal,
 } from '../../features/ejecucion/components';
@@ -79,6 +80,7 @@ export default function EjecucionPage() {
   // Modales de Gasto Directo
   const [showModalGasto, setShowModalGasto] = useState<boolean>(false);
   const [gastoToEdit, setGastoToEdit] = useState<Gasto | null>(null);
+  const [selectedGastoParaDetalle, setSelectedGastoParaDetalle] = useState<Gasto | null>(null);
 
   // ── Carga de Solicitudes de Gasto ───────────────────────────────────────────
   const fetchSolicitudes = useCallback(async () => {
@@ -434,6 +436,7 @@ export default function EjecucionPage() {
           loading={loading}
           canManage={canManage && !isGestionBloqueada}
           onEdit={handleOpenEditarGastoDirecto}
+          onViewDetail={(g) => setSelectedGastoParaDetalle(g)}
         />
       )}
 
@@ -515,6 +518,18 @@ export default function EjecucionPage() {
         onSubmit={handleConfirmCancelarSolicitud}
         certificacion={selectedCertParaCancelar}
         modo="cancelar_gerente"
+      />
+
+      {/* 5. Modal Detalle de Gasto Contable */}
+      <GastoDetalleModal
+        isOpen={Boolean(selectedGastoParaDetalle)}
+        onClose={() => setSelectedGastoParaDetalle(null)}
+        gasto={selectedGastoParaDetalle}
+        canEdit={canManage && !isGestionBloqueada}
+        onEdit={(g) => {
+          setSelectedGastoParaDetalle(null);
+          handleOpenEditarGastoDirecto(g as Gasto);
+        }}
       />
     </div>
   );

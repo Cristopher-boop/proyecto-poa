@@ -198,16 +198,43 @@ export function usePlanificacion() {
 
   const availableAmpsForAcpForm = useMemo(() => {
     if (!acpForm.programa) return [];
-    return ampList.filter((amp) => String(amp.programa) === String(acpForm.programa) && amp.estado);
-  }, [acpForm.programa, ampList]);
+    const selectedGestionObj = gestiones.find(
+      (g) => String(g.anio) === filterGestion || String(g.id) === filterGestion || (acpForm.gestion && String(g.id) === String(acpForm.gestion))
+    );
+    const targetAnio = selectedGestionObj ? selectedGestionObj.anio : (filterGestion !== 'ALL' ? Number(filterGestion) : null);
+
+    return ampList.filter((amp) => {
+      const matchProg = String(amp.programa) === String(acpForm.programa) && amp.estado;
+      if (!matchProg) return false;
+      if (targetAnio !== null && !isNaN(targetAnio)) {
+        return amp.periodo_inicio <= targetAnio && amp.periodo_fin >= targetAnio;
+      }
+      return true;
+    });
+  }, [acpForm.programa, ampList, filterGestion, gestiones, acpForm.gestion]);
 
   const availableAcpsForOpForm = useMemo(() => {
     if (!opForm.programa) return [];
+    const selectedGestionObj = gestiones.find(
+      (g) => String(g.anio) === filterGestion || String(g.id) === filterGestion
+    );
+    const targetAnio = selectedGestionObj ? selectedGestionObj.anio : (filterGestion !== 'ALL' ? Number(filterGestion) : null);
+    const targetId = selectedGestionObj ? selectedGestionObj.id : null;
+
     return acpList.filter((acp) => {
       const progId = acp.programa_id || ampList.find((m) => m.id === acp.accion_mediano_plazo)?.programa;
-      return String(progId) === String(opForm.programa) && acp.estado;
+      const matchProg = String(progId) === String(opForm.programa) && acp.estado;
+      if (!matchProg) return false;
+
+      if (filterGestion === 'ALL') return true;
+      const matchGestion =
+        (Boolean(targetAnio) && acp.gestion_anio === targetAnio) ||
+        (Boolean(targetId) && acp.gestion === targetId) ||
+        String(acp.gestion) === filterGestion ||
+        String(acp.gestion_anio) === filterGestion;
+      return matchGestion;
     });
-  }, [opForm.programa, acpList, ampList]);
+  }, [opForm.programa, acpList, ampList, filterGestion, gestiones]);
 
   const availableAreasForOpForm = useMemo(() => {
     if (!opForm.programa) return [];
@@ -294,9 +321,18 @@ export function usePlanificacion() {
 
       const matchPrograma = filterPrograma === 'ALL' || String(m.programa) === filterPrograma;
 
-      return matchText && matchPrograma;
+      const selectedGestionObj = gestiones.find(
+        (g) => String(g.anio) === filterGestion || String(g.id) === filterGestion
+      );
+      const targetAnio = selectedGestionObj ? selectedGestionObj.anio : (filterGestion !== 'ALL' ? Number(filterGestion) : null);
+
+      const matchGestion =
+        filterGestion === 'ALL' ||
+        (targetAnio !== null && !isNaN(targetAnio) && m.periodo_inicio <= targetAnio && m.periodo_fin >= targetAnio);
+
+      return matchText && matchPrograma && matchGestion;
     });
-  }, [ampList, searchTerm, filterPrograma]);
+  }, [ampList, searchTerm, filterPrograma, filterGestion, gestiones]);
 
   // Operations for Interannual Comparison
   const compOperacionesBase = useMemo(() => {

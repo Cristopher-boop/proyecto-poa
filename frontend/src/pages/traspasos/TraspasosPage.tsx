@@ -27,6 +27,7 @@ export default function TraspasosPage() {
     isGerente,
     canSolicitar,
     canAprobar,
+    canAceptarGerencia,
     isReadOnly,
     userAreaId,
     gestiones,
@@ -35,6 +36,8 @@ export default function TraspasosPage() {
     activeGestion,
     isGestionBloqueada,
     areas,
+    partidas,
+    operaciones,
     memorias,
     loading,
     actionLoading,
@@ -52,9 +55,13 @@ export default function TraspasosPage() {
     setCurrentPage,
     totalPages,
     PAGE_SIZE,
+    countPendientesGerencia,
+    countPendientesPresupuestos,
     countPendientes,
     countAprobadas,
     countRechazadas,
+    totalMontoPendienteGerencia,
+    totalMontoPendientePresupuestos,
     totalMontoPendiente,
     totalMontoAprobado,
     pendingVisiblesEnPagina,
@@ -66,6 +73,7 @@ export default function TraspasosPage() {
     handleToggleSelectRow,
     handleAprobarLote,
     handleAprobarIndividual,
+    handleAceptarGerencia,
     handleOpenRechazoModal,
     handleConfirmarRechazo,
     handleCrearModificacion,
@@ -100,7 +108,7 @@ export default function TraspasosPage() {
       <PageHeader
         icon={<ArrowRightLeft size={24} />}
         title="Modificaciones Presupuestarias"
-        subtitle="Flujo directo Área ➔ Presupuestos: traspasos compensados entre partidas de la misma área"
+        subtitle="Traspasos internos y solicitudes inter-gerencias por fuerza mayor con dictamen presupuestario"
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <GestionSelector
@@ -155,8 +163,10 @@ export default function TraspasosPage() {
       <ModificacionesKpis
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        countPendientes={countPendientes}
-        totalMontoPendiente={totalMontoPendiente}
+        countPendientesGerencia={countPendientesGerencia}
+        totalMontoPendienteGerencia={totalMontoPendienteGerencia}
+        countPendientesPresupuestos={countPendientesPresupuestos}
+        totalMontoPendientePresupuestos={totalMontoPendientePresupuestos}
         countAprobadas={countAprobadas}
         totalMontoAprobado={totalMontoAprobado}
         totalCount={modificaciones.length}
@@ -172,7 +182,8 @@ export default function TraspasosPage() {
         filtroArea={filtroArea}
         onAreaChange={setFiltroArea}
         totalCount={modificaciones.length}
-        countPendientes={countPendientes}
+        countPendientesGerencia={countPendientesGerencia}
+        countPendientesPresupuestos={countPendientesPresupuestos}
         countAprobadas={countAprobadas}
         countRechazadas={countRechazadas}
         gestionAnio={activeGestion?.anio}
@@ -195,6 +206,7 @@ export default function TraspasosPage() {
         modificaciones={modificacionesPaginadas}
         loading={loading}
         canAprobar={canAprobar}
+        canAceptarGerencia={canAceptarGerencia}
         selectedModIds={selectedModIds}
         areAllPendingOnPageSelected={areAllPendingOnPageSelected}
         pendingVisiblesCount={pendingVisiblesEnPagina.length}
@@ -202,6 +214,7 @@ export default function TraspasosPage() {
         onToggleSelectRow={handleToggleSelectRow}
         onVerDetalle={(mod) => setSelectedModDetalle(mod)}
         onAprobarIndividual={handleAprobarIndividual}
+        onAceptarGerencia={handleAceptarGerencia}
         onRechazarIndividual={handleOpenRechazoModal}
         actionLoading={actionLoading}
         currentPage={currentPage}
@@ -217,8 +230,10 @@ export default function TraspasosPage() {
         onClose={() => setSelectedModDetalle(null)}
         modificacion={selectedModDetalle}
         canAprobar={canAprobar}
+        canAceptarGerencia={selectedModDetalle ? canAceptarGerencia(selectedModDetalle) : false}
         actionLoading={actionLoading}
         onAprobar={handleAprobarIndividual}
+        onAceptarGerencia={handleAceptarGerencia}
         onRechazar={handleOpenRechazoModal}
       />
 
@@ -229,6 +244,8 @@ export default function TraspasosPage() {
         onSubmit={handleCrearModificacion}
         areas={areas}
         memorias={memorias}
+        partidas={partidas}
+        operaciones={operaciones}
         selectedGestionId={selectedGestionId}
         gestionAnio={activeGestion?.anio}
         isGestionBloqueada={isGestionBloqueada}

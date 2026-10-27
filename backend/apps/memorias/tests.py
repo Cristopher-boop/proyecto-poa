@@ -116,6 +116,12 @@ class MemoriasBaseTestCase(TestCase):
             rol=self.rol_elaborador,
             seccion=self.seccion
         )
+        self.user_gerente2 = Usuario.objects.create_user(
+            username='gerente_gaf',
+            password='password123',
+            rol=self.rol_gerente,
+            seccion=self.seccion2
+        )
 
         # Memorias de Cálculo
         self.memoria1 = MemoriaCalculo.objects.create(
@@ -166,6 +172,15 @@ class MemoriasBaseTestCase(TestCase):
             estado=MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
             total_presupuestado=Decimal('4000.00'),
             saldo_disponible=Decimal('4000.00')
+        )
+        self.detalle_otra_area = DetallePresupuestoMemoria.objects.create(
+            memoria=self.memoria_otra_area,
+            partida=self.partida1,
+            descripcion='Servicios operativos contables GAF',
+            unidad_medida='Servicio',
+            cantidad=Decimal('1.00'),
+            precio_unitario=Decimal('4000.00'),
+            factor_calculo=Decimal('1.0000')
         )
 
 
@@ -346,6 +361,121 @@ class ModificacionPresupuestariaServiceTests(MemoriasBaseTestCase):
         )
         self.assertEqual(mod_rechazada.estado, ModificacionPresupuestaria.EstadoModificacion.RECHAZADO)
         self.assertEqual(mod_rechazada.motivo_rechazo, 'NO PROCEDE POR CIERRE DE PARTIDA')
+
+    def test_traspaso_inter_areas_flujo_completo(self):
+        """
+        Flujo extraordinario Inter-Gerencias:
+        1. Gerencia Comercial (GC) solicita Bs. 2,000 a GAF por fuerza mayor.
+        2. Queda en PENDIENTE_GERENCIA_CEDENTE.
+        3. Gerente de GAF acepta la petición -> PENDIENTE_PRESUPUESTOS.
+        4. Presupuestos aprueba -> Se descuenta de GAF y se acredita a GC.
+        """
+        data = {
+            'gestion_id': self.gestion.id,
+            'area_id': self.area.id,
+            'area_cedente_id': self.area2.id,
+            'tipo': ModificacionPresupuestaria.TipoModificacion.TRASPASO_INTER_AREA,
+            'motivo': 'Petición extraordinaria por fuerza mayor a GAF para refuerzo comercial',
+            'origenes': [{'memoria_id': self.memoria_otra_area.id, 'monto': '2000.00'}],
+            'destinos': [{'memoria_id': self.memoria1.id, 'monto': '2000.00'}]
+        }
+        mod = ModificacionPresupuestariaService.registrar_modificacion(data, self.user_gerente)
+        self.assertEqual(mod.tipo, ModificacionPresupuestaria.TipoModificacion.TRASPASO_INTER_AREA)
+        self.assertEqual(mod.estado, ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_GERENCIA_CEDENTE)
+        self.assertEqual(mod.area_cedente_id, self.area2.id)
+
+        # Gerente de GAF acepta la cesión de fondos
+        mod_aceptada = ModificacionPresupuestariaService.aceptar_gerencia_cedente(
+            modificacion=mod,
+            usuario=self.user_gerente2,
+            nota='Aceptamos ceder Bs. 2,000 por motivos de fuerza mayor'
+        )
+        self.assertEqual(mod_aceptada.estado, ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_PRESUPUESTOS)
+        self.assertEqual(mod_aceptada.aceptado_por_gerencia, self.user_gerente2)
+        self.assertIsNotNone(mod_aceptada.fecha_aceptacion_gerencia)
+
+        # Presupuestos aprueba definitivamente
+        mod_final = ModificacionPresupuestariaService.aprobar_modificacion(
+            modificacion=mod_aceptada,
+            usuario=self.user_presupuestos,
+            observacion='Visto Bueno Presupuestos Otorgado'
+        )
+        self.assertEqual(mod_final.estado, ModificacionPresupuestaria.EstadoModificacion.APROBADO)
+
+        # Verificar saldos actualizados
+        self.memoria_otra_area.refresh_from_db()
+        self.memoria1.refresh_from_db()
+        self.assertEqual(self.memoria_otra_area.monto_saliente, Decimal('2000.00'))
+        self.assertEqual(self.memoria_otra_area.saldo_disponible, Decimal('2000.00'))
+        self.assertEqual(self.memoria1.monto_entrante, Decimal('2000.00'))
+        self.assertEqual(self.memoria1.saldo_disponible, Decimal('7000.00'))
+
+    def test_traspaso_inter_areas_rechazado_por_gerente_cedente(self):
+        """
+        Gerente Cedente rechaza la solicitud de traspaso inter-gerencias
+        """
+        data = {
+            'gestion_id': self.gestion.id,
+            'area_id': self.area.id,
+            'area_cedente_id': self.area2.id,
+            'tipo': ModificacionPresupuestaria.TipoModificacion.TRASPASO_INTER_AREA,
+            'motivo': 'Petición a rechazar',
+            'origenes': [{'memoria_id': self.memoria_otra_area.id, 'monto': '1000.00'}],
+            'destinos': [{'memoria_id': self.memoria1.id, 'monto': '1000.00'}]
+        }
+        mod = ModificacionPresupuestariaService.registrar_modificacion(data, self.user_gerente)
+        mod_rech = ModificacionPresupuestariaService.rechazar_gerencia_cedente(
+            modificacion=mod,
+            usuario=self.user_gerente2,
+            motivo='No disponemos de margen presupuestario para ceder'
+        )
+        self.assertEqual(mod_rech.estado, ModificacionPresupuestaria.EstadoModificacion.RECHAZADO)
+        self.assertIn('NO DISPONEMOS DE MARGEN', mod_rech.motivo_rechazo.upper())
+
+        self.memoria_otra_area.refresh_from_db()
+        self.assertEqual(self.memoria_otra_area.saldo_disponible, Decimal('4000.00'))
+
+    def test_traspaso_con_creacion_nueva_partida_en_ejecucion(self):
+        """
+        Creación de nueva partida en ejecución sin desglose inicial de ítems:
+        Al aprobar Presupuestos, se crea la MemoriaCalculo con creada_en_ejecucion=True
+        y recibe el saldo correspondiente.
+        """
+        data = {
+            'gestion_id': self.gestion.id,
+            'area_id': self.area.id,
+            'tipo': ModificacionPresupuestaria.TipoModificacion.TRASPASO_INTRA_AREA,
+            'motivo': 'Habilitación de partida no formulada para soporte operativo',
+            'origenes': [{'memoria_id': self.memoria1.id, 'monto': '1500.00'}],
+            'destinos': [{
+                'es_nueva_partida': True,
+                'partida_id': self.partida2.id,
+                'operacion_id': self.operacion.id,
+                'monto': '1500.00'
+            }]
+        }
+        mod = ModificacionPresupuestariaService.registrar_modificacion(data, self.user_gerente)
+        self.assertEqual(mod.estado, ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_PRESUPUESTOS)
+
+        # Detalle destino no tiene memoria al inicio
+        det_destino = mod.detalles.filter(tipo_movimiento=DetalleModificacion.TipoMovimiento.INCREMENTO).first()
+        self.assertTrue(det_destino.es_nueva_partida)
+        self.assertIsNone(det_destino.memoria)
+
+        # Presupuestos aprueba la modificación
+        ModificacionPresupuestariaService.aprobar_modificacion(mod, self.user_presupuestos)
+
+        det_destino.refresh_from_db()
+        self.assertIsNotNone(det_destino.memoria)
+        nueva_memoria = det_destino.memoria
+        self.assertTrue(nueva_memoria.creada_en_ejecucion)
+        self.assertEqual(nueva_memoria.estado, MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS)
+        self.assertEqual(nueva_memoria.total_presupuestado, Decimal('0.00'))
+        self.assertEqual(nueva_memoria.monto_entrante, Decimal('1500.00'))
+        self.assertEqual(nueva_memoria.saldo_disponible, Decimal('1500.00'))
+
+        self.memoria1.refresh_from_db()
+        self.assertEqual(self.memoria1.saldo_disponible, Decimal('3500.00'))
 
 
 class ModificacionPresupuestariaApiTests(APITestCase, MemoriasBaseTestCase):

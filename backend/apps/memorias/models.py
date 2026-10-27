@@ -32,6 +32,11 @@ class MemoriaCalculo(TimeStampedModel):
     es_contratacion = models.BooleanField(default=False, verbose_name="¿Corresponde a Contrataciones?")
     estado = models.CharField(max_length=30, choices=EstadoMemoria.choices, default=EstadoMemoria.BORRADOR, verbose_name="Estado")
     excluida_por_techo = models.BooleanField(default=False, verbose_name="¿Excluida por recorte de techo?")
+    creada_en_ejecucion = models.BooleanField(
+        default=False,
+        verbose_name="¿Creada durante la ejecución?",
+        help_text="Indica si la memoria fue creada dinámicamente mediante modificación presupuestaria sin desglose inicial."
+    )
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Aprobación")
 
     # Campos almacenados de saldo (actualizados automáticamente en cada movimiento)
@@ -107,11 +112,13 @@ class TraspasoPresupuestario(TimeStampedModel):
 
 class ModificacionPresupuestaria(TimeStampedModel):
     class TipoModificacion(models.TextChoices):
-        TRASPASO_INTRA_AREA = 'TRASPASO_INTRA_AREA', 'Traspaso Intra-Área'
+        TRASPASO_INTRA_AREA = 'TRASPASO_INTRA_AREA', 'Traspaso Mismo Área'
+        TRASPASO_INTER_AREA = 'TRASPASO_INTER_AREA', 'Traspaso Inter-Gerencias (Fuerza Mayor)'
         INCREMENTO = 'INCREMENTO', 'Incremento Presupuestario'
         DISMINUCION = 'DISMINUCION', 'Disminución Presupuestaria'
 
     class EstadoModificacion(models.TextChoices):
+        PENDIENTE_GERENCIA_CEDENTE = 'PENDIENTE_GERENCIA_CEDENTE', 'En Espera (Gerencia Cedente)'
         PENDIENTE_PRESUPUESTOS = 'PENDIENTE_PRESUPUESTOS', 'En Espera (Presupuestos)'
         APROBADO = 'APROBADO', 'Aprobado'
         RECHAZADO = 'RECHAZADO', 'Rechazado'
@@ -119,7 +126,15 @@ class ModificacionPresupuestaria(TimeStampedModel):
 
     codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
     gestion = models.ForeignKey(Gestion, on_delete=models.CASCADE, related_name='modificaciones_presupuestarias', verbose_name="Gestión")
-    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='modificaciones_presupuestarias', verbose_name="Área")
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='modificaciones_presupuestarias', verbose_name="Área Solicitante")
+    area_cedente = models.ForeignKey(
+        Area,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='modificaciones_como_cedente',
+        verbose_name="Área Cedente (si es inter-áreas)"
+    )
     tipo = models.CharField(max_length=30, choices=TipoModificacion.choices, default=TipoModificacion.TRASPASO_INTRA_AREA, verbose_name="Tipo")
     motivo = models.TextField(verbose_name="Motivo / Justificación")
     total_monto = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'), verbose_name="Monto Compensado")
@@ -132,6 +147,16 @@ class ModificacionPresupuestaria(TimeStampedModel):
         related_name='modificaciones_registradas',
         verbose_name="Usuario Solicitante"
     )
+    aceptado_por_gerencia = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='modificaciones_aceptadas_gerencia',
+        verbose_name="Aceptado por Gerente Cedente"
+    )
+    fecha_aceptacion_gerencia = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Aceptación Gerente Cedente")
+    nota_gerencia_cedente = models.TextField(null=True, blank=True, verbose_name="Nota de Gerencia Cedente")
     aprobado_por = models.ForeignKey(
         Usuario,
         on_delete=models.SET_NULL,
@@ -150,7 +175,8 @@ class ModificacionPresupuestaria(TimeStampedModel):
         ordering = ['-fecha', '-id']
 
     def __str__(self):
-        return f"{self.codigo} - {self.area.codigo} ({self.total_monto} Bs) [{self.estado}]"
+        cedente_str = f" <- {self.area_cedente.codigo}" if self.area_cedente else ""
+        return f"{self.codigo} - {self.area.codigo}{cedente_str} ({self.total_monto} Bs) [{self.estado}]"
 
 
 class DetalleModificacion(TimeStampedModel):
@@ -167,6 +193,8 @@ class DetalleModificacion(TimeStampedModel):
     memoria = models.ForeignKey(
         MemoriaCalculo,
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name='detalles_modificacion',
         verbose_name="Memoria de Cálculo"
     )
@@ -177,6 +205,18 @@ class DetalleModificacion(TimeStampedModel):
         blank=True,
         related_name='detalles_modificacion',
         verbose_name="Partida Presupuestaria"
+    )
+    es_nueva_partida = models.BooleanField(
+        default=False,
+        verbose_name="¿Nueva Partida en Ejecución?"
+    )
+    operacion = models.ForeignKey(
+        'planificacion.Operacion',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='detalles_modificacion_nuevas',
+        verbose_name="Operación POA (para nueva partida)"
     )
     tipo_movimiento = models.CharField(
         max_length=20,

@@ -179,6 +179,18 @@ export const MemoriaForm = ({ memoria, onClose, onSaved, isRecorteTechoActive = 
     }
   }, [selectedGestionId]);
 
+  // Recargar operaciones y ACPs cada vez que cambia la gestión seleccionada
+  useEffect(() => {
+    if (!selectedGestionId) return;
+    planificacionService.getOperaciones({ gestion: selectedGestionId }).then((ops) => {
+      setOperaciones(Array.isArray(ops) ? ops : []);
+    }).catch(console.error);
+
+    planificacionService.getAccionesCortoPlazo({ gestion: selectedGestionId }).then((acps) => {
+      setAccionesCortoPlazo(Array.isArray(acps) ? acps : []);
+    }).catch(console.error);
+  }, [selectedGestionId]);
+
   // Deep linking: Abrir modal de ficha técnica, situar pestaña correspondiente y parpadear fila al hacer clic en notificación
   useEffect(() => {
     if (targetMemoriaId) {
@@ -445,21 +457,54 @@ export const MemoriaForm = ({ memoria, onClose, onSaved, isRecorteTechoActive = 
     });
   }, [egresoLeafs, parentMap, formMemoria.partidaId, partidas, editingMemoria]);
 
-  // Opciones para el componente Dropdown de Operaciones POA
+  // Opciones para el componente Dropdown de ACPs filtradas por Gestión
+  const acpDropdownItems = useMemo((): DropdownItem[] => {
+    const currentGestionObj = gestiones.find((g) => g.id === Number(selectedGestionId || editingMemoria?.gestion));
+    const targetAnio = currentGestionObj?.anio || (editingMemoria ? editingMemoria.gestion_anio : null);
+    const targetGId = currentGestionObj?.id;
+
+    const filtered = accionesCortoPlazo.filter((acp) => {
+      if (targetGId && (acp.gestion || (acp as any).gestion_id)) {
+        return Number(acp.gestion || (acp as any).gestion_id) === Number(targetGId);
+      }
+      if (targetAnio && acp.gestion_anio) {
+        return Number(acp.gestion_anio) === Number(targetAnio);
+      }
+      return !targetGId && !targetAnio;
+    });
+
+    return filtered.map((acp) => ({
+      id: acp.id,
+      label: acp.descripcion,
+      badge: acp.codigo,
+    }));
+  }, [accionesCortoPlazo, selectedGestionId, editingMemoria, gestiones]);
+
+  // Opciones para el componente Dropdown de Operaciones POA estrictamente filtradas por Gestión y Área
   const operacionDropdownItems = useMemo((): DropdownItem[] => {
     const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
     const secAreaId = sec ? (typeof sec.area === 'object' ? (sec.area as any)?.id : sec.area || (sec as any).area_id) : null;
     const areaId = (editingMemoria as any)?.area_id || secAreaId || (user as any)?.area_id || null;
-    let opsFiltradas = areaId
-      ? operaciones.filter((o) => {
-          const oAreaId = typeof o.area === 'object' ? (o.area as any)?.id : o.area || (o as any).area_id;
-          return Number(oAreaId) === Number(areaId);
-        })
-      : operaciones;
 
-    if (opsFiltradas.length === 0) {
-      opsFiltradas = operaciones;
-    }
+    const currentGestionObj = gestiones.find((g) => g.id === Number(selectedGestionId || editingMemoria?.gestion));
+    const targetAnio = currentGestionObj?.anio || (editingMemoria ? editingMemoria.gestion_anio : null);
+    const targetGId = currentGestionObj?.id || (editingMemoria ? (typeof editingMemoria.gestion === 'object' ? (editingMemoria.gestion as any)?.id : editingMemoria.gestion) : null);
+
+    let opsFiltradas = operaciones.filter((o) => {
+      // 1. Filtrar estrictamente por Gestión / Año de la gestión activa
+      if (targetGId && o.gestion_id) {
+        if (Number(o.gestion_id) !== Number(targetGId)) return false;
+      } else if (targetAnio && o.gestion_anio) {
+        if (Number(o.gestion_anio) !== Number(targetAnio)) return false;
+      }
+
+      // 2. Filtrar por Área si está identificada
+      if (areaId) {
+        const oAreaId = typeof o.area === 'object' ? (o.area as any)?.id : o.area || (o as any).area_id;
+        if (Number(oAreaId) !== Number(areaId)) return false;
+      }
+      return true;
+    });
 
     // Asegurarnos de que la operación seleccionada siempre esté presente en la lista del Dropdown al editar
     if (formMemoria.operacionId && !opsFiltradas.some((o) => Number(o.id) === Number(formMemoria.operacionId))) {
@@ -481,7 +526,7 @@ export const MemoriaForm = ({ memoria, onClose, onSaved, isRecorteTechoActive = 
       label: op.descripcion,
       badge: op.codigo,
     }));
-  }, [secciones, formMemoria.seccionId, editingMemoria, user, operaciones, formMemoria.operacionId]);
+  }, [secciones, formMemoria.seccionId, editingMemoria, user, operaciones, formMemoria.operacionId, selectedGestionId, gestiones]);
 
   // Contadores por estado
   const conteos = useMemo(() => {
@@ -1203,11 +1248,8 @@ export const MemoriaForm = ({ memoria, onClose, onSaved, isRecorteTechoActive = 
                           Acción a Corto Plazo (ACP Padre) *
                         </label>
                         <Dropdown
-                          items={accionesCortoPlazo.map((acp) => ({
-                            id: acp.id,
-                            label: acp.descripcion,
-                            badge: acp.codigo,
-                          }))}
+                          items={acpDropdownItems}
+                          emptyMessage="No existen ACPs registradas para esta gestión."
                           value={quickOpForm.acp_id}
                           onChange={(val) => setQuickOpForm({ ...quickOpForm, acp_id: Number(val) })}
                           placeholder="Seleccione ACP..."

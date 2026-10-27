@@ -43,6 +43,30 @@ class AccionMedianoPlazoViewSet(viewsets.ModelViewSet):
     filterset_fields = ['programa', 'estado']
     search_fields = ['codigo', 'descripcion', 'programa__nombre']
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        gestion = self.request.query_params.get('gestion') or self.request.query_params.get('gestion_id')
+        anio = self.request.query_params.get('anio') or self.request.query_params.get('gestion_anio')
+        target_anio = None
+        if anio and str(anio).isdigit():
+            target_anio = int(anio)
+        elif gestion and str(gestion).isdigit():
+            from apps.presupuestos.models import Gestion
+            try:
+                g = Gestion.objects.get(id=int(gestion))
+                target_anio = g.anio
+            except Gestion.DoesNotExist:
+                pass
+        elif gestion and not str(gestion).isdigit():
+            try:
+                target_anio = int(gestion)
+            except ValueError:
+                pass
+
+        if target_anio:
+            qs = qs.filter(periodo_inicio__lte=target_anio, periodo_fin__gte=target_anio)
+        return qs
+
     def perform_create(self, serializer):
         rol = get_user_role(self.request.user)
         if rol not in ['APROBADOR', 'PRESUPUESTOS', 'ADMINISTRADOR', 'PLANIFICACION']:
@@ -80,6 +104,19 @@ class AccionCortoPlazoViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['accion_mediano_plazo', 'gestion', 'estado', 'accion_mediano_plazo__programa']
     search_fields = ['codigo', 'descripcion', 'accion_mediano_plazo__codigo']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        gestion = self.request.query_params.get('gestion') or self.request.query_params.get('gestion_id')
+        anio = self.request.query_params.get('anio') or self.request.query_params.get('gestion_anio')
+        if gestion:
+            if str(gestion).isdigit():
+                qs = qs.filter(gestion_id=int(gestion))
+            else:
+                qs = qs.filter(gestion__anio=gestion)
+        if anio and str(anio).isdigit():
+            qs = qs.filter(gestion__anio=int(anio))
+        return qs
 
     def perform_create(self, serializer):
         rol = get_user_role(self.request.user)
@@ -134,6 +171,17 @@ class OperacionViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(area_id=user.seccion.area_id)
             else:
                 qs = qs.none()
+
+        gestion = self.request.query_params.get('gestion') or self.request.query_params.get('gestion_id')
+        anio = self.request.query_params.get('anio') or self.request.query_params.get('gestion_anio')
+        if gestion:
+            if str(gestion).isdigit():
+                qs = qs.filter(accion_corto_plazo__gestion_id=int(gestion))
+            else:
+                qs = qs.filter(accion_corto_plazo__gestion__anio=gestion)
+        if anio and str(anio).isdigit():
+            qs = qs.filter(accion_corto_plazo__gestion__anio=int(anio))
+
         return qs
 
     def perform_create(self, serializer):

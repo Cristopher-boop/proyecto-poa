@@ -1,18 +1,20 @@
 import React from 'react';
-import { Search, Clock, CheckCircle2, XCircle, Layers } from 'lucide-react';
+import { Search, Clock, CheckCircle2, XCircle, Layers, Building2 } from 'lucide-react';
 import { Area } from '../../../services/presupuestoService';
 import { Dropdown, DropdownItem } from '../../../components/commons';
+import { ModificacionTab } from '../hooks/useModificaciones';
 
 interface ModificacionesFilterProps {
-  activeTab: 'TODAS' | 'PENDIENTE_PRESUPUESTOS' | 'APROBADO' | 'RECHAZADO';
-  onTabChange: (tab: 'TODAS' | 'PENDIENTE_PRESUPUESTOS' | 'APROBADO' | 'RECHAZADO') => void;
+  activeTab: ModificacionTab;
+  onTabChange: (tab: ModificacionTab) => void;
   searchTerm: string;
   onSearchChange: (val: string) => void;
   areas: Area[];
   filtroArea: string;
   onAreaChange: (val: string) => void;
   totalCount: number;
-  countPendientes: number;
+  countPendientesGerencia: number;
+  countPendientesPresupuestos: number;
   countAprobadas: number;
   countRechazadas: number;
   gestionAnio?: number;
@@ -28,7 +30,8 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
   filtroArea,
   onAreaChange,
   totalCount,
-  countPendientes,
+  countPendientesGerencia,
+  countPendientesPresupuestos,
   countAprobadas,
   countRechazadas,
   gestionAnio,
@@ -58,7 +61,7 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
         <button
           type="button"
           onClick={() => onTabChange('TODAS')}
-          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'TODAS'
               ? 'border-theme-primary text-theme-main font-bold'
               : 'border-transparent text-theme-muted hover:text-theme-main'
@@ -73,18 +76,36 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
 
         <button
           type="button"
+          onClick={() => onTabChange('PENDIENTE_GERENCIA_CEDENTE')}
+          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+            activeTab === 'PENDIENTE_GERENCIA_CEDENTE'
+              ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold'
+              : 'border-transparent text-theme-muted hover:text-theme-main'
+          }`}
+        >
+          <Building2 size={13} />
+          <span>En Espera (Gerencia Cedente)</span>
+          {countPendientesGerencia > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold font-mono">
+              {countPendientesGerencia}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
           onClick={() => onTabChange('PENDIENTE_PRESUPUESTOS')}
-          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'PENDIENTE_PRESUPUESTOS'
-              ? 'border-amber-500 text-amber-600 font-bold'
+              ? 'border-amber-500 text-amber-600 dark:text-amber-400 font-bold'
               : 'border-transparent text-theme-muted hover:text-theme-main'
           }`}
         >
           <Clock size={13} />
           <span>En Espera (Presupuestos)</span>
-          {countPendientes > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-700 font-bold font-mono">
-              {countPendientes}
+          {countPendientesPresupuestos > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold font-mono">
+              {countPendientesPresupuestos}
             </span>
           )}
         </button>
@@ -92,15 +113,15 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
         <button
           type="button"
           onClick={() => onTabChange('APROBADO')}
-          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'APROBADO'
-              ? 'border-emerald-500 text-emerald-600 font-bold'
+              ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
               : 'border-transparent text-theme-muted hover:text-theme-main'
           }`}
         >
           <CheckCircle2 size={13} />
           <span>Aprobadas</span>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-700 font-bold font-mono">
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold font-mono">
             {countAprobadas}
           </span>
         </button>
@@ -108,16 +129,16 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
         <button
           type="button"
           onClick={() => onTabChange('RECHAZADO')}
-          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'RECHAZADO'
-              ? 'border-rose-500 text-rose-600 font-bold'
+              ? 'border-rose-500 text-rose-600 dark:text-rose-400 font-bold'
               : 'border-transparent text-theme-muted hover:text-theme-main'
           }`}
         >
           <XCircle size={13} />
           <span>Rechazadas</span>
           {countRechazadas > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500/20 text-rose-700 font-bold font-mono">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500/20 text-rose-700 dark:text-rose-400 font-bold font-mono">
               {countRechazadas}
             </span>
           )}

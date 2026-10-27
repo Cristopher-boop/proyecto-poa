@@ -749,6 +749,8 @@ class ModificacionPresupuestariaService:
     def registrar_modificacion(data, usuario):
         from .utils import recalcular_saldos_memoria
         from apps.organizacional.models import Area
+        from apps.presupuestos.models import Partida
+        from apps.planificacion.models import Operacion
 
         # 1. Validación de Roles y Permisos
         # Solo Gerente del área o Superadmin pueden solicitar modificaciones
@@ -764,6 +766,7 @@ class ModificacionPresupuestariaService:
 
         gestion_id = data.get('gestion_id') or data.get('gestion')
         area_id = data.get('area_id') or data.get('area')
+        area_cedente_id = data.get('area_cedente_id') or data.get('area_cedente')
         motivo = str(data.get('motivo') or '').strip()
         tipo = data.get('tipo') or ModificacionPresupuestaria.TipoModificacion.TRASPASO_INTRA_AREA
         origenes = data.get('origenes') or []
@@ -795,7 +798,7 @@ class ModificacionPresupuestariaService:
         except Area.DoesNotExist:
             raise ValidationError({'area': ['El área especificada no existe.']})
 
-        # Si es gerente, validar que sea estrictamente su propia área
+        # Si es gerente, validar que el área solicitante sea estrictamente su propia área
         if is_gerente and not is_admin:
             user_area_id = None
             if hasattr(usuario, 'seccion') and usuario.seccion:
@@ -807,40 +810,74 @@ class ModificacionPresupuestariaService:
                     'non_field_errors': ['Como Gerente, únicamente puedes solicitar modificaciones presupuestarias para tu propia área.']
                 })
 
+        # Configuración según si es Inter-Áreas o Intra-Área
+        es_inter_area = (tipo == ModificacionPresupuestaria.TipoModificacion.TRASPASO_INTER_AREA)
+        area_cedente = None
+        if es_inter_area:
+            if not area_cedente_id:
+                raise ValidationError({'area_cedente': ['Para un traspaso inter-gerencias debe seleccionar la gerencia o unidad a la que solicita fondos.']})
+            try:
+                area_cedente = Area.objects.get(id=area_cedente_id)
+            except Area.DoesNotExist:
+                raise ValidationError({'area_cedente': ['La gerencia cedente seleccionada no existe.']})
+            if area_cedente.id == area.id:
+                raise ValidationError({'area_cedente': ['Para traspasos dentro de su propia gerencia seleccione la modalidad Traspaso Mismo Área.']})
+        else:
+            area_cedente = area
 
         def parse_item(item, idx, label):
+            es_nueva = bool(item.get('es_nueva_partida'))
             m_id = item.get('memoria_id') or item.get('memoria')
-            if not m_id:
+            p_id = item.get('partida_id') or item.get('partida')
+            op_id = item.get('operacion_id') or item.get('operacion')
+
+            if label == 'origenes' and es_nueva:
+                raise ValidationError({'origenes': [f"Las partidas de origen deben ser asignaciones existentes con saldo disponible (fila {idx + 1})."]})
+
+            if not es_nueva and not m_id:
                 raise ValidationError({label: [f"Falta el identificador de memoria en la fila {idx + 1}."]})
+
+            if es_nueva and not p_id:
+                raise ValidationError({label: [f"Debe seleccionar la partida presupuestaria para la nueva partida creada en ejecución (fila {idx + 1})."]})
+
             try:
                 monto = Decimal(str(item.get('monto', 0))).quantize(Decimal('0.01'))
             except Exception:
                 raise ValidationError({label: [f"Monto inválido en la fila {idx + 1}."]})
             if monto <= Decimal('0.00'):
                 raise ValidationError({label: [f"El monto debe ser mayor a 0 en la fila {idx + 1}."]})
-            partida_id = item.get('partida_id') or item.get('partida')
-            return int(m_id), monto, partida_id
+
+            return {
+                'memoria_id': int(m_id) if m_id else None,
+                'monto': monto,
+                'partida_id': int(p_id) if p_id else None,
+                'es_nueva_partida': es_nueva,
+                'operacion_id': int(op_id) if op_id else None
+            }
 
         parsed_origenes = [parse_item(it, idx, 'origenes') for idx, it in enumerate(origenes)]
         parsed_destinos = [parse_item(it, idx, 'destinos') for idx, it in enumerate(destinos)]
 
-        orig_ids = [m_id for m_id, _, _ in parsed_origenes]
-        dest_ids = [m_id for m_id, _, _ in parsed_destinos]
+        orig_mem_ids = [it['memoria_id'] for it in parsed_origenes if it['memoria_id']]
+        dest_mem_ids = [it['memoria_id'] for it in parsed_destinos if it['memoria_id']]
+        dest_nuevas_partidas = [it['partida_id'] for it in parsed_destinos if it['es_nueva_partida']]
 
         # Validar no duplicados dentro de la misma lista
-        if len(orig_ids) != len(set(orig_ids)):
+        if len(orig_mem_ids) != len(set(orig_mem_ids)):
             raise ValidationError({'origenes': ['No puede repetir la misma memoria en los orígenes.']})
-        if len(dest_ids) != len(set(dest_ids)):
+        if len(dest_mem_ids) != len(set(dest_mem_ids)):
             raise ValidationError({'destinos': ['No puede repetir la misma memoria en los destinos.']})
+        if len(dest_nuevas_partidas) != len(set(dest_nuevas_partidas)):
+            raise ValidationError({'destinos': ['No puede repetir la misma partida presupuestaria nueva en los destinos.']})
 
         # Validar que no haya memorias en ambos lados
-        comunes = set(orig_ids).intersection(set(dest_ids))
+        comunes = set(orig_mem_ids).intersection(set(dest_mem_ids))
         if comunes:
             raise ValidationError({'non_field_errors': ['Una misma memoria no puede figurar simultáneamente como origen y como destino.']})
 
         # Cuadre de balance (suma salidas == suma entradas)
-        total_salidas = sum((monto for _, monto, _ in parsed_origenes), Decimal('0.00'))
-        total_entradas = sum((monto for _, monto, _ in parsed_destinos), Decimal('0.00'))
+        total_salidas = sum((it['monto'] for it in parsed_origenes), Decimal('0.00'))
+        total_entradas = sum((it['monto'] for it in parsed_destinos), Decimal('0.00'))
 
         if abs(total_salidas - total_entradas) >= Decimal('0.01'):
             raise ValidationError({
@@ -850,68 +887,92 @@ class ModificacionPresupuestariaService:
             })
 
         # Bloquear memorias en BD para concurrencia
-        all_ids = set(orig_ids + dest_ids)
+        all_mem_ids = set(orig_mem_ids + dest_mem_ids)
         memorias_dict = {
-            m.id: m for m in MemoriaCalculo.objects.select_for_update().select_related('seccion__area', 'gestion').prefetch_related('detalles__partida').filter(id__in=all_ids)
+            m.id: m for m in MemoriaCalculo.objects.select_for_update().select_related('seccion__area', 'gestion').prefetch_related('detalles__partida').filter(id__in=all_mem_ids)
         }
 
         # Validar existencia de todas las memorias
-        for m_id in all_ids:
+        for m_id in all_mem_ids:
             if m_id not in memorias_dict:
                 raise ValidationError({'non_field_errors': [f"La memoria con ID {m_id} no fue encontrada."]})
 
-        # Validar regla intra-área institucional y gestión
-        for m_id, m in memorias_dict.items():
+        # Validar orígenes: deben pertenecer al área cedente y a la gestión
+        for it in parsed_origenes:
+            m = memorias_dict[it['memoria_id']]
             if m.gestion_id != gestion.id:
                 raise ValidationError({'non_field_errors': [f"La memoria {m.codigo} pertenece a la gestión {m.gestion.anio}, distinta a la seleccionada ({gestion.anio})."]})
-            if m.seccion.area_id != area.id:
+            if m.seccion.area_id != area_cedente.id:
                 raise ValidationError({
-                    'non_field_errors': [
-                        f"La memoria {m.codigo} pertenece a {m.seccion.area.nombre}, distinta al área de la modificación ({area.nombre}). Los traspasos son estrictamente intra-área."
+                    'origenes': [
+                        f"La memoria cedente {m.codigo} pertenece a {m.seccion.area.nombre}, distinta a la gerencia cedente ({area_cedente.nombre})."
+                    ]
+                })
+            if m.saldo_disponible < it['monto']:
+                raise ValidationError({
+                    'origenes': [
+                        f"Saldo insuficiente en la memoria {m.codigo}. Saldo disponible: Bs. {m.saldo_disponible:,.2f}, solicitado ceder: Bs. {it['monto']:,.2f}."
                     ]
                 })
 
-        # Validar saldo disponible en orígenes
-        for m_id, monto, _ in parsed_origenes:
-            m = memorias_dict[m_id]
-            if m.saldo_disponible < monto:
-                raise ValidationError({
-                    'origenes': [
-                        f"Saldo insuficiente en la memoria {m.codigo}. Saldo disponible: Bs. {m.saldo_disponible:,.2f}, solicitado ceder: Bs. {monto:,.2f}."
-                    ]
-                })
+        # Validar destinos existentes: deben pertenecer al área solicitante y a la gestión
+        for it in parsed_destinos:
+            if not it['es_nueva_partida']:
+                m = memorias_dict[it['memoria_id']]
+                if m.gestion_id != gestion.id:
+                    raise ValidationError({'non_field_errors': [f"La memoria receptora {m.codigo} pertenece a la gestión {m.gestion.anio}, distinta a la activa ({gestion.anio})."]})
+                if m.seccion.area_id != area.id:
+                    raise ValidationError({
+                        'destinos': [
+                            f"La memoria receptora {m.codigo} pertenece a {m.seccion.area.nombre}, distinta a su área solicitante ({area.nombre})."
+                        ]
+                    })
+            else:
+                # Validar partida nueva
+                partida = Partida.objects.filter(id=it['partida_id'], estado=True).first()
+                if not partida:
+                    raise ValidationError({'destinos': [f"La partida presupuestaria seleccionada no existe o está inactiva."]})
+                if partida.clase != Partida.ClasePartida.EGRESO:
+                    raise ValidationError({'destinos': [f"La partida {partida.codigo} no es una partida de egreso presupuestario."]})
 
         # Generar código correlativo oficial
         area_sigla = area.codigo.replace('P-', '').split('-')[-1]
+        tipo_prefijo = "INT" if es_inter_area else "MOD"
         correlativo = ModificacionPresupuestaria.objects.filter(gestion=gestion, area=area).count() + 1
-        codigo = f"MOD-{area_sigla}-{gestion.anio}-{correlativo:03d}"
+        codigo = f"{tipo_prefijo}-{area_sigla}-{gestion.anio}-{correlativo:03d}"
         while ModificacionPresupuestaria.objects.filter(codigo=codigo).exists():
             correlativo += 1
-            codigo = f"MOD-{area_sigla}-{gestion.anio}-{correlativo:03d}"
+            codigo = f"{tipo_prefijo}-{area_sigla}-{gestion.anio}-{correlativo:03d}"
 
         user = usuario if (usuario and usuario.is_authenticated) else None
 
-        # Crear cabecera en estado PENDIENTE_PRESUPUESTOS (En Espera del visto bueno de Presupuestos)
+        # Si es Inter-Áreas, primero pasa por aprobación de la Gerencia Cedente
+        # Si es Intra-Área, va directo a Presupuestos
+        estado_inicial = (
+            ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_GERENCIA_CEDENTE
+            if es_inter_area
+            else ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_PRESUPUESTOS
+        )
+
         modificacion = ModificacionPresupuestaria.objects.create(
             codigo=codigo,
             gestion=gestion,
             area=area,
+            area_cedente=area_cedente,
             tipo=tipo,
             motivo=motivo,
             total_monto=total_salidas,
-            estado=ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_PRESUPUESTOS,
+            estado=estado_inicial,
             usuario_registro=user,
             fecha=timezone.now()
         )
 
-        from apps.presupuestos.models import Partida
-
         # Crear líneas de detalle vinculando la partida
-        for m_id, monto, p_id in parsed_origenes:
-            mem = memorias_dict[m_id]
+        for it in parsed_origenes:
+            mem = memorias_dict[it['memoria_id']]
             partida = None
-            if p_id:
-                partida = Partida.objects.filter(id=p_id).first()
+            if it['partida_id']:
+                partida = Partida.objects.filter(id=it['partida_id']).first()
             if not partida:
                 primer_det = mem.detalles.first()
                 partida = primer_det.partida if primer_det else None
@@ -921,35 +982,163 @@ class ModificacionPresupuestariaService:
                 memoria=mem,
                 partida=partida,
                 tipo_movimiento=DetalleModificacion.TipoMovimiento.DISMINUCION,
-                monto=monto
+                monto=it['monto'],
+                es_nueva_partida=False
             )
 
-        for m_id, monto, p_id in parsed_destinos:
-            mem = memorias_dict[m_id]
-            partida = None
-            if p_id:
-                partida = Partida.objects.filter(id=p_id).first()
-            if not partida:
-                primer_det = mem.detalles.first()
-                partida = primer_det.partida if primer_det else None
+        for it in parsed_destinos:
+            if it['es_nueva_partida']:
+                partida = Partida.objects.get(id=it['partida_id'])
+                operacion = None
+                if it['operacion_id']:
+                    operacion = Operacion.objects.filter(id=it['operacion_id']).first()
 
-            DetalleModificacion.objects.create(
-                modificacion=modificacion,
-                memoria=mem,
-                partida=partida,
-                tipo_movimiento=DetalleModificacion.TipoMovimiento.INCREMENTO,
-                monto=monto
-            )
+                DetalleModificacion.objects.create(
+                    modificacion=modificacion,
+                    memoria=None,
+                    partida=partida,
+                    tipo_movimiento=DetalleModificacion.TipoMovimiento.INCREMENTO,
+                    monto=it['monto'],
+                    es_nueva_partida=True,
+                    operacion=operacion
+                )
+            else:
+                mem = memorias_dict[it['memoria_id']]
+                partida = None
+                if it['partida_id']:
+                    partida = Partida.objects.filter(id=it['partida_id']).first()
+                if not partida:
+                    primer_det = mem.detalles.first()
+                    partida = primer_det.partida if primer_det else None
 
-        # Notificar directamente a Presupuestos (Lic. Acha)
+                DetalleModificacion.objects.create(
+                    modificacion=modificacion,
+                    memoria=mem,
+                    partida=partida,
+                    tipo_movimiento=DetalleModificacion.TipoMovimiento.INCREMENTO,
+                    monto=it['monto'],
+                    es_nueva_partida=False
+                )
+
+        # Notificaciones
         user_name = user.get_full_name() or user.username if user else "Gerencia de Área"
+        if es_inter_area:
+            # Notificar al Gerente de la Gerencia Cedente
+            MemoriaCalculoService._notificar(
+                rol_nombre='GERENTE',
+                titulo=f"Petición Inter-Gerencias Recibida: {modificacion.codigo}",
+                mensaje=f"{user_name} ({area.nombre}) ha solicitado fondos de sus partidas por Bs. {total_salidas:,.2f} por fuerza mayor. Requiere su aceptación o rechazo.",
+                enlace="/traspasos",
+                usuario_origen=user
+            )
+        else:
+            # Notificar directamente a Presupuestos (Lic. Acha)
+            MemoriaCalculoService._notificar(
+                rol_nombre='PRESUPUESTOS',
+                titulo=f"Solicitud de Modificación Presupuestaria: {modificacion.codigo}",
+                mensaje=f"{user_name} ({area.nombre}) solicitó una modificación presupuestaria por Bs. {total_salidas:,.2f}. Pendiente de su visto bueno en Presupuestos.",
+                enlace="/traspasos",
+                usuario_origen=user
+            )
+
+        return modificacion
+
+    @staticmethod
+    @transaction.atomic
+    def aceptar_gerencia_cedente(modificacion, usuario, nota=''):
+        rol_nombre = usuario.rol.nombre.upper() if (usuario and usuario.rol) else ''
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_admin = bool(usuario and (usuario.is_superuser or 'ADMIN' in rol_clean))
+
+        user_area_id = None
+        if hasattr(usuario, 'seccion') and usuario.seccion:
+            user_area_id = usuario.seccion.area_id
+        elif hasattr(usuario, 'area') and usuario.area:
+            user_area_id = usuario.area.id
+
+        cedente_id = modificacion.area_cedente_id or modificacion.area_id
+        if not is_admin and (not user_area_id or user_area_id != cedente_id):
+            raise ValidationError({
+                'non_field_errors': ['Solo el Jefe / Gerente del Área Cedente o un Administrador puede aceptar esta petición de traspaso.']
+            })
+
+        if modificacion.estado != ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_GERENCIA_CEDENTE:
+            raise ValidationError({
+                'non_field_errors': [f'La modificación {modificacion.codigo} no está pendiente de aceptación por la gerencia cedente (Estado actual: {modificacion.get_estado_display()}).']
+            })
+
+        modificacion.estado = ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_PRESUPUESTOS
+        modificacion.aceptado_por_gerencia = usuario
+        modificacion.fecha_aceptacion_gerencia = timezone.now()
+        if nota:
+            modificacion.nota_gerencia_cedente = nota
+        modificacion.save()
+
+        user_name = usuario.get_full_name() or usuario.username if usuario else "Gerencia Cedente"
+        # Notificar al solicitante
+        if modificacion.usuario_registro:
+            MemoriaCalculoService._notificar(
+                usuario_destino=modificacion.usuario_registro,
+                titulo=f"Solicitud Inter-Gerencias Aceptada ({modificacion.codigo})",
+                mensaje=f"La Gerencia de {modificacion.area_cedente.nombre} ({user_name}) aceptó su solicitud de traspaso por Bs. {modificacion.total_monto:,.2f}. Ha sido remitida a Presupuestos para su aprobación final.",
+                enlace="/traspasos",
+                usuario_origen=usuario
+            )
+
+        # Notificar a Presupuestos
         MemoriaCalculoService._notificar(
             rol_nombre='PRESUPUESTOS',
-            titulo=f"Solicitud de Modificación Presupuestaria: {modificacion.codigo}",
-            mensaje=f"{user_name} ({area.nombre}) solicitó una modificación presupuestaria por Bs. {total_salidas:,.2f}. Pendiente de su visto bueno en Presupuestos.",
+            titulo=f"Traspaso Inter-Gerencias Aceptado: {modificacion.codigo}",
+            mensaje=f"El traspaso inter-gerencias solicitado por {modificacion.area.nombre} hacia {modificacion.area_cedente.nombre} fue ACEPTADO por la gerencia cedente. Requiere visto bueno final de Presupuestos.",
             enlace="/traspasos",
-            usuario_origen=user
+            usuario_origen=usuario
         )
+
+        return modificacion
+
+    @staticmethod
+    @transaction.atomic
+    def rechazar_gerencia_cedente(modificacion, usuario, motivo):
+        rol_nombre = usuario.rol.nombre.upper() if (usuario and usuario.rol) else ''
+        rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+        is_admin = bool(usuario and (usuario.is_superuser or 'ADMIN' in rol_clean))
+
+        user_area_id = None
+        if hasattr(usuario, 'seccion') and usuario.seccion:
+            user_area_id = usuario.seccion.area_id
+        elif hasattr(usuario, 'area') and usuario.area:
+            user_area_id = usuario.area.id
+
+        cedente_id = modificacion.area_cedente_id or modificacion.area_id
+        if not is_admin and (not user_area_id or user_area_id != cedente_id):
+            raise ValidationError({
+                'non_field_errors': ['Solo el Jefe / Gerente del Área Cedente o un Administrador puede rechazar esta petición de traspaso.']
+            })
+
+        if modificacion.estado != ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_GERENCIA_CEDENTE:
+            raise ValidationError({
+                'non_field_errors': [f'La modificación {modificacion.codigo} no está pendiente de respuesta de la gerencia cedente.']
+            })
+
+        motivo = (motivo or '').strip()
+        if not motivo:
+            raise ValidationError({'motivo': ['Debe ingresar el motivo por el cual rechaza ceder los fondos.']})
+
+        modificacion.estado = ModificacionPresupuestaria.EstadoModificacion.RECHAZADO
+        modificacion.aceptado_por_gerencia = usuario
+        modificacion.fecha_aceptacion_gerencia = timezone.now()
+        modificacion.motivo_rechazo = f"[Rechazado por Gerencia Cedente {modificacion.area_cedente.codigo}]: {motivo}"
+        modificacion.save()
+
+        user_name = usuario.get_full_name() or usuario.username if usuario else "Gerencia Cedente"
+        if modificacion.usuario_registro:
+            MemoriaCalculoService._notificar(
+                usuario_destino=modificacion.usuario_registro,
+                titulo=f"Solicitud Inter-Gerencias Rechazada ({modificacion.codigo})",
+                mensaje=f"La Gerencia de {modificacion.area_cedente.nombre} ({user_name}) rechazó la solicitud de traspaso {modificacion.codigo}. Motivo: {motivo}",
+                enlace="/traspasos",
+                usuario_origen=usuario
+            )
 
         return modificacion
 
@@ -957,6 +1146,8 @@ class ModificacionPresupuestariaService:
     @transaction.atomic
     def aprobar_modificacion(modificacion, usuario, observacion=''):
         from .utils import recalcular_saldos_memoria
+        from apps.planificacion.models import Operacion
+        from apps.organizacional.models import Seccion
 
         rol_nombre = usuario.rol.nombre.upper() if (usuario and usuario.rol) else ''
         rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
@@ -969,12 +1160,12 @@ class ModificacionPresupuestariaService:
             raise ValidationError({'non_field_errors': [f'La modificación {modificacion.codigo} no está pendiente de aprobación (Estado actual: {modificacion.get_estado_display()}).']})
 
         detalles = list(modificacion.detalles.select_related('memoria', 'partida').all())
-        mem_ids = {d.memoria_id for d in detalles}
+        mem_ids = {d.memoria_id for d in detalles if d.memoria_id}
         memorias_dict = {
             m.id: m for m in MemoriaCalculo.objects.select_for_update().filter(id__in=mem_ids)
         }
 
-        # Verificar saldo disponible de orígenes nuevamente en el momento del OK
+        # 1. Verificar saldo disponible de orígenes nuevamente en el momento del visto bueno
         for det in detalles:
             if det.tipo_movimiento == DetalleModificacion.TipoMovimiento.DISMINUCION:
                 mem = memorias_dict[det.memoria_id]
@@ -985,7 +1176,67 @@ class ModificacionPresupuestariaService:
                         ]
                     })
 
-        # Aplicar el movimiento presupuestario real a las memorias
+        # 2. Si hay destinos con 'es_nueva_partida' y sin memoria, crear la MemoriaCalculo en ejecución
+        for det in detalles:
+            if det.es_nueva_partida and not det.memoria_id:
+                seccion = modificacion.area.secciones.filter(estado=True).first()
+                if not seccion:
+                    seccion = modificacion.area.secciones.first()
+                if not seccion:
+                    seccion = Seccion.objects.create(
+                        area=modificacion.area,
+                        nombre=f"Sección Operativa {modificacion.area.codigo}",
+                        estado=True
+                    )
+
+                operacion = det.operacion
+                if not operacion:
+                    operacion = Operacion.objects.filter(
+                        area=modificacion.area,
+                        accion_corto_plazo__gestion=modificacion.gestion
+                    ).first()
+
+                count_mc = MemoriaCalculo.objects.filter(
+                    gestion=modificacion.gestion,
+                    seccion__area=modificacion.area
+                ).count() + 1
+                mem_cod = f"MC-EJEC-{modificacion.area.codigo}-{det.partida.codigo}-{count_mc:02d}"
+                while MemoriaCalculo.objects.filter(codigo=mem_cod).exists():
+                    count_mc += 1
+                    mem_cod = f"MC-EJEC-{modificacion.area.codigo}-{det.partida.codigo}-{count_mc:02d}"
+
+                nueva_mem = MemoriaCalculo.objects.create(
+                    codigo=mem_cod,
+                    gestion=modificacion.gestion,
+                    seccion=seccion,
+                    operacion=operacion,
+                    justificacion=f"Partida {det.partida.codigo} ({det.partida.nombre}) creada durante la ejecución presupuestaria mediante Modificación {modificacion.codigo}. Sin desglose inicial de ítems.",
+                    creada_en_ejecucion=True,
+                    estado=MemoriaCalculo.EstadoMemoria.APROBADO_FINANZAS,
+                    fecha_aprobacion=timezone.now(),
+                    total_presupuestado=Decimal('0.0000'),
+                    total_ejecutado=Decimal('0.0000'),
+                    monto_entrante=Decimal('0.0000'),
+                    monto_saliente=Decimal('0.0000'),
+                    saldo_disponible=Decimal('0.0000')
+                )
+
+                DetallePresupuestoMemoria.objects.create(
+                    memoria=nueva_mem,
+                    partida=det.partida,
+                    descripcion=f"Partida {det.partida.codigo} ({det.partida.nombre}) creada durante la ejecución ({modificacion.codigo})",
+                    unidad_medida="GLOBAL",
+                    cantidad=Decimal('1.0000'),
+                    precio_unitario=Decimal('0.00'),
+                    total_programado=Decimal('0.00'),
+                    saldo_disponible=Decimal('0.00')
+                )
+
+                det.memoria = nueva_mem
+                det.save(update_fields=['memoria'])
+                memorias_dict[nueva_mem.id] = nueva_mem
+
+        # 3. Aplicar el movimiento presupuestario real a las memorias
         for det in detalles:
             mem = memorias_dict[det.memoria_id]
             if det.tipo_movimiento == DetalleModificacion.TipoMovimiento.DISMINUCION:
@@ -1000,17 +1251,26 @@ class ModificacionPresupuestariaService:
             modificacion.motivo_rechazo = observacion
         modificacion.save()
 
-        # Recalcular saldos de memorias ahora que la modificacion esta en estado APROBADO
+        # 4. Recalcular saldos de memorias ahora que la modificación está en estado APROBADO
         for mem in memorias_dict.values():
             recalcular_saldos_memoria(mem)
 
-        # Notificar al solicitante
+        # 5. Notificar a las partes involucradas
         user_name = usuario.get_full_name() or usuario.username if usuario else "Presupuestos"
         if modificacion.usuario_registro:
             MemoriaCalculoService._notificar(
                 usuario_destino=modificacion.usuario_registro,
                 titulo=f"Modificación Presupuestaria Aprobada ({modificacion.codigo})",
                 mensaje=f"Presupuestos ({user_name}) aprobó la modificación presupuestaria {modificacion.codigo} por Bs. {modificacion.total_monto:,.2f}. Los saldos han sido actualizados.",
+                enlace="/traspasos",
+                usuario_origen=usuario
+            )
+
+        if modificacion.area_cedente and modificacion.area_cedente.id != modificacion.area.id:
+            MemoriaCalculoService._notificar(
+                rol_nombre='GERENTE',
+                titulo=f"Traspaso Inter-Gerencias Ejecutado ({modificacion.codigo})",
+                mensaje=f"Presupuestos ({user_name}) aprobó el traspaso {modificacion.codigo}. Se han deducido Bs. {modificacion.total_monto:,.2f} de sus partidas hacia {modificacion.area.nombre}.",
                 enlace="/traspasos",
                 usuario_origen=usuario
             )
@@ -1063,7 +1323,7 @@ class ModificacionPresupuestariaService:
             raise ValidationError({'non_field_errors': ['Solo Presupuestos (Lic. Acha) o Administrador puede rechazar modificaciones presupuestarias.']})
 
         if modificacion.estado != ModificacionPresupuestaria.EstadoModificacion.PENDIENTE_PRESUPUESTOS:
-            raise ValidationError({'non_field_errors': [f'La modificación {modificacion.codigo} no está pendiente de aprobación.']})
+            raise ValidationError({'non_field_errors': [f'La modificación {modificacion.codigo} no está pendiente de aprobación por presupuestos.']})
 
         motivo = (motivo or '').strip()
         if not motivo:
@@ -1081,6 +1341,15 @@ class ModificacionPresupuestariaService:
                 usuario_destino=modificacion.usuario_registro,
                 titulo=f"Modificación Presupuestaria Rechazada ({modificacion.codigo})",
                 mensaje=f"Presupuestos ({user_name}) rechazó la modificación presupuestaria {modificacion.codigo}. Motivo: {motivo}",
+                enlace="/traspasos",
+                usuario_origen=usuario
+            )
+
+        if modificacion.area_cedente and modificacion.area_cedente.id != modificacion.area.id:
+            MemoriaCalculoService._notificar(
+                rol_nombre='GERENTE',
+                titulo=f"Traspaso Inter-Gerencias Rechazado en Presupuestos ({modificacion.codigo})",
+                mensaje=f"Presupuestos ({user_name}) rechazó el traspaso inter-gerencias {modificacion.codigo}. No se aplicaron deducciones a sus partidas.",
                 enlace="/traspasos",
                 usuario_origen=usuario
             )

@@ -9,14 +9,17 @@ import {
   Eye,
   Clock,
   CheckCircle2,
+  Building2,
+  Sparkles,
 } from 'lucide-react';
 import { ModificacionPresupuestaria } from '../../../services/presupuestoService';
-import { StatusBadge, Button } from '../../../components/commons';
+import { StatusBadge } from '../../../components/commons';
 
 interface ModificacionesTableProps {
   modificaciones: ModificacionPresupuestaria[];
   loading: boolean;
   canAprobar: boolean;
+  canAceptarGerencia?: (mod: ModificacionPresupuestaria) => boolean;
   selectedModIds: number[];
   areAllPendingOnPageSelected: boolean;
   pendingVisiblesCount: number;
@@ -24,6 +27,7 @@ interface ModificacionesTableProps {
   onToggleSelectRow: (id: number) => void;
   onVerDetalle: (mod: ModificacionPresupuestaria) => void;
   onAprobarIndividual: (mod: ModificacionPresupuestaria) => void;
+  onAceptarGerencia?: (mod: ModificacionPresupuestaria) => void;
   onRechazarIndividual: (mod: ModificacionPresupuestaria) => void;
   actionLoading?: boolean;
   currentPage: number;
@@ -37,6 +41,7 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
   modificaciones,
   loading,
   canAprobar,
+  canAceptarGerencia,
   selectedModIds,
   areAllPendingOnPageSelected,
   pendingVisiblesCount,
@@ -44,6 +49,7 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
   onToggleSelectRow,
   onVerDetalle,
   onAprobarIndividual,
+  onAceptarGerencia,
   onRechazarIndividual,
   actionLoading = false,
   currentPage,
@@ -77,7 +83,7 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                 </th>
               )}
               <th className="py-3 px-4"># / Código</th>
-              <th className="py-3 px-4">Área Solicitante</th>
+              <th className="py-3 px-4">Área Solicitante / Flujo</th>
               <th className="py-3 px-4">Partida Cedente (-)</th>
               <th className="py-3 px-2 text-center">Flujo</th>
               <th className="py-3 px-4">Partida Receptora (+)</th>
@@ -107,8 +113,11 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
               modificaciones.map((mod) => {
                 const origCount = mod.origenes?.length || 0;
                 const destCount = mod.destinos?.length || 0;
-                const isPending = mod.estado === 'PENDIENTE_PRESUPUESTOS';
+                const isPendingPresupuestos = mod.estado === 'PENDIENTE_PRESUPUESTOS';
+                const isPendingGerencia = mod.estado === 'PENDIENTE_GERENCIA_CEDENTE';
                 const isSelected = selectedModIds.includes(mod.id);
+                const isInterArea = mod.tipo === 'TRASPASO_INTER_AREA' || !!mod.es_inter_area;
+                const userCanAcceptGerencia = canAceptarGerencia ? canAceptarGerencia(mod) : false;
 
                 return (
                   <tr
@@ -116,15 +125,17 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                     className={`transition-colors ${
                       isSelected
                         ? 'bg-amber-500/[0.08] dark:bg-amber-500/[0.12]'
-                        : isPending
+                        : isPendingPresupuestos
                         ? 'hover:bg-amber-500/[0.03]'
+                        : isPendingGerencia
+                        ? 'hover:bg-indigo-500/[0.03]'
                         : 'hover:bg-theme-border/20'
                     }`}
                   >
-                    {/* Checkbox de selección */}
+                    {/* Checkbox de selección para Presupuestos */}
                     {canAprobar && (
                       <td className="py-3 px-3 text-center">
-                        {isPending ? (
+                        {isPendingPresupuestos ? (
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -147,13 +158,29 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                       </p>
                     </td>
 
-                    {/* Área */}
+                    {/* Área Solicitante / Inter-Área */}
                     <td className="py-3 px-4">
-                      <span className="font-semibold text-theme-main">{mod.area_nombre || 'N/A'}</span>
-                      {mod.usuario_registro_nombre && (
-                        <p className="text-[10px] text-theme-muted flex items-center gap-1 mt-0.5">
-                          <UserCheck size={11} /> {mod.usuario_registro_nombre}
-                        </p>
+                      {isInterArea ? (
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
+                            Inter-Gerencias
+                          </span>
+                          <p className="text-xs font-semibold text-theme-main">
+                            {mod.area_nombre || 'N/A'}
+                          </p>
+                          <p className="text-[10px] text-theme-muted font-medium">
+                            Cede: <strong className="text-indigo-600 dark:text-indigo-400">{mod.area_cedente_nombre || 'Área Cedente'}</strong>
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="font-semibold text-theme-main">{mod.area_nombre || 'N/A'}</span>
+                          {mod.usuario_registro_nombre && (
+                            <p className="text-[10px] text-theme-muted flex items-center gap-1 mt-0.5">
+                              <UserCheck size={11} /> {mod.usuario_registro_nombre}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </td>
 
@@ -164,8 +191,8 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                           <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
                             Partida {mod.origenes[0].partida_codigo || 'S/P'}
                           </span>
-                          <span className="text-[10px] text-theme-muted font-mono">
-                            Memoria {mod.origenes[0].memoria_codigo}
+                          <span className="text-[10px] text-theme-muted font-mono truncate max-w-[150px]">
+                            {mod.origenes[0].memoria_codigo ? `Memoria ${mod.origenes[0].memoria_codigo}` : 'Origen'}
                           </span>
                         </div>
                       ) : (
@@ -187,18 +214,37 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                     <td className="py-3 px-4">
                       {destCount === 1 ? (
                         <div className="flex flex-col">
-                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                            Partida {mod.destinos[0].partida_codigo || 'S/P'}
-                          </span>
-                          <span className="text-[10px] text-theme-muted font-mono">
-                            Memoria {mod.destinos[0].memoria_codigo}
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                              Partida {mod.destinos[0].partida_codigo || 'S/P'}
+                            </span>
+                            {mod.destinos[0].es_nueva_partida && (
+                              <span
+                                title="Partida creada durante la ejecución (sin detalles)"
+                                className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30"
+                              >
+                                <Sparkles size={9} /> Nueva
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-theme-muted font-mono truncate max-w-[150px]">
+                            {mod.destinos[0].es_nueva_partida
+                              ? 'Creada en ejecución'
+                              : `Memoria ${mod.destinos[0].memoria_codigo}`}
                           </span>
                         </div>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                          <Layers size={11} className="mr-1" />
-                          {destCount} Partidas Receptoras
-                        </span>
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                            <Layers size={11} className="mr-1" />
+                            {destCount} Partidas Receptoras
+                          </span>
+                          {mod.destinos.some((d) => d.es_nueva_partida) && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                              <Sparkles size={9} /> Incluye nueva partida
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
 
@@ -214,7 +260,9 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                       <StatusBadge
                         status={mod.estado}
                         label={
-                          mod.estado === 'PENDIENTE_PRESUPUESTOS'
+                          mod.estado === 'PENDIENTE_GERENCIA_CEDENTE'
+                            ? 'En Espera (Gerencia Cedente)'
+                            : mod.estado === 'PENDIENTE_PRESUPUESTOS'
                             ? 'En Espera (Presupuestos)'
                             : mod.estado_display || mod.estado
                         }
@@ -225,7 +273,7 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                     {/* Acciones */}
                     <td className="py-3 px-4 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        {/* Ver Detalle en Modal (Petición explícita del usuario) */}
+                        {/* Ver Detalle en Modal */}
                         <button
                           type="button"
                           onClick={() => onVerDetalle(mod)}
@@ -235,8 +283,32 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                           <Eye size={14} />
                         </button>
 
+                        {/* Acciones para Gerencia Cedente */}
+                        {isPendingGerencia && userCanAcceptGerencia && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onAceptarGerencia && onAceptarGerencia(mod)}
+                              disabled={actionLoading}
+                              title="Aceptar petición de transferencia"
+                              className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onRechazarIndividual(mod)}
+                              disabled={actionLoading}
+                              title="Rechazar petición"
+                              className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </>
+                        )}
+
                         {/* Acciones de Presupuestos cuando está En Espera */}
-                        {canAprobar && isPending && (
+                        {canAprobar && isPendingPresupuestos && (
                           <>
                             <button
                               type="button"

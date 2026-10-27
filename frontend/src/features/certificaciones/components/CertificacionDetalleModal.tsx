@@ -171,15 +171,19 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
   const [showDetallesAvanzadosPlanif, setShowDetallesAvanzadosPlanif] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Cargar catálogos cuando se abre el modal
+  // Cargar catálogos acotados a la gestión cuando se abre el modal
   useEffect(() => {
     if (!isOpen) return;
     let isMounted = true;
     setLoadingCatalogos(true);
 
+    const gestParams: Record<string, any> = {};
+    if (certificacion?.gestion) gestParams.gestion = certificacion.gestion;
+    if (certificacion?.gestion_anio) gestParams.gestion_anio = certificacion.gestion_anio;
+
     Promise.all([
       partidaService.getPartidas().catch(() => ({ data: [] })),
-      planificacionService.getOperaciones().catch(() => []),
+      planificacionService.getOperaciones(gestParams).catch(() => []),
     ])
       .then(([partidasRes, opsRes]) => {
         if (!isMounted) return;
@@ -193,7 +197,7 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
     return () => {
       isMounted = false;
     };
-  }, [isOpen]);
+  }, [isOpen, certificacion?.gestion, certificacion?.gestion_anio]);
 
   // Cargar memorias de cálculo del área para comprobación
   useEffect(() => {
@@ -415,10 +419,12 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
   // Filtrar operaciones relevantes para el área de la solicitud
   const areaOperaciones = useMemo(() => {
     if (!Array.isArray(operacionesList)) return [];
-    return operacionesList.filter(
-      (op) => !op.area || op.area === certificacion.area
-    );
-  }, [operacionesList, certificacion.area]);
+    return operacionesList.filter((op) => {
+      if (certificacion.gestion && op.gestion_id && Number(op.gestion_id) !== Number(certificacion.gestion)) return false;
+      if (certificacion.gestion_anio && op.gestion_anio && Number(op.gestion_anio) !== Number(certificacion.gestion_anio)) return false;
+      return !op.area || op.area === certificacion.area;
+    });
+  }, [operacionesList, certificacion.area, certificacion.gestion, certificacion.gestion_anio]);
   const listaOpsParaMostrar = areaOperaciones.length > 0 ? areaOperaciones : (Array.isArray(operacionesList) ? operacionesList : []);
 
   // Cálculos financieros reactivos

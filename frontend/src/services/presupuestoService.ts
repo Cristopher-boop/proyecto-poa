@@ -111,6 +111,7 @@ export interface MemoriaCalculo {
   estado: 'BORRADOR' | 'PENDIENTE_GERENCIA' | 'APROBADO_GERENCIA' | 'PENDIENTE_PLANIFICACION' | 'APROBADO_PLANIFICACION' | 'APROBADO_FINANZAS' | 'RECHAZADO';
   estado_display: string;
   excluida_por_techo?: boolean;
+  creada_en_ejecucion?: boolean;
   fecha_aprobacion: string | null;
   partida_id?: number | null;
   partida_codigo?: string | null;
@@ -172,10 +173,14 @@ export interface Traspaso {
 
 export interface DetalleModificacionItem {
   id?: number;
-  memoria: number;
+  memoria?: number | null;
   memoria_codigo?: string;
+  partida?: number | null;
   partida_codigo?: string | null;
   partida_nombre?: string | null;
+  es_nueva_partida?: boolean;
+  operacion_id?: number | null;
+  operacion_codigo?: string | null;
   tipo_movimiento: 'DISMINUCION' | 'INCREMENTO';
   tipo_movimiento_display?: string;
   monto: number | string;
@@ -190,14 +195,22 @@ export interface ModificacionPresupuestaria {
   area: number;
   area_codigo?: string;
   area_nombre?: string;
-  tipo: 'TRASPASO_INTRA_AREA' | 'INCREMENTO' | 'DISMINUCION';
+  area_cedente?: number | null;
+  area_cedente_codigo?: string | null;
+  area_cedente_nombre?: string | null;
+  tipo: 'TRASPASO_INTRA_AREA' | 'TRASPASO_INTER_AREA' | 'INCREMENTO' | 'DISMINUCION';
   tipo_display?: string;
+  es_inter_area?: boolean;
   motivo: string;
   total_monto: string | number;
-  estado: 'PENDIENTE_PRESUPUESTOS' | 'APROBADO' | 'RECHAZADO' | 'ANULADO';
+  estado: 'PENDIENTE_GERENCIA_CEDENTE' | 'PENDIENTE_PRESUPUESTOS' | 'APROBADO' | 'RECHAZADO' | 'ANULADO';
   estado_display?: string;
   usuario_registro?: number | null;
   usuario_registro_nombre?: string | null;
+  aceptado_por_gerencia?: number | null;
+  aceptado_por_gerencia_nombre?: string | null;
+  fecha_aceptacion_gerencia?: string | null;
+  nota_gerencia_cedente?: string | null;
   aprobado_por?: number | null;
   aprobado_por_nombre?: string | null;
   fecha_aprobacion?: string | null;
@@ -212,10 +225,17 @@ export interface ModificacionPresupuestaria {
 export interface CrearModificacionPayload {
   gestion_id: number;
   area_id: number;
-    motivo: string;
-  tipo?: 'TRASPASO_INTRA_AREA' | 'INCREMENTO' | 'DISMINUCION';
+  area_cedente_id?: number | null;
+  motivo: string;
+  tipo?: 'TRASPASO_INTRA_AREA' | 'TRASPASO_INTER_AREA' | 'INCREMENTO' | 'DISMINUCION';
   origenes: Array<{ memoria_id: number; monto: number; partida_id?: number }>;
-  destinos: Array<{ memoria_id: number; monto: number; partida_id?: number }>;
+  destinos: Array<{
+    memoria_id?: number;
+    partida_id?: number;
+    es_nueva_partida?: boolean;
+    operacion_id?: number;
+    monto: number;
+  }>;
 }
 
 export interface SaldoMemoria {

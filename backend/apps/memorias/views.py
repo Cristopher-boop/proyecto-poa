@@ -79,8 +79,16 @@ class MemoriaCalculoViewSet(RolePermissionMixin, viewsets.ModelViewSet):
         rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
         is_global_role = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER'])
         
+        para_modificacion = (
+            self.request.query_params.get('para_modificacion') or 
+            self.request.query_params.get('para_traspaso')
+        )
+
         if not is_global_role:
-            if user.seccion and user.seccion.area_id:
+            if para_modificacion:
+                # Permitir ver memorias aprobadas en ejecución institucional para traspasos o modificaciones presupuestarias
+                qs = qs.filter(estado__in=['APROBADO_FINANZAS', 'APROBADO_GERENCIA', 'APROBADO_PLANIFICACION'])
+            elif user.seccion and user.seccion.area_id:
                 qs = qs.filter(seccion__area_id=user.seccion.area_id)
             else:
                 qs = qs.none()
@@ -473,7 +481,7 @@ class TraspasoViewSet(viewsets.ModelViewSet):
 
 class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
     queryset = ModificacionPresupuestaria.objects.select_related(
-        'gestion', 'area', 'usuario_registro', 'aprobado_por'
+        'gestion', 'area', 'area_cedente', 'usuario_registro', 'aprobado_por', 'aceptado_por_gerencia'
     ).prefetch_related(
         'detalles__memoria__seccion__area',
         'detalles__memoria__detalles__partida',
@@ -490,10 +498,16 @@ class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
         rol_clean = rol_nombre.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
         is_global_role = user.is_superuser or any(k in rol_clean for k in ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER'])
 
-        # Solo roles de área (Gerente, Elaborador, Trabajador) se restringen a su área asignada
+        # Solo roles de área (Gerente, Elaborador, Trabajador) se restringen a su área asignada (como solicitante o cedente)
         if not is_global_role:
+            user_area_id = None
             if hasattr(user, 'seccion') and user.seccion and user.seccion.area_id:
-                qs = qs.filter(area_id=user.seccion.area_id)
+                user_area_id = user.seccion.area_id
+            elif hasattr(user, 'area') and user.area:
+                user_area_id = user.area.id
+
+            if user_area_id:
+                qs = qs.filter(Q(area_id=user_area_id) | Q(area_cedente_id=user_area_id))
             else:
                 qs = qs.none()
 
@@ -505,7 +519,7 @@ class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
         if gestion_id:
             qs = qs.filter(gestion_id=gestion_id)
         if area_id:
-            qs = qs.filter(area_id=area_id)
+            qs = qs.filter(Q(area_id=area_id) | Q(area_cedente_id=area_id))
         if estado:
             qs = qs.filter(estado=estado)
         if search:
@@ -513,6 +527,7 @@ class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
                 Q(codigo__icontains=search) |
                 Q(motivo__icontains=search) |
                 Q(area__nombre__icontains=search) |
+                Q(area_cedente__nombre__icontains=search) |
                 Q(detalles__partida__codigo__icontains=search) |
                 Q(detalles__memoria__codigo__icontains=search)
             ).distinct()
@@ -525,6 +540,28 @@ class ModificacionPresupuestariaViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(modificacion)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='aceptar-gerencia')
+    def aceptar_gerencia(self, request, pk=None):
+        modificacion = self.get_object()
+        nota = request.data.get('nota', '')
+        modificacion_actualizada = ModificacionPresupuestariaService.aceptar_gerencia_cedente(
+            modificacion=modificacion,
+            usuario=request.user,
+            nota=nota
+        )
+        return Response(self.get_serializer(modificacion_actualizada).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='rechazar-gerencia')
+    def rechazar_gerencia(self, request, pk=None):
+        modificacion = self.get_object()
+        motivo = request.data.get('motivo', '')
+        modificacion_actualizada = ModificacionPresupuestariaService.rechazar_gerencia_cedente(
+            modificacion=modificacion,
+            usuario=request.user,
+            motivo=motivo
+        )
+        return Response(self.get_serializer(modificacion_actualizada).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='aprobar')
     def aprobar(self, request, pk=None):

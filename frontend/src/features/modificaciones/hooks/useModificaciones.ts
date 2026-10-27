@@ -4,11 +4,19 @@ import {
   MemoriaCalculo,
   ModificacionPresupuestaria,
   CrearModificacionPayload,
+  Partida,
 } from '../../../services/presupuestoService';
 import { modificacionesApi } from '../api/modificacionesApi';
 import { useAuth } from '../../../hooks/useAuth';
 import { useGestion } from '../../../contexts/GestionContext';
 import alertService from '../../../utils/alerts';
+
+export type ModificacionTab =
+  | 'TODAS'
+  | 'PENDIENTE_GERENCIA_CEDENTE'
+  | 'PENDIENTE_PRESUPUESTOS'
+  | 'APROBADO'
+  | 'RECHAZADO';
 
 export function useModificaciones() {
   const { user } = useAuth();
@@ -32,6 +40,8 @@ export function useModificaciones() {
 
   // Datos base
   const [areas, setAreas] = useState<Area[]>([]);
+  const [partidas, setPartidas] = useState<Partida[]>([]);
+  const [operaciones, setOperaciones] = useState<any[]>([]);
   const [modificaciones, setModificaciones] = useState<ModificacionPresupuestaria[]>([]);
   const [memorias, setMemorias] = useState<MemoriaCalculo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -39,7 +49,7 @@ export function useModificaciones() {
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Filtros de navegación
-  const [activeTab, setActiveTab] = useState<'TODAS' | 'PENDIENTE_PRESUPUESTOS' | 'APROBADO' | 'RECHAZADO'>('TODAS');
+  const [activeTab, setActiveTab] = useState<ModificacionTab>('TODAS');
   const [filtroArea, setFiltroArea] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -85,11 +95,15 @@ export function useModificaciones() {
   const cargarBase = useCallback(async () => {
     setLoading(true);
     try {
-      const aList = await modificacionesApi.getAreas();
+      const [aList, pList] = await Promise.all([
+        modificacionesApi.getAreas(),
+        modificacionesApi.getPartidas(),
+      ]);
       setAreas(aList);
+      setPartidas(pList);
     } catch (err) {
       console.error(err);
-      mostrarMensaje('error', 'Error al cargar áreas.');
+      mostrarMensaje('error', 'Error al cargar áreas o catálogo de partidas.');
     } finally {
       setLoading(false);
     }
@@ -99,12 +113,14 @@ export function useModificaciones() {
     async (gId: number) => {
       setLoading(true);
       try {
-        const [mList, modList, tList] = await Promise.all([
-          modificacionesApi.getMemorias({ gestion: gId }),
+        const [mList, modList, tList, opList] = await Promise.all([
+          modificacionesApi.getMemorias({ gestion: gId, para_modificacion: true }),
           modificacionesApi.getModificaciones({ gestion: gId }),
           modificacionesApi.getTraspasos({ gestion: gId }),
+          modificacionesApi.getOperaciones({ gestion: gId }).catch(() => []),
         ]);
         setMemorias(Array.isArray(mList) ? mList : []);
+        setOperaciones(Array.isArray(opList) ? opList : []);
 
         // Unificar modificaciones con traspasos 1:1 legacy si existieran
         const listaM: ModificacionPresupuestaria[] = Array.isArray(modList) ? [...modList] : [];
@@ -183,6 +199,7 @@ export function useModificaciones() {
       const matchArea =
         filtroArea === 'todas' ||
         String(mod.area) === filtroArea ||
+        String(mod.area_cedente) === filtroArea ||
         mod.area_nombre === areas.find((a) => String(a.id) === filtroArea)?.nombre;
 
       // Filtro por Buscador
@@ -192,6 +209,7 @@ export function useModificaciones() {
         mod.codigo.toLowerCase().includes(term) ||
         mod.motivo.toLowerCase().includes(term) ||
         (mod.area_nombre && mod.area_nombre.toLowerCase().includes(term)) ||
+        (mod.area_cedente_nombre && mod.area_cedente_nombre.toLowerCase().includes(term)) ||
         (mod.usuario_registro_nombre && mod.usuario_registro_nombre.toLowerCase().includes(term)) ||
         (mod.aprobado_por_nombre && mod.aprobado_por_nombre.toLowerCase().includes(term)) ||
         (mod.origenes || []).some(
@@ -221,9 +239,15 @@ export function useModificaciones() {
   }, [modificacionesFiltradas, currentPage]);
 
   // Contadores para pestañas y KPIs
-  const countPendientes = useMemo(() => {
+  const countPendientesGerencia = useMemo(() => {
+    return modificaciones.filter((m) => m.estado === 'PENDIENTE_GERENCIA_CEDENTE').length;
+  }, [modificaciones]);
+
+  const countPendientesPresupuestos = useMemo(() => {
     return modificaciones.filter((m) => m.estado === 'PENDIENTE_PRESUPUESTOS').length;
   }, [modificaciones]);
+
+  const countPendientes = countPendientesPresupuestos;
 
   const countAprobadas = useMemo(() => {
     return modificaciones.filter((m) => m.estado === 'APROBADO').length;
@@ -233,11 +257,19 @@ export function useModificaciones() {
     return modificaciones.filter((m) => m.estado === 'RECHAZADO').length;
   }, [modificaciones]);
 
-  const totalMontoPendiente = useMemo(() => {
+  const totalMontoPendienteGerencia = useMemo(() => {
+    return modificaciones
+      .filter((m) => m.estado === 'PENDIENTE_GERENCIA_CEDENTE')
+      .reduce((acc, m) => acc + parseFloat(String(m.total_monto) || '0'), 0);
+  }, [modificaciones]);
+
+  const totalMontoPendientePresupuestos = useMemo(() => {
     return modificaciones
       .filter((m) => m.estado === 'PENDIENTE_PRESUPUESTOS')
       .reduce((acc, m) => acc + parseFloat(String(m.total_monto) || '0'), 0);
   }, [modificaciones]);
+
+  const totalMontoPendiente = totalMontoPendientePresupuestos;
 
   const totalMontoAprobado = useMemo(() => {
     return modificaciones
@@ -245,7 +277,7 @@ export function useModificaciones() {
       .reduce((acc, m) => acc + parseFloat(String(m.total_monto) || '0'), 0);
   }, [modificaciones]);
 
-  // Pendientes visibles en la página actual
+  // Pendientes visibles en la página actual para aprobación en lote por Presupuestos
   const pendingVisiblesEnPagina = useMemo(() => {
     return modificacionesPaginadas.filter((m) => m.estado === 'PENDIENTE_PRESUPUESTOS');
   }, [modificacionesPaginadas]);
@@ -278,6 +310,64 @@ export function useModificaciones() {
     );
   }, []);
 
+  // Verificar si el usuario actual puede autorizar/rechazar como Gerencia Cedente
+  const canAceptarGerencia = useCallback(
+    (mod: ModificacionPresupuestaria) => {
+      if (mod.estado !== 'PENDIENTE_GERENCIA_CEDENTE') return false;
+      if (isAdmin) return true;
+      if (isGerente && mod.area_cedente && Number(mod.area_cedente) === Number(userAreaId)) {
+        return true;
+      }
+      return false;
+    },
+    [isAdmin, isGerente, userAreaId]
+  );
+
+  // Aceptar Solicitud por parte de Gerencia Cedente
+  const handleAceptarGerencia = useCallback(
+    async (mod: ModificacionPresupuestaria, nota?: string) => {
+      if (!canAceptarGerencia(mod)) return;
+
+      const confirm = await alertService.confirm({
+        title: `¿Aceptar Petición de Transferencia ${mod.codigo}?`,
+        text: `Como Gerente del Área Cedente (${mod.area_cedente_nombre || 'su área'}), usted autoriza ceder ${new Intl.NumberFormat(
+          'es-BO',
+          { style: 'currency', currency: 'BOB' }
+        ).format(Number(mod.total_monto))} al área solicitante (${mod.area_nombre}). La solicitud pasará a Presupuestos para visto bueno final.`,
+        icon: 'question',
+        confirmButtonText: 'Sí, Aceptar y Pasar a Presupuestos',
+      });
+      if (!confirm) return;
+
+      setActionLoading(true);
+      try {
+        await modificacionesApi.aceptarGerencia(mod.id, { nota });
+        mostrarMensaje(
+          'success',
+          `Petición ${mod.codigo} aceptada por la Gerencia Cedente. Ha pasado a Presupuestos (En Espera).`
+        );
+        if (selectedModDetalle?.id === mod.id) {
+          setSelectedModDetalle((prev) =>
+            prev ? { ...prev, estado: 'PENDIENTE_PRESUPUESTOS' } : null
+          );
+        }
+        if (selectedGestionId) {
+          await cargarDatosModificaciones(selectedGestionId);
+        }
+      } catch (err: any) {
+        console.error(err);
+        const errMsg =
+          err?.response?.data?.non_field_errors?.[0] ||
+          err?.response?.data?.error ||
+          'Error al aceptar la solicitud inter-gerencias.';
+        mostrarMensaje('error', errMsg);
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [canAceptarGerencia, selectedModDetalle, selectedGestionId, cargarDatosModificaciones, mostrarMensaje]
+  );
+
   // Aprobación Masiva "De Golpe" (Presupuestos)
   const handleAprobarLote = useCallback(async () => {
     if (!canAprobar || selectedModIds.length === 0) return;
@@ -307,7 +397,7 @@ export function useModificaciones() {
     }
   }, [canAprobar, selectedModIds, selectedGestionId, cargarDatosModificaciones, mostrarMensaje]);
 
-  // Aprobación Individual
+  // Aprobación Individual por Presupuestos
   const handleAprobarIndividual = useCallback(
     async (mod: ModificacionPresupuestaria) => {
       if (!canAprobar) return;
@@ -342,14 +432,14 @@ export function useModificaciones() {
     [canAprobar, selectedModDetalle, selectedGestionId, cargarDatosModificaciones, mostrarMensaje]
   );
 
-  // Apertura modal de rechazo
+  // Apertura modal de rechazo (tanto para Gerencia Cedente como para Presupuestos)
   const handleOpenRechazoModal = useCallback((mod: ModificacionPresupuestaria) => {
     setModToReject(mod);
     setMotivoRechazo('');
     setShowRejectModal(true);
   }, []);
 
-  // Confirmar rechazo
+  // Confirmar rechazo (identifica si rechaza la Gerencia Cedente o Presupuestos)
   const handleConfirmarRechazo = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -360,20 +450,31 @@ export function useModificaciones() {
 
       setActionLoading(true);
       try {
-        await modificacionesApi.rechazarModificacion(modToReject.id, { motivo: motivoRechazo.trim() });
-        mostrarMensaje('success', `Modificación ${modToReject.codigo} rechazada.`);
+        if (modToReject.estado === 'PENDIENTE_GERENCIA_CEDENTE') {
+          await modificacionesApi.rechazarGerencia(modToReject.id, { motivo: motivoRechazo.trim() });
+          mostrarMensaje('success', `Petición ${modToReject.codigo} rechazada por la Gerencia Cedente.`);
+        } else {
+          await modificacionesApi.rechazarModificacion(modToReject.id, { motivo: motivoRechazo.trim() });
+          mostrarMensaje('success', `Modificación ${modToReject.codigo} rechazada por Presupuestos.`);
+        }
+
         setShowRejectModal(false);
         setModToReject(null);
         setSelectedModIds((prev) => prev.filter((id) => id !== modToReject.id));
         if (selectedModDetalle?.id === modToReject.id) {
-          setSelectedModDetalle((prev) => (prev ? { ...prev, estado: 'RECHAZADO', motivo_rechazo: motivoRechazo.trim() } : null));
+          setSelectedModDetalle((prev) =>
+            prev ? { ...prev, estado: 'RECHAZADO', motivo_rechazo: motivoRechazo.trim() } : null
+          );
         }
         if (selectedGestionId) {
           await cargarDatosModificaciones(selectedGestionId);
         }
       } catch (err: any) {
         console.error(err);
-        const errMsg = err?.response?.data?.non_field_errors?.[0] || 'Error al rechazar la modificación.';
+        const errMsg =
+          err?.response?.data?.non_field_errors?.[0] ||
+          err?.response?.data?.error ||
+          'Error al rechazar la modificación.';
         mostrarMensaje('error', errMsg);
       } finally {
         setActionLoading(false);
@@ -382,13 +483,20 @@ export function useModificaciones() {
     [modToReject, motivoRechazo, selectedModDetalle, selectedGestionId, cargarDatosModificaciones, mostrarMensaje]
   );
 
-  // Crear Modificación
+  // Crear Modificación (Intra o Inter-Área)
   const handleCrearModificacion = useCallback(
     async (payload: CrearModificacionPayload) => {
       setActionLoading(true);
       try {
         await modificacionesApi.createModificacion(payload);
-        mostrarMensaje('success', '¡Solicitud registrada con éxito! Enviada a Presupuestos (En Espera).');
+        if (payload.tipo === 'TRASPASO_INTER_AREA') {
+          mostrarMensaje(
+            'success',
+            '¡Solicitud inter-gerencias registrada con éxito! Enviada a la Gerencia Cedente para su revisión.'
+          );
+        } else {
+          mostrarMensaje('success', '¡Solicitud registrada con éxito! Enviada a Presupuestos (En Espera).');
+        }
         setShowCreateModal(false);
         if (selectedGestionId) {
           await cargarDatosModificaciones(selectedGestionId);
@@ -418,6 +526,7 @@ export function useModificaciones() {
     isGerente,
     canSolicitar,
     canAprobar,
+    canAceptarGerencia,
     isReadOnly,
     userAreaId,
     gestiones,
@@ -426,6 +535,8 @@ export function useModificaciones() {
     activeGestion,
     isGestionBloqueada,
     areas,
+    partidas,
+    operaciones,
     memorias,
     loading,
     actionLoading,
@@ -443,9 +554,13 @@ export function useModificaciones() {
     setCurrentPage,
     totalPages,
     PAGE_SIZE,
+    countPendientesGerencia,
+    countPendientesPresupuestos,
     countPendientes,
     countAprobadas,
     countRechazadas,
+    totalMontoPendienteGerencia,
+    totalMontoPendientePresupuestos,
     totalMontoPendiente,
     totalMontoAprobado,
     pendingVisiblesEnPagina,
@@ -457,6 +572,7 @@ export function useModificaciones() {
     handleToggleSelectRow,
     handleAprobarLote,
     handleAprobarIndividual,
+    handleAceptarGerencia,
     handleOpenRechazoModal,
     handleConfirmarRechazo,
     handleCrearModificacion,

@@ -1466,13 +1466,23 @@ export default function MemoriasPage() {
                       {(() => {
                         const sec = secciones.find((s) => s.id === Number(formMemoria.seccionId));
                         const areaId = (editingMemoria as any)?.area_id || (sec ? (sec.area || (sec as any).area_id) : (user?.area_id || null));
-                        let opsFiltradas = areaId
-                          ? operaciones.filter((o) => Number(o.area || (o as any).area_id) === Number(areaId))
-                          : operaciones;
 
-                        if (opsFiltradas.length === 0) {
-                          opsFiltradas = operaciones;
-                        }
+                        const currentGestionObj = gestiones.find((g) => g.id === Number(selectedGestionId || editingMemoria?.gestion));
+                        const targetAnio = currentGestionObj?.anio || (editingMemoria ? editingMemoria.gestion_anio : null);
+                        const targetGId = currentGestionObj?.id || (editingMemoria ? (typeof editingMemoria.gestion === 'object' ? (editingMemoria.gestion as any)?.id : editingMemoria.gestion) : null);
+
+                        let opsFiltradas = operaciones.filter((o) => {
+                          if (targetGId && o.gestion_id) {
+                            if (Number(o.gestion_id) !== Number(targetGId)) return false;
+                          } else if (targetAnio && o.gestion_anio) {
+                            if (Number(o.gestion_anio) !== Number(targetAnio)) return false;
+                          }
+                          if (areaId) {
+                            const oAreaId = typeof o.area === 'object' ? (o.area as any)?.id : o.area || (o as any).area_id;
+                            if (Number(oAreaId) !== Number(areaId)) return false;
+                          }
+                          return true;
+                        });
 
                         if (formMemoria.operacionId && !opsFiltradas.some((o) => o.id === Number(formMemoria.operacionId))) {
                           const opActual = operaciones.find((o) => o.id === Number(formMemoria.operacionId));

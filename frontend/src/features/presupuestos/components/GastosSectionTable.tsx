@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Receipt, Clock } from 'lucide-react';
+import { Receipt, Clock, Eye } from 'lucide-react';
 import { GastoAuxiliarItem } from '../types/presupuestos.types';
 import { Pagination } from '../../../components/commons/Pagination';
+import { GastoDetalleModal } from '../../ejecucion/components';
 
 interface GastosSectionTableProps {
   gastos: GastoAuxiliarItem[];
@@ -13,6 +14,7 @@ export const GastosSectionTable: React.FC<GastosSectionTableProps> = ({
   formatMoney,
 }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [selectedGasto, setSelectedGasto] = useState<GastoAuxiliarItem | null>(null);
   const pageSize = 10;
 
   const pagedGastos = React.useMemo(() => {
@@ -57,11 +59,16 @@ export const GastosSectionTable: React.FC<GastosSectionTableProps> = ({
                   <th className="py-3 px-4">N° Comprobante</th>
                   <th className="py-3 px-4">Justificación / Observación</th>
                   <th className="py-3 px-4 text-right">Monto Ejecutado</th>
+                  <th className="py-3 px-4 text-center">Detalle</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-theme-border">
                 {pagedGastos.map((gasto, index) => (
-                  <tr key={gasto.gasto_id || index} className="hover:bg-theme-border/20 transition-colors">
+                  <tr
+                    key={gasto.gasto_id || index}
+                    onClick={() => setSelectedGasto(gasto)}
+                    className="hover:bg-theme-border/20 transition-colors cursor-pointer"
+                  >
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-theme-muted bg-theme-base px-2 py-0.5 rounded border border-theme-border/60">
                         <Clock size={11} />
@@ -91,6 +98,19 @@ export const GastosSectionTable: React.FC<GastosSectionTableProps> = ({
                     <td className="py-3 px-4 text-right font-extrabold text-[13px] text-rose-600 dark:text-rose-400 whitespace-nowrap">
                       {formatMoney(gasto.monto)}
                     </td>
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedGasto(gasto);
+                        }}
+                        className="p-1.5 text-theme-muted hover:text-theme-primary hover:bg-theme-primary/10 rounded-lg transition-colors"
+                        title="Ver detalle del gasto"
+                      >
+                        <Eye size={15} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -102,6 +122,7 @@ export const GastosSectionTable: React.FC<GastosSectionTableProps> = ({
                   <td className="py-3 px-4 text-right text-rose-600 dark:text-rose-400 text-sm">
                     {formatMoney(totalGastado)}
                   </td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>
@@ -117,6 +138,13 @@ export const GastosSectionTable: React.FC<GastosSectionTableProps> = ({
           />
         </div>
       )}
+
+      {/* Modal Detalle de Gasto */}
+      <GastoDetalleModal
+        isOpen={Boolean(selectedGasto)}
+        onClose={() => setSelectedGasto(null)}
+        gasto={selectedGasto}
+      />
     </div>
   );
 };
