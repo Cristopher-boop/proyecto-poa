@@ -52,7 +52,7 @@ export const FlujoTrabajadoresMatrix: React.FC<FlujoTrabajadoresMatrixProps> = (
   const getRoleBadgeStyle = (rol: string) => {
     const r = rol.toUpperCase();
     if (r.includes('SUPERADMIN')) {
-      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20';
+      return 'bg-theme-primary/10 text-theme-primary border border-theme-primary/20';
     }
     if (r.includes('GERENTE') || r.includes('APROBADOR')) {
       return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';

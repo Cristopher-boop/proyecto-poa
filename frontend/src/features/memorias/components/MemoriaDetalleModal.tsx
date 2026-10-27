@@ -189,7 +189,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                     <h3 className="text-base font-bold text-theme-main font-mono">
                       Revisión de Memoria
                     </h3>
-                    <span className="font-mono font-bold text-xs bg-theme-base px-2 py-0.5 rounded border border-theme-border text-theme-main">
+                    <span className="font-mono font-bold text-xs text-theme-primary">
                       {fichaMemoria.codigo}
                     </span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded bg-theme-base border border-theme-border text-theme-main">
@@ -274,7 +274,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                       1. Partida Presupuestaria de Egreso
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-xs text-theme-primary bg-theme-base px-2 py-0.5 rounded border border-theme-border">
+                      <span className="font-mono font-bold text-xs text-theme-primary">
                         {fichaMemoria.partida_codigo || 'N/A'}
                       </span>
                       <span className="text-xs font-semibold text-theme-main line-clamp-1">
@@ -289,7 +289,7 @@ export const MemoriaDetalleModal = ({ memoriaId, onClose, onActionSuccess }: any
                       2. Operación POA Institucional
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-xs text-theme-main bg-theme-base px-2 py-0.5 rounded border border-theme-border">
+                      <span className="font-mono font-bold text-xs text-theme-primary">
                         {fichaMemoria.operacion_codigo ? `POA: ${fichaMemoria.operacion_codigo}` : 'Sin Operación'}
                       </span>
                       <span className="text-xs text-theme-main line-clamp-1">

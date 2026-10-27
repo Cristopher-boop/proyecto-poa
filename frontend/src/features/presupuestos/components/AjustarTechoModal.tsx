@@ -92,7 +92,7 @@ export const AjustarTechoModal: React.FC<AjustarTechoModalProps> = ({
         {/* Cabecera Informativa del Área */}
         <div className="p-3.5 rounded-xl bg-theme-base/60 border border-theme-border flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-theme-primary/10 text-theme-primary border border-theme-primary/20">
+            <span className="font-mono font-bold text-xs text-theme-primary">
               {presupuesto.area_codigo}
             </span>
             <h4 className="text-sm font-bold text-theme-main mt-1">{presupuesto.area_nombre}</h4>

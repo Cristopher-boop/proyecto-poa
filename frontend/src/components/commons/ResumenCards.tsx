@@ -6,7 +6,7 @@ export interface ResumenCardItem {
   value: React.ReactNode;
   subtitle?: React.ReactNode;
   icon: React.ReactNode;
-  color?: 'blue' | 'amber' | 'emerald' | 'rose' | 'indigo' | 'purple' | 'primary';
+  color?: 'blue' | 'amber' | 'emerald' | 'rose' | 'primary';
   progress?: {
     value: number; // Porcentaje de 0 a 100
     label?: string;
@@ -54,20 +54,6 @@ export const ResumenCards: React.FC<ResumenCardsProps> = ({
       bar: 'bg-rose-500',
       cardBorder: 'border-rose-200/80 dark:border-rose-900/40',
       cardBg: 'bg-rose-500/[0.02]',
-    },
-    indigo: {
-      bgIcon: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-      textValue: 'text-indigo-600 dark:text-indigo-400',
-      bar: 'bg-indigo-500',
-      cardBorder: 'border-theme-border',
-      cardBg: '',
-    },
-    purple: {
-      bgIcon: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-      textValue: 'text-purple-600 dark:text-purple-400',
-      bar: 'bg-purple-500',
-      cardBorder: 'border-theme-border',
-      cardBg: '',
     },
     primary: {
       bgIcon: 'bg-theme-primary/10 text-theme-primary',

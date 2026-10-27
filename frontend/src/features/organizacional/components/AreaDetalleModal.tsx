@@ -35,7 +35,7 @@ export const AreaDetalleModal: React.FC<AreaDetalleModalProps> = ({
       title="Detalles de la Gerencia / Unidad"
       subtitle="Ficha técnica institucional y organigrama de dependencias operativas"
       badge={
-        <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2.5 py-0.5 rounded-lg">
+        <span className="font-mono font-bold text-xs text-theme-primary">
           {area.codigo}
         </span>
       }
@@ -136,7 +136,7 @@ export const AreaDetalleModal: React.FC<AreaDetalleModalProps> = ({
             <div className="p-3 rounded-xl bg-theme-base border border-theme-border space-y-1.5 shadow-xs">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded">
+                  <span className="font-mono font-bold text-xs text-theme-primary">
                     {area.codigo}
                   </span>
                   <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 font-mono">

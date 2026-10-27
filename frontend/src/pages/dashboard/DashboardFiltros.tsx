@@ -75,7 +75,7 @@ export const DashboardFiltros: React.FC<DashboardFiltrosProps> = ({
   }, []);
 
   return (
-    <div className="card p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm">
+    <div className="card p-4 bg-theme-surface border border-theme-border rounded-2xl shadow-sm !overflow-visible relative z-20">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Título de la Sección de Filtros */}
         <div className="flex items-center gap-2 text-xs font-bold text-theme-main uppercase tracking-wider shrink-0">
@@ -111,6 +111,8 @@ export const DashboardFiltros: React.FC<DashboardFiltrosProps> = ({
               }}
               icon={<Calendar size={14} className="text-theme-muted" />}
               size="sm"
+              searchable={false}
+              menuMinWidth="150px"
               placeholder="Desde..."
             />
           </div>
@@ -127,6 +129,9 @@ export const DashboardFiltros: React.FC<DashboardFiltrosProps> = ({
               }}
               icon={<Calendar size={14} className="text-theme-muted" />}
               size="sm"
+              searchable={false}
+              align="right"
+              menuMinWidth="150px"
               placeholder="Hasta..."
             />
           </div>

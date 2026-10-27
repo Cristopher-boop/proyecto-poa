@@ -60,9 +60,9 @@ export const AuditoriaMacroOverview: React.FC<AuditoriaMacroOverviewProps> = ({
     },
     CERTIFICACIONES: {
       label: 'Certificaciones POA',
-      icon: <Award size={16} className="text-purple-500" />,
-      color: 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20',
-      barColor: 'bg-purple-500',
+      icon: <Award size={16} className="text-theme-primary" />,
+      color: 'text-theme-primary bg-theme-primary/10 border-theme-primary/20',
+      barColor: 'bg-theme-primary',
     },
     PRESUPUESTOS: {
       label: 'Techos & Presupuestos',

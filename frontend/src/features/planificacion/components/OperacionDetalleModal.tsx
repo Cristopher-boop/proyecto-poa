@@ -29,7 +29,7 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
       title="Detalle de la Operación"
       subtitle="Consulta técnica y articulación estratégica del Plan Operativo Anual (POA)"
       badge={
-        <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2.5 py-1 rounded-lg">
+        <span className="font-mono font-bold text-xs text-theme-primary">
           {operacion.codigo}
         </span>
       }
@@ -62,7 +62,7 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
                Código de Operación
             </span>
             <div className="flex items-center justify-between">
-              <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded">
+              <span className="font-mono font-bold text-xs text-theme-primary">
                 {operacion.codigo}
               </span>
               <span className="text-[10px] text-theme-muted">
@@ -163,7 +163,7 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
               Acción a Mediano Plazo (AMP - PEI)
             </span>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="font-mono font-bold text-xs bg-violet-50 text-violet-700 border border-violet-200/90 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60 px-2 py-0.5 rounded">
+              <span className="font-mono font-bold text-xs text-theme-primary">
                 {operacion.amp_codigo || 'AMP'}
               </span>
             </div>

@@ -47,7 +47,7 @@ export const PartidasResumen: React.FC<PartidasResumenProps> = ({ stats }) => {
       value: `${stats.totalGrupos} Grupos`,
       subtitle: 'Clasificadores por objeto de gasto',
       icon: <SlidersHorizontal size={18} />,
-      color: 'indigo',
+      color: 'blue',
     },
   ];
 

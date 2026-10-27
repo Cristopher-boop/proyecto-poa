@@ -337,7 +337,7 @@ export const NuevaGestionConTechosModal: React.FC<NuevaGestionConTechosModalProp
                   >
                     {/* Código y Nombre */}
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-theme-base border border-theme-border text-theme-main shrink-0">
+                      <span className="font-mono font-bold text-xs text-theme-primary shrink-0">
                         {a.codigo}
                       </span>
                       <p className="text-xs font-semibold text-theme-main truncate" title={a.nombre}>

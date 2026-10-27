@@ -305,14 +305,13 @@ export default function MemoriasPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 animate-in fade-in duration-200">
 
       {/* Cabecera Institucional Unificada */}
       <PageHeader
         icon={<BookOpen size={26} />}
         title="Módulo de Memorias de Cálculo"
         subtitle="Formulación, sustento técnico ítem por ítem y ciclo de aprobación para la Planificación Operativa Anual (POA)."
-        className="mb-6"
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <GestionSelector

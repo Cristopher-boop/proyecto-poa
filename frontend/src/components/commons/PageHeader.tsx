@@ -23,7 +23,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-2xl border border-theme-border bg-theme-surface p-5 sm:p-6 shadow-sm relative ${className}`}
+      className={`rounded-2xl border border-theme-border bg-theme-surface px-6 py-5 min-h-[112px] flex flex-col justify-center shadow-sm relative ${className}`}
     >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3.5">

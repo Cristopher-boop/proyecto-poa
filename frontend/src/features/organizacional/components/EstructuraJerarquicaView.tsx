@@ -82,7 +82,7 @@ export const EstructuraJerarquicaView: React.FC<EstructuraJerarquicaViewProps> =
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded-md">
+                    <span className="font-mono font-bold text-xs text-theme-primary">
                       {item.codigo}
                     </span>
 

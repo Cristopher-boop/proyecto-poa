@@ -18,7 +18,7 @@ import { Dropdown, DropdownItem } from '../../../components/commons';
 
 const getRoleBadgeStyle = (rol: string, isSuper?: boolean) => {
   if (isSuper) {
-    return 'bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-500/30 dark:border-purple-400/30';
+    return 'bg-theme-primary/10 text-theme-primary border-theme-primary/30';
   }
   const r = (rol || '').toUpperCase();
   if (r.includes('GERENTE') || r.includes('APROBADOR')) {

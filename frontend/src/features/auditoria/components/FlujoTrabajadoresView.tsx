@@ -54,7 +54,7 @@ export const FlujoTrabajadoresView: React.FC<FlujoTrabajadoresViewProps> = ({
   const getRoleBadgeStyle = (rol: string) => {
     const r = rol.toUpperCase();
     if (r.includes('SUPERADMIN')) {
-      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+      return 'bg-theme-primary/10 text-theme-primary border-theme-primary/20';
     }
     if (r.includes('GERENTE') || r.includes('APROBADOR')) {
       return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
@@ -269,7 +269,7 @@ export const FlujoTrabajadoresView: React.FC<FlujoTrabajadoresViewProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => onOpenWorkerModal(worker.id)}
-                  className="w-full flex items-center justify-center gap-1.5 font-semibold text-xs mt-2 group-hover:bg-theme-primary group-hover:text-white group-hover:border-theme-primary transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-1.5 font-semibold text-xs mt-2 group-hover:bg-theme-primary group-hover:text-theme-primaryText group-hover:border-theme-primary transition-all cursor-pointer"
                 >
                   <span>Ver Expediente Operativo</span>
                   <ArrowRight size={13} />

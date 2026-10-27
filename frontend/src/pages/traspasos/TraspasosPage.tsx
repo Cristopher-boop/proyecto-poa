@@ -89,7 +89,7 @@ export default function TraspasosPage() {
   } = useModificaciones();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 animate-in fade-in duration-200">
       {/* Mensaje Feedback Toast */}
       {feedbackMsg && (
         <div

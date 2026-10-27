@@ -227,7 +227,7 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
       id: a.id,
       label: a.nombre,
       badge: a.codigo,
-      badgeClassName: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 font-mono text-[10px]',
+      badgeClassName: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono text-[10px]',
       sublabel: `${a.tipo || 'Gerencia/Unidad'} cedente`,
     }));
   }, [areasCedentesDisponibles]);
@@ -263,7 +263,7 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
       id: p.id,
       label: `${p.codigo} - ${p.nombre}`,
       badge: 'Partida Oficial',
-      badgeClassName: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 font-mono text-[10px]',
+      badgeClassName: 'bg-theme-primary/10 text-theme-primary border border-theme-primary/20 font-mono text-[10px]',
       sublabel: p.descripcion || undefined,
     }));
   }, [partidasEgresos]);
@@ -516,11 +516,6 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
             disabled={actionLoading || !isCuadrado}
             loading={actionLoading}
             icon={<CheckCircle2 size={16} />}
-            className={
-              tipoModificacion === 'TRASPASO_INTER_AREA'
-                ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                : undefined
-            }
           >
             {tipoModificacion === 'TRASPASO_INTER_AREA'
               ? 'Enviar a Gerencia Cedente (En Espera)'
@@ -553,11 +548,11 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
                 <div
                   className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                     tipoModificacion === 'TRASPASO_INTRA_AREA'
-                      ? 'border-theme-primary bg-theme-primary text-white'
+                      ? 'border-theme-primary bg-theme-primary text-theme-primaryText'
                       : 'border-theme-muted'
                   }`}
                 >
-                  {tipoModificacion === 'TRASPASO_INTRA_AREA' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  {tipoModificacion === 'TRASPASO_INTRA_AREA' && <div className="w-1.5 h-1.5 rounded-full bg-theme-primaryText" />}
                 </div>
                 <span className="font-bold text-xs text-theme-main">Traspaso Interno (Misma Gerencia)</span>
               </div>
@@ -574,7 +569,7 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
               }}
               className={`p-3.5 rounded-xl border text-left transition-all ${
                 tipoModificacion === 'TRASPASO_INTER_AREA'
-                  ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500 shadow-sm'
+                  ? 'border-amber-500/60 bg-amber-500/10 ring-1 ring-amber-500/60 shadow-sm'
                   : 'border-theme-border bg-theme-surface hover:bg-theme-border/30'
               }`}
             >
@@ -582,13 +577,13 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
                 <div
                   className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                     tipoModificacion === 'TRASPASO_INTER_AREA'
-                      ? 'border-indigo-600 bg-indigo-600 text-white'
+                      ? 'border-amber-600 bg-amber-600 text-white'
                       : 'border-theme-muted'
                   }`}
                 >
                   {tipoModificacion === 'TRASPASO_INTER_AREA' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </div>
-                <span className="font-bold text-xs text-indigo-700 dark:text-indigo-400">
+                <span className="font-bold text-xs text-amber-700 dark:text-amber-400">
                   Solicitud Inter-Gerencias (Fuerza Mayor)
                 </span>
               </div>
@@ -601,8 +596,8 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
 
         {/* Banner Informativo del Flujo Seleccionado */}
         {tipoModificacion === 'TRASPASO_INTER_AREA' ? (
-          <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-900 dark:text-indigo-200 text-xs space-y-1">
-            <div className="flex items-center gap-2 font-bold text-indigo-700 dark:text-indigo-400">
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs space-y-1">
+            <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-400">
               <Building2 size={16} />
               <span>Flujo de Fuerza Mayor: Solicitante ➔ Gerente Cedente ➔ Presupuestos</span>
             </div>
@@ -668,7 +663,7 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
           {/* Área Cedente (Solo visible si es Inter-Gerencias) */}
           {tipoModificacion === 'TRASPASO_INTER_AREA' && (
             <div>
-              <label className="block text-xs font-semibold uppercase text-indigo-700 dark:text-indigo-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase text-amber-700 dark:text-amber-400 mb-1.5">
                 2. Gerencia / Unidad Cedente (A quien se solicita) *
               </label>
               <Dropdown
@@ -882,8 +877,8 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
                           }}
                           className={`flex-1 py-1 px-2 rounded-md transition-colors flex items-center justify-center gap-1 ${
                             fila.esNuevaPartida
-                              ? 'bg-purple-600 text-white shadow-xs font-bold'
-                              : 'text-purple-600 dark:text-purple-400 hover:text-purple-700'
+                              ? 'bg-theme-primary text-theme-primaryText shadow-xs font-bold'
+                              : 'text-theme-muted hover:text-theme-main'
                           }`}
                         >
                           <Sparkles size={11} />
@@ -893,9 +888,9 @@ export const NuevaModificacionModal: React.FC<NuevaModificacionModalProps> = ({
 
                       {/* Contenido según tipo elegido */}
                       {fila.esNuevaPartida ? (
-                        <div className="space-y-2 pt-1 border-t border-purple-500/20">
+                        <div className="space-y-2 pt-1 border-t border-theme-border">
                           {/* Banner informativo de nueva partida en ejecución */}
-                          <div className="p-2 rounded bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-800 dark:text-purple-300">
+                          <div className="p-2.5 rounded-xl bg-theme-primary/10 border border-theme-primary/25 text-[11px] text-theme-main">
                             <strong>Partida creada durante la ejecución (sin detalles):</strong> Se creará una memoria directa
                             sin desglose analítico para habilitar presupuesto en esta partida oficial no formulada inicialmente.
                           </div>

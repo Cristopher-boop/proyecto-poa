@@ -82,7 +82,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
             <button
               onClick={onRefresh}
               disabled={refreshing || loading}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-theme-primary text-theme-primaryText dark:text-white hover:bg-theme-primaryHover transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
               title="Recargar datos de auditoría"
             >
               <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
@@ -163,7 +163,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
             onClick={() => onTabChange('BITACORA')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'BITACORA'
-                ? 'bg-theme-primary text-theme-primaryText dark:text-white shadow-sm font-bold'
+                ? 'bg-theme-primary text-theme-primaryText shadow-sm font-bold'
                 : 'text-theme-muted hover:text-theme-main hover:bg-theme-surface'
             }`}
           >
@@ -172,7 +172,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                 activeTab === 'BITACORA'
-                  ? 'bg-black/15 text-theme-primaryText dark:bg-white/20 dark:text-white'
+                  ? 'bg-black/20 text-theme-primaryText'
                   : 'bg-theme-border/40 text-theme-muted'
               }`}
             >
@@ -184,7 +184,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
             onClick={() => onTabChange('TRABAJADORES')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'TRABAJADORES'
-                ? 'bg-theme-primary text-theme-primaryText dark:text-white shadow-sm font-bold'
+                ? 'bg-theme-primary text-theme-primaryText shadow-sm font-bold'
                 : 'text-theme-muted hover:text-theme-main hover:bg-theme-surface'
             }`}
           >
@@ -193,7 +193,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                 activeTab === 'TRABAJADORES'
-                  ? 'bg-black/15 text-theme-primaryText dark:bg-white/20 dark:text-white'
+                  ? 'bg-black/20 text-theme-primaryText'
                   : 'bg-theme-border/40 text-theme-muted'
               }`}
             >
@@ -205,7 +205,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
             onClick={() => onTabChange('LOGINS')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'LOGINS'
-                ? 'bg-theme-primary text-theme-primaryText dark:text-white shadow-sm font-bold'
+                ? 'bg-theme-primary text-theme-primaryText shadow-sm font-bold'
                 : 'text-theme-muted hover:text-theme-main hover:bg-theme-surface'
             }`}
           >
@@ -214,7 +214,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                 activeTab === 'LOGINS'
-                  ? 'bg-black/15 text-theme-primaryText dark:bg-white/20 dark:text-white'
+                  ? 'bg-black/20 text-theme-primaryText'
                   : 'bg-theme-border/40 text-theme-muted'
               }`}
             >
@@ -240,7 +240,7 @@ export const AuditoriaControlBar: React.FC<AuditoriaControlBarProps> = ({
                 onClick={() => onTimeRangeChange(p.id as any)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                   timeRange === p.id
-                    ? 'bg-theme-primary text-theme-primaryText dark:text-white font-bold shadow-sm'
+                    ? 'bg-theme-primary text-theme-primaryText font-bold shadow-sm'
                     : 'text-theme-muted hover:text-theme-main hover:bg-theme-surface-subtle'
                 }`}
               >

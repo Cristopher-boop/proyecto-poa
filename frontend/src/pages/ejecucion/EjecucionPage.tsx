@@ -298,13 +298,12 @@ export default function EjecucionPage() {
   }, [areas, isGerente, user?.area_id]);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto animate-in fade-in duration-200 space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 animate-in fade-in duration-200">
       {/* Cabecera Principal Unificada */}
       <PageHeader
         icon={<TrendingDown size={28} />}
         title="Módulo de Gastos y Ejecución Presupuestaria"
         subtitle="Formulación de solicitudes de gasto institucional, registro contable de ejecuciones y monitoreo de saldos POA."
-        className="mb-6"
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
             <GestionSelector

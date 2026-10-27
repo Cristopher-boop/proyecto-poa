@@ -166,7 +166,7 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
                       >
                         <td className="py-3.5 px-4 min-w-[200px]">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-1.5 py-0.5 rounded">
+                            <span className="font-mono text-xs font-bold text-theme-primary shrink-0">
                               {p.area_codigo}
                             </span>
                             <span className="font-bold text-theme-main text-xs group-hover:text-theme-primary transition-colors">
@@ -353,7 +353,7 @@ export const PresupuestosTable: React.FC<PresupuestosTableProps> = ({
                             >
                               <td className="py-3 px-4 pl-10">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-1.5 py-0.5 rounded">
+                                  <span className="font-mono text-xs font-bold text-theme-primary shrink-0">
                                     {p.area_codigo}
                                   </span>
                                   <span className="text-theme-main text-xs group-hover:text-theme-primary transition-colors">

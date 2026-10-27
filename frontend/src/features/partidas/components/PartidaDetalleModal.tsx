@@ -32,7 +32,7 @@ export const PartidaDetalleModal: React.FC<PartidaDetalleModalProps> = ({
       title="Detalles de la Partida Presupuestaria"
       subtitle="Ficha técnica de consulta y clasificación oficial del clasificador"
       badge={
-        <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2.5 py-0.5 rounded-lg">
+        <span className="font-mono font-bold text-xs text-theme-primary">
           {partida.codigo}
         </span>
       }
@@ -64,7 +64,7 @@ export const PartidaDetalleModal: React.FC<PartidaDetalleModalProps> = ({
             <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block mb-1">
               Código Oficial
             </span>
-            <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded inline-block">
+            <span className="font-mono font-bold text-xs text-theme-primary inline-block">
               {partida.codigo}
             </span>
           </div>

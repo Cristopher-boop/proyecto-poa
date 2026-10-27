@@ -42,7 +42,7 @@ export const GastosTable: React.FC<GastosTableProps> = ({
       header: 'Nº Comprobante',
       width: '140px',
       render: (g) => (
-        <span className="font-mono font-bold text-xs bg-theme-base px-2 py-0.5 rounded border border-theme-border text-theme-main inline-block">
+        <span className="font-mono font-bold text-xs text-theme-primary inline-block">
           {g.comprobante_num || 'S/N'}
         </span>
       ),
@@ -76,7 +76,7 @@ export const GastosTable: React.FC<GastosTableProps> = ({
       header: 'Memoria POA',
       width: '160px',
       render: (g) => (
-        <span className="font-mono font-bold text-xs text-theme-main bg-theme-base/80 px-2.5 py-1 rounded-md border border-theme-border inline-block whitespace-nowrap">
+        <span className="font-mono font-bold text-xs text-theme-primary inline-block whitespace-nowrap">
           {g.memoria_codigo}
         </span>
       ),

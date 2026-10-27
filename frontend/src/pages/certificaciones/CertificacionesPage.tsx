@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Ban,
   XCircle,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useGestion } from '../../contexts/GestionContext';
@@ -80,6 +81,8 @@ export default function CertificacionesPage() {
   const canCancelGerente = isSuperAdmin || isGerente;
   // Permiso de impresión oficial: SOLO Planificación puede imprimir ("SOLO PLANIFICACION PUEDE IMPRIMIR, nadie mas")
   const canPrint = isPlanificador;
+  // Rol de unidad solicitante (Gerente, Elaborador, Trabajador)
+  const isSolicitanteArea = isGerente || isElaborador || isTrabajador;
 
   // Área del usuario (para Gerente, Trabajador y Elaborador)
   const userAreaId = user?.area_id || (user as any)?.seccion?.area_id || null;
@@ -368,6 +371,21 @@ export default function CertificacionesPage() {
 
   // Abrir vista previa oficial y detalle de Certificación POA
   const handleOpenDetalle = async (item: CertificacionPOA) => {
+    const isPendiente = [
+      'PENDIENTE_PLANIFICACION',
+      'PENDIENTE_PRESUPUESTOS',
+      'PENDIENTE_TESORERIA',
+    ].includes(item.estado);
+
+    // Los roles de área (Gerente, Elaborador, Trabajador) solo ven el número y estado en trámite; el detalle técnico está en evaluación interna
+    if (isSolicitanteArea && isPendiente) {
+      alertService.info(
+        'Certificación en Trámite',
+        'La solicitud se encuentra en evaluación por las áreas de control (Planificación, Presupuestos y Tesorería). Podrás consultar el detalle o boleta una vez emitida la resolución correspondiente.'
+      );
+      return;
+    }
+
     setSelectedCert(item);
     if (!item.codigo_certificacion && item.gestion && item.area) {
       try {
@@ -633,7 +651,7 @@ export default function CertificacionesPage() {
       minWidth: '140px',
       render: (row) => (
         <div className="flex items-center gap-1.5">
-          <span className="px-2 py-0.5 rounded-md bg-theme-base border border-theme-border text-xs font-mono font-bold text-theme-main">
+          <span className="font-mono font-bold text-xs text-theme-primary">
             {row.memoria_codigo || 'S/M'}
           </span>
         </div>
@@ -663,7 +681,7 @@ export default function CertificacionesPage() {
         }
         return (
           <span
-            className="font-mono font-bold text-xs text-theme-main bg-theme-base px-2.5 py-1 rounded-lg border border-theme-border truncate inline-block"
+            className="font-mono font-bold text-xs text-theme-primary truncate inline-block"
             title={row.codigo_certificacion}
           >
             {row.codigo_certificacion}
@@ -887,14 +905,23 @@ export default function CertificacionesPage() {
 
             {/* Ver Detalle y Seguimiento (Disponible cuando no se muestran ya los botones de acción rápida) */}
             {!(isPendPlanif && canCertify) && !(isPendPresup && canApprove) && !(isPendTesoreria && canDisburse) && (
-              <button
-                type="button"
-                onClick={() => handleOpenDetalle(row)}
-                title="Ver Vista Previa y Seguimiento del Trámite"
-                className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-theme-base transition"
-              >
-                <Eye size={15} />
-              </button>
+              isSolicitanteArea && (isPendPlanif || isPendPresup || isPendTesoreria) ? (
+                <span
+                  title="En evaluación por las áreas de control (Planificación, Presupuestos y Tesorería). Detalle en trámite."
+                  className="p-1.5 rounded-lg text-theme-muted/50 cursor-not-allowed inline-flex items-center"
+                >
+                  <Lock size={14} />
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleOpenDetalle(row)}
+                  title="Ver Vista Previa y Seguimiento del Trámite"
+                  className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-theme-base transition cursor-pointer"
+                >
+                  <Eye size={15} />
+                </button>
+              )
             )}
           </div>
         );
@@ -915,7 +942,7 @@ export default function CertificacionesPage() {
   }, [areas]);
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 animate-in fade-in duration-200">
       {/* ── PageHeader ────────────────────────────────────────────────────────── */}
       <PageHeader
         icon={<FileText size={24} />}

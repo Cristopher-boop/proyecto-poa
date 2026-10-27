@@ -79,7 +79,7 @@ export const MemoriasSaldoTable: React.FC<MemoriasSaldoTableProps> = ({
       header: 'Memoria POA',
       width: '160px',
       render: (m) => (
-        <span className="font-mono font-bold text-xs bg-theme-base px-2.5 py-1 rounded-md border border-theme-border text-theme-main inline-block whitespace-nowrap">
+        <span className="font-mono font-bold text-xs text-theme-primary inline-block whitespace-nowrap">
           {m.codigo}
         </span>
       ),

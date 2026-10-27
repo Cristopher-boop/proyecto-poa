@@ -28,7 +28,7 @@ import {
 const getRoleBadgeStyle = (rol: string) => {
   const r = (rol || '').toUpperCase();
   if (r.includes('SUPER')) {
-    return 'bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/30 dark:border-purple-400/25';
+    return 'bg-theme-primary/10 text-theme-primary border border-theme-primary/30';
   }
   if (r.includes('ADMIN') || r.includes('GERENTE')) {
     return 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/25';
@@ -231,7 +231,7 @@ export const TrabajadorWorkflowModal: React.FC<TrabajadorWorkflowModalProps> = (
       width: '130px',
       align: 'right',
       render: (row) => (
-        <span className="font-mono text-xs font-bold text-purple-600 dark:text-purple-400">
+        <span className="font-mono text-xs font-bold text-theme-primary">
           Bs. {row.monto_solicitado.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
         </span>
       ),
@@ -344,7 +344,7 @@ export const TrabajadorWorkflowModal: React.FC<TrabajadorWorkflowModalProps> = (
             onClick={() => setSubTab('MEMORIAS')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               subTab === 'MEMORIAS'
-                ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                ? 'border-theme-primary text-theme-primary font-bold'
                 : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
           >
@@ -356,7 +356,7 @@ export const TrabajadorWorkflowModal: React.FC<TrabajadorWorkflowModalProps> = (
             onClick={() => setSubTab('GASTOS')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               subTab === 'GASTOS'
-                ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                ? 'border-theme-primary text-theme-primary font-bold'
                 : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
           >
@@ -368,7 +368,7 @@ export const TrabajadorWorkflowModal: React.FC<TrabajadorWorkflowModalProps> = (
             onClick={() => setSubTab('TRASPASOS')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               subTab === 'TRASPASOS'
-                ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                ? 'border-theme-primary text-theme-primary font-bold'
                 : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
           >
@@ -380,7 +380,7 @@ export const TrabajadorWorkflowModal: React.FC<TrabajadorWorkflowModalProps> = (
             onClick={() => setSubTab('CERTIFICACIONES')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               subTab === 'CERTIFICACIONES'
-                ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                ? 'border-theme-primary text-theme-primary font-bold'
                 : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
           >
@@ -392,7 +392,7 @@ export const TrabajadorWorkflowModal: React.FC<TrabajadorWorkflowModalProps> = (
             onClick={() => setSubTab('BITACORA')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               subTab === 'BITACORA'
-                ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                ? 'border-theme-primary text-theme-primary font-bold'
                 : 'border-transparent text-theme-muted hover:text-theme-main'
             }`}
           >

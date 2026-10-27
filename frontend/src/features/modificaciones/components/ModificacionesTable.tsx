@@ -128,7 +128,7 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                         : isPendingPresupuestos
                         ? 'hover:bg-amber-500/[0.03]'
                         : isPendingGerencia
-                        ? 'hover:bg-indigo-500/[0.03]'
+                        ? 'hover:bg-amber-500/[0.03]'
                         : 'hover:bg-theme-border/20'
                     }`}
                   >
@@ -221,7 +221,7 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                             {mod.destinos[0].es_nueva_partida && (
                               <span
                                 title="Partida creada durante la ejecución (sin detalles)"
-                                className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30"
+                                className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-theme-primary/10 text-theme-primary border border-theme-primary/25"
                               >
                                 <Sparkles size={9} /> Nueva
                               </span>
@@ -240,7 +240,7 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                             {destCount} Partidas Receptoras
                           </span>
                           {mod.destinos.some((d) => d.es_nueva_partida) && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-theme-primary/10 text-theme-primary border border-theme-primary/25">
                               <Sparkles size={9} /> Incluye nueva partida
                             </span>
                           )}
@@ -373,7 +373,7 @@ export const ModificacionesTable: React.FC<ModificacionesTableProps> = ({
                     onClick={() => onPageChange(p as number)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                       currentPage === p
-                        ? 'border-theme-primary bg-theme-primary text-white'
+                        ? 'border-theme-primary bg-theme-primary text-theme-primaryText'
                         : 'border-theme-border text-theme-muted hover:text-theme-main'
                     }`}
                   >

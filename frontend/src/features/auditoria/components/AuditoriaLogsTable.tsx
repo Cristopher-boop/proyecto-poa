@@ -82,7 +82,7 @@ export const AuditoriaLogsTable: React.FC<AuditoriaLogsTableProps> = ({
       case 'MODIFICACIONES':
         return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800';
       case 'CERTIFICACIONES':
-        return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800';
+        return 'bg-theme-primary/10 text-theme-primary border-theme-primary/25 dark:bg-theme-primary/15 dark:text-theme-primary dark:border-theme-primary/30';
       case 'PRESUPUESTOS':
         return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800';
       case 'AUTENTICACIÓN':

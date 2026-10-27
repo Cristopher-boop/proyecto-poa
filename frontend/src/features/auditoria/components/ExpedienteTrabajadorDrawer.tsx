@@ -26,7 +26,7 @@ import { Button } from '../../../components/commons';
 const getRoleBadgeStyle = (rol: string) => {
   const r = (rol || '').toUpperCase();
   if (r.includes('SUPERADMIN')) {
-    return 'bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/30 dark:border-purple-400/30';
+    return 'bg-theme-primary/10 text-theme-primary border border-theme-primary/30';
   }
   if (r.includes('GERENTE') || r.includes('APROBADOR')) {
     return 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/30';
@@ -189,7 +189,7 @@ export const ExpedienteTrabajadorDrawer: React.FC<ExpedienteTrabajadorDrawerProp
                   onClick={() => setSubTab('MEMORIAS')}
                   className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
                     subTab === 'MEMORIAS'
-                      ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                      ? 'border-theme-primary text-theme-primary font-bold'
                       : 'border-transparent text-theme-muted hover:text-theme-main'
                   }`}
                 >
@@ -201,7 +201,7 @@ export const ExpedienteTrabajadorDrawer: React.FC<ExpedienteTrabajadorDrawerProp
                   onClick={() => setSubTab('GASTOS')}
                   className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
                     subTab === 'GASTOS'
-                      ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                      ? 'border-theme-primary text-theme-primary font-bold'
                       : 'border-transparent text-theme-muted hover:text-theme-main'
                   }`}
                 >
@@ -213,7 +213,7 @@ export const ExpedienteTrabajadorDrawer: React.FC<ExpedienteTrabajadorDrawerProp
                   onClick={() => setSubTab('TRASPASOS')}
                   className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
                     subTab === 'TRASPASOS'
-                      ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                      ? 'border-theme-primary text-theme-primary font-bold'
                       : 'border-transparent text-theme-muted hover:text-theme-main'
                   }`}
                 >
@@ -225,7 +225,7 @@ export const ExpedienteTrabajadorDrawer: React.FC<ExpedienteTrabajadorDrawerProp
                   onClick={() => setSubTab('CERTIFICACIONES')}
                   className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
                     subTab === 'CERTIFICACIONES'
-                      ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                      ? 'border-theme-primary text-theme-primary font-bold'
                       : 'border-transparent text-theme-muted hover:text-theme-main'
                   }`}
                 >
@@ -237,7 +237,7 @@ export const ExpedienteTrabajadorDrawer: React.FC<ExpedienteTrabajadorDrawerProp
                   onClick={() => setSubTab('BITACORA')}
                   className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
                     subTab === 'BITACORA'
-                      ? 'border-theme-primary text-theme-main dark:text-white font-bold'
+                      ? 'border-theme-primary text-theme-primary font-bold'
                       : 'border-transparent text-theme-muted hover:text-theme-main'
                   }`}
                 >
@@ -410,7 +410,7 @@ export const ExpedienteTrabajadorDrawer: React.FC<ExpedienteTrabajadorDrawerProp
                                   {c.estado}
                                 </span>
                               </td>
-                              <td className="py-2.5 px-3 text-right font-mono font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                              <td className="py-2.5 px-3 text-right font-mono font-bold text-theme-primary whitespace-nowrap">
                                 Bs. {c.monto_solicitado.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
                               </td>
                             </tr>

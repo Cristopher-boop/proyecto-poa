@@ -818,7 +818,7 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
 
                     <div className="shrink-0">
                       {isSelected ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded bg-theme-primary text-white">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded bg-theme-primary text-theme-primaryText">
                           <Check size={11} /> Asignada
                         </span>
                       ) : (
@@ -826,7 +826,7 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
                           size="sm"
                           variant="outline"
                           onClick={() => handleSelectMemoria(mem)}
-                          className="text-[10.5px] py-1 px-2 font-bold hover:bg-theme-primary hover:text-white"
+                          className="text-[10.5px] py-1 px-2 font-bold hover:bg-theme-primary hover:text-theme-primaryText"
                         >
                           Asignar
                         </Button>

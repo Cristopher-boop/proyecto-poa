@@ -158,7 +158,7 @@ export default function PresupuestosPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 animate-in fade-in duration-200">
       {/* Toast de Retroalimentación de Acciones */}
       {feedbackMsg && (
         <div

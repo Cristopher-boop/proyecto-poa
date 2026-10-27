@@ -145,7 +145,7 @@ export const PresupuestoSectionView: React.FC<PresupuestoSectionViewProps> = ({
           <div className="card p-5 bg-gradient-to-r from-theme-surface to-theme-base/30">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 font-mono uppercase">
+                <span className="font-mono font-bold text-xs text-theme-primary uppercase">
                   {detalleArea?.area_codigo} — Sección Operativa
                 </span>
                 <h2 className="text-xl font-bold text-theme-main mt-1.5">{seccionActivaData.seccion_nombre}</h2>
@@ -196,7 +196,7 @@ export const PresupuestoSectionView: React.FC<PresupuestoSectionViewProps> = ({
               onClick={() => onTabSeccionChange('presupuesto')}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 tabSeccion === 'presupuesto'
-                  ? 'border-theme-primary text-theme-main font-extrabold'
+                  ? 'border-theme-primary text-theme-primary font-extrabold'
                   : 'border-transparent text-theme-muted hover:text-theme-main'
               }`}
             >
@@ -218,7 +218,7 @@ export const PresupuestoSectionView: React.FC<PresupuestoSectionViewProps> = ({
               onClick={() => onTabSeccionChange('partidas')}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 tabSeccion === 'partidas'
-                  ? 'border-theme-primary text-theme-main font-extrabold'
+                  ? 'border-theme-primary text-theme-primary font-extrabold'
                   : 'border-transparent text-theme-muted hover:text-theme-main'
               }`}
             >

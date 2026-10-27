@@ -76,7 +76,7 @@ export const AreasList: React.FC<AreasListProps> = ({
                 >
                   {/* Código */}
                   <td className="py-3.5 px-4 font-mono font-bold whitespace-nowrap">
-                    <span className="bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2 py-0.5 rounded-md text-[11px]">
+                    <span className="font-mono font-bold text-xs text-theme-primary">
                       {area.codigo}
                     </span>
                   </td>

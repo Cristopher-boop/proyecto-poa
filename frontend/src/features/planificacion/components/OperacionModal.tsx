@@ -162,7 +162,7 @@ export const OperacionModal: React.FC<OperacionModalProps> = ({
       title={operacion ? 'Editar Operación Institucional' : 'Nueva Operación por Área'}
       subtitle="Defina la articulación de la operación con el Programa Institucional y la Acción a Corto Plazo"
       badge={
-        <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2.5 py-1 rounded-lg">
+        <span className="font-mono font-bold text-xs text-theme-primary">
           {displayCode}
         </span>
       }

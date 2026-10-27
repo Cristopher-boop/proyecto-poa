@@ -251,7 +251,7 @@ export const DashboardVisualAnalytics: React.FC<DashboardVisualAnalyticsProps> =
       return (
         <div className="card p-3 bg-theme-surface/95 backdrop-blur-sm border border-theme-border rounded-xl shadow-lg text-xs space-y-1.5 z-50">
           <div className="flex items-center gap-2 border-b border-theme-border pb-1">
-            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
+            <span className="font-mono text-xs font-bold text-theme-primary whitespace-nowrap shrink-0">
               {d.codigo}
             </span>
             <p className="font-bold text-theme-main truncate max-w-[200px]">{d.nombre}</p>

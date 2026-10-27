@@ -56,7 +56,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
               {/* Encabezado: Código, Programa, Estado y Acciones */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 px-2.5 py-1 rounded-lg">
+                  <span className="font-mono font-bold text-xs text-theme-primary">
                     {op.codigo}
                   </span>
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 font-mono">
@@ -140,7 +140,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
                 </div>
 
                 <div className="shrink-0 flex items-center gap-1">
-                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/90 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60">
+                  <span className="font-mono font-bold text-xs text-theme-primary">
                     {op.acp_codigo || 'ACP'}
                   </span>
                 </div>

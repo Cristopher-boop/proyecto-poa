@@ -15,8 +15,11 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowRightLeft,
+  Lock,
 } from 'lucide-react';
 import { PresupuestoArea } from '../../services/presupuestoService';
+import { useAuth } from '../../hooks/useAuth';
+import { alertService } from '../../utils/alerts';
 import { Dropdown, DropdownItem } from '../../components/commons';
 
 export interface DashboardMatrixExplorerProps {
@@ -54,6 +57,31 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
   activeGestionAnio,
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Control de permisos por rol institucional o área asignada
+  const rolClean = String(user?.rol_nombre || '').toUpperCase();
+  const isGlobalRole =
+    Boolean(user?.is_superuser) ||
+    ['ADMIN', 'PRESUPUEST', 'APROBAD', 'PLANIFIC', 'TESORER', 'FINAN'].some((k) =>
+      rolClean.includes(k)
+    );
+  const userAreaId = user?.area_id ?? null;
+
+  const canInspectArea = (targetAreaId: number) => {
+    return isGlobalRole || (userAreaId !== null && Number(userAreaId) === Number(targetAreaId));
+  };
+
+  const handleInspectArea = (targetAreaId: number, areaNombre?: string) => {
+    if (canInspectArea(targetAreaId)) {
+      navigate(`/presupuestos?area=${targetAreaId}`);
+    } else {
+      alertService.warning(
+        'Acceso Restringido',
+        `Solo tienes permisos para consultar los detalles y partidas de tu propia área (${user?.area_nombre || 'asignada'}).`
+      );
+    }
+  };
 
   // Tab activo de la matriz: 'gerencias' | 'programas' | 'radar'
   const [tabActivo, setTabActivo] = useState<'gerencias' | 'programas' | 'radar'>('gerencias');
@@ -256,7 +284,7 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
           <div className="flex items-center bg-theme-base/60 p-1 rounded-xl border border-theme-border text-xs font-semibold">
             <button
               onClick={() => setTabActivo('gerencias')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
                 tabActivo === 'gerencias'
                   ? 'bg-theme-primary text-theme-primaryText font-bold shadow-sm'
                   : 'text-theme-muted hover:text-theme-main'
@@ -264,14 +292,20 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
             >
               <Building2 size={13} />
               <span>Gerencias y Unidades</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-theme-base/80 text-theme-main font-mono">
+              <span
+                className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono transition-colors ${
+                  tabActivo === 'gerencias'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-theme-base text-theme-muted border border-theme-border/60'
+                }`}
+              >
                 {presupuestosCalculados.length}
               </span>
             </button>
 
             <button
               onClick={() => setTabActivo('programas')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
                 tabActivo === 'programas'
                   ? 'bg-theme-primary text-theme-primaryText font-bold shadow-sm'
                   : 'text-theme-muted hover:text-theme-main'
@@ -279,23 +313,35 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
             >
               <Layers size={13} />
               <span>Programas Institucionales</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-theme-base/80 text-theme-main font-mono">
+              <span
+                className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono transition-colors ${
+                  tabActivo === 'programas'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-theme-base text-theme-muted border border-theme-border/60'
+                }`}
+              >
                 {programasResumen.length}
               </span>
             </button>
 
             <button
               onClick={() => setTabActivo('radar')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
                 tabActivo === 'radar'
                   ? 'bg-theme-primary text-theme-primaryText font-bold shadow-sm'
                   : 'text-theme-muted hover:text-theme-main'
               }`}
             >
-              <AlertTriangle size={13} className="text-amber-500" />
+              <AlertTriangle size={13} className={tabActivo === 'radar' ? 'text-amber-300' : 'text-amber-500'} />
               <span>Desviaciones</span>
               {areasRadar.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-500 font-mono">
+                <span
+                  className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono transition-colors ${
+                    tabActivo === 'radar'
+                      ? 'bg-amber-400 text-slate-950 font-bold'
+                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/25'
+                  }`}
+                >
                   {areasRadar.length}
                 </span>
               )}
@@ -464,7 +510,7 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                       {/* Cabecera de la Tarjeta */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
+                          <span className="font-mono text-xs sm:text-[13px] font-bold text-theme-primary whitespace-nowrap shrink-0">
                             {area.area_codigo}
                           </span>
                           <span className="text-[10px] uppercase font-bold text-theme-muted tracking-wider truncate">
@@ -544,12 +590,20 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                       </span>
 
                       <button
-                        onClick={() => navigate(`/presupuestos?area=${area.area}`)}
-                        className="px-3 py-1 rounded-lg text-xs font-semibold bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap"
-                        title={`Explorar memorias y partidas de ${area.area_nombre}`}
+                        onClick={() => handleInspectArea(area.area, area.area_nombre)}
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap ${
+                          canInspectArea(area.area)
+                            ? 'bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover'
+                            : 'bg-theme-base/60 text-theme-muted hover:bg-theme-base border border-theme-border'
+                        }`}
+                        title={
+                          canInspectArea(area.area)
+                            ? `Explorar memorias y partidas de ${area.area_nombre}`
+                            : `Acceso reservado para ${area.area_nombre}`
+                        }
                       >
-                        <span>Explorar Área</span>
-                        <ArrowUpRight size={13} />
+                        <span>{canInspectArea(area.area) ? 'Explorar Área' : 'Área Restringida'}</span>
+                        {canInspectArea(area.area) ? <ArrowUpRight size={13} /> : <Lock size={12} />}
                       </button>
                     </div>
                   </div>
@@ -590,7 +644,7 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                           className="hover:bg-theme-base/30 transition-colors group"
                         >
                           <td className="py-3 px-4 whitespace-nowrap">
-                            <span className="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap inline-block bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
+                            <span className="font-mono text-xs sm:text-[13px] font-bold text-theme-primary whitespace-nowrap inline-block">
                               {area.area_codigo}
                             </span>
                           </td>
@@ -636,12 +690,20 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                           </td>
                           <td className="py-3 px-4 text-right whitespace-nowrap">
                             <button
-                              onClick={() => navigate(`/presupuestos?area=${area.area}`)}
-                              className="px-3 py-1 rounded-lg text-xs font-semibold bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap"
-                              title={`Ver ${area.area_nombre} en Presupuestos`}
+                              onClick={() => handleInspectArea(area.area, area.area_nombre)}
+                              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap ${
+                                canInspectArea(area.area)
+                                  ? 'bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover'
+                                  : 'bg-theme-base/60 text-theme-muted hover:bg-theme-base border border-theme-border'
+                              }`}
+                              title={
+                                canInspectArea(area.area)
+                                  ? `Ver ${area.area_nombre} en Presupuestos`
+                                  : `Detalle reservado para ${area.area_nombre}`
+                              }
                             >
                               <span>Ver</span>
-                              <ArrowUpRight size={12} />
+                              {canInspectArea(area.area) ? <ArrowUpRight size={12} /> : <Lock size={11} />}
                             </button>
                           </td>
                         </tr>
@@ -685,7 +747,7 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                       </div>
                       <div>
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
+                          <span className="font-mono text-xs sm:text-[13px] font-bold text-theme-primary whitespace-nowrap shrink-0">
                             {prog.codigo}
                           </span>
                           <h3 className="text-sm font-bold text-theme-main font-display truncate">
@@ -772,7 +834,7 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                               return (
                                 <tr key={a.id} className="hover:bg-theme-base/30 transition-colors">
                                   <td className="py-2.5 px-3 whitespace-nowrap">
-                                    <span className="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap inline-block bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
+                                    <span className="font-mono text-xs sm:text-[13px] font-bold text-theme-primary whitespace-nowrap inline-block">
                                       {a.area_codigo}
                                     </span>
                                   </td>
@@ -795,12 +857,20 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                                   </td>
                                   <td className="py-2.5 px-3 text-right whitespace-nowrap">
                                     <button
-                                      onClick={() => navigate(`/presupuestos?area=${a.area}`)}
-                                      className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap"
-                                      title={`Explorar ${a.area_nombre}`}
+                                      onClick={() => handleInspectArea(a.area, a.area_nombre)}
+                                      className={`px-2.5 py-0.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap ${
+                                        canInspectArea(a.area)
+                                          ? 'bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover'
+                                          : 'bg-theme-base/60 text-theme-muted hover:bg-theme-base border border-theme-border'
+                                      }`}
+                                      title={
+                                        canInspectArea(a.area)
+                                          ? `Explorar ${a.area_nombre}`
+                                          : `Detalle reservado para ${a.area_nombre}`
+                                      }
                                     >
                                       <span>Ver</span>
-                                      <ArrowUpRight size={12} />
+                                      {canInspectArea(a.area) ? <ArrowUpRight size={12} /> : <Lock size={11} />}
                                     </button>
                                   </td>
                                 </tr>
@@ -861,7 +931,7 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                     <div>
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
+                          <span className="font-mono text-xs sm:text-[13px] font-bold text-theme-primary whitespace-nowrap shrink-0">
                             {area.area_codigo}
                           </span>
                           <h4 className="text-sm font-bold text-theme-main font-display truncate">
@@ -921,12 +991,20 @@ export const DashboardMatrixExplorer: React.FC<DashboardMatrixExplorerProps> = (
                           </button>
                         )}
                         <button
-                          onClick={() => navigate(`/presupuestos?area=${area.area}`)}
-                          className="px-3 py-1 rounded-lg text-xs font-semibold bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover transition-all flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap"
-                          title={`Ver detalles de ${area.area_nombre}`}
+                          onClick={() => handleInspectArea(area.area, area.area_nombre)}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap ${
+                            canInspectArea(area.area)
+                              ? 'bg-theme-primary text-theme-primaryText hover:bg-theme-primaryHover'
+                              : 'bg-theme-base/60 text-theme-muted hover:bg-theme-base border border-theme-border'
+                          }`}
+                          title={
+                            canInspectArea(area.area)
+                              ? `Ver detalles de ${area.area_nombre}`
+                              : `Detalle reservado para ${area.area_nombre}`
+                          }
                         >
                           <span>Inspeccionar</span>
-                          <ArrowUpRight size={13} />
+                          {canInspectArea(area.area) ? <ArrowUpRight size={13} /> : <Lock size={12} />}
                         </button>
                       </div>
                     </div>

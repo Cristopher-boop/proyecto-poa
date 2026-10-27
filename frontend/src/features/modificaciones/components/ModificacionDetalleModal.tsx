@@ -350,7 +350,7 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
                           {dest.partida_nombre ? `- ${dest.partida_nombre}` : ''}
                         </p>
                         {dest.es_nueva_partida && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-theme-primary/10 text-theme-primary border border-theme-primary/25">
                             <Sparkles size={11} />
                             Partida creada durante la ejecución (sin detalles)
                           </span>
@@ -358,7 +358,7 @@ export const ModificacionDetalleModal: React.FC<ModificacionDetalleModalProps> =
                       </div>
                       <p className="text-[11px] text-theme-muted font-mono mt-0.5">
                         {dest.es_nueva_partida ? (
-                          <span className="text-purple-600 dark:text-purple-400 font-sans">
+                          <span className="text-theme-primary font-sans font-medium">
                             Asignación directa en ejecución • Sin desglose inicial
                           </span>
                         ) : (
