@@ -27,7 +27,7 @@ export const MESES_ANIO = [
   { num: 12, nombre: 'Diciembre' },
 ];
 
-import { SelectOption } from './TabsFilter';
+import { SelectOption, TabItem } from './TabsFilter';
 import { Dropdown, DropdownItem } from './Dropdown';
 
 export interface FilterOption extends SelectOption {
@@ -40,6 +40,14 @@ export interface FilterOption extends SelectOption {
 }
 
 export interface FilterPanelProps {
+  // Pestañas integradas opcionales (Estilo Modificaciones)
+  tabs?: TabItem[];
+  activeTab?: string;
+  onTabChange?: (tabId: string) => void;
+  filteredCount?: number;
+  totalCount?: number;
+  recordsLabel?: string;
+
   // Buscador general (desacoplado de filtros específicos)
   searchTerm: string;
   onSearchChange: (term: string) => void;
@@ -89,6 +97,12 @@ export interface FilterPanelProps {
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
+  tabs,
+  activeTab,
+  onTabChange,
+  filteredCount,
+  totalCount,
+  recordsLabel,
   searchTerm,
   onSearchChange,
   searchPlaceholder = 'Buscar por comprobante, observación...',
@@ -184,9 +198,49 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   }, [partidaOptions, partidaPlaceholder]);
 
   return (
-    <div className={`space-y-3 mb-6 ${className}`}>
+    <div className={`card p-4 border border-theme-border bg-theme-surface shadow-sm space-y-4 mb-6 ${className}`}>
+      {/* Pestañas de Estado integradas en cabecera (Estilo Modificaciones) */}
+      {tabs && tabs.length > 0 && onTabChange && (
+        <div className="flex border-b border-theme-border overflow-x-auto no-scrollbar gap-2">
+          {tabs.map((tab) => {
+            const isActive = tab.id === activeTab;
+            const activeClass =
+              tab.activeColorClass || 'border-theme-primary text-theme-main font-bold';
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onTabChange(tab.id)}
+                data-tab-id={tab.id}
+                data-tour={tab.tourId || `tour-tab-${tab.id.toLowerCase()}`}
+                className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+                  isActive
+                    ? activeClass
+                    : 'border-transparent text-theme-muted hover:text-theme-main'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+                {typeof tab.count === 'number' && (
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                      isActive
+                        ? (tab.activeBadgeClass || 'bg-theme-primary/15 text-theme-primary font-bold')
+                        : 'bg-theme-border/60 text-theme-main'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Barra Principal de Filtros */}
-      <div className="flex flex-col lg:flex-row gap-2.5 justify-between items-stretch lg:items-center bg-theme-surface p-3 rounded-2xl border border-theme-border shadow-sm relative z-20">
+      <div className="flex flex-col lg:flex-row gap-2.5 justify-between items-stretch lg:items-center relative z-20">
         <div className="flex flex-1 flex-wrap gap-2.5 items-center">
           {/* Buscador General Desacoplado */}
           <div className="relative flex-1 min-w-[220px]">
@@ -249,28 +303,26 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               />
             </div>
           )}
-
         </div>
 
-        {/* Acciones del Extremo Derecho: Filtros Avanzados a la izquierda de Refrescar, solo íconos */}
+        {/* Acciones del Extremo Derecho */}
         <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
-          {/* Botón Limpiar Filtros (Solo Ícono) */}
           {hasActiveFilters && (
             <button
               type="button"
               onClick={onResetFilters}
-              className="p-2 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all flex items-center justify-center border border-rose-300/60 dark:border-rose-900/60"
+              className="p-2 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all flex items-center justify-center border border-rose-300/60 dark:border-rose-900/60 cursor-pointer"
               title="Restablecer filtros"
             >
               <RotateCcw size={15} />
             </button>
           )}
 
-          {/* Botón Filtros Avanzados (Solo Ícono, a la izquierda de Refrescar) */}
+          {/* Botón Filtros Avanzados */}
           <button
             type="button"
             onClick={() => setShowAdvanced((prev) => !prev)}
-            className={`relative p-2 rounded-xl text-xs font-semibold flex items-center justify-center transition-all border ${
+            className={`relative p-2 rounded-xl text-xs font-semibold flex items-center justify-center transition-all border cursor-pointer ${
               showAdvanced || countActive > 0
                 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-900/60 ring-1 ring-rose-500/30'
                 : 'bg-theme-base text-theme-muted border-theme-border hover:text-theme-main hover:border-theme-border/80'
@@ -285,14 +337,22 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             )}
           </button>
 
-          {/* Botón Refrescar (Acción del extremo derecho) */}
+          {/* Botón Refrescar */}
           {actions}
+
+          {/* Texto Contador de Registros */}
+          {typeof filteredCount === 'number' && typeof totalCount === 'number' && gestionAnio && (
+            <p className="text-xs text-theme-muted font-medium shrink-0 ml-2 hidden sm:block">
+              Mostrando <strong className="text-theme-main">{filteredCount}</strong> de{' '}
+              <strong className="text-theme-main">{totalCount}</strong> {recordsLabel || 'registros'} en Gestión {gestionAnio}
+            </p>
+          )}
         </div>
       </div>
 
       {/* Panel Desplegable de Filtros Avanzados */}
       {showAdvanced && (
-        <div className="p-4 bg-theme-surface rounded-2xl border border-theme-border shadow-sm space-y-4 animate-in fade-in duration-200">
+        <div className="p-4 bg-theme-base rounded-2xl border border-theme-border shadow-sm space-y-4 animate-in fade-in duration-200">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* 1. Rango de Meses (Dentro del año fiscal) */}
             {onMesDesdeChange && onMesHastaChange && (
@@ -311,11 +371,11 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                         onMesDesdeChange(val);
                         if (val > mesHasta) onMesHastaChange(val);
                       }}
-                      className="w-full px-2.5 py-1.5 text-xs bg-theme-base border border-theme-border rounded-lg text-theme-main outline-none focus:border-theme-primary cursor-pointer"
+                      className="w-full text-xs bg-theme-surface border border-theme-border rounded-xl px-2.5 py-1.5 text-theme-main outline-none focus:ring-1 focus:ring-theme-primary/50 cursor-pointer"
                     >
                       {MESES_ANIO.map((m) => (
-                        <option key={`d-${m.num}`} value={m.num}>
-                          {m.nombre}
+                        <option key={m.num} value={m.num}>
+                          {m.num}. {m.nombre}
                         </option>
                       ))}
                     </select>
@@ -329,11 +389,11 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                         onMesHastaChange(val);
                         if (val < mesDesde) onMesDesdeChange(val);
                       }}
-                      className="w-full px-2.5 py-1.5 text-xs bg-theme-base border border-theme-border rounded-lg text-theme-main outline-none focus:border-theme-primary cursor-pointer"
+                      className="w-full text-xs bg-theme-surface border border-theme-border rounded-xl px-2.5 py-1.5 text-theme-main outline-none focus:ring-1 focus:ring-theme-primary/50 cursor-pointer"
                     >
                       {MESES_ANIO.map((m) => (
-                        <option key={`h-${m.num}`} value={m.num}>
-                          {m.nombre}
+                        <option key={m.num} value={m.num}>
+                          {m.num}. {m.nombre}
                         </option>
                       ))}
                     </select>
@@ -342,12 +402,12 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               </div>
             )}
 
-            {/* 2. Rango de Fechas Exactas (Limitado al año fiscal) */}
+            {/* 2. Rango de Fechas Exactas */}
             {onFechaDesdeChange && onFechaHastaChange && (
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-theme-muted">
                   <Calendar size={13} className="text-theme-primary" />
-                  Fechas Exactas {gestionAnio ? `(${gestionAnio})` : ''}
+                  Fechas Exactas
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
@@ -356,9 +416,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                       type="date"
                       value={fechaDesde}
                       min={minFechaFiscal}
-                      max={maxFechaFiscal}
+                      max={fechaHasta || maxFechaFiscal}
                       onChange={(e) => onFechaDesdeChange(e.target.value)}
-                      className="w-full px-2 py-1.5 text-xs bg-theme-base border border-theme-border rounded-lg text-theme-main outline-none focus:border-theme-primary"
+                      className="w-full text-xs bg-theme-surface border border-theme-border rounded-xl px-2.5 py-1.5 text-theme-main outline-none focus:ring-1 focus:ring-theme-primary/50"
                     />
                   </div>
                   <div>
@@ -366,71 +426,64 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                     <input
                       type="date"
                       value={fechaHasta}
-                      min={minFechaFiscal}
+                      min={fechaDesde || minFechaFiscal}
                       max={maxFechaFiscal}
                       onChange={(e) => onFechaHastaChange(e.target.value)}
-                      className="w-full px-2 py-1.5 text-xs bg-theme-base border border-theme-border rounded-lg text-theme-main outline-none focus:border-theme-primary"
+                      className="w-full text-xs bg-theme-surface border border-theme-border rounded-xl px-2.5 py-1.5 text-theme-main outline-none focus:ring-1 focus:ring-theme-primary/50"
                     />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 3. Rango de Montos Ejecutados (Min - Max) */}
+            {/* 3. Rango de Montos */}
             {onMontoMinChange && onMontoMaxChange && (
-              <div className="space-y-1.5 lg:col-span-2">
+              <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-theme-muted">
-                  <DollarSign size={13} className="text-rose-600 dark:text-rose-400" />
-                  Rango de Importe (Bs.)
+                  <DollarSign size={13} className="text-theme-primary" />
+                  Rango de Monto (Bs.)
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <span className="text-[10px] text-theme-muted block mb-0.5">Mínimo</span>
                     <input
                       type="number"
-                      step="0.01"
-                      min="0"
                       placeholder="0.00"
                       value={montoMin}
                       onChange={(e) => onMontoMinChange(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono bg-theme-base border border-theme-border rounded-lg text-theme-main outline-none focus:border-theme-primary"
+                      className="w-full text-xs bg-theme-surface border border-theme-border rounded-xl px-2.5 py-1.5 text-theme-main outline-none focus:ring-1 focus:ring-theme-primary/50"
                     />
                   </div>
                   <div>
                     <span className="text-[10px] text-theme-muted block mb-0.5">Máximo</span>
                     <input
                       type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="Sin límite"
+                      placeholder="Sin tope"
                       value={montoMax}
                       onChange={(e) => onMontoMaxChange(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono bg-theme-base border border-theme-border rounded-lg text-theme-main outline-none focus:border-theme-primary"
+                      className="w-full text-xs bg-theme-surface border border-theme-border rounded-xl px-2.5 py-1.5 text-theme-main outline-none focus:ring-1 focus:ring-theme-primary/50"
                     />
                   </div>
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Resumen de Criterios Aplicados */}
-          {hasActiveFilters && (
-            <div className="pt-2 border-t border-theme-border/50 flex items-center justify-between text-[11px] text-theme-muted">
-              <span>
-                Filtros activos:{' '}
-                <strong className="text-theme-main font-semibold">
-                  {countActive} criterio(s) aplicado(s)
-                </strong>
+            {/* 4. Resumen y Limpieza */}
+            <div className="flex flex-col justify-end space-y-1.5">
+              <span className="text-[10px] text-theme-muted block">
+                {countActive > 0 ? `${countActive} filtros aplicados` : 'Sin filtros avanzados activos'}
               </span>
               <button
                 type="button"
                 onClick={onResetFilters}
-                className="text-rose-600 dark:text-rose-400 hover:underline font-semibold"
+                disabled={!hasActiveFilters}
+                className="w-full py-1.5 px-3 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 disabled:opacity-40 disabled:cursor-not-allowed border border-rose-300/60 dark:border-rose-900/60 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
               >
-                Limpiar todos los filtros
+                <RotateCcw size={13} />
+                Restablecer Todo
               </button>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

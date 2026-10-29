@@ -8,6 +8,7 @@ export interface TabItem {
   icon?: React.ReactNode;
   activeColorClass?: string;
   activeBadgeClass?: string;
+  tourId?: string;
 }
 
 export interface SelectOption {
@@ -28,6 +29,11 @@ export interface TabsFilterProps {
   selectPlaceholder?: string;
   actions?: React.ReactNode;
   className?: string;
+  variant?: 'card' | 'plain';
+  totalCount?: number;
+  filteredCount?: number;
+  gestionAnio?: number;
+  recordsLabel?: string;
 }
 
 export const TabsFilter: React.FC<TabsFilterProps> = ({
@@ -43,82 +49,85 @@ export const TabsFilter: React.FC<TabsFilterProps> = ({
   selectPlaceholder = 'Todos',
   actions,
   className = '',
+  variant = 'card',
+  totalCount,
+  filteredCount,
+  gestionAnio,
+  recordsLabel,
 }) => {
+  const containerClass =
+    variant === 'plain'
+      ? `space-y-4 mb-6 ${className}`
+      : `card p-4 border border-theme-border bg-theme-surface shadow-sm space-y-4 mb-6 ${className}`;
+
   return (
-    <div className={`space-y-4 mb-6 ${className}`}>
-      {/* Pestañas horizontales y acciones rápidas */}
-      <div className="flex border-b border-theme-border justify-between items-center gap-2">
-        <div className="flex gap-1 overflow-x-auto no-scrollbar">
-          {tabs.map((tab) => {
-            const isActive = tab.id === activeTab;
-            const activeClass =
-              tab.activeColorClass || 'border-theme-primary text-theme-main font-bold';
+    <div className={containerClass}>
+      {/* Pestañas de Estado con Insignias Contadoras */}
+      <div className="flex border-b border-theme-border overflow-x-auto no-scrollbar gap-2">
+        {tabs.map((tab) => {
+          const isActive = tab.id === activeTab;
+          const activeClass =
+            tab.activeColorClass || 'border-theme-primary text-theme-main font-bold';
 
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all duration-150 ${
-                  isActive
-                    ? activeClass
-                    : 'border-transparent text-theme-muted hover:text-theme-main hover:border-theme-border'
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-                {typeof tab.count === 'number' && (
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isActive
-                        ? (tab.activeBadgeClass || 'bg-theme-primary/15 text-theme-primary')
-                        : 'bg-theme-border/40 text-theme-muted'
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {actions && !onSearchChange && !selectOptions && (
-          <div className="shrink-0 pb-1">
-            {actions}
-          </div>
-        )}
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onTabChange(tab.id)}
+              data-tab-id={tab.id}
+              data-tour={tab.tourId || `tour-tab-${tab.id.toLowerCase()}`}
+              className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+                isActive
+                  ? activeClass
+                  : 'border-transparent text-theme-muted hover:text-theme-main'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+              {typeof tab.count === 'number' && (
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                    isActive
+                      ? (tab.activeBadgeClass || 'bg-theme-primary/15 text-theme-primary font-bold')
+                      : 'bg-theme-border/60 text-theme-main'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Barra de Filtros y Acciones (solo si hay buscador o select de búsqueda) */}
-      {Boolean(onSearchChange || (selectOptions && onSelectChange)) && (
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
-          <div className="flex flex-1 flex-wrap gap-3 w-full sm:w-auto">
+      {/* Buscador, Selectores y Acciones */}
+      {Boolean(onSearchChange || (selectOptions && onSelectChange) || actions || (typeof filteredCount === 'number' && typeof totalCount === 'number')) && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto flex-1">
             {/* Buscador */}
             {onSearchChange && (
-              <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-theme-muted">
-                  <Search size={14} />
-                </div>
+              <div className="relative w-full sm:w-80">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted pointer-events-none" />
                 <input
                   type="text"
                   placeholder={searchPlaceholder}
                   value={searchTerm || ''}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="block w-full pl-9 pr-3 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:ring-2 focus:ring-theme-primary/40 focus:border-theme-primary outline-none transition-all"
+                  className="input-theme pl-9 text-xs w-full"
                 />
               </div>
             )}
 
-            {/* Select de Área u otro filtro */}
+            {/* Select simple */}
             {selectOptions && onSelectChange && (
-              <div className="relative flex-1 min-w-[180px] sm:max-w-xs">
+              <div className="relative w-full sm:w-64">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-theme-muted">
                   <Filter size={14} />
                 </div>
                 <select
                   value={selectedValue || 'todas'}
                   onChange={(e) => onSelectChange(e.target.value)}
-                  className="block w-full pl-9 pr-8 py-2 bg-theme-base border border-theme-border rounded-xl text-theme-main text-xs focus:ring-2 focus:ring-theme-primary/40 focus:border-theme-primary outline-none appearance-none transition-all cursor-pointer"
+                  className="input-theme pl-9 text-xs w-full cursor-pointer appearance-none"
                 >
                   <option value="todas">{selectPlaceholder}</option>
                   {selectOptions.map((opt) => (
@@ -129,13 +138,21 @@ export const TabsFilter: React.FC<TabsFilterProps> = ({
                 </select>
               </div>
             )}
+
+            {/* Acciones */}
+            {actions && (
+              <div className="flex items-center gap-2">
+                {actions}
+              </div>
+            )}
           </div>
 
-          {/* Acciones */}
-          {actions && (
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              {actions}
-            </div>
+          {/* Conteo de registros */}
+          {typeof filteredCount === 'number' && typeof totalCount === 'number' && gestionAnio && (
+            <p className="text-xs text-theme-muted font-medium shrink-0">
+              Mostrando <strong className="text-theme-main">{filteredCount}</strong> de{' '}
+              <strong className="text-theme-main">{totalCount}</strong> {recordsLabel || 'operaciones'} en Gestión {gestionAnio}
+            </p>
           )}
         </div>
       )}

@@ -1,3 +1,4 @@
+import { useGuia } from "../../features/guia-interactiva";
 import React from 'react';
 import {
   ArrowRightLeft,
@@ -6,6 +7,7 @@ import {
   AlertCircle,
   Lock,
   Eye,
+  HelpCircle,
 } from 'lucide-react';
 import { PageHeader, GestionSelector, Button } from '../../components/commons';
 import {
@@ -20,6 +22,7 @@ import {
 } from '../../features/modificaciones';
 
 export default function TraspasosPage() {
+  const { openGuia, activeLiveTour } = useGuia();
   const {
     user,
     isAdmin,
@@ -116,14 +119,23 @@ export default function TraspasosPage() {
               selectedGestionId={selectedGestionId}
               onSelectGestion={(id) => setSelectedGestionId(id)}
             />
+            <button
+              type="button"
+              onClick={() => openGuia('modificaciones', 'diagrama')}
+              className="px-3 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              title="Ver diagrama de flujo del proceso de Modificaciones Presupuestarias"
+            >
+              <HelpCircle size={15} /> Flujo del Módulo
+            </button>
 
-            {/* Botón Nueva Solicitud (Solo Gerente o Administrador) */}
-            {canSolicitar && (
+            {/* Botón Nueva Solicitud (Solo Gerente, Administrador o Modo Simulación) */}
+            {(canSolicitar || activeLiveTour?.moduloId === 'modificaciones') && (
               <Button
                 onClick={() => setShowCreateModal(true)}
                 disabled={isGestionBloqueada || loading}
                 icon={<Plus size={15} />}
                 variant="primary"
+                data-tour="tour-btn-traspaso"
                 title={
                   isGestionBloqueada
                     ? 'Las modificaciones solo están permitidas en gestiones En Ejecución'

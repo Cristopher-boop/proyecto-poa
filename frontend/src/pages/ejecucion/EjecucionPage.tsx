@@ -1,3 +1,4 @@
+import { useGuia } from "../../features/guia-interactiva";
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useGestion } from '../../contexts/GestionContext';
@@ -21,6 +22,8 @@ import {
   Button,
   PageHeader,
   GestionSelector,
+  ResumenCards,
+  ResumenCardItem,
 } from '../../components/commons';
 import { certificacionService } from '../../services/certificacionService';
 import { CertificacionPOA, CertificacionFormData } from '../../types/certificacion';
@@ -34,9 +37,13 @@ import {
   RefreshCw,
   Lock,
   FileText,
+  HelpCircle,
+  WalletCards,
+  Coins,
 } from 'lucide-react';
 
 export default function EjecucionPage() {
+  const { openGuia, activeLiveTour } = useGuia();
   const { user } = useAuth();
   const { gestiones, gestionActiva, gestionActivaId, setGestionActivaId, isGestionBloqueada } =
     useGestion();
@@ -252,33 +259,114 @@ export default function EjecucionPage() {
     setShowModalGasto(true);
   };
 
+  const formatMoney = (val: number | string) => {
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    return new Intl.NumberFormat('es-BO', {
+      style: 'currency',
+      currency: 'BOB',
+      minimumFractionDigits: 2,
+    }).format(num || 0);
+  };
+
+  const kpiItems: ResumenCardItem[] = useMemo(() => [
+    {
+      id: 'techo-vigente',
+      title: 'Techo Vigente (Presupuestos)',
+      value: formatMoney(metrics.totalInicial),
+      subtitle: 'Presupuesto total programado',
+      icon: <WalletCards size={18} />,
+      color: 'blue',
+    },
+    {
+      id: 'gastado',
+      title: 'Gasto Ejecutado (Devengado)',
+      value: formatMoney(metrics.totalGastado),
+      subtitle: `${metrics.pctGlobal.toFixed(1)}% ejecutado formalmente`,
+      icon: <Receipt size={18} />,
+      color: 'rose',
+      progress: {
+        value: metrics.pctGlobal,
+        label: `${metrics.pctGlobal.toFixed(1)}%`,
+      },
+    },
+    {
+      id: 'disponible',
+      title: 'Saldo Disponible Líquido',
+      value: formatMoney(metrics.totalDisponible),
+      subtitle: 'Habilitado para nuevas solicitudes',
+      icon: <Coins size={18} />,
+      color: 'emerald',
+    },
+    {
+      id: 'ejecucion-pct',
+      title: 'Eficacia Presupuestaria',
+      value: `${metrics.pctGlobal.toFixed(1)}%`,
+      subtitle: metrics.pctGlobal >= 70 ? 'Ritmo óptimo institucional' : 'En seguimiento operativo',
+      icon: <TrendingDown size={18} />,
+      color: metrics.pctGlobal >= 70 ? 'emerald' : metrics.pctGlobal >= 40 ? 'amber' : 'blue',
+    },
+  ], [metrics]);
+
   // Pestañas dinámicas
   const tabs: TabItem[] = [
     {
       id: 'solicitudes',
       label: 'Solicitudes de Gasto',
       count: solicitudesFiltradas.length,
-      icon: <FileText size={16} />,
-      activeColorClass: 'border-theme-primary text-theme-primary font-bold bg-theme-primary/[0.04]',
-      activeBadgeClass: 'bg-theme-primary/15 text-theme-primary font-bold',
+      icon: <FileText size={13} />,
+      activeColorClass: 'border-theme-primary text-theme-main font-bold',
+      activeBadgeClass: 'bg-theme-primary/15 text-theme-primary font-bold font-mono',
+      tourId: 'tour-tab-solicitudes',
     },
     {
       id: 'gastos',
       label: 'Gastos Ejecutados',
       count: metrics.isFiltered ? gastosFiltrados.length : gastos.length,
-      icon: <Receipt size={16} />,
-      activeColorClass: 'border-rose-500 text-rose-600 dark:text-rose-400 font-bold bg-rose-500/[0.04]',
-      activeBadgeClass: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold',
+      icon: <Receipt size={13} />,
+      activeColorClass: 'border-rose-500 text-rose-600 dark:text-rose-400 font-bold',
+      activeBadgeClass: 'bg-rose-500/20 text-rose-700 dark:text-rose-400 font-bold font-mono',
+      tourId: 'tour-tab-gastos',
     },
     {
       id: 'memorias',
       label: 'Memorias con Saldo',
       count: renglonesFiltrados.length,
-      icon: <BookOpen size={16} />,
-      activeColorClass: 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/[0.04]',
-      activeBadgeClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold',
+      icon: <BookOpen size={13} />,
+      activeColorClass: 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold',
+      activeBadgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold font-mono',
+      tourId: 'tour-tab-memorias',
     },
   ];
+
+  const currentTabCounts = useMemo(() => {
+    if (filters.activeTab === 'solicitudes') {
+      return {
+        filtered: solicitudesFiltradas.length,
+        total: solicitudes.length,
+        label: 'solicitudes',
+      };
+    }
+    if (filters.activeTab === 'gastos') {
+      return {
+        filtered: gastosFiltrados.length,
+        total: gastos.length,
+        label: 'gastos contables',
+      };
+    }
+    return {
+      filtered: renglonesFiltrados.length,
+      total: renglonesDisponibles.length,
+      label: 'memorias con saldo',
+    };
+  }, [
+    filters.activeTab,
+    solicitudesFiltradas.length,
+    solicitudes.length,
+    gastosFiltrados.length,
+    gastos.length,
+    renglonesFiltrados.length,
+    renglonesDisponibles.length,
+  ]);
 
   const areaOptions = useMemo(() => {
     if (isGerente && user?.area_id) {
@@ -311,6 +399,14 @@ export default function EjecucionPage() {
               selectedGestionId={gestionActivaId}
               onSelectGestion={(id) => setGestionActivaId(id)}
             />
+            <button
+              type="button"
+              onClick={() => openGuia('ejecucion', 'diagrama')}
+              className="px-3 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              title="Ver diagrama de flujo del proceso de Ejecución y Pagos"
+            >
+              <HelpCircle size={15} /> Flujo del Módulo
+            </button>
 
             {/* Botón Solicitar Gasto (Gerente o Admin) */}
             {canSolicitar && (
@@ -353,8 +449,19 @@ export default function EjecucionPage() {
         )}
       </PageHeader>
 
-      {/* Panel de Filtros Avanzados */}
+      {/* Tarjetas KPI de Ejecución Institucional con ResumenCards */}
+      <div data-tour="tour-kpis-ejecucion">
+        <ResumenCards items={kpiItems} columns={4} />
+      </div>
+
+      {/* Panel Unificado de Pestañas y Filtros */}
       <FilterPanel
+        tabs={tabs}
+        activeTab={filters.activeTab}
+        onTabChange={(id) => filters.setActiveTab(id as any)}
+        totalCount={currentTabCounts.total}
+        filteredCount={currentTabCounts.filtered}
+        recordsLabel={currentTabCounts.label}
         searchTerm={filters.searchTerm}
         onSearchChange={filters.setSearchTerm}
         searchPlaceholder={
@@ -402,12 +509,7 @@ export default function EjecucionPage() {
         }
       />
 
-      {/* Navegador de Pestañas */}
-      <TabsFilter
-        tabs={tabs}
-        activeTab={filters.activeTab}
-        onTabChange={(id) => filters.setActiveTab(id as any)}
-      />
+
 
       {/* Contenido de Tablas por Pestaña */}
       {filters.activeTab === 'solicitudes' && (

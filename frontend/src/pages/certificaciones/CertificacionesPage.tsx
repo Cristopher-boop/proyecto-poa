@@ -1,3 +1,4 @@
+import { useGuia } from "../../features/guia-interactiva";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   FileText,
@@ -14,6 +15,8 @@ import {
   Ban,
   XCircle,
   Lock,
+  HelpCircle,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useGestion } from '../../contexts/GestionContext';
@@ -46,6 +49,7 @@ import {
 import type { ModoRechazo } from '../../features/certificaciones/components/CertificacionRechazarModal';
 
 export default function CertificacionesPage() {
+  const { openGuia, activeLiveTour } = useGuia();
   const { user } = useAuth();
   const rolName = (user?.rol_nombre || '').toUpperCase().trim();
   const rolClean = rolName.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -213,6 +217,17 @@ export default function CertificacionesPage() {
 
   // ── 6. Definición Dinámica de Pestañas según Rol ─────────────────────────────
   const tabs = useMemo(() => {
+    if (activeLiveTour?.moduloId === 'certificaciones') {
+      return [
+        { id: 'TODAS', label: 'Todas', count: counts.total, tourId: 'tour-tab-todas' },
+        { id: 'PENDIENTE_PLANIFICACION', label: 'Pendientes Planificación', count: counts.pendiente_planificacion, tourId: 'tour-tab-pendiente_planificacion' },
+        { id: 'PENDIENTE_PRESUPUESTOS', label: 'Pendientes Presupuestos', count: counts.pendiente_presupuestos, tourId: 'tour-tab-pendiente_presupuestos' },
+        { id: 'PENDIENTE_TESORERIA', label: 'En Tesorería (Lic. Zaida)', count: counts.pendiente_tesoreria, tourId: 'tour-tab-pendiente_tesoreria' },
+        { id: 'APROBADO', label: 'Aprobadas / Pagadas', count: counts.aprobado, tourId: 'tour-tab-aprobado' },
+        { id: 'RECHAZADO', label: 'Rechazadas', count: counts.rechazado_o_anulado, tourId: 'tour-tab-rechazado' },
+      ];
+    }
+
     if (isTrabajador || isElaborador) {
       // Trabajador / Elaborador: Solo ve sus certificados, observaciones y aprobadas de su área
       return [
@@ -952,13 +967,38 @@ export default function CertificacionesPage() {
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {/* Selector de Gestión Fiscal */}
-            {gestiones.length > 0 && (
+            {gestiones.length > 0 && (<>
+
               <GestionSelector
                 gestiones={gestiones}
                 selectedGestionId={selectedGestionId}
                 onSelectGestion={(id) => setSelectedGestionId(id)}
               />
+            <button
+              type="button"
+              onClick={() => openGuia('certificaciones', 'diagrama')}
+              className="px-3 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              title="Ver diagrama de flujo del proceso de Certificaciones POA"
+            >
+              <HelpCircle size={15} /> Flujo del Módulo
+            </button>
+
+            {(canCreate || activeLiveTour?.moduloId === 'certificaciones') && (
+              <Button
+                variant="primary"
+                size="sm"
+                data-tour="tour-btn-certificacion"
+                onClick={() => {
+                  setSelectedCert(null);
+                  setFormModalOpen(true);
+                }}
+                icon={<Plus size={15} />}
+                className="font-bold shadow-xs"
+              >
+                + Nueva Solicitud
+              </Button>
             )}
+            </>)}
           </div>
         }
       />
@@ -969,6 +1009,10 @@ export default function CertificacionesPage() {
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId)}
+          totalCount={certificaciones.length}
+          filteredCount={filteredCertificaciones.length}
+          gestionAnio={gestiones.find((g) => g.id === selectedGestionId)?.anio}
+          recordsLabel="certificaciones"
           searchTerm={searchTerm}
           onSearchChange={(term) => setSearchTerm(term)}
           searchPlaceholder="Buscar por CITE, código, gerencia, partida, concepto..."

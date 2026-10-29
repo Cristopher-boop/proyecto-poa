@@ -20,13 +20,15 @@ import { MemoriaDetalleModal } from '../../features/memorias/components/MemoriaD
 import { MemoriaExcelDuplicatorModal } from '../../features/memorias/components/MemoriaExcelDuplicatorModal';
 import { CopiaGastosModal } from '../../features/memorias/components/CopiaGastosModal';
 import { AlertaRecorteTecho } from '../../features/memorias/components/AlertaRecorteTecho';
-import { BookOpen, Plus, Copy } from 'lucide-react';
+import { BookOpen, Plus, Copy, HelpCircle, AlertCircle } from 'lucide-react';
+import { useGuia } from '../../features/guia-interactiva';
 import { Dropdown, PageHeader, GestionSelector } from '../../components/commons';
 import { useGestion } from '../../contexts/GestionContext';
 import { memoriasApi } from '../../features/memorias/api/memoriasApi';
 
 export default function MemoriasPage() {
   const { user } = useAuth();
+  const { openGuia, activeLiveTour } = useGuia();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('todas');
   const [searchTerm, setSearchTerm] = useState('');
@@ -314,11 +316,21 @@ export default function MemoriasPage() {
         subtitle="Formulación, sustento técnico ítem por ítem y ciclo de aprobación para la Planificación Operativa Anual (POA)."
         actions={
           <div className="flex flex-wrap items-center gap-3">
-            <GestionSelector
-              gestiones={gestiones}
-              selectedGestionId={selectedGestionId}
-              onSelectGestion={(id) => setSelectedGestionId(id)}
-            />
+            <div data-tour="tour-gestion">
+              <GestionSelector
+                gestiones={gestiones}
+                selectedGestionId={selectedGestionId}
+                onSelectGestion={(id) => setSelectedGestionId(id)}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => openGuia('memorias', 'diagrama')}
+              className="px-3 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              title="Ver diagrama de flujo del proceso de Memorias de Cálculo"
+            >
+              <HelpCircle size={15} /> Flujo del Módulo
+            </button>
 
             {canCreate && (
               isRecorteTechoActive ? (
@@ -331,6 +343,7 @@ export default function MemoriasPage() {
                   <button
                     type="button"
                     onClick={() => setShowCopiaGastosModal(true)}
+                    data-tour="tour-btn-duplicar"
                     disabled={isGestionBloqueada}
                     className="px-3.5 py-2 rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
                     title="Duplicar memorias de cálculo desde una gestión anterior"
@@ -340,6 +353,7 @@ export default function MemoriasPage() {
                   <button
                     type="button"
                     onClick={handleCreate}
+                    data-tour="tour-btn-memoria"
                     disabled={isGestionBloqueada}
                     className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
@@ -361,13 +375,34 @@ export default function MemoriasPage() {
         )}
       </PageHeader>
 
-      {/* Alerta Obligatoria de Recorte de Techo si está activa */}
-      {isRecorteTechoActive && estadoTecho && (
-        <AlertaRecorteTecho
-          estadoTecho={estadoTecho}
-          onEnviarPaseDirecto={handleEnviarPaseDirecto}
-          actionLoading={enviandoReajuste}
-        />
+      {/* Alerta Obligatoria de Recorte de Techo si está activa o en Simulación */}
+      {isRecorteTechoActive && estadoTecho ? (
+        <div data-tour="tour-alerta-recorte">
+          <AlertaRecorteTecho
+            estadoTecho={estadoTecho}
+            onEnviarPaseDirecto={handleEnviarPaseDirecto}
+            actionLoading={enviandoReajuste}
+          />
+        </div>
+      ) : (
+        activeLiveTour?.moduloId === 'memorias' && activeLiveTour.stepIndex === 6 && (
+          <div
+            data-tour="tour-alerta-recorte"
+            className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/50 text-amber-900 dark:text-amber-200 flex items-start gap-3 shadow-md animate-in fade-in"
+          >
+            <div className="p-2 rounded-xl bg-amber-500 text-white shrink-0 mt-0.5">
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold">
+                Simulación en Vivo: Alerta de Reducción de Techos Dictada por Presupuestos
+              </h4>
+              <p className="text-xs text-amber-800 dark:text-amber-300 mt-1 leading-relaxed">
+                En caso de recorte, la Dirección de Presupuestos (y NO Planificación) dicta el nuevo techo reducido y emite esta notificación oficial a todas las gerencias para que rebajen montos en sus memorias hasta cuadrar con el nuevo techo.
+              </p>
+            </div>
+          </div>
+        )
       )}
 
       <MemoriasFilter
@@ -393,6 +428,9 @@ export default function MemoriasPage() {
         isPlanificador={isPlanificador}
         canEnviarBorradores={canEnviarBorradores}
         isGestionBloqueada={isGestionBloqueada}
+        gestionAnio={activeGestion?.anio}
+        filteredCount={memorias.length}
+        totalCount={conteos?.todas || 0}
       />
 
       <MemoriasList

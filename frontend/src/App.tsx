@@ -3,6 +3,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { GestionProvider } from "./contexts/GestionContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { GuiaProvider } from "./features/guia-interactiva";
+import { ErrorBoundary } from "./components/commons/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import AppShell from "./components/layout/AppShell";
@@ -16,6 +18,7 @@ import OrganizacionalPage from "./pages/organizacional/OrganizacionalPage";
 import LogsPage from "./pages/logs/LogsPage";
 import TraspasosPage from "./pages/traspasos/TraspasosPage";
 import CertificacionesPage from "./pages/certificaciones/CertificacionesPage";
+import ReportesPage from "./pages/reportes/ReportesPage";
 import UxUiLabPage from "./pages/ux/UxUiLabPage";
 
 export default function App() {
@@ -25,25 +28,30 @@ export default function App() {
         <AuthProvider>
           <GestionProvider>
             <SidebarProvider>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<AppShell />}>
-                    <Route index element={<DashboardPage />} />
-                    <Route path="presupuestos" element={<PresupuestosPage />} />
-                    <Route path="partidas" element={<PartidasPage />} />
-                    <Route path="certificaciones" element={<CertificacionesPage />} />
-                    <Route path="memorias" element={<MemoriasPage />} />
-                    <Route path="traspasos" element={<TraspasosPage />} />
-                    <Route path="ejecucion" element={<EjecucionPage />} />
-                    <Route path="planificacion" element={<PlanificacionPage />} />
-                    <Route path="organizacional" element={<OrganizacionalPage />} />
-                    <Route path="logs" element={<LogsPage />} />
-                    <Route path="ux-ui" element={<UxUiLabPage />} />
+              <ErrorBoundary>
+              <GuiaProvider>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/" element={<AppShell />}>
+                      <Route index element={<DashboardPage />} />
+                      <Route path="presupuestos" element={<PresupuestosPage />} />
+                      <Route path="partidas" element={<PartidasPage />} />
+                      <Route path="certificaciones" element={<CertificacionesPage />} />
+                      <Route path="memorias" element={<MemoriasPage />} />
+                      <Route path="traspasos" element={<TraspasosPage />} />
+                      <Route path="ejecucion" element={<EjecucionPage />} />
+                      <Route path="planificacion" element={<PlanificacionPage />} />
+                      <Route path="organizacional" element={<OrganizacionalPage />} />
+                      <Route path="reportes" element={<ReportesPage />} />
+                      <Route path="logs" element={<LogsPage />} />
+                      <Route path="ux-ui" element={<UxUiLabPage />} />
+                    </Route>
                   </Route>
-                </Route>
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </GuiaProvider>
+              </ErrorBoundary>
             </SidebarProvider>
           </GestionProvider>
         </AuthProvider>

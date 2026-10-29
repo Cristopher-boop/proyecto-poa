@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, LogOut, User, Moon, Sun, CheckCheck, PanelLeft, PanelLeftClose } from "lucide-react";
+import { Bell, ChevronDown, LogOut, User, Moon, Sun, CheckCheck, PanelLeft, PanelLeftClose, HelpCircle } from "lucide-react";
+import { useGuia } from "../../features/guia-interactiva";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useGestion } from "../../contexts/GestionContext";
@@ -17,6 +18,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { gestionActiva } = useGestion();
   const { collapsed, toggleSidebar } = useSidebar();
+  const { openGuia } = useGuia();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
@@ -109,6 +111,18 @@ export default function Navbar() {
             Gestión Actual: {new Date().getFullYear()}
           </span>
         </div>
+
+        {/* Botón con Signo de Interrogación: Guía y Flujos Interactivos */}
+        <button
+          type="button"
+          onClick={() => openGuia()}
+          className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition-all shadow-xs group"
+          title="Centro de Aprendizaje y Flujos Operativos POA (Shift + ? o F1)"
+          aria-label="Guía y Flujos Operativos"
+        >
+          <HelpCircle size={18} className="text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+          <span className="hidden sm:inline text-xs font-bold">Guía POA</span>
+        </button>
 
         {/* Toggle Dark Mode */}
         <button

@@ -16,7 +16,10 @@ import {
   PanelLeftClose,
   ChevronsUpDown,
   Palette,
+  BarChart3,
+  HelpCircle,
 } from "lucide-react";
+import { useGuia } from "../../features/guia-interactiva";
 
 export default function Sidebar() {
   const {
@@ -31,6 +34,7 @@ export default function Sidebar() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { openGuia } = useGuia();
 
   const { user } = useAuth();
   const rol = user?.rol_nombre?.toUpperCase() || "";
@@ -43,6 +47,14 @@ export default function Sidebar() {
 
   // Certificaciones POA solo visible para Planificación, Presupuestos y Tesorería
   const showCertificacionesMenu = isAdmin || isPlanificador || isPresupuestos || isTesoreria;
+
+  // Reportes POA: Restringido estrictamente para Elaborador y Trabajador
+  const isElaborador = rolClean.includes("ELABORAD");
+  const isTrabajador = rolClean.includes("TRABAJAD");
+  const canAccessReports =
+    (isAdmin || isPlanificador || isPresupuestos || isTesoreria || rolClean.includes("GERENT") || rolClean.includes("DIRECT") || rolClean.includes("JEFE")) &&
+    !isElaborador &&
+    !isTrabajador;
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
@@ -127,6 +139,7 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => navigate("/")}
+            data-tour="tour-nav-dashboard"
             className={navItemClass(isActive("/"))}
           >
             <LayoutDashboard size={18} className="shrink-0" />
@@ -137,6 +150,7 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => navigate("/presupuestos")}
+            data-tour="tour-nav-presupuestos"
             className={navItemClass(isActive("/presupuestos"))}
           >
             <WalletCards size={18} className="shrink-0" />
@@ -206,6 +220,7 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => navigate("/memorias")}
+            data-tour="tour-nav-memorias"
             className={navItemClass(isActive("/memorias"))}
           >
             <BookOpenText size={18} className="shrink-0" />
@@ -217,6 +232,7 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={() => toggleMenu("gastos")}
+              data-tour="tour-nav-gastos"
               className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isGastosActive && !openMenus.gastos
                   ? "bg-theme-primary/10 text-theme-primary font-semibold"
@@ -247,6 +263,7 @@ export default function Sidebar() {
                   <button
                     type="button"
                     onClick={() => navigate("/certificaciones")}
+                    data-tour="tour-nav-certificaciones"
                     className={subItemClass(isActive("/certificaciones"))}
                   >
                     <FileText size={14} className="shrink-0" />
@@ -256,6 +273,7 @@ export default function Sidebar() {
                 <button
                   type="button"
                   onClick={() => navigate("/ejecucion")}
+                  data-tour="tour-nav-ejecucion"
                   className={subItemClass(isActive("/ejecucion"))}
                 >
                   <TrendingDown size={14} className="shrink-0" />
@@ -264,6 +282,7 @@ export default function Sidebar() {
                 <button
                   type="button"
                   onClick={() => navigate("/traspasos")}
+                  data-tour="tour-nav-traspasos"
                   className={subItemClass(isActive("/traspasos"))}
                 >
                   <ArrowRightLeft size={14} className="shrink-0" />
@@ -273,7 +292,19 @@ export default function Sidebar() {
             )}
           </div>
 
-          {/* 5. Administración y Laboratorio UX / UI */}
+          {/* 5. Reportes Oficiales POA */}
+          {canAccessReports && (
+            <button
+              type="button"
+              onClick={() => navigate("/reportes")}
+              className={navItemClass(isActive("/reportes"))}
+            >
+              <BarChart3 size={18} className="shrink-0" />
+              <span>Reportes POA</span>
+            </button>
+          )}
+
+          {/* 6. Administración y Laboratorio UX / UI */}
           <div className="pt-6 space-y-1">
             <div className="px-2 mb-2 select-none">
               <span className="text-[10px] uppercase tracking-widest text-theme-muted/70 font-bold">
@@ -300,6 +331,20 @@ export default function Sidebar() {
                 <span>UX / UI</span>
                 <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md bg-theme-primary/15 text-theme-primary">
                   Test
+                </span>
+              </div>
+            </button>
+            {/* Acceso a Guía y Flujos Operativos POA */}
+            <button
+              type="button"
+              onClick={() => openGuia()}
+              className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-150 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 shadow-xs"
+            >
+              <HelpCircle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+              <div className="flex items-center justify-between flex-1">
+                <span>Guía y Flujos</span>
+                <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                  Ayuda
                 </span>
               </div>
             </button>

@@ -77,6 +77,8 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
         <button
           type="button"
           onClick={() => onTabChange('PENDIENTE_GERENCIA_CEDENTE')}
+          data-tour="tour-tab-gerencia-mod"
+          data-tab-id="PENDIENTE_GERENCIA_CEDENTE"
           className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'PENDIENTE_GERENCIA_CEDENTE'
               ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold'
@@ -95,6 +97,8 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
         <button
           type="button"
           onClick={() => onTabChange('PENDIENTE_PRESUPUESTOS')}
+          data-tour="tour-tab-presup-mod"
+          data-tab-id="PENDIENTE_PRESUPUESTOS"
           className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'PENDIENTE_PRESUPUESTOS'
               ? 'border-amber-500 text-amber-600 dark:text-amber-400 font-bold'
@@ -113,6 +117,8 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
         <button
           type="button"
           onClick={() => onTabChange('APROBADO')}
+          data-tour="tour-tab-aprobadas-mod"
+          data-tab-id="APROBADO"
           className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'APROBADO'
               ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
@@ -129,6 +135,8 @@ export const ModificacionesFilter: React.FC<ModificacionesFilterProps> = ({
         <button
           type="button"
           onClick={() => onTabChange('RECHAZADO')}
+          data-tour="tour-tab-rechazadas-mod"
+          data-tab-id="RECHAZADO"
           className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'RECHAZADO'
               ? 'border-rose-500 text-rose-600 dark:text-rose-400 font-bold'

@@ -207,3 +207,13 @@
   }
 }
 
+/* Animación del pulso de partículas del flujo interactivo */
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+.animate-flow-dash {
+  animation: flowDash 1.2s linear infinite;
+}
