@@ -10,10 +10,14 @@ import type {
   ProgramaFormValues,
   HierarchicalAreaItem,
 } from '../types/organizacional.types';
-import { formatProgramaShort } from '../utils/organizacionalUtils';
+import { formatProgramaShort, isSuperAdminUser } from '../utils/organizacionalUtils';
 import alertService from '../../../utils/alerts';
+import { useAuth } from '../../../hooks/useAuth';
 
 export function useOrganizacional() {
+  const { user } = useAuth();
+  const canManageArea = isSuperAdminUser(user);
+
   const [activeTab, setActiveTab] = useState<OrganizacionalTab>('JERARQUIA');
   const [loading, setLoading] = useState(true);
 
@@ -177,14 +181,28 @@ export function useOrganizacional() {
   }, [filteredAreas, programas, secciones]);
 
   // ==========================================
-  // HANDLERS: ÁREA
+  // HANDLERS: ÁREA (VALIDACIONES DE SUPERADMIN)
   // ==========================================
   const handleOpenCreateArea = () => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para registrar nuevas gerencias o unidades.'
+      );
+      return;
+    }
     setEditingArea(null);
     setShowAreaModal(true);
   };
 
   const handleOpenEditArea = (area: Area) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para modificar gerencias o unidades.'
+      );
+      return;
+    }
     setEditingArea(area);
     setShowAreaDetalleModal(false);
     setShowAreaModal(true);
@@ -196,6 +214,13 @@ export function useOrganizacional() {
   };
 
   const handleSaveArea = async (formValues: AreaFormValues) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene autorización para registrar o modificar gerencias o unidades.'
+      );
+      return;
+    }
     if (!formValues.programa) {
       alertService.error('Campo requerido', 'Debe seleccionar un Programa.');
       return;
@@ -233,12 +258,19 @@ export function useOrganizacional() {
       fetchAll();
     } catch (err: any) {
       console.error('Error guardando área:', err);
-      const detail = err?.response?.data?.detail || err?.response?.data?.codigo?.[0] || 'Error al guardar el área.';
+      const detail = err?.response?.data?.detail || err?.response?.data?.error || err?.response?.data?.codigo?.[0] || 'Error al guardar el área.';
       alertService.error('No se pudo guardar', detail);
     }
   };
 
   const handleToggleArea = async (area: Area) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para cambiar el estado de gerencias o unidades.'
+      );
+      return;
+    }
     const nextState = !area.estado;
     const confirmed = await alertService.confirm({
       title: nextState ? '¿Activar área institucional?' : '¿Desactivar área institucional?',
@@ -259,7 +291,7 @@ export function useOrganizacional() {
       fetchAll();
     } catch (err: any) {
       console.error('Error cambiando estado área:', err);
-      alertService.error('Error', err?.response?.data?.detail || 'No se pudo actualizar el estado del área.');
+      alertService.error('Error', err?.response?.data?.detail || err?.response?.data?.error || 'No se pudo actualizar el estado del área.');
     }
   };
 
@@ -267,11 +299,25 @@ export function useOrganizacional() {
   // HANDLERS: SECCIÓN
   // ==========================================
   const handleOpenCreateSeccion = (defaultAreaId?: number) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para registrar nuevas secciones operativas.'
+      );
+      return;
+    }
     setEditingSeccion(defaultAreaId ? ({ area: defaultAreaId } as any) : null);
     setShowSeccionModal(true);
   };
 
   const handleOpenEditSeccion = (sec: Seccion) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para modificar secciones operativas.'
+      );
+      return;
+    }
     setEditingSeccion(sec);
     setShowSeccionDetalleModal(false);
     setShowSeccionModal(true);
@@ -283,6 +329,13 @@ export function useOrganizacional() {
   };
 
   const handleSaveSeccion = async (formValues: SeccionFormValues) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para registrar o modificar secciones operativas.'
+      );
+      return;
+    }
     if (!formValues.area) {
       alertService.error('Campo requerido', 'Debe seleccionar un Área dependiente.');
       return;
@@ -312,12 +365,19 @@ export function useOrganizacional() {
       fetchAll();
     } catch (err: any) {
       console.error('Error guardando sección:', err);
-      const detail = err?.response?.data?.detail || err?.response?.data?.nombre?.[0] || 'Error al guardar la sección.';
+      const detail = err?.response?.data?.detail || err?.response?.data?.error || err?.response?.data?.nombre?.[0] || 'Error al guardar la sección.';
       alertService.error('No se pudo guardar', detail);
     }
   };
 
   const handleToggleSeccion = async (sec: Seccion) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para cambiar el estado de secciones operativas.'
+      );
+      return;
+    }
     const nextState = !sec.estado;
     const confirmed = await alertService.confirm({
       title: nextState ? '¿Activar sección?' : '¿Desactivar sección?',
@@ -338,7 +398,7 @@ export function useOrganizacional() {
       fetchAll();
     } catch (err: any) {
       console.error('Error cambiando estado sección:', err);
-      alertService.error('Error', err?.response?.data?.detail || 'No se pudo actualizar el estado de la sección.');
+      alertService.error('Error', err?.response?.data?.detail || err?.response?.data?.error || 'No se pudo actualizar el estado de la sección.');
     }
   };
 
@@ -346,11 +406,25 @@ export function useOrganizacional() {
   // HANDLERS: PROGRAMA
   // ==========================================
   const handleOpenCreatePrograma = () => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para crear programas institucionales.'
+      );
+      return;
+    }
     setEditingPrograma(null);
     setShowProgramaModal(true);
   };
 
   const handleOpenEditPrograma = (prog: Programa) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para modificar programas institucionales.'
+      );
+      return;
+    }
     setEditingPrograma(prog);
     setShowProgramaDetalleModal(false);
     setShowProgramaModal(true);
@@ -362,6 +436,13 @@ export function useOrganizacional() {
   };
 
   const handleSavePrograma = async (formValues: ProgramaFormValues) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para crear o modificar programas institucionales.'
+      );
+      return;
+    }
     if (!formValues.codigo?.trim()) {
       alertService.error('Campo requerido', 'El código de programa es obligatorio.');
       return;
@@ -391,12 +472,19 @@ export function useOrganizacional() {
       fetchAll();
     } catch (err: any) {
       console.error('Error guardando programa:', err);
-      const detail = err?.response?.data?.detail || err?.response?.data?.codigo?.[0] || 'Error al guardar el programa.';
+      const detail = err?.response?.data?.detail || err?.response?.data?.error || err?.response?.data?.codigo?.[0] || 'Error al guardar el programa.';
       alertService.error('No se pudo guardar', detail);
     }
   };
 
   const handleTogglePrograma = async (prog: Programa) => {
+    if (!canManageArea) {
+      alertService.error(
+        'Acceso Restringido',
+        'Solo la Superadministración tiene privilegios para cambiar el estado de programas institucionales.'
+      );
+      return;
+    }
     const nextState = !prog.estado;
     const shortTitle = formatProgramaShort(prog);
     const confirmed = await alertService.confirm({
@@ -418,7 +506,7 @@ export function useOrganizacional() {
       fetchAll();
     } catch (err: any) {
       console.error('Error cambiando estado programa:', err);
-      alertService.error('Error', err?.response?.data?.detail || 'No se pudo actualizar el estado del programa.');
+      alertService.error('Error', err?.response?.data?.detail || err?.response?.data?.error || 'No se pudo actualizar el estado del programa.');
     }
   };
 
@@ -434,6 +522,10 @@ export function useOrganizacional() {
     setActiveTab,
     loading,
     fetchAll,
+
+    // Permisos institucionales
+    canManageArea,
+    isSuperAdmin: canManageArea,
 
     // Filter states
     searchTerm,

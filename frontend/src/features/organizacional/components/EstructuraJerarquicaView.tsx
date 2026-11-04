@@ -10,12 +10,14 @@ interface EstructuraJerarquicaViewProps {
   onEditArea?: (area: Area) => void;
   onToggleArea?: (area: Area) => void;
   onOpenCreateSeccionForArea?: (areaId: number) => void;
+  canManageArea?: boolean;
 }
 
 export const EstructuraJerarquicaView: React.FC<EstructuraJerarquicaViewProps> = ({
   items,
   areas,
   onViewArea,
+  canManageArea = false,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
@@ -34,7 +36,9 @@ export const EstructuraJerarquicaView: React.FC<EstructuraJerarquicaViewProps> =
         <div>
           <p className="text-sm font-semibold text-theme-main">No hay gerencias o unidades que coincidan con la búsqueda</p>
           <p className="text-xs text-theme-muted mt-0.5">
-            Ajuste los filtros o presione "Nueva Gerencia / Unidad" para incorporar una unidad a la estructura.
+            {canManageArea
+              ? 'Ajuste los filtros o presione "Nueva Gerencia / Unidad" para incorporar una unidad a la estructura.'
+              : 'Ajuste los criterios de filtrado para consultar la estructura jerárquica de la institución.'}
           </p>
         </div>
       </div>

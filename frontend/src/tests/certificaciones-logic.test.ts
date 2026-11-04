@@ -157,4 +157,184 @@ describe('Reglas de Negocio - Flujo de Certificaciones POA', () => {
     assert.equal(jerarquia.programas.length, 2);
     assert.deepEqual(jerarquia.acps, ['ACP-01.1', 'ACP-02.3']);
   });
+
+  it('Cotejo de Planificación: Sugerencia de Partida Presupuestaria sin mutación directa', () => {
+    // Planificación no sobreescribe la partida en la BD; genera una sugerencia para devolver a la gerencia
+    const generarSugerenciaPartida = (
+      memoriaSugerida: { codigo: string; partida_codigo: string; partida_nombre: string; saldo: number },
+      motivo?: string
+    ) => {
+      const { codigo, partida_codigo, partida_nombre, saldo } = memoriaSugerida;
+      return `Asignación incorrecta de Partida / MC. Sugerencia: Reasignar a la Partida ${partida_codigo} — ${partida_nombre} (Memoria de Cálculo ${codigo}, Saldo disponible: Bs. ${saldo.toLocaleString('es-BO', { minimumFractionDigits: 2 })}). Motivo: ${motivo || 'Se adecúa con mayor precisión al concepto de gasto.'}`;
+    };
+
+    const sugerencia = generarSugerenciaPartida(
+      { codigo: 'MEM-IF-2026-005', partida_codigo: '25600', partida_nombre: 'Servicios de Imprenta', saldo: 15400 },
+      'El gasto corresponde a material impreso, no a equipo de computación.'
+    );
+
+    assert.ok(sugerencia.includes('Asignación incorrecta'));
+    assert.ok(sugerencia.includes('25600'));
+    assert.ok(sugerencia.includes('Servicios de Imprenta'));
+    assert.ok(sugerencia.includes('MEM-IF-2026-005'));
+    assert.ok(sugerencia.includes('15.400,00'));
+  });
+
+  it('Cotejo de Planificación: Sugerencia de Operación POA sin mutación directa', () => {
+    const generarSugerenciaOperacion = (
+      opSugerida: { codigo: string; descripcion: string; acp_codigo?: string },
+      motivo?: string
+    ) => {
+      return `Asignación incorrecta de Operación POA. Sugerencia: Reasignar a la operación ${opSugerida.codigo} — ${opSugerida.descripcion}${opSugerida.acp_codigo ? ` (ACP: ${opSugerida.acp_codigo})` : ''}. Motivo: ${motivo || 'No corresponde al concepto de gasto solicitado.'}`;
+    };
+
+    const sugerenciaOp = generarSugerenciaOperacion(
+      { codigo: 'OP-IF-2026-02', descripcion: 'Soporte y Mantenimiento de Servidores', acp_codigo: 'ACP-P1-2026' },
+      'El gasto es soporte técnico y no adquisición de activos.'
+    );
+
+    assert.ok(sugerenciaOp.includes('Asignación incorrecta de Operación POA'));
+    assert.ok(sugerenciaOp.includes('OP-IF-2026-02'));
+    assert.ok(sugerenciaOp.includes('ACP-P1-2026'));
+  });
+
+  it('Combinación inteligente de Sugerencia de Operación y Sugerencia de Partida sin sobrescritura', () => {
+    const TAG_SUG_OP = '[SUGERENCIA OPERACIÓN POA]';
+    const TAG_SUG_PARTIDA = '[SUGERENCIA PARTIDA / MC]';
+
+    const actualizarTextoObservacion = (
+      prevText: string,
+      tipo: 'operacion' | 'partida',
+      detalle: string
+    ): string => {
+      const opRegex = /(?:\[SUGERENCIA OPERACIÓN POA\]|Asignación incorrecta de Operación POA)[^\n]*(?:\n(?!\s*\[SUGERENCIA|\s*Asignación incorrecta)[^\n]*)*/gi;
+      const partRegex = /(?:\[SUGERENCIA PARTIDA \/ MC\]|Asignación incorrecta de Partida \/ MC)[^\n]*(?:\n(?!\s*\[SUGERENCIA|\s*Asignación incorrecta)[^\n]*)*/gi;
+
+      let currentOpBlock = '';
+      let currentPartidaBlock = '';
+      let cleanText = prevText || '';
+
+      const opMatch = cleanText.match(opRegex);
+      if (opMatch) {
+        currentOpBlock = opMatch[0].trim();
+        cleanText = cleanText.replace(opRegex, '').trim();
+      }
+
+      const partMatch = cleanText.match(partRegex);
+      if (partMatch) {
+        currentPartidaBlock = partMatch[0].trim();
+        cleanText = cleanText.replace(partRegex, '').trim();
+      }
+
+      if (tipo === 'operacion') {
+        currentOpBlock = `${TAG_SUG_OP}: ${detalle}`;
+      } else {
+        currentPartidaBlock = `${TAG_SUG_PARTIDA}: ${detalle}`;
+      }
+
+      const sections: string[] = [];
+      if (cleanText) sections.push(cleanText);
+      if (currentOpBlock) sections.push(currentOpBlock);
+      if (currentPartidaBlock) sections.push(currentPartidaBlock);
+
+      return sections.join('\n\n');
+    };
+
+    // Caso 1: Se sugiere primero Operación
+    let obs = actualizarTextoObservacion('', 'operacion', 'Reasignar a OP-01');
+    assert.ok(obs.includes('[SUGERENCIA OPERACIÓN POA]: Reasignar a OP-01'));
+
+    // Caso 2: Se sugiere luego Partida (ambas deben coexistir)
+    obs = actualizarTextoObservacion(obs, 'partida', 'Reasignar a Partida 22110 (MEM-01)');
+    assert.ok(obs.includes('[SUGERENCIA OPERACIÓN POA]: Reasignar a OP-01'));
+    assert.ok(obs.includes('[SUGERENCIA PARTIDA / MC]: Reasignar a Partida 22110 (MEM-01)'));
+
+    // Caso 3: Se cambia la sugerencia de Operación (Partida se conserva intacta)
+    obs = actualizarTextoObservacion(obs, 'operacion', 'Reasignar a OP-02');
+    assert.ok(obs.includes('[SUGERENCIA OPERACIÓN POA]: Reasignar a OP-02'));
+    assert.ok(!obs.includes('Reasignar a OP-01'));
+    assert.ok(obs.includes('[SUGERENCIA PARTIDA / MC]: Reasignar a Partida 22110 (MEM-01)'));
+  });
+
+  it('Remoción limpia de sugerencia específica al validar correspondiente', () => {
+    const removerSugerencia = (
+      prevText: string,
+      tipo: 'operacion' | 'partida'
+    ): string => {
+      const opRegex = /(?:\[SUGERENCIA OPERACIÓN POA\]|Asignación incorrecta de Operación POA)[^\n]*(?:\n(?!\s*\[SUGERENCIA|\s*Asignación incorrecta)[^\n]*)*/gi;
+      const partRegex = /(?:\[SUGERENCIA PARTIDA \/ MC\]|Asignación incorrecta de Partida \/ MC)[^\n]*(?:\n(?!\s*\[SUGERENCIA|\s*Asignación incorrecta)[^\n]*)*/gi;
+
+      let res = prevText || '';
+      if (tipo === 'operacion') {
+        res = res.replace(opRegex, '').trim();
+      } else {
+        res = res.replace(partRegex, '').trim();
+      }
+      return res.replace(/\n{3,}/g, '\n\n').trim();
+    };
+
+    const combined = '[SUGERENCIA OPERACIÓN POA]: Reasignar a OP-02\n\n[SUGERENCIA PARTIDA / MC]: Reasignar a Partida 22110';
+    const removedOp = removerSugerencia(combined, 'operacion');
+    assert.equal(removedOp, '[SUGERENCIA PARTIDA / MC]: Reasignar a Partida 22110');
+
+    const removedAll = removerSugerencia(removedOp, 'partida');
+    assert.equal(removedAll, '');
+  });
+
+  it('Detección y auto-aplicación de sugerencias técnicas en SolicitudGastoModal', () => {
+    const catalogoOps = [
+      { id: 10, codigo: '2.210.1.01', descripcion: 'Operación 1' },
+      { id: 11, codigo: '2.210.1.02', descripcion: 'Operación 2' },
+    ];
+    const catalogoMemorias = [
+      { id: 101, codigo: 'MEM-SMS-2026-001', justificacion: 'Pasajes' },
+      { id: 102, codigo: 'MEM-SMS-2026-002', justificacion: 'Viáticos' },
+    ];
+
+    const observacionPlanif = '[SUGERENCIA OPERACIÓN POA]: REASIGNAR A LA OPERACIÓN 2.210.1.02\n[SUGERENCIA PARTIDA / MC]: REASIGNAR A MEM-SMS-2026-001';
+    const textUpper = observacionPlanif.toUpperCase();
+
+    const matchedOp = catalogoOps.find((op) => textUpper.includes(op.codigo.toUpperCase()));
+    const matchedMem = catalogoMemorias.find((m) => textUpper.includes(m.codigo.toUpperCase()));
+
+    assert.equal(matchedOp?.id, 11);
+    assert.equal(matchedOp?.codigo, '2.210.1.02');
+    assert.equal(matchedMem?.id, 101);
+    assert.equal(matchedMem?.codigo, 'MEM-SMS-2026-001');
+  });
+
+  it('Resolución robusta de Partida: Garantiza que la partida asignada siempre aparezca', () => {
+    const resolverPartidaAsignada = (cert: {
+      partida_codigo?: string | null;
+      partida_nombre?: string | null;
+      partida_literal?: string | null;
+      memoria?: { partida_codigo?: string; partida_nombre?: string } | null;
+    }) => {
+      if (cert.partida_codigo) {
+        return { codigo: cert.partida_codigo, nombre: cert.partida_nombre || '' };
+      }
+      if (cert.memoria?.partida_codigo) {
+        return { codigo: cert.memoria.partida_codigo, nombre: cert.memoria.partida_nombre || '' };
+      }
+      if (cert.partida_literal) {
+        return { codigo: '', nombre: cert.partida_literal };
+      }
+      return null;
+    };
+
+    // Caso 1: Certificación con partida explícita
+    const p1 = resolverPartidaAsignada({ partida_codigo: '43120', partida_nombre: 'Equipo de Computación' });
+    assert.deepEqual(p1, { codigo: '43120', nombre: 'Equipo de Computación' });
+
+    // Caso 2: Certificación sin partida_codigo pero con memoria vinculada que tiene partida
+    const p2 = resolverPartidaAsignada({
+      partida_codigo: null,
+      memoria: { partida_codigo: '25600', partida_nombre: 'Imprenta y Reproducción' },
+    });
+    assert.deepEqual(p2, { codigo: '25600', nombre: 'Imprenta y Reproducción' });
+
+    // Caso 3: Fallback a partida_literal
+    const p3 = resolverPartidaAsignada({ partida_literal: 'Consultorías por Producto' });
+    assert.deepEqual(p3, { codigo: '', nombre: 'Consultorías por Producto' });
+  });
 });

@@ -116,7 +116,7 @@ export const OperacionModal: React.FC<OperacionModalProps> = ({
       id: String(a.id),
       label: a.descripcion,
       badge: a.codigo,
-      sublabel: a.amp_codigo ? `PEI: ${a.amp_codigo}` : undefined,
+      sublabel: a.amp_codigo ? `PEI: ${a.amp_codigo.replace(/-\d+$/, '')}` : undefined,
     }));
   }, [availableAcps]);
 
@@ -166,7 +166,7 @@ export const OperacionModal: React.FC<OperacionModalProps> = ({
           {displayCode}
         </span>
       }
-      icon={<FileCheck2 size={20} className="text-blue-600 dark:text-blue-400" />}
+      icon={<FileCheck2 size={20} className="text-theme-primary" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">

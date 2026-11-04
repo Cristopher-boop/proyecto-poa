@@ -16,15 +16,24 @@ import alertService from '../../../utils/alerts';
 
 export function usePlanificacion() {
   const { user } = useAuth();
-  const rolName = user?.rol_nombre?.toUpperCase() || '';
-  const isAprobador = user?.is_superuser || rolName === 'APROBADOR' || rolName === 'PRESUPUESTOS' || rolName === 'ADMINISTRADOR';
-  const isGerente = rolName === 'GERENTE';
-  const isElaborador = rolName === 'ELABORADOR';
-  const isPlanificador = rolName === 'PLANIFICADOR';
+  const rolClean = (user?.rol_nombre || '')
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
-  const canCreateOp = isAprobador || isPlanificador || isGerente || isElaborador;
-  const canEditOrToggleOp = isAprobador || isPlanificador || isGerente;
-  const canManageAmpOrAcp = isAprobador || isPlanificador;
+  const isSuperadmin = Boolean(user?.is_superuser) || rolClean.includes('ADMIN');
+  const isPlanificador = rolClean.includes('PLANIFIC');
+  const isGerente = rolClean.includes('GERENT');
+  const isElaborador = rolClean.includes('ELABORAD');
+  const isPresupuestos = rolClean.includes('PRESUPUEST') || rolClean.includes('APROBAD');
+  const isAprobador = isSuperadmin || isPresupuestos;
+
+  // Únicamente superadmin y planificación pueden crear o modificar ACP y AMP
+  const canManageAmpOrAcp = isSuperadmin || isPlanificador;
+
+  const canCreateOp = isSuperadmin || isPlanificador || isGerente || isElaborador;
+  const canEditOrToggleOp = isSuperadmin || isPlanificador || isGerente;
+  const canReplicate = isSuperadmin || isPlanificador || isGerente;
 
   const userAreaId = user?.area_id;
 
@@ -145,36 +154,36 @@ export function usePlanificacion() {
   // ==========================================
 
   const calculatedAmpCode = useMemo(() => {
-    if (editingAmp) return editingAmp.codigo;
-    if (!ampForm.programa) return 'AMP-P?-??';
+    if (editingAmp) return editingAmp.codigo.replace(/-\d+$/, '');
+    if (!ampForm.programa) return 'AMP-P?';
     const prog = programas.find((p) => String(p.id) === String(ampForm.programa));
-    const prefix = prog ? prog.codigo.replace(/[^a-zA-Z0-9]/g, '') : 'P1';
-
-    const existing = ampList.filter((a) => String(a.programa) === String(ampForm.programa));
-    let nextNum = existing.length + 1;
-    let code = `AMP-${prefix}-${String(nextNum).padStart(2, '0')}`;
-    while (ampList.some((a) => a.codigo === code)) {
-      nextNum++;
-      code = `AMP-${prefix}-${String(nextNum).padStart(2, '0')}`;
-    }
-    return code;
-  }, [editingAmp, ampForm.programa, programas, ampList]);
+    const rawCode = prog?.codigo || '1';
+    const cleanNum = rawCode.replace(/[^0-9]/g, '') || rawCode;
+    return `AMP-P${cleanNum}`;
+  }, [editingAmp, ampForm.programa, programas]);
 
   const calculatedAcpCode = useMemo(() => {
     if (editingAcp) return editingAcp.codigo;
-    if (!acpForm.accion_mediano_plazo) return 'ACP-P?-??';
-    const amp = ampList.find((a) => String(a.id) === String(acpForm.accion_mediano_plazo));
-    const ampCode = amp ? amp.codigo : 'AMP';
-
-    const existingInAmp = acpList.filter((acp) => String(acp.accion_mediano_plazo) === String(acpForm.accion_mediano_plazo));
-    let nextNum = existingInAmp.length + 1;
-    let code = `${ampCode}-ACP${String(nextNum).padStart(2, '0')}`;
-    while (acpList.some((acp) => acp.codigo === code)) {
-      nextNum++;
-      code = `${ampCode}-ACP${String(nextNum).padStart(2, '0')}`;
+    if (!acpForm.programa && !acpForm.accion_mediano_plazo) return 'ACP-P?-2026';
+    let progCode = '1';
+    if (acpForm.programa) {
+      const prog = programas.find((p) => String(p.id) === String(acpForm.programa));
+      progCode = prog?.codigo || '1';
+    } else if (acpForm.accion_mediano_plazo) {
+      const amp = ampList.find((a) => String(a.id) === String(acpForm.accion_mediano_plazo));
+      progCode = amp?.programa_codigo || '1';
     }
-    return code;
-  }, [editingAcp, acpForm.accion_mediano_plazo, ampList, acpList]);
+    const cleanNum = progCode.replace(/[^0-9]/g, '') || progCode;
+
+    let anioGestion = '2026';
+    if (acpForm.gestion) {
+      const gObj = gestiones.find((g) => String(g.id) === String(acpForm.gestion));
+      if (gObj) anioGestion = String(gObj.anio);
+    } else if (filterGestion && filterGestion !== 'ALL') {
+      anioGestion = filterGestion;
+    }
+    return `ACP-P${cleanNum}-${anioGestion}`;
+  }, [editingAcp, acpForm.programa, acpForm.accion_mediano_plazo, acpForm.gestion, filterGestion, programas, ampList, gestiones]);
 
   const calculatedOpCode = useMemo(() => {
     if (editingOp) return editingOp.codigo;
@@ -669,54 +678,38 @@ export function usePlanificacion() {
   // ==========================================
 
   const handleReplicarOperaciones = async () => {
-    if (!isAprobador && !isPlanificador) return;
+    if (!canReplicate) return;
+    const effectiveAreaId = (isGerente && !isSuperadmin && !isPlanificador && userAreaId)
+      ? String(userAreaId)
+      : compAreaId;
+
     const confirm = await alertService.confirm({
       title: `¿Replicar Operaciones de Gestión ${compGestionBase} a ${compGestionDestino}?`,
-      text: `Se copiarán las operaciones base del año ${compGestionBase} a la gestión ${compGestionDestino} para facilitar la formulación interanual.`,
+      text: `Se duplicarán las operaciones del año ${compGestionBase} a la gestión ${compGestionDestino} vinculándolas a la nueva formulación POA.`,
       isDanger: false,
     });
     if (!confirm) return;
 
     setReplicating(true);
     try {
-      const opsToReplicate = operacionesList.filter((op) => {
-        const matchesArea = compAreaId === 'ALL' || String(op.area) === compAreaId;
-        const matchesGestion = !op.gestion_anio || op.gestion_anio === compGestionBase;
-        return matchesArea && matchesGestion && op.estado;
+      const res = await planificacionApi.duplicarGestionOperaciones({
+        gestion_base: compGestionBase,
+        gestion_destino: compGestionDestino,
+        area_id: effectiveAreaId,
       });
-
-      if (opsToReplicate.length === 0) {
-        alertService.error('Sin Operaciones', `No se encontraron operaciones activas en la gestión ${compGestionBase} para replicar.`);
-        setReplicating(false);
-        return;
-      }
-
-      let countSuccess = 0;
-      for (const op of opsToReplicate) {
-        const newCode = `${op.codigo}-${compGestionDestino}`;
-        if (!operacionesList.some((existing) => existing.codigo === newCode)) {
-          try {
-            await planificacionApi.createOperacion({
-              accion_corto_plazo: op.accion_corto_plazo,
-              area: op.area,
-              codigo: newCode,
-              descripcion: `[GESTIÓN ${compGestionDestino}] ${op.descripcion}`,
-              es_contratacion: true,
-            });
-            countSuccess++;
-          } catch (e) {
-            console.error('Error replicando operacion:', op.codigo, e);
-          }
-        }
-      }
 
       alertService.success(
         'Replicación Completada',
-        `Se han formulado ${countSuccess} operaciones en la Gestión ${compGestionDestino} con base en la Gestión ${compGestionBase}.`
+        res.message || `Se han formulado ${res.creadas} operaciones en la Gestión ${compGestionDestino}.`
       );
+      if (res.errores && res.errores.length > 0) {
+        alertService.info('Aviso de Planificación', res.errores.join('\n'));
+      }
       fetchAll();
-    } catch (err) {
-      alertService.error('Error', 'No se pudo completar la replicación de operaciones.');
+    } catch (err: any) {
+      console.error('Error al replicar operaciones:', err);
+      const errMsg = err?.response?.data?.error || err?.response?.data?.detail || 'No se pudo completar la replicación de operaciones.';
+      alertService.error('Aviso de Planificación', errMsg);
     } finally {
       setReplicating(false);
     }
@@ -725,13 +718,16 @@ export function usePlanificacion() {
   return {
     // Roles & Permissions
     user,
-    isAprobador,
+    isSuperadmin,
+    isAprobador: isSuperadmin || isPresupuestos,
+    isPresupuestos,
     isGerente,
     isElaborador,
     isPlanificador,
     canCreateOp,
     canEditOrToggleOp,
     canManageAmpOrAcp,
+    canReplicate,
     userAreaId,
 
     // Tabs & State

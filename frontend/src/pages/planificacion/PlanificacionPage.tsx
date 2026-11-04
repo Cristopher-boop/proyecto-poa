@@ -23,6 +23,7 @@ export default function PlanificacionPage() {
     canCreateOp,
     canEditOrToggleOp,
     canManageAmpOrAcp,
+    canReplicate,
     userAreaId,
 
     // Tabs y Estado
@@ -136,7 +137,7 @@ export default function PlanificacionPage() {
         ampCount={filteredAmps.length}
         canCreateOp={canCreateOp}
         canManageAmpOrAcp={canManageAmpOrAcp}
-        canReplicate={isAprobadorOrPlanificador}
+        canReplicate={canReplicate}
         compGestionDestino={compGestionDestino}
         replicating={replicating}
         onOpenCreateOp={handleOpenCreateOp}
@@ -212,7 +213,7 @@ export default function PlanificacionPage() {
               compOperacionesBase={compOperacionesBase}
               compOperacionesDestino={compOperacionesDestino}
               replicating={replicating}
-              canReplicate={isAprobadorOrPlanificador}
+              canReplicate={canReplicate}
               onGestionBaseChange={setCompGestionBase}
               onGestionDestinoChange={setCompGestionDestino}
               onAreaChange={setCompAreaId}

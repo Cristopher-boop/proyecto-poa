@@ -375,6 +375,15 @@ class CertificacionPOAViewSet(viewsets.ModelViewSet):
         if monto > Decimal('2000.00'):
             extra_fields['es_contratacion'] = True
 
+        memoria = serializer.validated_data.get('memoria', instance.memoria)
+        if memoria:
+            if not serializer.validated_data.get('partida') and not instance.partida:
+                primer_detalle = memoria.detalles.select_related('partida').first()
+                if primer_detalle and primer_detalle.partida:
+                    extra_fields['partida'] = primer_detalle.partida
+                    if not serializer.validated_data.get('partida_literal'):
+                        extra_fields['partida_literal'] = primer_detalle.partida.nombre
+
         serializer.save(**extra_fields)
 
     def perform_destroy(self, instance):

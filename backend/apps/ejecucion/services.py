@@ -353,6 +353,16 @@ class CertificacionService:
             except Operacion.DoesNotExist:
                 raise ValidationError({'operacion_id': ['La operación POA seleccionada no existe.']})
 
+        # Asegurar asignación de partida y operación desde la memoria si aún no están vinculadas
+        if not cert.partida and cert.memoria:
+            primer_detalle = cert.memoria.detalles.select_related('partida').first()
+            if primer_detalle and primer_detalle.partida:
+                cert.partida = primer_detalle.partida
+                if not cert.partida_literal:
+                    cert.partida_literal = primer_detalle.partida.nombre
+        if not cert.operaciones.exists() and cert.memoria and cert.memoria.operacion:
+            cert.operaciones.set([cert.memoria.operacion])
+
         # 1. Asignar/Confirmar Código Oficial Global de Certificación POA
         if codigo_certificacion:
             cert.codigo_certificacion = codigo_certificacion
@@ -683,7 +693,7 @@ class CertificacionService:
                 cert.creado_por,
                 f"Certificación Observada por {origen_str} ({cert.hoja_ruta})",
                 f"Tu solicitud con Hoja de Ruta {cert.hoja_ruta} ha sido observada: {observacion}",
-                tipo=Notificacion.TipoNotificacion.RECHAZADO,
+                tipo=Notificacion.TipoNotificacion.RECHAZO,
                 usuario_origen=user,
                 enlace='/certificaciones'
             )
@@ -735,7 +745,7 @@ class CertificacionService:
                 cert.creado_por,
                 f"Solicitud Rechazada por {origen_str} ({cert.hoja_ruta})",
                 f"Tu solicitud con Hoja de Ruta {cert.hoja_ruta} ha sido rechazada por {origen_str}. Motivo: {motivo}",
-                tipo=Notificacion.TipoNotificacion.RECHAZADO,
+                tipo=Notificacion.TipoNotificacion.RECHAZO,
                 usuario_origen=user,
                 enlace='/certificaciones'
             )
@@ -745,7 +755,7 @@ class CertificacionService:
                 'APROBADOR',
                 f"Solicitud Rechazada en Planificación ({cert.hoja_ruta})",
                 f"Planificación ha rechazado la solicitud del área {cert.area.nombre} (Hoja de Ruta {cert.hoja_ruta}). Motivo: {motivo}",
-                tipo=Notificacion.TipoNotificacion.RECHAZADO,
+                tipo=Notificacion.TipoNotificacion.RECHAZO,
                 usuario_origen=user,
                 enlace='/certificaciones'
             )
@@ -754,7 +764,7 @@ class CertificacionService:
                 'PLANIFICADOR',
                 f"Certificación Denegada en Presupuestos ({cert.codigo_certificacion or cert.hoja_ruta})",
                 f"Presupuestos ha denegado la certificación del área {cert.area.nombre}. Motivo: {motivo}",
-                tipo=Notificacion.TipoNotificacion.RECHAZADO,
+                tipo=Notificacion.TipoNotificacion.RECHAZO,
                 usuario_origen=user,
                 enlace='/certificaciones'
             )
@@ -792,7 +802,7 @@ class CertificacionService:
                 'PLANIFICADOR',
                 f"Solicitud Cancelada por Gerencia ({cert.hoja_ruta})",
                 f"El área {cert.area.nombre} ha cancelado su solicitud con Hoja de Ruta {cert.hoja_ruta}.",
-                tipo=Notificacion.TipoNotificacion.RECHAZADO,
+                tipo=Notificacion.TipoNotificacion.RECHAZO,
                 usuario_origen=user,
                 enlace='/certificaciones'
             )
@@ -800,7 +810,7 @@ class CertificacionService:
                 'APROBADOR',
                 f"Solicitud Cancelada por Gerencia ({cert.hoja_ruta})",
                 f"El área {cert.area.nombre} ha cancelado su solicitud con Hoja de Ruta {cert.hoja_ruta}.",
-                tipo=Notificacion.TipoNotificacion.RECHAZADO,
+                tipo=Notificacion.TipoNotificacion.RECHAZO,
                 usuario_origen=user,
                 enlace='/certificaciones'
             )

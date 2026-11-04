@@ -21,6 +21,9 @@ export const AcpDetalleModal: React.FC<AcpDetalleModalProps> = ({
   if (!isOpen || !acp) return null;
 
   const isActiva = Boolean(acp.estado);
+  const cleanAcpCode = acp.codigo;
+  const cleanAmpCode = (acp.amp_codigo || 'AMP').replace(/-\d+$/, '');
+  const progNumber = acp.programa_codigo?.replace(/^P-?/i, '') || '1';
 
   return (
     <Modal
@@ -29,11 +32,11 @@ export const AcpDetalleModal: React.FC<AcpDetalleModalProps> = ({
       title="Detalle de Acción a Corto Plazo (ACP)"
       subtitle="Meta institucional de corto plazo alineada al Plan Operativo Anual (POA)"
       badge={
-        <span className="font-mono font-bold text-xs bg-indigo-50 text-indigo-700 border border-indigo-200/90 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60 px-2.5 py-1 rounded-lg">
-          {acp.codigo}
+        <span className="font-mono font-bold text-xs text-theme-primary">
+          {cleanAcpCode}
         </span>
       }
-      icon={<Target size={20} className="text-indigo-600 dark:text-indigo-400" />}
+      icon={<Target size={20} className="text-theme-primary" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -62,8 +65,8 @@ export const AcpDetalleModal: React.FC<AcpDetalleModalProps> = ({
               Código ACP
             </span>
             <div className="flex items-center justify-between">
-              <span className="font-mono font-bold text-xs bg-indigo-50 text-indigo-700 border border-indigo-200/90 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60 px-2 py-0.5 rounded">
-                {acp.codigo}
+              <span className="font-mono font-bold text-xs text-theme-primary">
+                {cleanAcpCode}
               </span>
               <span className="text-[10px] text-theme-muted">
                 Objetivo POA
@@ -113,11 +116,8 @@ export const AcpDetalleModal: React.FC<AcpDetalleModalProps> = ({
               Programa Institucional
             </span>
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 px-2 py-0.5 rounded shrink-0">
-                {acp.programa_codigo || 'P-01'}
-              </span>
-              <span className="text-xs font-semibold text-theme-main line-clamp-1">
-                {acp.programa_nombre || 'Programa General'}
+              <span className="text-xs font-semibold text-theme-main">
+                Programa {progNumber}
               </span>
             </div>
           </div>
@@ -140,8 +140,8 @@ export const AcpDetalleModal: React.FC<AcpDetalleModalProps> = ({
             Acción a Mediano Plazo Vinculada (AMP PEI)
           </span>
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono font-bold text-xs bg-violet-50 text-violet-700 border border-violet-200/90 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60 px-2 py-0.5 rounded">
-              {acp.amp_codigo || 'AMP'}
+            <span className="font-mono font-bold text-xs text-theme-primary">
+              {cleanAmpCode}
             </span>
           </div>
           <p className="text-[11px] text-theme-muted line-clamp-2">

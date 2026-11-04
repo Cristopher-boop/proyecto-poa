@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Save } from 'lucide-react';
+import { Building2, Save, ShieldAlert } from 'lucide-react';
 import { Modal, Dropdown, Button, type DropdownItem } from '../../../components/commons';
 import type { Area, Programa, AreaFormValues } from '../types/organizacional.types';
 import { formatProgramaShort } from '../utils/organizacionalUtils';
@@ -10,6 +10,7 @@ interface AreaModalProps {
   onSave: (data: AreaFormValues) => Promise<void>;
   editingArea: Area | null;
   programas: Programa[];
+  canManage?: boolean;
 }
 
 export const AreaModal: React.FC<AreaModalProps> = ({
@@ -18,6 +19,7 @@ export const AreaModal: React.FC<AreaModalProps> = ({
   onSave,
   editingArea,
   programas,
+  canManage = true,
 }) => {
   const [formData, setFormData] = useState<AreaFormValues>({
     programa: '',
@@ -62,6 +64,7 @@ export const AreaModal: React.FC<AreaModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManage) return;
     setSaving(true);
     try {
       await onSave(formData);
@@ -85,27 +88,39 @@ export const AreaModal: React.FC<AreaModalProps> = ({
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
+            {canManage ? 'Cancelar' : 'Cerrar'}
           </Button>
-          <Button
-            type="submit"
-            form="area-form"
-            variant="primary"
-            disabled={saving}
-            className="flex items-center gap-1.5"
-          >
-            <Save size={14} />
-            <span>{saving ? 'Guardando...' : editingArea ? 'Guardar Cambios' : 'Registrar'}</span>
-          </Button>
+          {canManage && (
+            <Button
+              type="submit"
+              form="area-form"
+              variant="primary"
+              disabled={saving}
+              className="flex items-center gap-1.5"
+            >
+              <Save size={14} />
+              <span>{saving ? 'Guardando...' : editingArea ? 'Guardar Cambios' : 'Registrar'}</span>
+            </Button>
+          )}
         </div>
       }
     >
+      {!canManage && (
+        <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center gap-2.5">
+          <ShieldAlert size={18} className="shrink-0" />
+          <p className="text-xs font-semibold">
+            Acceso restringido: Solo la Superadministración tiene autorización para registrar o modificar gerencias y unidades.
+          </p>
+        </div>
+      )}
+
       <form id="area-form" onSubmit={handleSubmit} className="space-y-3.5 text-xs">
         {/* Programa Selector */}
         <div>
           <Dropdown
             label="Programa Institucional"
             required
+            disabled={!canManage}
             items={programaItems}
             value={formData.programa}
             onChange={(val) => setFormData({ ...formData, programa: String(val) })}
@@ -119,6 +134,7 @@ export const AreaModal: React.FC<AreaModalProps> = ({
           <Dropdown
             label="Clasificación Institucional"
             required
+            disabled={!canManage}
             items={tipoItems}
             value={formData.tipo}
             onChange={(val) => setFormData({ ...formData, tipo: val as 'GERENCIA' | 'UNIDAD' })}
@@ -134,10 +150,11 @@ export const AreaModal: React.FC<AreaModalProps> = ({
             <input
               type="text"
               required
+              disabled={!canManage}
               value={formData.codigo}
               onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
               placeholder="Ej: GG, GAF, UAI, DAF"
-              className="block w-full px-3 py-2 text-xs font-mono font-bold bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all uppercase"
+              className="block w-full px-3 py-2 text-xs font-mono font-bold bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all uppercase disabled:opacity-60 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -148,10 +165,11 @@ export const AreaModal: React.FC<AreaModalProps> = ({
             <input
               type="text"
               required
+              disabled={!canManage}
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               placeholder="Ej: Gerencia General, Unidad de Auditoría"
-              className="block w-full px-3 py-2 text-xs bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all"
+              className="block w-full px-3 py-2 text-xs bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -163,10 +181,11 @@ export const AreaModal: React.FC<AreaModalProps> = ({
           </label>
           <textarea
             rows={3}
+            disabled={!canManage}
             value={formData.descripcion}
             onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
             placeholder="Funciones o alcance operativo..."
-            className="block w-full px-3 py-2 text-xs bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all resize-none"
+            className="block w-full px-3 py-2 text-xs bg-theme-base border border-theme-border rounded-xl text-theme-main focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500 focus:border-slate-400 dark:focus:border-slate-500 transition-all resize-none disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </div>
       </form>

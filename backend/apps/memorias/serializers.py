@@ -89,6 +89,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
     area_codigo = serializers.CharField(source='seccion.area.codigo', read_only=True)
     area_nombre = serializers.CharField(source='seccion.area.nombre', read_only=True)
     operacion_codigo = serializers.CharField(source='operacion.codigo', read_only=True, default=None)
+    partida_id = serializers.SerializerMethodField()
     partida_codigo = serializers.SerializerMethodField()
     partida_nombre = serializers.SerializerMethodField()
     total_items = serializers.SerializerMethodField()
@@ -99,7 +100,7 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
             'id', 'codigo', 'gestion', 'gestion_anio', 'seccion', 'seccion_nombre', 'area_id', 'area_codigo', 'area_nombre', 'operacion', 'operacion_codigo',
             'justificacion', 'motivo_rechazo', 'es_contratacion', 'estado', 'excluida_por_techo', 'creada_en_ejecucion', 'fecha_aprobacion',
             'total_presupuestado', 'total_ejecutado', 'monto_entrante', 'monto_saliente', 'saldo_disponible',
-            'partida_codigo', 'partida_nombre', 'total_items',
+            'partida_id', 'partida_codigo', 'partida_nombre', 'total_items',
             'created_at', 'updated_at'
         ]
 
@@ -107,6 +108,10 @@ class MemoriaCalculoListSerializer(serializers.ModelSerializer):
         if not hasattr(obj, '_cached_detalles_list'):
             obj._cached_detalles_list = list(obj.detalles.all())
         return obj._cached_detalles_list
+
+    def get_partida_id(self, obj):
+        detalles = self._get_detalles(obj)
+        return detalles[0].partida.id if detalles and detalles[0].partida else None
 
     def get_partida_codigo(self, obj):
         detalles = self._get_detalles(obj)

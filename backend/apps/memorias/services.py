@@ -120,6 +120,42 @@ class MemoriaCalculoService:
             except (ValueError, IndexError):
                 pass
 
+        def resolver_operacion_destino(op_origen, anio_destino_val, gestion_destino_obj):
+            if not op_origen:
+                return None
+            try:
+                from apps.planificacion.models import Operacion
+                cod_orig = op_origen.codigo
+                anio_orig_str = None
+                if op_origen.accion_corto_plazo and op_origen.accion_corto_plazo.gestion:
+                    anio_orig_str = str(op_origen.accion_corto_plazo.gestion.anio)
+                
+                if anio_orig_str and anio_orig_str in cod_orig:
+                    cod_esperado = cod_orig.replace(anio_orig_str, str(anio_destino_val))
+                    op_encontrada = Operacion.objects.filter(codigo=cod_esperado).first()
+                    if op_encontrada:
+                        return op_encontrada
+
+                op_encontrada = Operacion.objects.filter(
+                    area=op_origen.area,
+                    accion_corto_plazo__gestion=gestion_destino_obj,
+                    descripcion=op_origen.descripcion,
+                    estado=True
+                ).first()
+                if op_encontrada:
+                    return op_encontrada
+
+                op_encontrada = Operacion.objects.filter(
+                    area=op_origen.area,
+                    accion_corto_plazo__gestion=gestion_destino_obj,
+                    estado=True
+                ).first()
+                if op_encontrada:
+                    return op_encontrada
+            except Exception:
+                pass
+            return op_origen
+
         creadas = []
 
         if memorias_modificadas and isinstance(memorias_modificadas, list):
@@ -131,11 +167,20 @@ class MemoriaCalculoService:
                 just = (m_item.get('justificacion') or '').strip().upper()
                 es_contratacion = bool(m_item.get('es_contratacion', False))
 
+                op_orig_obj = None
+                if op_id:
+                    try:
+                        from apps.planificacion.models import Operacion
+                        op_orig_obj = Operacion.objects.filter(id=op_id).first()
+                    except Exception:
+                        pass
+                op_final = resolver_operacion_destino(op_orig_obj, anio_destino, gestion_destino)
+
                 nueva_mem = MemoriaCalculo.objects.create(
                     codigo=cod,
                     gestion=gestion_destino,
                     seccion_id=sec_id,
-                    operacion_id=op_id,
+                    operacion=op_final,
                     justificacion=just,
                     es_contratacion=es_contratacion,
                     estado=MemoriaCalculo.EstadoMemoria.BORRADOR
@@ -185,11 +230,13 @@ class MemoriaCalculoService:
             for mem_orig in qs.prefetch_related('detalles'):
                 max_num += 1
                 cod = f"{prefix}{str(max_num).zfill(3)}"
+                op_final = resolver_operacion_destino(mem_orig.operacion, anio_destino, gestion_destino)
+
                 nueva_mem = MemoriaCalculo.objects.create(
                     codigo=cod,
                     gestion=gestion_destino,
                     seccion=mem_orig.seccion,
-                    operacion=mem_orig.operacion,
+                    operacion=op_final,
                     justificacion=mem_orig.justificacion,
                     es_contratacion=mem_orig.es_contratacion,
                     estado=MemoriaCalculo.EstadoMemoria.BORRADOR

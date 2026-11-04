@@ -44,7 +44,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {operaciones.map((op) => {
           const isActiva = Boolean(op.estado);
-          const progCode = op.area_programa_codigo || op.acp_programa_codigo || 'P-01';
+          const displayAcpCode = op.acp_codigo || 'ACP';
 
           return (
             <div
@@ -53,14 +53,11 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
                 !isActiva ? 'opacity-65 bg-theme-base/40' : ''
               }`}
             >
-              {/* Encabezado: Código, Programa, Estado y Acciones */}
+              {/* Encabezado: Código, Estado y Acciones */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono font-bold text-xs text-theme-primary">
                     {op.codigo}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 font-mono">
-                    {progCode}
                   </span>
                 </div>
 
@@ -84,7 +81,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
                   <button
                     type="button"
                     onClick={() => onView(op)}
-                    className="p-1.5 rounded-lg border border-theme-border bg-theme-base hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 dark:hover:border-indigo-800/60 text-theme-muted transition-colors"
+                    className="p-1.5 rounded-lg border border-theme-border bg-theme-base hover:bg-theme-primary/10 hover:text-theme-primary hover:border-theme-primary/30 text-theme-muted transition-colors cursor-pointer"
                     title="Ver detalles de la operación"
                     aria-label={`Ver detalles de ${op.codigo}`}
                   >
@@ -97,7 +94,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
                       <button
                         type="button"
                         onClick={() => onEdit(op)}
-                        className="p-1.5 rounded-lg border border-theme-border bg-theme-base hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 dark:hover:bg-amber-950/50 dark:hover:text-amber-300 dark:hover:border-amber-800/60 text-theme-muted transition-colors"
+                        className="p-1.5 rounded-lg border border-theme-border bg-theme-base hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 dark:hover:bg-amber-950/50 dark:hover:text-amber-300 dark:hover:border-amber-800/60 text-theme-muted transition-colors cursor-pointer"
                         title="Editar operación"
                         aria-label={`Editar ${op.codigo}`}
                       >
@@ -106,7 +103,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
                       <button
                         type="button"
                         onClick={() => onToggle(op)}
-                        className={`p-1.5 rounded-lg border border-theme-border bg-theme-base transition-colors ${
+                        className={`p-1.5 rounded-lg border border-theme-border bg-theme-base transition-colors cursor-pointer ${
                           isActiva
                             ? 'text-theme-muted hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 dark:hover:bg-rose-950/50 dark:hover:text-rose-300 dark:hover:border-rose-800/60'
                             : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300 dark:hover:border-emerald-800/60'
@@ -141,7 +138,7 @@ export const OperacionesList: React.FC<OperacionesListProps> = ({
 
                 <div className="shrink-0 flex items-center gap-1">
                   <span className="font-mono font-bold text-xs text-theme-primary">
-                    {op.acp_codigo || 'ACP'}
+                    {displayAcpCode}
                   </span>
                 </div>
               </div>

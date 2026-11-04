@@ -6,6 +6,41 @@ from .models import Programa, Area, Seccion
 from .serializers import ProgramaSerializer, AreaSerializer, SeccionSerializer
 
 
+def is_super_admin(user):
+    """
+    Verifica si el usuario pertenece a la Superadministración:
+    - Es superusuario de Django (is_superuser=True), o
+    - Pertenece a un rol con privilegios de Administrador/Superadmin (ADMINISTRADOR, SUPERADMIN, SUPERADMINISTRADOR).
+    """
+    if not (user and user.is_authenticated):
+        return False
+    if getattr(user, 'is_superuser', False):
+        return True
+    if hasattr(user, 'rol') and user.rol:
+        rol_clean = (
+            user.rol.nombre.strip()
+            .upper()
+            .replace('Á', 'A')
+            .replace('É', 'E')
+            .replace('Í', 'I')
+            .replace('Ó', 'O')
+            .replace('Ú', 'U')
+        )
+        return any(term in rol_clean for term in ['SUPERADMIN', 'SUPERUSUARIO', 'ADMINISTRADOR', 'ADMIN'])
+    return False
+
+
+class IsSuperAdminUser(permissions.BasePermission):
+    """
+    Permiso estricto de DRF para asegurar que solo la Superadministración
+    pueda realizar acciones de modificación o creación institucional.
+    """
+    message = 'Solo los usuarios con privilegio de Superadministración tienen autorización para realizar esta acción.'
+
+    def has_permission(self, request, view):
+        return is_super_admin(request.user)
+
+
 class ProgramaViewSet(viewsets.ModelViewSet):
     queryset = (
         Programa.objects.all()
@@ -18,7 +53,39 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'areas', 'secciones']:
             return [permissions.AllowAny()]
-        return super().get_permissions()
+        return [permissions.IsAuthenticated(), IsSuperAdminUser()]
+
+    def create(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para crear programas institucionales.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para modificar programas institucionales.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para modificar programas institucionales.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para dar de baja programas institucionales.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'])
     def areas(self, request, pk=None):
@@ -48,6 +115,35 @@ class AreaViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AreaSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'por_programa', 'secciones']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated(), IsSuperAdminUser()]
+
+    def create(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para registrar nuevas gerencias o unidades.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para modificar gerencias o unidades.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para modificar gerencias o unidades.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().partial_update(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -113,6 +209,11 @@ class AreaViewSet(viewsets.ModelViewSet):
                 print("Error actualizando PresupuestoArea:", e)
 
     def destroy(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para dar de baja gerencias o unidades.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         instance = self.get_object()
         instance.estado = False
         instance.save(update_fields=['estado'])
@@ -123,6 +224,11 @@ class AreaViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'patch'], url_path='toggle-estado')
     def toggle_estado(self, request, pk=None):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para cambiar el estado de gerencias o unidades.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         instance = self.get_object()
         nuevo_estado = request.data.get('estado')
         if nuevo_estado is None:
@@ -153,11 +259,6 @@ class AreaViewSet(viewsets.ModelViewSet):
 
         return qs
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve', 'por_programa', 'secciones']:
-            return [permissions.AllowAny()]
-        return super().get_permissions()
-
     @action(detail=True, methods=['get'])
     def secciones(self, request, pk=None):
         area = self.get_object()
@@ -187,7 +288,41 @@ class SeccionViewSet(viewsets.ModelViewSet):
     serializer_class = SeccionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'por_area']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated(), IsSuperAdminUser()]
+
+    def create(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para registrar secciones operativas.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para modificar secciones operativas.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para modificar secciones operativas.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().partial_update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para dar de baja secciones operativas.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         instance = self.get_object()
         instance.estado = False
         instance.save(update_fields=['estado'])
@@ -198,6 +333,11 @@ class SeccionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'patch'], url_path='toggle-estado')
     def toggle_estado(self, request, pk=None):
+        if not is_super_admin(request.user):
+            return Response(
+                {'error': 'Solo la Superadministración tiene permisos para cambiar el estado de secciones operativas.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         instance = self.get_object()
         nuevo_estado = request.data.get('estado')
         if nuevo_estado is None:
@@ -224,11 +364,6 @@ class SeccionViewSet(viewsets.ModelViewSet):
             qs = qs.filter(estado=estado.lower() in ('true', '1', 'si', 'activo'))
 
         return qs
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve', 'por_area']:
-            return [permissions.AllowAny()]
-        return super().get_permissions()
 
     @action(detail=False, methods=['get'])
     def por_area(self, request):

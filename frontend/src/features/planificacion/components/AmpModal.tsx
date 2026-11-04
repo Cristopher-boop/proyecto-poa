@@ -67,7 +67,8 @@ export const AmpModal: React.FC<AmpModalProps> = ({
     }
   };
 
-  const displayCode = amp ? amp.codigo : calculatedAmpCode;
+  const rawDisplayCode = amp ? amp.codigo : calculatedAmpCode;
+  const displayCode = rawDisplayCode.replace(/-\d+$/, '');
 
   return (
     <Modal
@@ -76,11 +77,11 @@ export const AmpModal: React.FC<AmpModalProps> = ({
       title={amp ? 'Editar Acción a Mediano Plazo' : 'Nueva Acción a Mediano Plazo (PEI)'}
       subtitle="Defina el objetivo estratégico quinquenal del Plan Estratégico Institucional"
       badge={
-        <span className="font-mono font-bold text-xs bg-violet-50 text-violet-700 border border-violet-200/90 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/60 px-2.5 py-1 rounded-lg">
+        <span className="font-mono font-bold text-xs text-theme-primary">
           {displayCode}
         </span>
       }
-      icon={<Compass size={20} className="text-violet-600 dark:text-violet-400" />}
+      icon={<Compass size={20} className="text-theme-primary" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -118,38 +119,47 @@ export const AmpModal: React.FC<AmpModalProps> = ({
             </label>
             <input
               type="number"
+              min={2020}
+              max={2040}
               value={formData.periodo_inicio}
               onChange={(e) => setFormData((prev) => ({ ...prev, periodo_inicio: Number(e.target.value) }))}
+              className="w-full px-3 py-2 rounded-xl border border-theme-border bg-theme-surface text-theme-main focus:border-theme-primary focus:outline-none font-mono"
               required
-              className="w-full px-3 py-2 text-xs rounded-xl border border-theme-border bg-theme-surface text-theme-main focus:outline-none focus:border-theme-primary font-mono font-bold"
             />
           </div>
+
           <div>
             <label className="block text-xs font-semibold text-theme-main mb-1.5">
               Año Fin Quinquenio <span className="text-rose-500">*</span>
             </label>
             <input
               type="number"
+              min={formData.periodo_inicio || 2026}
+              max={2050}
               value={formData.periodo_fin}
               onChange={(e) => setFormData((prev) => ({ ...prev, periodo_fin: Number(e.target.value) }))}
+              className="w-full px-3 py-2 rounded-xl border border-theme-border bg-theme-surface text-theme-main focus:border-theme-primary focus:outline-none font-mono"
               required
-              className="w-full px-3 py-2 text-xs rounded-xl border border-theme-border bg-theme-surface text-theme-main focus:outline-none focus:border-theme-primary font-mono font-bold"
             />
           </div>
         </div>
 
-        {/* Paso 3: Descripción */}
+        {/* Paso 3: Descripción Técnica del Objetivo PEI */}
         <div>
           <label className="block text-xs font-semibold text-theme-main mb-1.5">
-            3. Descripción del Objetivo Estratégico PEI
+            2. Descripción / Objetivo Estratégico Quinquenal <span className="text-rose-500">*</span>
           </label>
           <textarea
             value={formData.descripcion}
             onChange={(e) => setFormData((prev) => ({ ...prev, descripcion: e.target.value }))}
-            rows={3}
-            placeholder="Ingrese la descripción del objetivo quinquenal o deje en blanco para autogenerar..."
-            className="input-theme text-xs w-full resize-none font-medium"
+            placeholder="Redacte el objetivo institucional quinquenal de alto impacto..."
+            rows={4}
+            className="w-full px-3 py-2 rounded-xl border border-theme-border bg-theme-surface text-theme-main placeholder:text-theme-muted/70 focus:border-theme-primary focus:outline-none resize-none leading-relaxed"
+            required
           />
+          <span className="text-[10px] text-theme-muted mt-1 block">
+            Este objetivo rige todas las Acciones a Corto Plazo (ACP) articuladas durante el quinquenio.
+          </span>
         </div>
       </form>
     </Modal>

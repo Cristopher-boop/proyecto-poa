@@ -171,6 +171,13 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
   const [showDetallesAvanzadosPlanif, setShowDetallesAvanzadosPlanif] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
+  // Estados de verificación técnica y comparadores de Planificación
+  const [operacionVerificada, setOperacionVerificada] = useState<boolean>(true);
+  const [partidaVerificada, setPartidaVerificada] = useState<boolean>(true);
+  const [showComparadorOps, setShowComparadorOps] = useState<boolean>(false);
+  const [showComparadorPartidas, setShowComparadorPartidas] = useState<boolean>(false);
+  const [busquedaComparadorOps, setBusquedaComparadorOps] = useState<string>('');
+
   // Cargar catálogos acotados a la gestión cuando se abre el modal
   useEffect(() => {
     if (!isOpen) return;
@@ -283,6 +290,11 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
       setObservacionPresup(certificacion.observacion_presupuestos || '');
       setActionPanelMode('none');
       setMotivoAccion('');
+      setOperacionVerificada(true);
+      setPartidaVerificada(true);
+      setShowComparadorOps(false);
+      setShowComparadorPartidas(false);
+      setBusquedaComparadorOps('');
     }
   }, [isOpen, certificacion, siguienteCorrelativoGlobal, siguienteCorrelativoArea]);
 
@@ -371,11 +383,14 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
     alertService.toast('Se restauró la asignación original del área', 'info');
   };
 
-  // Encontrar partida y operación seleccionada activamente (con fallback a la MC)
+  // Partida asignada a la certificación (siempre resuelta sin depender de selección de edición)
   const activePartida = useMemo(() => {
-    if (selectedPartidaId && Array.isArray(partidasList)) {
-      const found = partidasList.find((p) => p.id === selectedPartidaId);
-      if (found) return found;
+    if (certificacion.partida_codigo) {
+      return {
+        id: typeof certificacion.partida === 'number' ? certificacion.partida : 0,
+        codigo: certificacion.partida_codigo,
+        nombre: certificacion.partida_nombre || certificacion.partida_literal || '',
+      } as Partida;
     }
     if (activeMemoria?.partida_codigo) {
       return {
@@ -384,37 +399,52 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
         nombre: activeMemoria.partida_nombre || '',
       } as Partida;
     }
-    if (certificacion.partida_codigo) {
+    if (selectedPartidaId && Array.isArray(partidasList)) {
+      const found = partidasList.find((p) => p.id === selectedPartidaId);
+      if (found) return found;
+    }
+    if (certificacion.partida_literal) {
       return {
-        id: typeof certificacion.partida === 'number' ? certificacion.partida : 0,
-        codigo: certificacion.partida_codigo,
-        nombre: certificacion.partida_nombre || certificacion.partida_literal || '',
+        id: 0,
+        codigo: '',
+        nombre: certificacion.partida_literal,
       } as Partida;
     }
     return null;
-  }, [selectedPartidaId, partidasList, activeMemoria, certificacion]);
+  }, [certificacion, activeMemoria, selectedPartidaId, partidasList]);
 
+  // Operación POA asignada a la certificación (siempre resuelta sin depender de select)
   const activeOperacion = useMemo(() => {
-    if (selectedOperacionId && Array.isArray(operacionesList)) {
-      const found = operacionesList.find((op) => op.id === selectedOperacionId);
-      if (found) return found;
+    if (certificacion.operaciones_detalle && certificacion.operaciones_detalle.length > 0) {
+      const op0 = certificacion.operaciones_detalle[0];
+      return {
+        id: op0.id || 0,
+        codigo: op0.codigo,
+        descripcion: op0.descripcion,
+        acp_codigo: op0.acp_codigo || '',
+        acp_descripcion: op0.acp_descripcion || '',
+        amp_codigo: op0.amp_codigo || '',
+        programa_codigo: op0.programa_codigo || '',
+        programa_nombre: op0.programa_nombre || '',
+      } as any;
     }
     if (activeMemoria?.operacion_codigo) {
       return {
         id: activeMemoria.operacion || 0,
         codigo: activeMemoria.operacion_codigo,
         descripcion: activeMemoria.operacion_descripcion || '',
-      } as Operacion;
+        acp_codigo: '',
+        acp_descripcion: '',
+        amp_codigo: '',
+        programa_codigo: '',
+      } as any;
     }
-    if (certificacion.operaciones_detalle?.[0]?.codigo) {
-      return {
-        id: certificacion.operaciones_detalle[0].id || 0,
-        codigo: certificacion.operaciones_detalle[0].codigo,
-        descripcion: certificacion.operaciones_detalle[0].descripcion || '',
-      } as Operacion;
+    if (selectedOperacionId && Array.isArray(operacionesList)) {
+      const found = operacionesList.find((op) => op.id === selectedOperacionId);
+      if (found) return found;
     }
     return null;
-  }, [selectedOperacionId, operacionesList, activeMemoria, certificacion]);
+  }, [certificacion, activeMemoria, selectedOperacionId, operacionesList]);
 
   // Filtrar operaciones relevantes para el área de la solicitud
   const areaOperaciones = useMemo(() => {
@@ -422,10 +452,100 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
     return operacionesList.filter((op) => {
       if (certificacion.gestion && op.gestion_id && Number(op.gestion_id) !== Number(certificacion.gestion)) return false;
       if (certificacion.gestion_anio && op.gestion_anio && Number(op.gestion_anio) !== Number(certificacion.gestion_anio)) return false;
-      return !op.area || op.area === certificacion.area;
+      return !op.area || Number(op.area) === Number(certificacion.area);
     });
   }, [operacionesList, certificacion.area, certificacion.gestion, certificacion.gestion_anio]);
   const listaOpsParaMostrar = areaOperaciones.length > 0 ? areaOperaciones : (Array.isArray(operacionesList) ? operacionesList : []);
+
+  // Operaciones del área filtradas para el comparador
+  const operacionesComparadorFiltradas = useMemo(() => {
+    const baseList = areaOperaciones.length > 0 ? areaOperaciones : (Array.isArray(operacionesList) ? operacionesList : []);
+    if (!busquedaComparadorOps.trim()) return baseList;
+    const q = busquedaComparadorOps.toLowerCase();
+    return baseList.filter(
+      (op) =>
+        op.codigo.toLowerCase().includes(q) ||
+        (op.descripcion || '').toLowerCase().includes(q) ||
+        (op.acp_codigo || '').toLowerCase().includes(q)
+    );
+  }, [areaOperaciones, operacionesList, busquedaComparadorOps]);
+
+  // Constantes y helpers para combinar sugerencias de Operación y Partida sin sobrescribir
+  const TAG_SUG_OP = '[SUGERENCIA OPERACIÓN POA]';
+  const TAG_SUG_PARTIDA = '[SUGERENCIA PARTIDA / MC]';
+
+  const actualizarTextoObservacion = (
+    prevText: string,
+    tipo: 'operacion' | 'partida',
+    detalle: string
+  ): string => {
+    const opRegex = /(?:\[SUGERENCIA OPERACIÓN POA\]|Asignación incorrecta de Operación POA)[^\n]*(?:\n(?!\s*\[SUGERENCIA|\s*Asignación incorrecta)[^\n]*)*/gi;
+    const partRegex = /(?:\[SUGERENCIA PARTIDA \/ MC\]|Asignación incorrecta de Partida \/ MC)[^\n]*(?:\n(?!\s*\[SUGERENCIA|\s*Asignación incorrecta)[^\n]*)*/gi;
+
+    let currentOpBlock = '';
+    let currentPartidaBlock = '';
+    let cleanText = prevText || '';
+
+    const opMatch = cleanText.match(opRegex);
+    if (opMatch) {
+      currentOpBlock = opMatch[0].trim();
+      cleanText = cleanText.replace(opRegex, '').trim();
+    }
+
+    const partMatch = cleanText.match(partRegex);
+    if (partMatch) {
+      currentPartidaBlock = partMatch[0].trim();
+      cleanText = cleanText.replace(partRegex, '').trim();
+    }
+
+    if (tipo === 'operacion') {
+      currentOpBlock = `${TAG_SUG_OP}: ${detalle}`;
+    } else {
+      currentPartidaBlock = `${TAG_SUG_PARTIDA}: ${detalle}`;
+    }
+
+    const sections: string[] = [];
+    if (cleanText) sections.push(cleanText);
+    if (currentOpBlock) sections.push(currentOpBlock);
+    if (currentPartidaBlock) sections.push(currentPartidaBlock);
+
+    return sections.join('\n\n');
+  };
+
+  const removerSugerencia = (
+    prevText: string,
+    tipo: 'operacion' | 'partida'
+  ): string => {
+    const opRegex = /(?:\[SUGERENCIA OPERACIÓN POA\]|Asignación incorrecta de Operación POA)[^\n]*(?:\n(?!\s*\[SUGERENCIA|\s*Asignación incorrecta)[^\n]*)*/gi;
+    const partRegex = /(?:\[SUGERENCIA PARTIDA \/ MC\]|Asignación incorrecta de Partida \/ MC)[^\n]*(?:\n(?!\s*\[SUGERENCIA|\s*Asignación incorrecta)[^\n]*)*/gi;
+
+    let res = prevText || '';
+    if (tipo === 'operacion') {
+      res = res.replace(opRegex, '').trim();
+    } else {
+      res = res.replace(partRegex, '').trim();
+    }
+    return res.replace(/\n{3,}/g, '\n\n').trim();
+  };
+
+  // Sugerir cambio de Operación (Planificación no cambia la BD, devuelve con sugerencia)
+  const handleSugerirOperacion = (op: Operacion) => {
+    setOperacionVerificada(false);
+    setActionPanelMode('observar');
+    const detalle = `Reasignar a la operación ${op.codigo} — ${op.descripcion || ''}${op.acp_codigo ? ` (ACP: ${op.acp_codigo})` : ''}. Motivo: No corresponde al concepto de gasto solicitado.`;
+    setMotivoAccion((prev) => actualizarTextoObservacion(prev, 'operacion', detalle));
+  };
+
+  // Sugerir cambio de Partida / MC (Planificación no cambia la BD, devuelve con sugerencia)
+  const handleSugerirPartidaMC = (mem: MemoriaCalculo) => {
+    setPartidaVerificada(false);
+    setActionPanelMode('observar');
+    const pCod = mem.partida_codigo || '';
+    const pNom = mem.partida_nombre || '';
+    const saldo = Number(mem.saldo_disponible || 0);
+    const detalle = `Reasignar a la Partida ${pCod ? `${pCod} — ${pNom}` : 'correspondiente'} (Memoria de Cálculo ${mem.codigo}, Saldo disponible: Bs. ${saldo.toLocaleString('es-BO', { minimumFractionDigits: 2 })}). Motivo: Se adecúa con mayor precisión al concepto de gasto.`;
+    setMotivoAccion((prev) => actualizarTextoObservacion(prev, 'partida', detalle));
+  };
 
   // Cálculos financieros reactivos
   const memoriaTotalPresup = useMemo(() => {
@@ -476,9 +596,7 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
           categoria_programatica_codigo: catProgCodigo.trim(),
           categoria_programatica: catProgNombre.trim(),
           notas: notas.trim(),
-          memoria_id: selectedMemoriaId || undefined,
-          partida_id: selectedPartidaId || undefined,
-          operacion_id: selectedOperacionId || undefined,
+          // Planificación certifica la solicitud validada sin sobreescribir la asignación de la gerencia
         });
       }
       onClose();
@@ -920,15 +1038,15 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {isPlanifControl && (
             <div className="xl:col-span-5 space-y-4">
-              <div className="p-4 rounded-2xl bg-theme-surface border border-indigo-500/30 shadow-sm space-y-4">
+              <div className="p-4 rounded-2xl bg-theme-surface border border-theme-primary/30 shadow-sm space-y-4">
                 {/* Encabezado del Panel */}
                 <div className="flex items-center justify-between pb-3 border-b border-theme-border">
-                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                  <div className="flex items-center gap-2 text-theme-primary font-bold text-sm">
                     <ShieldCheck size={18} />
-                    <span>Alineación Técnica y Emisión</span>
+                    <span>Cotejo y Verificación Técnica POA</span>
                   </div>
-                  <span className="text-[10px] uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-mono font-bold">
-                    Planificación
+                  <span className="text-[10px] uppercase px-2 py-0.5 rounded bg-theme-primary/10 text-theme-primary font-mono font-bold">
+                    Planificación SPO
                   </span>
                 </div>
 
@@ -942,9 +1060,10 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span>
+                      <span className="flex items-center gap-1.5">
+                        <AlertCircle size={15} />
                         {actionPanelMode === 'observar'
-                          ? 'Motivo de la Observación (Devolver al Área):'
+                          ? 'Sugerencia y Devolución a la Gerencia:'
                           : 'Motivo del Rechazo Definitivo:'}
                       </span>
                       <button
@@ -955,16 +1074,21 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
                         ✕ Cancelar
                       </button>
                     </div>
+                    <p className="text-[11px] text-theme-muted">
+                      {actionPanelMode === 'observar'
+                        ? 'Planificación sugiere la corrección adecuada. La solicitud volverá a la Gerencia para que aplique la sugerencia.'
+                        : 'Indica la causa insubsanable del rechazo formal de la solicitud.'}
+                    </p>
                     <textarea
                       value={motivoAccion}
                       onChange={(e) => setMotivoAccion(e.target.value)}
                       placeholder={
                         actionPanelMode === 'observar'
-                          ? 'Indica qué debe corregir la gerencia (imputación incorrecta, justificación, especificaciones)...'
+                          ? 'Indica qué debe corregir la gerencia (imputación incorrecta, sugerencia de partida o de operación)...'
                           : 'Indica la causa insubsanable del rechazo...'
                       }
-                      rows={3}
-                      className="w-full text-xs p-2.5 rounded-lg border border-theme-border bg-theme-surface text-theme-main focus:outline-none focus:ring-1 focus:ring-theme-primary"
+                      rows={4}
+                      className="w-full text-xs p-2.5 rounded-lg border border-theme-border bg-theme-surface text-theme-main focus:outline-none focus:ring-1 focus:ring-theme-primary font-medium"
                     />
                     <div className="flex items-center justify-end gap-2 pt-1">
                       <Button
@@ -991,229 +1115,399 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
                         }
                       >
                         {actionPanelMode === 'observar'
-                          ? 'Confirmar y Devolver'
+                          ? 'Confirmar y Devolver con Sugerencia'
                           : 'Confirmar Rechazo'}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    {/* 1. Comprobación de Suficiencia de Dinero en Memoria (Simple y Directo) */}
-                    <div
-                      className={`p-3 rounded-xl border ${
-                        tieneFondosSuficientes
-                          ? 'bg-emerald-500/10 border-emerald-500/30'
-                          : 'bg-rose-500/10 border-rose-500/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {tieneFondosSuficientes ? (
-                            <CheckCircle2
-                              size={17}
-                              className="text-emerald-600 dark:text-emerald-400 shrink-0"
-                            />
-                          ) : (
-                            <AlertTriangle
-                              size={17}
-                              className="text-rose-600 dark:text-rose-400 shrink-0"
-                            />
-                          )}
-                          <span
-                            className={`text-xs font-bold ${
-                              tieneFondosSuficientes
-                                ? 'text-emerald-800 dark:text-emerald-200'
-                                : 'text-rose-800 dark:text-rose-200'
-                            }`}
-                          >
-                            {tieneFondosSuficientes
-                              ? 'Fondos Suficientes para la Solicitud'
-                              : 'Saldo Insuficiente en Memoria de Cálculo'}
-                          </span>
+                    {/* ── 1. Resumen de la Solicitud (Redactado por Gerencia) ── */}
+                    <div className="p-3 rounded-xl bg-theme-base border border-theme-border/70 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[10px] uppercase font-bold text-theme-muted">
+                          Concepto del Gasto Solicitado:
+                        </span>
+                        <span className="font-mono font-bold text-xs text-theme-primary">
+                          Bs. {montoNum.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-theme-main font-medium leading-relaxed bg-theme-surface p-2 rounded-lg border border-theme-border/60">
+                        "{certificacion.concepto_gasto || 'Sin descripción detallada por la gerencia'}"
+                      </p>
+                      {certificacion.memoria_justificacion && (
+                        <p className="text-[11px] text-theme-muted italic">
+                          <strong>Justificación en MC:</strong> {certificacion.memoria_justificacion}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* ── 2. PREGUNTA 1: ¿La Operación POA corresponde al gasto? ── */}
+                    <div className="p-3.5 rounded-xl bg-theme-base border border-theme-border space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-theme-main">
+                          <Sparkles size={14} className="text-theme-primary" />
+                          <span>1. ¿La Operación POA corresponde al gasto?</span>
                         </div>
-                        <span className="font-mono text-xs font-bold text-theme-muted">
-                          {activeMemoria?.codigo || certificacion.memoria_codigo || 'Sin MC'}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            operacionVerificada
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              operacionVerificada ? 'bg-emerald-500' : 'bg-amber-500'
+                            }`}
+                          />
+                          {operacionVerificada ? 'Asignación Conforme' : 'Observada / Sugerir'}
                         </span>
                       </div>
 
-                      {/* 3 Valores clave en fila */}
-                      <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-theme-border/40">
-                        <div className="p-1.5 rounded-lg bg-theme-surface/80 border border-theme-border/40">
-                          <span className="text-[9px] uppercase font-bold text-theme-muted block">
-                            Saldo en MC:
+                      {/* Operación Asignada por la Gerencia (Solo Lectura) */}
+                      <div className="p-2.5 rounded-lg bg-theme-surface border border-theme-border/70 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-bold text-xs text-theme-primary">
+                            {activeOperacion?.codigo || 'Sin Operación POA asignada'}
                           </span>
-                          <span className="text-xs font-mono font-bold text-theme-main">
-                            Bs. {memoriaSaldoDisp.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
-                          </span>
+                          {activeOperacion?.acp_codigo && (
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-theme-base text-theme-muted border border-theme-border">
+                              {activeOperacion.acp_codigo}
+                            </span>
+                          )}
                         </div>
-                        <div className="p-1.5 rounded-lg bg-theme-surface/80 border border-theme-border/40">
-                          <span className="text-[9px] uppercase font-bold text-theme-muted block">
-                            Solicitado:
-                          </span>
-                          <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                            Bs. {montoNum.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                        <div className="p-1.5 rounded-lg bg-theme-surface/80 border border-theme-border/40">
-                          <span className="text-[9px] uppercase font-bold text-theme-muted block">
-                            Saldo Restante:
-                          </span>
-                          <span
-                            className={`text-xs font-mono font-bold ${
-                              saldoRestanteProyectado >= 0
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-rose-600 dark:text-rose-400'
-                            }`}
-                          >
-                            Bs. {saldoRestanteProyectado.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
+                        <p className="text-xs text-theme-main font-medium leading-relaxed">
+                          {activeOperacion?.descripcion || 'No se cuenta con descripción de la operación vinculada.'}
+                        </p>
                       </div>
 
-                      {/* Opción para verificar o cambiar a otra MC de la gerencia */}
-                      <div className="pt-2 mt-2 border-t border-theme-border/30 flex items-center justify-between text-[11px]">
+                      {/* Botones de Validación Rápida y Comparador */}
+                      <div className="flex items-center justify-between pt-1 text-xs">
                         <button
                           type="button"
-                          onClick={() => setShowOtrasMemorias(!showOtrasMemorias)}
-                          className="font-semibold text-theme-primary hover:underline flex items-center gap-1"
+                          onClick={() => setShowComparadorOps(!showComparadorOps)}
+                          className="font-semibold text-theme-primary hover:underline flex items-center gap-1 text-[11px]"
                         >
                           <span>
-                            {showOtrasMemorias
-                              ? 'Ocultar catálogo de MCs'
-                              : `Comprobar o cambiar a otra MC (${memoriasArea.length})`}
+                            {showComparadorOps
+                              ? 'Ocultar otras Operaciones'
+                              : `Comparar con otras Operaciones (${areaOperaciones.length})`}
                           </span>
-                          {showOtrasMemorias ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                          {showComparadorOps ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                         </button>
-                        {esMemoriaReasignada && (
+
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={handleRestaurarMemoriaOriginal}
-                            className="text-[10px] text-amber-600 hover:underline font-bold"
+                            onClick={() => {
+                              setOperacionVerificada(true);
+                              setShowComparadorOps(false);
+                              setMotivoAccion((prev) => {
+                                const updated = removerSugerencia(prev, 'operacion');
+                                if (!updated && partidaVerificada) {
+                                  setActionPanelMode('none');
+                                }
+                                return updated;
+                              });
+                            }}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold border transition ${
+                              operacionVerificada
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                : 'bg-theme-surface text-theme-muted hover:text-theme-main border-theme-border'
+                            }`}
                           >
-                            Restaurar original
+                            ✓ Corresponde
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOperacionVerificada(false);
+                              setShowComparadorOps(true);
+                              setActionPanelMode('observar');
+                            }}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold border transition ${
+                              !operacionVerificada
+                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                                : 'bg-theme-surface text-theme-muted hover:text-theme-main border-theme-border'
+                            }`}
+                          >
+                            ✕ No corresponde
+                          </button>
+                        </div>
                       </div>
 
-                      {showOtrasMemorias && (
-                        <div className="mt-2 pt-2 border-t border-theme-border/50 space-y-2">
-                          <input
-                            type="text"
-                            value={busquedaMemoria}
-                            onChange={(e) => setBusquedaMemoria(e.target.value)}
-                            placeholder="Buscar otra MC del área por código o partida..."
-                            className="w-full text-[11px] p-2 rounded-lg border border-theme-border bg-theme-surface text-theme-main focus:outline-none"
-                          />
-                          <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
-                            {memoriasFiltradas.map((m) => (
-                              <div
-                                key={m.id}
-                                onClick={() => handleSelectMemoria(m)}
-                                className={`p-2 rounded-lg border text-[11px] cursor-pointer transition ${
-                                  selectedMemoriaId === m.id
-                                    ? 'bg-theme-primary/10 border-theme-primary font-bold'
-                                    : 'bg-theme-surface border-theme-border/60 hover:bg-theme-base'
-                                }`}
-                              >
-                                <div className="flex justify-between">
-                                  <span className="font-mono">{m.codigo}</span>
-                                  <span className="font-mono text-emerald-600 font-bold">
-                                    Bs. {Number(m.saldo_disponible || 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })}
-                                  </span>
-                                </div>
-                                <p className="text-[10px] text-theme-muted truncate">
-                                  {m.justificacion || m.partida_nombre}
-                                </p>
-                              </div>
-                            ))}
+                      {/* Comparador desplegable de Operaciones */}
+                      {showComparadorOps && (
+                        <div className="mt-2 pt-2 border-t border-theme-border/50 space-y-2 animate-in fade-in duration-150">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={busquedaComparadorOps}
+                              onChange={(e) => setBusquedaComparadorOps(e.target.value)}
+                              placeholder="Buscar otra operación por código o descripción..."
+                              className="w-full text-[11px] p-2 rounded-lg border border-theme-border bg-theme-surface text-theme-main focus:outline-none"
+                            />
+                          </div>
+                          <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                            {operacionesComparadorFiltradas.length === 0 ? (
+                              <p className="text-[11px] text-theme-muted italic text-center py-2">
+                                No se encontraron otras operaciones para esta área.
+                              </p>
+                            ) : (
+                              operacionesComparadorFiltradas.map((op) => {
+                                const isCurrent = activeOperacion?.id === op.id || activeOperacion?.codigo === op.codigo;
+                                return (
+                                  <div
+                                    key={op.id}
+                                    className={`p-2 rounded-lg border text-[11px] flex items-center justify-between gap-2 ${
+                                      isCurrent
+                                        ? 'bg-theme-primary/10 border-theme-primary/40'
+                                        : 'bg-theme-surface border-theme-border/60 hover:bg-theme-base'
+                                    }`}
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-mono font-bold text-theme-primary">
+                                          {op.codigo}
+                                        </span>
+                                        {op.acp_codigo && (
+                                          <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-theme-base text-theme-muted border">
+                                            {op.acp_codigo}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[10px] text-theme-main truncate" title={op.descripcion}>
+                                        {op.descripcion}
+                                      </p>
+                                    </div>
+                                    {!isCurrent && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSugerirOperacion(op)}
+                                        className="text-[10px] py-1 px-2 font-bold shrink-0 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border-amber-500/30"
+                                      >
+                                        Sugerir esta OP
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* 2. Cotejo de Gasto y Partida Asignada (Comparar descripción de Gerencia vs Partida) */}
-                    <div className="p-3.5 rounded-xl bg-theme-base border border-theme-border space-y-3">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-theme-main">
-                        <FileText size={15} className="text-indigo-600 dark:text-indigo-400" />
-                        <span>Cotejo de Gasto y Partida Asignada:</span>
-                      </div>
-
-                      {/* Descripción redactada por la Gerencia */}
-                      <div className="p-2.5 rounded-lg bg-theme-surface border border-theme-border/60 space-y-1">
-                        <span className="text-[10px] uppercase font-bold text-theme-muted block">
-                          Descripción / Concepto del Gasto (Redactado por Gerencia):
+                    {/* ── 3. PREGUNTA 2: ¿La Partida / MC corresponde al concepto de gasto? ── */}
+                    <div className="p-3.5 rounded-xl bg-theme-base border border-theme-border space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-theme-main">
+                          <Layers size={14} className="text-theme-primary" />
+                          <span>2. ¿La Partida / MC corresponde al concepto?</span>
+                        </div>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            partidaVerificada
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              partidaVerificada ? 'bg-emerald-500' : 'bg-amber-500'
+                            }`}
+                          />
+                          {partidaVerificada ? 'Asignación Conforme' : 'Observada / Sugerir'}
                         </span>
-                        <p className="text-xs text-theme-main font-medium leading-relaxed bg-amber-50/60 dark:bg-amber-900/10 p-2 rounded border border-amber-200/60 dark:border-amber-700/30">
-                          "{certificacion.concepto_gasto || 'Sin descripción detallada por la gerencia'}"
-                        </p>
-                        {certificacion.memoria_justificacion && (
-                          <span className="text-[10px] text-theme-muted italic block pt-0.5">
-                            Justificación en MC: {certificacion.memoria_justificacion}
-                          </span>
-                        )}
                       </div>
 
-                      {/* Partida Presupuestaria Asignada con opción de corregir */}
-                      <div className="space-y-1.5 text-xs">
+                      {/* Partida Asignada por la Gerencia (SIEMPRE VISIBLE) */}
+                      <div className="p-2.5 rounded-lg bg-theme-surface border border-theme-border/70 space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <label className="font-bold text-theme-main flex items-center gap-1.5">
-                            <Layers size={14} className="text-theme-primary" />
-                            <span>Partida Asignada (¿Corresponde al gasto?):</span>
-                          </label>
-                          {activePartida && (
-                            <span className="text-[10px] font-mono font-bold text-theme-primary">
+                          <span className="text-[10px] uppercase font-bold text-theme-muted">
+                            Partida Presupuestaria Asignada:
+                          </span>
+                          {activePartida?.codigo && (
+                            <span className="font-mono font-bold text-xs text-theme-primary">
                               Partida {activePartida.codigo}
                             </span>
                           )}
                         </div>
-                        <select
-                          value={selectedPartidaId || ''}
-                          onChange={(e) => setSelectedPartidaId(Number(e.target.value) || null)}
-                          className="w-full text-xs p-2.5 rounded-lg border border-theme-border bg-theme-surface text-theme-main font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        >
-                          <option value="">-- Seleccionar Partida Presupuestaria --</option>
-                          {partidasList.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.codigo} — {p.nombre}
-                            </option>
-                          ))}
-                        </select>
-                        {activePartida && (
-                          <p className="text-[11px] text-theme-muted bg-theme-surface/60 p-1.5 rounded border border-theme-border/40">
-                            <strong>Objeto de la partida:</strong> {activePartida.nombre}
-                          </p>
-                        )}
+                        <p className="text-xs font-bold text-theme-main">
+                          {activePartida
+                            ? `${activePartida.codigo ? `${activePartida.codigo} — ` : ''}${activePartida.nombre}`
+                            : certificacion.partida_literal || 'Sin Partida asignada en la solicitud'}
+                        </p>
+
+                        {/* Memoria de Cálculo y Suficiencia Financiera */}
+                        <div className="pt-2 border-t border-theme-border/40 space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-theme-muted font-semibold">
+                              Memoria: <strong className="font-mono text-theme-main">{activeMemoria?.codigo || certificacion.memoria_codigo || 'Sin MC'}</strong>
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                tieneFondosSuficientes
+                                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                  : 'bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                              }`}
+                            >
+                              {tieneFondosSuficientes ? 'Fondos Suficientes ✓' : 'Saldo Insuficiente ✕'}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                            <div className="p-1 rounded bg-theme-base border border-theme-border/50">
+                              <span className="text-theme-muted block font-semibold">Saldo MC</span>
+                              <strong className="font-mono text-theme-main">
+                                Bs. {memoriaSaldoDisp.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+                              </strong>
+                            </div>
+                            <div className="p-1 rounded bg-theme-base border border-theme-border/50">
+                              <span className="text-theme-muted block font-semibold">Solicitado</span>
+                              <strong className="font-mono text-theme-primary">
+                                Bs. {montoNum.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+                              </strong>
+                            </div>
+                            <div className="p-1 rounded bg-theme-base border border-theme-border/50">
+                              <span className="text-theme-muted block font-semibold">Restante</span>
+                              <strong
+                                className={`font-mono ${
+                                  saldoRestanteProyectado >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                                }`}
+                              >
+                                Bs. {saldoRestanteProyectado.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+                              </strong>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Operación POA */}
-                      <div className="space-y-1.5 text-xs pt-1 border-t border-theme-border/40">
-                        <div className="flex items-center justify-between">
-                          <label className="font-bold text-theme-main flex items-center gap-1.5">
-                            <Sparkles size={14} className="text-indigo-600 dark:text-indigo-400" />
-                            <span>Operación POA:</span>
-                          </label>
-                          {activeOperacion && (
-                            <span className="text-[10px] font-mono font-bold text-theme-muted">
-                              {activeOperacion.codigo}
-                            </span>
-                          )}
-                        </div>
-                        <select
-                          value={selectedOperacionId || ''}
-                          onChange={(e) => setSelectedOperacionId(Number(e.target.value) || null)}
-                          className="w-full text-xs p-2.5 rounded-lg border border-theme-border bg-theme-surface text-theme-main font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      {/* Botones de Validación Rápida y Comparador de Partidas */}
+                      <div className="flex items-center justify-between pt-1 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setShowComparadorPartidas(!showComparadorPartidas)}
+                          className="font-semibold text-theme-primary hover:underline flex items-center gap-1 text-[11px]"
                         >
-                          <option value="">-- Seleccionar Operación POA --</option>
-                          {listaOpsParaMostrar.map((op) => (
-                            <option key={op.id} value={op.id}>
-                              {op.codigo} — {(op.descripcion || '').slice(0, 75)}
-                            </option>
-                          ))}
-                        </select>
+                          <span>
+                            {showComparadorPartidas
+                              ? 'Ocultar otras Partidas / MCs'
+                              : `Comparar con otras Partidas / MCs (${memoriasArea.length})`}
+                          </span>
+                          {showComparadorPartidas ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPartidaVerificada(true);
+                              setShowComparadorPartidas(false);
+                              setMotivoAccion((prev) => {
+                                const updated = removerSugerencia(prev, 'partida');
+                                if (!updated && operacionVerificada) {
+                                  setActionPanelMode('none');
+                                }
+                                return updated;
+                              });
+                            }}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold border transition ${
+                              partidaVerificada
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                : 'bg-theme-surface text-theme-muted hover:text-theme-main border-theme-border'
+                            }`}
+                          >
+                            ✓ Corresponde
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPartidaVerificada(false);
+                              setShowComparadorPartidas(true);
+                              setActionPanelMode('observar');
+                            }}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold border transition ${
+                              !partidaVerificada
+                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                                : 'bg-theme-surface text-theme-muted hover:text-theme-main border-theme-border'
+                            }`}
+                          >
+                            ✕ No corresponde
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Comparador desplegable de Partidas y MCs */}
+                      {showComparadorPartidas && (
+                        <div className="mt-2 pt-2 border-t border-theme-border/50 space-y-2 animate-in fade-in duration-150">
+                          <input
+                            type="text"
+                            value={busquedaMemoria}
+                            onChange={(e) => setBusquedaMemoria(e.target.value)}
+                            placeholder="Buscar por código de MC, código o nombre de partida..."
+                            className="w-full text-[11px] p-2 rounded-lg border border-theme-border bg-theme-surface text-theme-main focus:outline-none"
+                          />
+                          <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                            {memoriasFiltradas.length === 0 ? (
+                              <p className="text-[11px] text-theme-muted italic text-center py-2">
+                                No se encontraron otras memorias para esta área.
+                              </p>
+                            ) : (
+                              memoriasFiltradas.map((m) => {
+                                const isCurrent = (activeMemoria?.id === m.id) || (certificacion.memoria === m.id);
+                                const saldo = Number(m.saldo_disponible || 0);
+                                const pCod = m.partida_codigo || '';
+                                const pNom = m.partida_nombre || '';
+                                return (
+                                  <div
+                                    key={m.id}
+                                    className={`p-2 rounded-lg border text-[11px] flex items-center justify-between gap-2 ${
+                                      isCurrent
+                                        ? 'bg-theme-primary/10 border-theme-primary/40'
+                                        : 'bg-theme-surface border-theme-border/60 hover:bg-theme-base'
+                                    }`}
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-mono font-bold text-theme-main">
+                                          {m.codigo}
+                                        </span>
+                                        <span className="font-mono text-emerald-600 font-bold text-[10px]">
+                                          Bs. {saldo.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
+                                        </span>
+                                      </div>
+                                      <p className="text-[10px] font-bold text-theme-primary truncate">
+                                        {pCod ? `Partida ${pCod} — ${pNom}` : (m.justificacion || 'Sin partida')}
+                                      </p>
+                                      {pCod && m.justificacion && (
+                                        <p className="text-[9.5px] text-theme-muted truncate" title={m.justificacion}>
+                                          {m.justificacion}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {!isCurrent && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSugerirPartidaMC(m)}
+                                        className="text-[10px] py-1 px-2 font-bold shrink-0 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border-amber-500/30"
+                                      >
+                                        Sugerir Partida
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* 3. Acordeón para Más Detalles y Ajustes Técnicos (Sin Ruido por Defecto) */}
+                    {/* ── 4. Acordeón de Ajustes Oficiales (Categoría, Notas, Correlativos) ── */}
                     <div className="rounded-xl border border-theme-border bg-theme-base overflow-hidden">
                       <button
                         type="button"
@@ -1287,7 +1581,7 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
                               <span className="text-[10px] text-theme-muted block">
                                 Nº Certificación POA:
                               </span>
-                              <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 truncate block">
+                              <span className="font-mono font-bold text-theme-primary truncate block">
                                 {codigoCert || 'Generando...'}
                               </span>
                             </div>
@@ -1296,7 +1590,7 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
                       )}
                     </div>
 
-                    {/* Botones de Acción de Planificación */}
+                    {/* ── 5. Botones de Acción de Planificación ── */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-theme-border">
                       <div className="flex items-center gap-1.5">
                         <Button
@@ -1309,7 +1603,7 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
                           icon={<AlertCircle size={14} />}
                           className="text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border-amber-500/30 font-bold"
                         >
-                          Observar
+                          Devolver con Observación
                         </Button>
                         <Button
                           size="sm"
@@ -1342,7 +1636,7 @@ const CertificacionDetalleModalContent: React.FC<CertificacionDetalleModalProps>
             </div>
           )}
 
-          {/* ═══════════════════════════════════════════════════════════════════ */}
+
           {/* COLUMNA IZQUIERDA: PANEL DE CONTROL DE PRESUPUESTOS                */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {isPresupControl && (

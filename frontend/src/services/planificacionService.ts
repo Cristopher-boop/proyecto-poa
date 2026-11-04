@@ -70,6 +70,17 @@ export const planificacionService = {
     const response = await api.delete(`/api/v1/planificacion/operaciones/${id}/`);
     return response.data;
   },
+  duplicarGestionOperaciones: async (payload: {
+    gestion_base: number;
+    gestion_destino: number;
+    area_id?: string | number;
+  }) => {
+    const response = await api.post<{ message: string; creadas: number; errores?: string[] }>(
+      '/api/v1/planificacion/operaciones/duplicar-gestion/',
+      payload
+    );
+    return response.data;
+  },
 
   // Tareas
   getTareas: async (params?: Record<string, any>) => {

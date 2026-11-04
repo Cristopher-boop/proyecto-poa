@@ -21,6 +21,9 @@ export default function OrganizacionalPage() {
     setActiveTab,
     loading,
 
+    // Permisos institucionales (Superadministración)
+    canManageArea,
+
     // Filters
     searchTerm,
     setSearchTerm,
@@ -99,6 +102,7 @@ export default function OrganizacionalPage() {
         onOpenCreateArea={handleOpenCreateArea}
         onOpenCreateSeccion={() => handleOpenCreateSeccion()}
         onOpenCreatePrograma={handleOpenCreatePrograma}
+        canCreateArea={canManageArea}
       />
 
       {/* 2. Barra de Búsqueda y Filtros */}
@@ -133,6 +137,7 @@ export default function OrganizacionalPage() {
               onEditArea={handleOpenEditArea}
               onToggleArea={handleToggleArea}
               onOpenCreateSeccionForArea={handleOpenCreateSeccion}
+              canManageArea={canManageArea}
             />
           )}
 
@@ -143,6 +148,7 @@ export default function OrganizacionalPage() {
               onView={handleOpenViewArea}
               onEdit={handleOpenEditArea}
               onToggleEstado={handleToggleArea}
+              canManage={canManageArea}
             />
           )}
 
@@ -153,6 +159,7 @@ export default function OrganizacionalPage() {
               onView={handleOpenViewSeccion}
               onEdit={handleOpenEditSeccion}
               onToggleEstado={handleToggleSeccion}
+              canManage={canManageArea}
             />
           )}
 
@@ -162,6 +169,7 @@ export default function OrganizacionalPage() {
               onView={handleOpenViewPrograma}
               onEdit={handleOpenEditPrograma}
               onToggleEstado={handleTogglePrograma}
+              canManage={canManageArea}
             />
           )}
         </>
@@ -174,6 +182,7 @@ export default function OrganizacionalPage() {
         onSave={handleSaveArea}
         editingArea={editingArea}
         programas={programas}
+        canManage={canManageArea}
       />
       <AreaDetalleModal
         isOpen={showAreaDetalleModal}
@@ -181,7 +190,7 @@ export default function OrganizacionalPage() {
         area={viewingArea}
         programas={programas}
         onEdit={handleOpenEditArea}
-        canEdit={activeTab !== 'JERARQUIA'}
+        canEdit={canManageArea && activeTab !== 'JERARQUIA'}
       />
 
       {/* Modales: Secciones */}
@@ -198,6 +207,7 @@ export default function OrganizacionalPage() {
         seccion={viewingSeccion}
         areas={areas}
         onEdit={handleOpenEditSeccion}
+        canEdit={canManageArea}
       />
 
       {/* Modales: Programas */}
@@ -212,6 +222,7 @@ export default function OrganizacionalPage() {
         onClose={() => setShowProgramaDetalleModal(false)}
         programa={viewingPrograma}
         onEdit={handleOpenEditPrograma}
+        canEdit={canManageArea}
       />
     </div>
   );

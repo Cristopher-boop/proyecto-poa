@@ -1,4 +1,5 @@
 import type { Programa } from '../../../types/organizacional';
+import type { UserProfile } from '../../../services/authService';
 
 /**
  * Formats a program to display strictly as "Programa X" without verbose breakdowns.
@@ -28,4 +29,22 @@ export const formatProgramaShort = (
   }
 
   return 'Sin Programa';
+};
+
+/**
+ * Determina si el usuario actual pertenece a la Superadministración
+ * (is_superuser activo o rol ADMINISTRADOR / SUPERADMIN / SUPERUSUARIO).
+ */
+export const isSuperAdminUser = (user: UserProfile | null | undefined): boolean => {
+  if (!user) return false;
+  if (user.is_superuser) return true;
+  const rolClean = (user.rol_nombre || '')
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  return (
+    rolClean.includes('SUPERADMIN') ||
+    rolClean.includes('SUPERUSUARIO') ||
+    rolClean.includes('ADMIN')
+  );
 };

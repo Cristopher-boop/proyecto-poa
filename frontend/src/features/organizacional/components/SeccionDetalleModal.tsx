@@ -9,6 +9,7 @@ interface SeccionDetalleModalProps {
   seccion: Seccion | null;
   areas: Area[];
   onEdit: (sec: Seccion) => void;
+  canEdit?: boolean;
 }
 
 export const SeccionDetalleModal: React.FC<SeccionDetalleModalProps> = ({
@@ -17,6 +18,7 @@ export const SeccionDetalleModal: React.FC<SeccionDetalleModalProps> = ({
   seccion,
   areas,
   onEdit,
+  canEdit = false,
 }) => {
   if (!isOpen || !seccion) return null;
 
@@ -41,32 +43,32 @@ export const SeccionDetalleModal: React.FC<SeccionDetalleModalProps> = ({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cerrar
           </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() => onEdit(seccion)}
-            className="flex items-center gap-1.5"
-          >
-            <Edit3 size={14} /> Editar Sección
-          </Button>
+          {canEdit && onEdit && (
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => onEdit(seccion)}
+              className="flex items-center gap-1.5"
+            >
+              <Edit3 size={14} /> Editar Sección
+            </Button>
+          )}
         </div>
       }
     >
       <div className="space-y-3.5 text-xs">
-        {/* Metadatos Rápidos: Gerencia Dependiente y Estado */}
+        {/* Metadatos Rápidos: Área Dependiente y Estado */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block mb-1">
               Gerencia / Unidad Dependiente
             </span>
             {parentArea ? (
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono font-bold text-xs text-theme-primary shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 px-1.5 py-0.5 rounded">
                   {parentArea.codigo}
                 </span>
-                <span className="text-xs font-semibold text-theme-main truncate">
-                  {parentArea.nombre}
-                </span>
+                <span className="text-xs font-semibold text-theme-main">{parentArea.nombre}</span>
               </div>
             ) : (
               <span className="text-xs text-theme-muted italic">Área ID: {seccion.area}</span>
@@ -90,7 +92,7 @@ export const SeccionDetalleModal: React.FC<SeccionDetalleModalProps> = ({
           </div>
         </div>
 
-        {/* Nombre de la Sección */}
+        {/* Nombre Sección */}
         <div className="p-3 rounded-xl bg-theme-surface border border-theme-border space-y-1">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block">
             Nombre de la Sección
@@ -101,7 +103,7 @@ export const SeccionDetalleModal: React.FC<SeccionDetalleModalProps> = ({
         {/* Descripción */}
         <div className="p-3 rounded-xl bg-theme-surface border border-theme-border space-y-1">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-theme-muted block">
-            Descripción / Alcance Operativo
+            Descripción y Funciones
           </span>
           <p className="text-xs text-theme-main font-normal leading-relaxed">
             {seccion.descripcion || <span className="italic text-theme-muted">Sin descripción registrada.</span>}

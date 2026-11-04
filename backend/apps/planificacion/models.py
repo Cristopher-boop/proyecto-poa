@@ -42,7 +42,7 @@ class AccionCortoPlazo(TimeStampedModel):
         related_name='acciones_corto_plazo',
         verbose_name="Gestión POA"
     )
-    codigo = models.CharField(max_length=20, unique=True, verbose_name="Código ACP")
+    codigo = models.CharField(max_length=20, verbose_name="Código ACP")
     descripcion = models.TextField(verbose_name="Descripción / Objetivo de Gestión POA")
     estado = models.BooleanField(default=True, verbose_name="Activo")
 
@@ -50,6 +50,7 @@ class AccionCortoPlazo(TimeStampedModel):
         verbose_name = "Acción a Corto Plazo (POA)"
         verbose_name_plural = "Acciones a Corto Plazo (POA)"
         ordering = ['codigo']
+        unique_together = [['codigo', 'gestion']]
 
     def __str__(self):
         return f"{self.codigo} - {self.descripcion[:50]}"

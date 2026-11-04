@@ -78,7 +78,7 @@ export const AcpModal: React.FC<AcpModalProps> = ({
     return availableAmps.map((a) => ({
       id: String(a.id),
       label: a.descripcion,
-      badge: a.codigo,
+      badge: a.codigo.replace(/-\d+$/, ''),
       sublabel: `Período: ${a.periodo_inicio} - ${a.periodo_fin}`,
     }));
   }, [availableAmps]);
@@ -113,7 +113,8 @@ export const AcpModal: React.FC<AcpModalProps> = ({
     }
   };
 
-  const displayCode = acp ? acp.codigo : calculatedAcpCode;
+  const rawDisplayCode = acp ? acp.codigo : calculatedAcpCode;
+  const displayCode = rawDisplayCode;
 
   return (
     <Modal
@@ -122,11 +123,11 @@ export const AcpModal: React.FC<AcpModalProps> = ({
       title={acp ? 'Editar Acción a Corto Plazo' : 'Nueva Acción a Corto Plazo (POA)'}
       subtitle="Defina el objetivo anual vinculado a la Acción a Mediano Plazo del PEI"
       badge={
-        <span className="font-mono font-bold text-xs bg-indigo-50 text-indigo-700 border border-indigo-200/90 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60 px-2.5 py-1 rounded-lg">
+        <span className="font-mono font-bold text-xs text-theme-primary">
           {displayCode}
         </span>
       }
-      icon={<Target size={20} className="text-indigo-600 dark:text-indigo-400" />}
+      icon={<Target size={20} className="text-theme-primary" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">

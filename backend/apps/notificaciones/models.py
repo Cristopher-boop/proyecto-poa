@@ -43,3 +43,7 @@ class Notificacion(TimeStampedModel):
 
     def __str__(self):
         return f"Notificación -> {self.usuario_destino.username}: {self.titulo}"
+
+
+# Alias de compatibilidad defensivo
+setattr(Notificacion.TipoNotificacion, 'RECHAZADO', Notificacion.TipoNotificacion.RECHAZO)

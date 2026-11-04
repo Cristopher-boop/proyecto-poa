@@ -21,6 +21,10 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
   if (!isOpen || !operacion) return null;
 
   const isActiva = Boolean(operacion.estado);
+  const cleanAcpCode = operacion.acp_codigo || 'ACP';
+  const cleanAmpCode = (operacion.amp_codigo || 'AMP').replace(/-\d+$/, '');
+  const rawProg = operacion.area_programa_codigo || operacion.acp_programa_codigo || '1';
+  const progNumber = rawProg.replace(/^P-?/i, '');
 
   return (
     <Modal
@@ -33,7 +37,7 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
           {operacion.codigo}
         </span>
       }
-      icon={<FileCheck2 size={20} className="text-blue-600 dark:text-blue-400" />}
+      icon={<FileCheck2 size={20} className="text-theme-primary" />}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -100,12 +104,12 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
           </span>
           <p className="text-xs text-theme-main font-medium leading-relaxed whitespace-pre-wrap">
             {operacion.descripcion || (
-              <span className="italic text-theme-muted">Sin descripción detallada registrada.</span>
+              <span className="italic text-theme-muted">Operación sin descripción técnica detallada.</span>
             )}
           </p>
         </div>
 
-        {/* Fila 3: Programa Institucional y Área Responsable */}
+        {/* Fila 3: Programa Institucional y Área */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
             <span className="text-[10px] font-semibold uppercase text-theme-muted block mb-1.5 flex items-center gap-1">
@@ -113,11 +117,8 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
               Programa Institucional
             </span>
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 px-2 py-0.5 rounded shrink-0">
-                {operacion.area_programa_codigo || operacion.acp_programa_codigo || 'P-01'}
-              </span>
-              <span className="text-xs font-semibold text-theme-main line-clamp-1">
-                {operacion.area_programa_nombre || 'Programa General'}
+              <span className="text-xs font-semibold text-theme-main">
+                Programa {progNumber}
               </span>
             </div>
           </div>
@@ -148,8 +149,8 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
               Acción a Corto Plazo (ACP - POA)
             </span>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="font-mono font-bold text-xs bg-indigo-50 text-indigo-700 border border-indigo-200/90 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60 px-2 py-0.5 rounded">
-                {operacion.acp_codigo || 'ACP'}
+              <span className="font-mono font-bold text-xs text-theme-primary">
+                {cleanAcpCode}
               </span>
             </div>
             <p className="text-[11px] text-theme-muted line-clamp-2">
@@ -164,7 +165,7 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
             </span>
             <div className="flex items-center gap-1.5 mb-1">
               <span className="font-mono font-bold text-xs text-theme-primary">
-                {operacion.amp_codigo || 'AMP'}
+                {cleanAmpCode}
               </span>
             </div>
             <p className="text-[11px] text-theme-muted line-clamp-2">
@@ -180,16 +181,22 @@ export const OperacionDetalleModal: React.FC<OperacionDetalleModalProps> = ({
               Gestión Fiscal
             </span>
             <span className="font-mono font-bold text-xs text-theme-main">
-              {operacion.gestion_anio ? `Gestión ${operacion.gestion_anio}` : 'Vigente / Interanual'}
+              {operacion.gestion_anio ? `Gestión ${operacion.gestion_anio}` : 'Gestión Vigente'}
             </span>
           </div>
 
           <div className="p-3 rounded-xl bg-theme-surface border border-theme-border">
             <span className="text-[10px] font-semibold uppercase text-theme-muted block mb-1">
-              Modalidad de Adquisición
+              Alcance de la Operación
             </span>
-            <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border border-theme-border bg-theme-border/30 text-theme-main">
-              {operacion.es_contratacion ? '✓ Aplica a Contrataciones / PAC' : 'Gasto Corriente Operativo'}
+            <span
+              className={`inline-block px-2.5 py-0.5 rounded-md font-mono text-[11px] font-bold border ${
+                operacion.es_contratacion
+                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              {operacion.es_contratacion ? 'Contrataciones y Compras' : 'Operación Regular'}
             </span>
           </div>
         </div>

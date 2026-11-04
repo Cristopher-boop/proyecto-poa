@@ -12,6 +12,7 @@ import {
   Coins,
   ShieldCheck,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import { CertificacionPOA, CertificacionFormData } from '../../../types/certificacion';
 import { Area } from '../../../services/presupuestoService';
@@ -70,7 +71,14 @@ export const SolicitudGastoModal: React.FC<SolicitudGastoModalProps> = ({
   useEffect(() => {
     if (initialData) {
       setAreaId(initialData.area);
-      setSelectedOperacionId(initialData.operaciones?.[0] ?? null);
+      const rawOp = initialData.operaciones?.[0];
+      const initialOpId =
+        typeof rawOp === 'number'
+          ? rawOp
+          : typeof rawOp === 'object' && rawOp !== null && 'id' in rawOp
+          ? Number((rawOp as any).id) || null
+          : initialData.operaciones_detalle?.[0]?.id || null;
+      setSelectedOperacionId(initialOpId);
       setMemoriaId(initialData.memoria || null);
       setHojaRuta(initialData.hoja_ruta || '');
       setMontoSolicitado(String(initialData.monto_solicitado || ''));
@@ -145,9 +153,28 @@ export const SolicitudGastoModal: React.FC<SolicitudGastoModalProps> = ({
     return todasOperaciones.filter((op) => {
       if (gestionId && op.gestion_id && Number(op.gestion_id) !== Number(gestionId)) return false;
       if (gestionAnio && op.gestion_anio && Number(op.gestion_anio) !== Number(gestionAnio)) return false;
-      return op.area === areaId && op.estado;
+      return Number(op.area) === Number(areaId) && op.estado;
     });
   }, [todasOperaciones, areaId, gestionId, gestionAnio]);
+
+  // Detección inteligente de Operación y Memoria sugeridas en observaciones
+  const suggestedOp = useMemo(() => {
+    const text = [initialData?.observacion_planificacion, initialData?.observacion_presupuestos]
+      .filter(Boolean)
+      .join(' ')
+      .toUpperCase();
+    if (!text || !todasOperaciones.length) return null;
+    return todasOperaciones.find((op) => text.includes(op.codigo.toUpperCase())) || null;
+  }, [initialData?.observacion_planificacion, initialData?.observacion_presupuestos, todasOperaciones]);
+
+  const suggestedMemoria = useMemo(() => {
+    const text = [initialData?.observacion_planificacion, initialData?.observacion_presupuestos]
+      .filter(Boolean)
+      .join(' ')
+      .toUpperCase();
+    if (!text || !memorias.length) return null;
+    return memorias.find((m) => text.includes(m.codigo.toUpperCase())) || null;
+  }, [initialData?.observacion_planificacion, initialData?.observacion_presupuestos, memorias]);
 
   // Regla: En caso de que el área tenga solo una operación, se auto-selecciona automáticamente
   useEffect(() => {
@@ -171,7 +198,7 @@ export const SolicitudGastoModal: React.FC<SolicitudGastoModalProps> = ({
   const derivedPartida = useMemo(() => {
     if (!selectedMemoriaObj) return null;
     const det = selectedMemoriaObj.detalles?.[0];
-    const pid = det?.partida?.id || (selectedMemoriaObj as any).partida_id || (selectedMemoriaObj as any).partida?.id || null;
+    const pid = (selectedMemoriaObj as any).partida_id || det?.partida?.id || (selectedMemoriaObj as any).partida?.id || null;
     const pcod = selectedMemoriaObj.partida_codigo || det?.partida?.codigo || det?.partida_codigo || '';
     const pnom = selectedMemoriaObj.partida_nombre || det?.partida?.nombre || det?.partida_nombre || '';
     return { id: pid, codigo: pcod, nombre: pnom };
@@ -337,6 +364,70 @@ export const SolicitudGastoModal: React.FC<SolicitudGastoModalProps> = ({
       size="xl"
     >
       <div className="space-y-5">
+        {/* Observación y Sugerencia de Planificación (si fue observada) */}
+        {initialData?.observacion_planificacion && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs space-y-1 animate-in fade-in">
+            <div className="flex items-center gap-2 font-bold text-amber-700 dark:text-amber-300">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>Observación y Sugerencia de la Unidad de Planificación:</span>
+            </div>
+            <p className="pl-6 text-[11.5px] leading-relaxed font-medium">
+              {initialData.observacion_planificacion}
+            </p>
+          </div>
+        )}
+
+        {/* Observación de la Unidad de Presupuestos (si fue observada en esa fase) */}
+        {initialData?.observacion_presupuestos && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs space-y-1 animate-in fade-in">
+            <div className="flex items-center gap-2 font-bold text-amber-700 dark:text-amber-300">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>Observación y Sugerencia de la Unidad de Presupuestos:</span>
+            </div>
+            <p className="pl-6 text-[11.5px] leading-relaxed font-medium">
+              {initialData.observacion_presupuestos}
+            </p>
+          </div>
+        )}
+
+        {/* Acciones Rápidas para aplicar sugerencias técnicas detectadas */}
+        {(suggestedOp || suggestedMemoria) && (
+          <div className="p-3 rounded-xl bg-theme-base border border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-bold">
+              <Sparkles size={14} />
+              <span>Sugerencias Técnicas Detectadas:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {suggestedOp && selectedOperacionId !== suggestedOp.id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleSelectOperacion(suggestedOp.id)}
+                  className="text-[10px] py-1 px-2.5 font-bold text-amber-700 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
+                >
+                  Aplicar Operación ({suggestedOp.codigo})
+                </Button>
+              )}
+              {suggestedMemoria && memoriaId !== suggestedMemoria.id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setMemoriaId(suggestedMemoria.id)}
+                  className="text-[10px] py-1 px-2.5 font-bold text-amber-700 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
+                >
+                  Aplicar MC ({suggestedMemoria.codigo})
+                </Button>
+              )}
+              {(!suggestedOp || selectedOperacionId === suggestedOp.id) &&
+                (!suggestedMemoria || memoriaId === suggestedMemoria.id) && (
+                  <span className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400">
+                    ✓ Sugerencias aplicadas al formulario
+                  </span>
+                )}
+            </div>
+          </div>
+        )}
+
         {/* Banner Institucional */}
         <div className="p-3.5 rounded-2xl bg-theme-primary/10 border border-theme-primary/20 text-theme-main flex items-start gap-3">
           <span className="p-2 rounded-xl bg-theme-primary/20 text-theme-primary shrink-0 mt-0.5">

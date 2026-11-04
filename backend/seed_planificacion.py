@@ -35,7 +35,7 @@ def sembrar_planificacion():
     desc_amp_p1 = "Fortalecer la gestión institucional mediante la mejora continua de los procesos, la modernización tecnológica, y el fortalecimiento de la transparencia institucional a nivel nacional."
     if p1:
         amp_p1, _ = AccionMedianoPlazo.objects.update_or_create(
-            codigo='AMP-P1-01',
+            codigo='AMP-P1',
             defaults={
                 'programa': p1,
                 'descripcion': desc_amp_p1,
@@ -259,7 +259,7 @@ def sembrar_planificacion():
     desc_amp_p2 = "Fortalecer la gestión financiera de la Empresa Pública Transporte Aéreo Militar mediante la administración eficiente de los recursos, contribuyendo a la sostenibilidad y al desarrollo empresarial."
     if p2:
         amp_p2, _ = AccionMedianoPlazo.objects.update_or_create(
-            codigo='AMP-P2-01',
+            codigo='AMP-P2',
             defaults={
                 'programa': p2,
                 'descripcion': desc_amp_p2,
@@ -314,7 +314,7 @@ def sembrar_planificacion():
     desc_amp_p410 = "Incrementar la participación en el mercado de transporte aéreo de pasajeros, carga y correo, mediante la implementación de estrategias comerciales, a nivel nacional."
     if p410:
         amp_p410, _ = AccionMedianoPlazo.objects.update_or_create(
-            codigo='AMP-P410-01',
+            codigo='AMP-P410',
             defaults={
                 'programa': p410,
                 'descripcion': desc_amp_p410,
@@ -412,7 +412,7 @@ def sembrar_planificacion():
     desc_amp_p210 = "Gestionar la prestación segura, eficiente y continua de las operaciones aeronáuticas mediante la gestión integral de la flota aérea, la aeronavegabilidad continua y el cumplimiento de los estándares de seguridad operacional a nivel nacional."
     if p210:
         amp_p210, _ = AccionMedianoPlazo.objects.update_or_create(
-            codigo='AMP-P210-01',
+            codigo='AMP-P210',
             defaults={
                 'programa': p210,
                 'descripcion': desc_amp_p210,

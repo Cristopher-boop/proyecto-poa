@@ -90,8 +90,8 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
     area_nombre = serializers.CharField(source='area.nombre', read_only=True)
     area_tipo = serializers.CharField(source='area.tipo', read_only=True)
     
-    partida_codigo = serializers.CharField(source='partida.codigo', read_only=True, default=None)
-    partida_nombre = serializers.CharField(source='partida.nombre', read_only=True, default=None)
+    partida_codigo = serializers.SerializerMethodField()
+    partida_nombre = serializers.SerializerMethodField()
     memoria_codigo = serializers.CharField(source='memoria.codigo', read_only=True, default=None)
     memoria_saldo_disponible = serializers.DecimalField(source='memoria.saldo_disponible', max_digits=14, decimal_places=4, read_only=True, default=Decimal('0.0000'))
     memoria_total_presupuestado = serializers.DecimalField(source='memoria.total_presupuestado', max_digits=14, decimal_places=4, read_only=True, default=Decimal('0.0000'))
@@ -169,6 +169,26 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
             'updated_at'
         ]
 
+    def get_partida_codigo(self, obj):
+        if obj.partida:
+            return obj.partida.codigo
+        if obj.memoria:
+            primer_detalle = obj.memoria.detalles.select_related('partida').first()
+            if primer_detalle and primer_detalle.partida:
+                return primer_detalle.partida.codigo
+        return None
+
+    def get_partida_nombre(self, obj):
+        if obj.partida:
+            return obj.partida.nombre
+        if obj.partida_literal:
+            return obj.partida_literal
+        if obj.memoria:
+            primer_detalle = obj.memoria.detalles.select_related('partida').first()
+            if primer_detalle and primer_detalle.partida:
+                return primer_detalle.partida.nombre
+        return None
+
     def get_creado_por_nombre(self, obj):
         if obj.creado_por:
             return obj.creado_por.get_full_name() or obj.creado_por.username
@@ -212,10 +232,13 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
 
     def get_operaciones_detalle(self, obj):
         detalles = []
-        for op in obj.operaciones.select_related(
+        ops = list(obj.operaciones.select_related(
             'accion_corto_plazo__accion_mediano_plazo__programa',
             'area__programa'
-        ).all():
+        ).all())
+        if not ops and obj.memoria and obj.memoria.operacion:
+            ops = [obj.memoria.operacion]
+        for op in ops:
             acp = op.accion_corto_plazo
             amp = acp.accion_mediano_plazo if acp else None
             prog = amp.programa if amp else (op.area.programa if op.area else None)
@@ -242,10 +265,14 @@ class CertificacionPOASerializer(serializers.ModelSerializer):
         ops_list = []
         programas_dict = {}
 
-        for op in obj.operaciones.select_related(
+        ops = list(obj.operaciones.select_related(
             'accion_corto_plazo__accion_mediano_plazo__programa',
             'area__programa'
-        ).all():
+        ).all())
+        if not ops and obj.memoria and obj.memoria.operacion:
+            ops = [obj.memoria.operacion]
+
+        for op in ops:
             acp = op.accion_corto_plazo
             amp = acp.accion_mediano_plazo if acp else None
             prog = amp.programa if amp else (op.area.programa if op.area else None)

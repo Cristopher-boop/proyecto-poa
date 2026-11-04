@@ -10,6 +10,7 @@ interface AreasListProps {
   onView: (area: Area) => void;
   onEdit: (area: Area) => void;
   onToggleEstado: (area: Area) => void;
+  canManage?: boolean;
 }
 
 export const AreasList: React.FC<AreasListProps> = ({
@@ -18,6 +19,7 @@ export const AreasList: React.FC<AreasListProps> = ({
   onView,
   onEdit,
   onToggleEstado,
+  canManage = false,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -35,7 +37,9 @@ export const AreasList: React.FC<AreasListProps> = ({
         <div>
           <p className="text-sm font-semibold text-theme-main">No hay gerencias o unidades que coincidan con la búsqueda</p>
           <p className="text-xs text-theme-muted mt-0.5">
-            Ajuste los filtros o presione "Nueva Gerencia / Unidad" para incorporar una gerencia o unidad a la estructura.
+            {canManage
+              ? 'Ajuste los filtros o presione "Nueva Gerencia / Unidad" para incorporar una gerencia o unidad a la estructura.'
+              : 'Ajuste los criterios de búsqueda para consultar las gerencias y unidades registradas.'}
           </p>
         </div>
       </div>
@@ -100,7 +104,7 @@ export const AreasList: React.FC<AreasListProps> = ({
                     </span>
                   </td>
 
-                  {/* Programa Badge: "Programa X", NO PURPLE */}
+                  {/* Programa Badge */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-900 border border-amber-200/90 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/50 font-mono">
                       {progLabel}
@@ -133,7 +137,7 @@ export const AreasList: React.FC<AreasListProps> = ({
                   {/* Acciones */}
                   <td className="py-3.5 px-4 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {/* Ojito: Ver detalles */}
+                      {/* Ojito: Ver detalles (Accesible para todos los usuarios) */}
                       <button
                         type="button"
                         onClick={() => onView(area)}
@@ -143,29 +147,33 @@ export const AreasList: React.FC<AreasListProps> = ({
                         <Eye size={15} />
                       </button>
 
-                      {/* Lápiz: Editar */}
-                      <button
-                        type="button"
-                        onClick={() => onEdit(area)}
-                        className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        title="Editar área"
-                      >
-                        <Edit3 size={15} />
-                      </button>
+                      {/* Lápiz: Editar (Solo Superadministración) */}
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(area)}
+                          className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Editar área"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                      )}
 
-                      {/* Botón de encendido / apagado */}
-                      <button
-                        type="button"
-                        onClick={() => onToggleEstado(area)}
-                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                          isActiva
-                            ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-                            : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                        }`}
-                        title={isActiva ? 'Desactivar área institucional' : 'Activar área institucional'}
-                      >
-                        <Power size={15} />
-                      </button>
+                      {/* Botón de encendido / apagado (Solo Superadministración) */}
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleEstado(area)}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            isActiva
+                              ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                              : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                          }`}
+                          title={isActiva ? 'Desactivar área institucional' : 'Activar área institucional'}
+                        >
+                          <Power size={15} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

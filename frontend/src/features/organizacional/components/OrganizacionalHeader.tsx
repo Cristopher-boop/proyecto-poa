@@ -13,6 +13,7 @@ interface OrganizacionalHeaderProps {
   onOpenCreateArea: () => void;
   onOpenCreateSeccion: () => void;
   onOpenCreatePrograma: () => void;
+  canCreateArea?: boolean;
 }
 
 export const OrganizacionalHeader: React.FC<OrganizacionalHeaderProps> = ({
@@ -25,6 +26,7 @@ export const OrganizacionalHeader: React.FC<OrganizacionalHeaderProps> = ({
   onOpenCreateArea,
   onOpenCreateSeccion,
   onOpenCreatePrograma,
+  canCreateArea = false,
 }) => {
   return (
     <div className="space-y-4">
@@ -34,37 +36,39 @@ export const OrganizacionalHeader: React.FC<OrganizacionalHeaderProps> = ({
         title="Estructura Organizacional Institucional"
         subtitle="Catálogo oficial de programas, gerencias, unidades y secciones operativas que formulan y ejecutan el presupuesto POA."
         actions={
-          <>
-            {(activeTab === 'AREAS' || activeTab === 'JERARQUIA') && (
-              <button
-                type="button"
-                onClick={onOpenCreateArea}
-                className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText font-semibold text-xs shadow-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Plus size={15} /> Nueva Gerencia / Unidad
-              </button>
-            )}
+          canCreateArea ? (
+            <>
+              {(activeTab === 'AREAS' || activeTab === 'JERARQUIA') && (
+                <button
+                  type="button"
+                  onClick={onOpenCreateArea}
+                  className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText font-semibold text-xs shadow-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus size={15} /> Nueva Gerencia / Unidad
+                </button>
+              )}
 
-            {activeTab === 'SECCIONES' && (
-              <button
-                type="button"
-                onClick={onOpenCreateSeccion}
-                className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText font-semibold text-xs shadow-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Plus size={15} /> Nueva Sección
-              </button>
-            )}
+              {activeTab === 'SECCIONES' && (
+                <button
+                  type="button"
+                  onClick={onOpenCreateSeccion}
+                  className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText font-semibold text-xs shadow-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus size={15} /> Nueva Sección
+                </button>
+              )}
 
-            {activeTab === 'PROGRAMAS' && (
-              <button
-                type="button"
-                onClick={onOpenCreatePrograma}
-                className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText font-semibold text-xs shadow-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Plus size={15} /> Nuevo Programa
-              </button>
-            )}
-          </>
+              {activeTab === 'PROGRAMAS' && (
+                <button
+                  type="button"
+                  onClick={onOpenCreatePrograma}
+                  className="px-4 py-2 rounded-xl bg-theme-primary text-theme-primaryText font-semibold text-xs shadow-sm hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus size={15} /> Nuevo Programa
+                </button>
+              )}
+            </>
+          ) : undefined
         }
       />
 

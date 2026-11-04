@@ -9,6 +9,7 @@ interface SeccionesListProps {
   onView: (sec: Seccion) => void;
   onEdit: (sec: Seccion) => void;
   onToggleEstado: (sec: Seccion) => void;
+  canManage?: boolean;
 }
 
 export const SeccionesList: React.FC<SeccionesListProps> = ({
@@ -17,6 +18,7 @@ export const SeccionesList: React.FC<SeccionesListProps> = ({
   onView,
   onEdit,
   onToggleEstado,
+  canManage = false,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -34,7 +36,9 @@ export const SeccionesList: React.FC<SeccionesListProps> = ({
         <div>
           <p className="text-sm font-semibold text-theme-main">No hay secciones que coincidan con la búsqueda</p>
           <p className="text-xs text-theme-muted mt-0.5">
-            Ajuste los filtros o presione "Nueva Sección" para agregar una unidad operativa.
+            {canManage
+              ? 'Ajuste los filtros o presione "Nueva Sección" para agregar una unidad operativa.'
+              : 'Ajuste los criterios de filtrado para consultar las secciones registradas.'}
           </p>
         </div>
       </div>
@@ -122,7 +126,7 @@ export const SeccionesList: React.FC<SeccionesListProps> = ({
                   {/* Acciones */}
                   <td className="py-3.5 px-4 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {/* Ojito: Ver detalles */}
+                      {/* Ojito: Ver detalles (Accesible para todos) */}
                       <button
                         type="button"
                         onClick={() => onView(sec)}
@@ -132,29 +136,33 @@ export const SeccionesList: React.FC<SeccionesListProps> = ({
                         <Eye size={15} />
                       </button>
 
-                      {/* Lápiz: Editar */}
-                      <button
-                        type="button"
-                        onClick={() => onEdit(sec)}
-                        className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        title="Editar sección"
-                      >
-                        <Edit3 size={15} />
-                      </button>
+                      {/* Lápiz: Editar (Solo Superadministración) */}
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(sec)}
+                          className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Editar sección"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                      )}
 
-                      {/* Botón de encendido / apagado */}
-                      <button
-                        type="button"
-                        onClick={() => onToggleEstado(sec)}
-                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                          isActiva
-                            ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-                            : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                        }`}
-                        title={isActiva ? 'Desactivar sección' : 'Activar sección'}
-                      >
-                        <Power size={15} />
-                      </button>
+                      {/* Botón de encendido / apagado (Solo Superadministración) */}
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleEstado(sec)}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            isActiva
+                              ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                              : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                          }`}
+                          title={isActiva ? 'Desactivar sección' : 'Activar sección'}
+                        >
+                          <Power size={15} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

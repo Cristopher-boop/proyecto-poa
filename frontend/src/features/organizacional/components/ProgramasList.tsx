@@ -9,6 +9,7 @@ interface ProgramasListProps {
   onView: (prog: Programa) => void;
   onEdit: (prog: Programa) => void;
   onToggleEstado: (prog: Programa) => void;
+  canManage?: boolean;
 }
 
 export const ProgramasList: React.FC<ProgramasListProps> = ({
@@ -16,6 +17,7 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
   onView,
   onEdit,
   onToggleEstado,
+  canManage = false,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -33,7 +35,9 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
         <div>
           <p className="text-sm font-semibold text-theme-main">No hay programas registrados</p>
           <p className="text-xs text-theme-muted mt-0.5">
-            Ajuste los filtros o presione "Nuevo Programa" para incorporar un programa institucional.
+            {canManage
+              ? 'Ajuste los filtros o presione "Nuevo Programa" para incorporar un programa institucional.'
+              : 'Ajuste los criterios de filtrado para consultar los programas registrados.'}
           </p>
         </div>
       </div>
@@ -60,7 +64,6 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
           <tbody className="divide-y divide-theme-border">
             {pagedProgramas.map((prog) => {
               const isActivo = prog.estado;
-              // Clean program display: "Programa X", NO BREAKDOWN!
               const shortTitle = formatProgramaShort(prog);
 
               return (
@@ -70,7 +73,7 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
                     !isActivo ? 'opacity-65 bg-theme-base/30' : ''
                   }`}
                 >
-                  {/* Nombre Programa (Clean "Programa X") */}
+                  {/* Nombre Programa */}
                   <td className="py-3.5 px-4 font-semibold text-theme-main min-w-[200px]">
                     <span className="text-xs sm:text-sm font-semibold">{shortTitle}</span>
                   </td>
@@ -106,7 +109,7 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
                   {/* Acciones */}
                   <td className="py-3.5 px-4 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {/* Ojito: Ver detalles */}
+                      {/* Ojito: Ver detalles (Accesible para todos) */}
                       <button
                         type="button"
                         onClick={() => onView(prog)}
@@ -116,29 +119,33 @@ export const ProgramasList: React.FC<ProgramasListProps> = ({
                         <Eye size={15} />
                       </button>
 
-                      {/* Lápiz: Editar */}
-                      <button
-                        type="button"
-                        onClick={() => onEdit(prog)}
-                        className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        title="Editar programa"
-                      >
-                        <Edit3 size={15} />
-                      </button>
+                      {/* Lápiz: Editar (Solo Superadministración) */}
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(prog)}
+                          className="p-1.5 rounded-lg text-theme-muted hover:text-theme-main hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Editar programa"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                      )}
 
-                      {/* Botón de encendido / apagado */}
-                      <button
-                        type="button"
-                        onClick={() => onToggleEstado(prog)}
-                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                          isActivo
-                            ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-                            : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                        }`}
-                        title={isActivo ? 'Desactivar programa' : 'Activar programa'}
-                      >
-                        <Power size={15} />
-                      </button>
+                      {/* Botón de encendido / apagado (Solo Superadministración) */}
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleEstado(prog)}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            isActivo
+                              ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                              : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                          }`}
+                          title={isActivo ? 'Desactivar programa' : 'Activar programa'}
+                        >
+                          <Power size={15} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -23,6 +23,7 @@ export const planificacionApi = {
   updateOperacion: planificacionService.updateOperacion,
   toggleEstadoOperacion: planificacionService.toggleEstadoOperacion,
   deleteOperacion: planificacionService.deleteOperacion,
+  duplicarGestionOperaciones: planificacionService.duplicarGestionOperaciones,
 
   // Tareas
   getTareas: planificacionService.getTareas,
